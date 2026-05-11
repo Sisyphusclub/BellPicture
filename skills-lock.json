@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "cc-codex-spec-bootstrap": {
+      "source": "mindfold-ai/marketplace",
+      "sourceType": "github",
+      "skillPath": "skills/cc-codex-spec-bootstrap/SKILL.md",
+      "computedHash": "4b3dc7fd1cc240b279b3546371a3432b43d9db736d2cc6556ffd01de94ccef5c"
+    }
+  }
+}
