@@ -14,9 +14,9 @@ This directory contains guidelines for backend development. Fill in each file wi
 
 | Guide | Description | Status |
 |-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | Express + TS layout, env vars, folder rules | Verified (task 05-09) |
-| [Database Guidelines](./database-guidelines.md) | No-DB MVP rule + local fs storage rules | Planning version |
-| [Error Handling](./error-handling.md) | `AppError` hierarchy, error response shape, provider mapping | Planning version |
+| [Directory Structure](./directory-structure.md) | Express + TS layout, env vars, folder rules | Verified (task 05-11) |
+| [Database Guidelines](./database-guidelines.md) | No-DB MVP rule + local fs storage rules | Verified (task 05-11) |
+| [Error Handling](./error-handling.md) | `AppError` hierarchy, error response shape, provider mapping | Verified (task 05-11) |
 | [Quality Guidelines](./quality-guidelines.md) | TS strict, ESLint, Vitest, pre-commit, review checklist | Verified (task 05-09) |
 | [Logging Guidelines](./logging-guidelines.md) | pino singleton, log levels, redact rules | Verified (task 05-09) |
 

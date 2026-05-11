@@ -1,10 +1,10 @@
 # Backend Directory Structure
 
-> **Status**: Verified against `backend/src/` after task `05-09-backend-skeleton`
-> (env table + `IMAGE_API_BASE_URL` convention reflect actual implementation).
-> Folders for `controllers/`, `services/imageGeneration.service.ts`, and
-> `middlewares/upload.ts` are listed below but **not yet created** — they
-> land in task 2 (image endpoints).
+> **Status**: Verified against `backend/src/` after task
+> `05-11-image-endpoints`. Routes, controllers, services, and the upload
+> middleware now exist. Env table reflects actual implementation including
+> `UPLOAD_MAX_BYTES`. The `IMAGE_API_BASE_URL` "no `/v1`" convention is
+> locked.
 
 ---
 
@@ -92,6 +92,7 @@ outside `config/env.ts`.**
 | `IMAGE_MODEL` | no | `gpt-image-2` | Default `gpt-image-2` |
 | `IMAGE_API_TIMEOUT_MS` | no | `120000` | Default 120000 (2 min). Must be a positive integer; non-numeric or `<= 0` → throw on `config/env.ts` import. |
 | `UPLOAD_DIR` | no | `./tmp/uploads` | Default `./tmp/uploads` |
+| `UPLOAD_MAX_BYTES` | no | `10485760` | Default 10 MiB. Multer `limits.fileSize`. Positive integer; non-numeric or `<= 0` → throw on import. Oversize uploads → `AppError(PAYLOAD_TOO_LARGE, 413)`. |
 | `OUTPUT_DIR` | no | `./tmp/outputs` | Default `./tmp/outputs` |
 | `LOG_LEVEL` | no | `info` | pino level |
 | `CORS_ORIGIN` | no | `http://localhost:5173` | Vite dev origin |

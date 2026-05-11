@@ -1,9 +1,10 @@
 # Database Guidelines
 
-> **Status**: Planning version. **The MVP backend has no database.** This file
-> documents that decision, the local-filesystem substitute, and the rules
-> that prevent the team from accidentally introducing a DB before it's
-> agreed.
+> **Status**: Verified against `backend/src/storage/localStorage.ts` after
+> task `05-11-image-endpoints`. **The MVP backend has no database.** This
+> file documents that decision, the local-filesystem substitute, and the
+> rules that prevent the team from accidentally introducing a DB before
+> it's agreed.
 
 ---
 
@@ -34,8 +35,12 @@ The backend writes two kinds of files:
 
 - Use `crypto.randomUUID()` for filenames. Never use the user-supplied
   filename (path-traversal risk, collision risk).
-- Preserve the file extension only after validating the MIME type against
-  an allow-list (`image/png`, `image/jpeg`, `image/webp`).
+- For uploads, the extension is decided by **magic-bytes sniffing**, not
+  the client-declared MIME (`Content-Type` is forgeable). See
+  `sniffImageExt` in `storage/localStorage.ts`.
+- The `referenceId` that the client passes back to `/api/images/generate`
+  is the full `<uuid>.<ext>` filename — not just the UUID — so the backend
+  doesn't have to do directory scans to find the extension.
 
 ### Lifecycle
 

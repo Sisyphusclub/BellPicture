@@ -24,10 +24,13 @@
     "*.{ts,js,cjs,mjs,json,md,yml,yaml}": "prettier --write"
   },
   "dependencies": {
+    "@types/multer": "^2.1.0",
     "cors": "^2.8.5",
     "express": "^4.21.1",
+    "multer": "^2.1.1",
     "pino": "^9.5.0",
-    "pino-pretty": "^11.3.0"
+    "pino-pretty": "^11.3.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

@@ -1,7 +1,9 @@
 # Backend Error Handling
 
-> **Status**: Planning version. Re-verify against actual `errors/AppError.ts`
-> and `middlewares/errorHandler.ts` once they land.
+> **Status**: Verified against `backend/src/errors/AppError.ts` +
+> `backend/src/middlewares/errorHandler.ts` after task `05-11-image-endpoints`.
+> ErrorCode union extended; details now included in the JSON response body
+> when set.
 
 ---
 
@@ -20,10 +22,12 @@ Single tagged base class in `src/errors/AppError.ts`:
 ```ts
 export type ErrorCode =
   | 'BAD_REQUEST'
+  | 'NOT_FOUND'
   | 'UNSUPPORTED_MEDIA_TYPE'
   | 'PAYLOAD_TOO_LARGE'
   | 'PROVIDER_ERROR'        // 2API returned non-2xx or invalid payload
   | 'PROVIDER_TIMEOUT'      // request exceeded IMAGE_API_TIMEOUT_MS
+  | 'PROVIDER_RATE_LIMITED' // 2API returned 429
   | 'STORAGE_ERROR'         // local fs read/write failed
   | 'INTERNAL';
 
@@ -56,7 +60,8 @@ The error middleware always returns:
   "error": {
     "code": "PROVIDER_TIMEOUT",
     "message": "Image generation timed out after 120000ms",
-    "requestId": "<uuid>"
+    "requestId": "<uuid>",
+    "details": { "...": "..." }
   }
 }
 ```
@@ -66,8 +71,11 @@ The error middleware always returns:
   vars, or stack traces here.
 - `requestId` is set by the request-logger middleware (one UUID per
   request) and is included in all logs for that request.
-- `details` may be added when useful to the frontend (e.g., validation
-  field names) but never for provider responses.
+- `details` is included **only when the thrown AppError set it** (it is
+  `undefined`-omitted otherwise). Use it for validation field names
+  (`{ issues: [...] }`), reference ids the client sent, or upstream
+  status codes. Never put provider response bodies, header values, or
+  raw error stacks here — those leak to the frontend.
 
 ---
 
@@ -106,12 +114,31 @@ Mounted **last** in `app.ts`, after all routes.
 | Trigger | AppError.code | HTTP |
 |---|---|---|
 | `AbortError` from `fetch` | `PROVIDER_TIMEOUT` | 504 |
-| 2API 4xx | `PROVIDER_ERROR` | 502 (don't pass through 4xx; the client called *us* correctly) |
+| 2API 429 | `PROVIDER_RATE_LIMITED` | 429 (the only upstream status we surface as-is) |
+| 2API other 4xx | `PROVIDER_ERROR` | 502 (don't pass through 4xx; the client called *us* correctly) |
 | 2API 5xx | `PROVIDER_ERROR` | 502 |
 | Malformed JSON / missing image data | `PROVIDER_ERROR` | 502 |
+| Local file-read fails before fetch (image-to-image) | `PROVIDER_ERROR` | 502 (treated as "provider unreachable" — the file should have existed if the service did the preflight) |
 
 Always log the upstream status + a redacted summary of the response body
 (no `Authorization` header echoes, no API key fragments).
+
+## Upload / validation failure mapping
+
+The image endpoints add validation errors at the upload + controller
+boundary:
+
+| Trigger | AppError.code | HTTP |
+|---|---|---|
+| zod schema fails on JSON body | `BAD_REQUEST` | 400 (`details.issues` = `ZodError.issues`) |
+| Multer rejects oversize upload (`LIMIT_FILE_SIZE`) | `PAYLOAD_TOO_LARGE` | 413 (`details.field` = the multipart field) |
+| Multer sees an unexpected field name | `BAD_REQUEST` | 400 |
+| Multipart request with no file | `BAD_REQUEST` | 400 |
+| Magic-bytes sniff doesn't recognize the upload | `UNSUPPORTED_MEDIA_TYPE` | 415 (`details.firstBytes` = first 12 bytes) |
+| `referenceId` not `<uuid>.<ext>` | `BAD_REQUEST` | 400 |
+| `referenceId` does not match a file on disk | `BAD_REQUEST` | 400 (`details.referenceId` = the id) |
+| `GET /api/outputs/:filename` filename malformed | `BAD_REQUEST` | 400 |
+| `GET /api/outputs/:filename` file missing | `NOT_FOUND` | 404 |
 
 ---
 

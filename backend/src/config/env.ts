@@ -7,6 +7,7 @@ export interface Env {
   IMAGE_MODEL: string;
   IMAGE_API_TIMEOUT_MS: number;
   UPLOAD_DIR: string;
+  UPLOAD_MAX_BYTES: number;
   OUTPUT_DIR: string;
   LOG_LEVEL: string;
   CORS_ORIGIN: string;
@@ -46,6 +47,7 @@ function loadEnv(): Env {
     IMAGE_MODEL: readString('IMAGE_MODEL', 'gpt-image-2'),
     IMAGE_API_TIMEOUT_MS: readInt('IMAGE_API_TIMEOUT_MS', 120_000),
     UPLOAD_DIR: readString('UPLOAD_DIR', './tmp/uploads'),
+    UPLOAD_MAX_BYTES: readInt('UPLOAD_MAX_BYTES', 10_485_760),
     OUTPUT_DIR: readString('OUTPUT_DIR', './tmp/outputs'),
     LOG_LEVEL: readString('LOG_LEVEL', 'info'),
     CORS_ORIGIN: readString('CORS_ORIGIN', 'http://localhost:5173'),

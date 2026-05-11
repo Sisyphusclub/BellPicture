@@ -19,9 +19,20 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
       },
       err.message,
     );
-    res.status(err.status).json({
+    const body: {
+      error: {
+        code: string;
+        message: string;
+        requestId: string;
+        details?: Record<string, unknown>;
+      };
+    } = {
       error: { code: err.code, message: err.message, requestId },
-    });
+    };
+    if (err.details !== undefined) {
+      body.error.details = err.details;
+    }
+    res.status(err.status).json(body);
     return;
   }
 

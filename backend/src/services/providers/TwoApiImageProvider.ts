@@ -1,8 +1,10 @@
 import { Buffer } from 'node:buffer';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 
 import { AppError } from '../../errors/AppError.js';
 import { logger } from '../../logger.js';
-import { saveOutput } from '../../storage/localStorage.js';
+import { mimeFromExt, saveOutput } from '../../storage/localStorage.js';
 import type { GenerateInput, GenerateOutput } from '../../types/image.js';
 
 import type { ImageGenerationProvider } from './ImageGenerationProvider.js';
@@ -35,38 +37,15 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
   }
 
   async generate(input: GenerateInput): Promise<GenerateOutput> {
-    if (input.referencePath !== undefined) {
-      throw new AppError('BAD_REQUEST', 'Reference image not yet supported', 400, undefined, {
-        referencePath: input.referencePath,
-      });
-    }
-
     const model = input.model ?? this.config.defaultModel;
-    const url = buildUrl(this.config.baseUrl);
-
-    logger.info(
-      { model, promptPreview: input.prompt.slice(0, 80), url },
-      'image generation: provider request',
-    );
+    const hasReference = typeof input.referencePath === 'string' && input.referencePath.length > 0;
 
     const start = Date.now();
     let response: Response;
     try {
-      response = await this.fetchImpl(url, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          authorization: `Bearer ${this.config.apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          prompt: input.prompt,
-          n: 1,
-          size: DEFAULT_SIZE,
-          response_format: 'b64_json',
-        }),
-        signal: AbortSignal.timeout(this.config.timeoutMs),
-      });
+      response = hasReference
+        ? await this.callEdits(model, input.prompt, input.referencePath as string)
+        : await this.callGenerations(model, input.prompt);
     } catch (err) {
       if (isTimeoutLike(err)) {
         throw new AppError(
@@ -79,10 +58,25 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
       throw new AppError('PROVIDER_ERROR', 'Failed to reach image generation provider', 502, err);
     }
 
+    if (response.status === 429) {
+      const summary = await summarizeBody(response);
+      logger.warn(
+        { upstreamStatus: 429, summary, hasReference },
+        'image generation: provider rate-limited',
+      );
+      throw new AppError(
+        'PROVIDER_RATE_LIMITED',
+        'Image generation provider rate-limited (429)',
+        429,
+        undefined,
+        { upstreamStatus: 429 },
+      );
+    }
+
     if (!response.ok) {
       const summary = await summarizeBody(response);
       logger.warn(
-        { upstreamStatus: response.status, summary },
+        { upstreamStatus: response.status, summary, hasReference },
         'image generation: provider non-2xx',
       );
       throw new AppError(
@@ -114,6 +108,7 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
         durationMs: Date.now() - start,
         outputPath: saved.absolutePath,
         outputBytes: buffer.byteLength,
+        hasReference,
       },
       'image generation: provider success',
     );
@@ -124,11 +119,73 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
       height: DEFAULT_HEIGHT,
     };
   }
+
+  private async callGenerations(model: string, prompt: string): Promise<Response> {
+    const url = buildUrl(this.config.baseUrl, 'v1/images/generations');
+    logger.info(
+      { model, promptPreview: prompt.slice(0, 80), url },
+      'image generation: provider request (text-to-image)',
+    );
+    return this.fetchImpl(url, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${this.config.apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        prompt,
+        n: 1,
+        size: DEFAULT_SIZE,
+        response_format: 'b64_json',
+      }),
+      signal: AbortSignal.timeout(this.config.timeoutMs),
+    });
+  }
+
+  private async callEdits(model: string, prompt: string, referencePath: string): Promise<Response> {
+    const url = buildUrl(this.config.baseUrl, 'v1/images/edits');
+    const buffer = await readFile(referencePath);
+    const basename = path.basename(referencePath);
+    const ext = basename.split('.').pop()?.toLowerCase() ?? 'png';
+    const mime =
+      ext === 'jpeg' || ext === 'jpg' ? 'image/jpeg' : ext === 'webp' ? 'image/webp' : 'image/png';
+
+    // Sanity-check the MIME using the same helper so unsupported extensions
+    // never silently leak upstream.
+    mimeFromExt(ext === 'jpg' ? 'jpeg' : ext);
+
+    const form = new FormData();
+    form.append('image', new Blob([new Uint8Array(buffer)], { type: mime }), basename);
+    form.append('prompt', prompt);
+    form.append('model', model);
+    form.append('n', '1');
+    form.append('size', DEFAULT_SIZE);
+    form.append('response_format', 'b64_json');
+
+    logger.info(
+      {
+        model,
+        promptPreview: prompt.slice(0, 80),
+        url,
+        referenceFile: basename,
+        referenceBytes: buffer.byteLength,
+      },
+      'image generation: provider request (image-to-image)',
+    );
+
+    return this.fetchImpl(url, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${this.config.apiKey}` },
+      body: form,
+      signal: AbortSignal.timeout(this.config.timeoutMs),
+    });
+  }
 }
 
-function buildUrl(baseUrl: string): string {
+function buildUrl(baseUrl: string, suffix: string): string {
   const trimmed = baseUrl.replace(/\/+$/, '');
-  return `${trimmed}/v1/images/generations`;
+  return `${trimmed}/${suffix}`;
 }
 
 function isTimeoutLike(err: unknown): boolean {
