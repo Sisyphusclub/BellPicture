@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend guide entry point."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Code review checklist (no any, no console, no raw process.env outside config/env, errors as AppError, tests cover happy + failure path) — the actual checklist run during quality verification."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Validates the error mapping matrix added by this task: PROVIDER_RATE_LIMITED 429, PAYLOAD_TOO_LARGE 413, UNSUPPORTED_MEDIA_TYPE 415, BAD_REQUEST 400 for zod + missing referenceId."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Confirms each new file lands in its specified location and the controller-thin/service-fat boundary holds."}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Verifies upload naming + MIME allow-list + path-traversal guards + no sync fs APIs."}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Verifies image endpoints log around the provider call with the documented fields and no API-key leakage."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Check that generate response fields line up with frontend's ImageRecord schema (no rename/missing field that would force a re-design later)."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer dimension in trellis-check (data flow Storage→Service→Controller→Route → response → frontend)."}

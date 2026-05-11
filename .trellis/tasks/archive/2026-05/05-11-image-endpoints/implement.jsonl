@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Stack snapshot + guide index; entry point to all backend specs."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Locks routes/images.ts, controllers/images.controller.ts, services/imageGeneration.service.ts, middlewares/upload.ts targets and env-var contract (incl. UPLOAD_MAX_BYTES). Verified against current backend/src/."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "AppError shape, zod→BAD_REQUEST(400, {issues}) convention at controller boundary, provider failure mapping (4xx/5xx/AbortError → PROVIDER_ERROR/PROVIDER_TIMEOUT). New PROVIDER_RATE_LIMITED 429 row will be queued for Phase 3.3."}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "tmp/uploads/<uuid>.<ext> naming, MIME allow-list (image/png|jpeg|webp), fs/promises only, helpers in storage/. Drives upload + magic-bytes design."}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "pino redact list, requestId echo, log levels around provider call. Image endpoints must obey same structure as /api/health."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "TS strict / ESLint rules / Vitest patterns / no console / no any. Implementation must lint clean and obey the toolchain."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Frontend's ImageRecord shape (id/createdAt/prompt/model/referenceId?/width/height) — backend response fields must match so frontend can map directly."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Image endpoints span service→provider→storage→route; reuse the checklist for cross-layer correctness."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Storage helper additions (saveUpload/readUpload) must reuse existing localStorage.ts primitives, not duplicate path-traversal / extension logic."}
