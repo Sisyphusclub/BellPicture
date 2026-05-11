@@ -1,8 +1,8 @@
 # Composable Guidelines
 
-> **Status**: Planning version. (Vue calls these "composables", not "hooks",
-> but this file fills the role of `hook-guidelines.md` from the bootstrap
-> scaffold.)
+> **Status**: Verified by the first `frontend/` implementation. (Vue calls
+> these "composables", not "hooks", but this file fills the role of
+> `hook-guidelines.md` from the bootstrap scaffold.)
 
 ---
 

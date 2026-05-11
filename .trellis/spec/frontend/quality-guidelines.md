@@ -1,6 +1,6 @@
 # Frontend Quality Guidelines
 
-> **Status**: Planning version.
+> **Status**: Verified by the first `frontend/` implementation.
 
 ---
 
@@ -14,7 +14,7 @@
 | Prettier 3 | Formatting | `.prettierrc` |
 | Vitest + jsdom | Unit + component tests | `vitest.config.ts` |
 | `@vue/test-utils` | Component mounting helpers | (peer dep) |
-| lefthook *(or husky+lint-staged)* | Pre-commit gate | `lefthook.yml` |
+| husky+lint-staged *(or lefthook)* | Pre-commit gate | `package.json` + `.husky/` or `lefthook.yml` |
 
 ### ESLint baseline
 
@@ -46,6 +46,7 @@ Project-specific rules:
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -57,21 +58,19 @@ Project-specific rules:
 
 ## Pre-commit gate
 
-`lefthook.yml`:
+Prefer husky + lint-staged for consistency with the backend package. Lefthook is
+also acceptable if the repository standard changes.
 
-```yaml
-pre-commit:
-  parallel: true
-  commands:
-    lint:
-      glob: "*.{ts,vue,js,json}"
-      run: npx eslint {staged_files}
-    typecheck:
-      glob: "*.{ts,vue}"
-      run: npx vue-tsc --noEmit
-    format:
-      glob: "*.{ts,vue,js,json,md,css,scss}"
-      run: npx prettier --check {staged_files}
+```jsonc
+{
+  "scripts": {
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,vue,js,cjs,mjs}": "eslint --fix",
+    "*.{ts,vue,js,cjs,mjs,json,md,css}": "prettier --write"
+  }
+}
 ```
 
 Never bypass with `--no-verify` unless explicitly authorized.
@@ -103,8 +102,12 @@ One assertion focus per test.
 - [ ] No new dependency without justification (esp. UI libs that
       overlap with Element Plus).
 - [ ] No global side effects on import (top-level `await`, `window.x = ...`).
-- [ ] Element Plus components used over hand-rolled equivalents.
+- [ ] Hybrid UI boundary is respected: custom Claude-styled product surfaces;
+      Element Plus only for utility primitives.
 - [ ] All async paths handle errors via composable `error` ref + UI feedback.
+- [ ] All user-facing strings are Simplified Chinese, including status panels,
+      validation, errors, toasts, `aria-label`s, `alt` text, `index.html`, and
+      frontend README usage guidance.
 - [ ] New types added to `src/types/`, not inline-duplicated.
 - [ ] `schemaVersion` bumped if localStorage shape changed.
 
@@ -114,10 +117,12 @@ One assertion focus per test.
 
 - Element Plus components ship reasonable a11y; **don't override their
   semantics** (e.g., don't `role="button"` an `el-button`).
-- Every interactive element has a visible label or `aria-label`.
+- Every interactive element has a visible Simplified Chinese label or
+  Simplified Chinese `aria-label`, except brand/model/technical terms.
 - Color contrast ≥ 4.5:1 for body text. Don't rely on color alone for
   state (also use icon/text).
-- Forms have associated labels via `el-form-item` `label`.
+- Forms have associated labels, either native `<label>` text for custom
+  controls or `el-form-item` labels for Element Plus form controls.
 
 ---
 
@@ -129,5 +134,7 @@ One assertion focus per test.
   once in `main.ts`).
 - ❌ Using `v-html` with backend-returned strings.
 - ❌ Committing `console.log` / `console.warn`.
+- ❌ Letting raw browser/backend/runtime English errors escape into UI; map
+  them to Simplified Chinese user messages at the composable/UI boundary.
 - ❌ Adding a state-management lib (Pinia, Vuex) — see
   `state-management.md` for the agreed escalation path.

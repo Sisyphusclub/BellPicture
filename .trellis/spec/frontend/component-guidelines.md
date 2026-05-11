@@ -1,6 +1,6 @@
 # Vue Component Guidelines
 
-> **Status**: Planning version.
+> **Status**: Verified by the first `frontend/` implementation.
 
 ---
 
@@ -9,10 +9,9 @@
 ```vue
 <script setup lang="ts">
 // 1. Imports
-import { ref, computed } from 'vue';
-import { ElButton, ElMessage } from 'element-plus';
+import { ElMessage } from 'element-plus';
+import { computed, ref } from 'vue';
 import { useImageGeneration } from '@/composables/useImageGeneration';
-import type { GenerateRequest } from '@/types/image';
 
 // 2. Props / Emits / defineModel
 interface Props {
@@ -38,27 +37,31 @@ const prompt = ref(props.initialPrompt);
 const canSubmit = computed(() => !props.disabled && prompt.value.trim().length > 0);
 
 // 6. Methods
-async function handleSubmit() {
-  const id = await generate({ prompt: prompt.value });
-  emit('generated', id);
+async function handleSubmit(): Promise<void> {
+  const result = await generate({ prompt: prompt.value });
+  ElMessage.success('图片已生成并保存到历史记录。');
+  emit('generated', result.record.id);
 }
 
 // 7. Lifecycle (rare; prefer composables for side effects)
 </script>
 
 <template>
-  <div class="generator">
-    <el-input v-model="prompt" type="textarea" :rows="4" />
-    <el-button :loading="isLoading" :disabled="!canSubmit" @click="handleSubmit">
-      Generate
-    </el-button>
+  <form class="generator" @submit.prevent="handleSubmit">
+    <label>
+      <span class="field-label">提示词</span>
+      <textarea v-model="prompt" class="textarea-field" />
+    </label>
     <p v-if="error" class="error">{{ error.message }}</p>
-  </div>
+    <button type="submit" class="claude-button claude-button--primary" :disabled="!canSubmit">
+      生成图片
+    </button>
+  </form>
 </template>
 
 <style scoped>
-.generator { display: grid; gap: 12px; }
-.error { color: var(--el-color-danger); }
+.generator { display: grid; gap: var(--space-md); }
+.error { color: var(--color-danger); }
 </style>
 ```
 
@@ -83,17 +86,69 @@ async function handleSubmit() {
 
 ---
 
-## Element Plus usage
+## Hybrid UI and Element Plus usage
 
-- Import components explicitly: `import { ElButton } from 'element-plus'`.
-  Don't rely on global registration.
-- Import only the styles you need (the project should configure
-  `unplugin-element-plus` or import full `element-plus/dist/index.css`
-  once in `main.ts` — pick one and stick with it).
-- Use Element Plus components for forms, dialogs, tables, messages.
-  Avoid hand-rolling alternatives that already exist in EP.
+### Design Decision: Hybrid Claude UI
+
+**Context**: The product UI needs Claude-style warm surfaces, serif display
+headlines, coral CTAs, and dark navy status panels. Element Plus is useful for
+utility primitives, but its default visual system fights those product surfaces.
+
+**Options Considered**:
+1. Theme Element Plus globally.
+2. Build every primitive from scratch.
+3. Use custom Claude-styled product surfaces plus Element Plus utilities.
+
+**Decision**: Use custom SFCs and CSS tokens for product-defining UI, and use
+Element Plus only for low-risk utilities such as `ElMessage`, `ElDialog`, and
+form validation helpers when needed.
+
+**Example**:
+```ts
+import { ElMessage } from 'element-plus';
+
+ElMessage.success('图片已生成并保存到历史记录。');
+```
+
+**Extensibility**: If future screens need tables, complex dialogs, or date
+pickers, prefer Element Plus utilities there. Do not use Element Plus as the
+primary source of layout, cards, CTA buttons, upload zones, galleries, or hero
+surfaces.
+
+### Element Plus rules
+
+- Do not register Element Plus globally with `app.use(ElementPlus)`.
+- Import utility APIs/components explicitly from `element-plus`.
+- Import `element-plus/dist/index.css` once in `src/main.ts`.
 - For toast messages: `ElMessage.success(...)`, `ElMessage.error(...)`.
   Never `alert()`.
+- Product surfaces use project classes and tokens from `src/styles/`, not
+  `el-card`, `el-button`, or `el-upload` as their primary UI.
+
+---
+
+## User-facing language
+
+### Convention: Simplified Chinese UI copy
+
+**What**: All user-facing page copy is Simplified Chinese by default: visible
+text, labels, buttons, empty states, validation messages, status messages,
+toasts, `aria-label`s, image `alt` text, `index.html` metadata, and frontend
+README usage guidance.
+
+**Why**: The product targets a Chinese UI. Leaving backend/browser/runtime
+English errors or default English placeholders in the page creates an
+inconsistent experience and makes future screens drift.
+
+**Example**:
+```ts
+ElMessage.error('生成失败，请稍后重试。');
+```
+
+**Allowed English**: Code identifiers, route paths, API fields, env keys, model
+names (`gpt-image-2`), brand/product names (`Ref2Image Studio`), and technical
+terms (`Vue`, `Vite`, `IndexedDB`, `localStorage`, `PNG/JPEG/WebP`) may remain
+English where translating would reduce clarity.
 
 ---
 
@@ -117,6 +172,10 @@ async function handleSubmit() {
   sanitize at the service layer.
 - ❌ Inline styles for anything beyond one-off positioning. Use `<style scoped>`.
 - ❌ `any` in props/emits.
+- ❌ New English user-facing copy unless it is an allowed brand, model,
+  route/API/env key, or technical term.
+- ❌ Importing from `services/` inside components or views; go through a
+  composable.
 - ❌ Calling `fetch` / `axios` inside a component.
 - ❌ Reaching into another component via `ref` + `expose` to mutate its
   internals. Communicate via props/emits or a shared composable.

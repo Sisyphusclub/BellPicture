@@ -14,21 +14,21 @@ This directory contains guidelines for frontend development. Fill in each file w
 
 | Guide | Description | Status |
 |-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | Vue 3 + Vite layout, services/composables/components split | Planning version |
-| [Component Guidelines](./component-guidelines.md) | `<script setup>` SFCs, Element Plus, props/emits | Planning version |
-| [Hook Guidelines](./hook-guidelines.md) | Composable shape (`useThing`), shared-state pattern | Planning version |
-| [State Management](./state-management.md) | Composables-only, IndexedDB blobs + localStorage meta | Planning version |
-| [Quality Guidelines](./quality-guidelines.md) | ESLint+Prettier, Vitest+jsdom, pre-commit, a11y baseline | Planning version |
-| [Type Safety](./type-safety.md) | TS strict, shared `types/`, narrowing at the boundary | Planning version |
+| [Directory Structure](./directory-structure.md) | Vue 3 + Vite layout, services/composables/components split | Verified by frontend app |
+| [Component Guidelines](./component-guidelines.md) | `<script setup>` SFCs, Hybrid Claude UI + Element Plus utilities, props/emits | Verified by frontend app |
+| [Hook Guidelines](./hook-guidelines.md) | Composable shape (`useThing`), shared-state pattern | Verified by frontend app |
+| [State Management](./state-management.md) | Composables-only, IndexedDB blobs + localStorage meta | Verified by frontend app |
+| [Quality Guidelines](./quality-guidelines.md) | ESLint+Prettier, Vitest+jsdom, pre-commit, a11y baseline | Verified by frontend app |
+| [Type Safety](./type-safety.md) | TS strict, shared `types/`, narrowing at the boundary | Verified by frontend app |
 
-> **Status note**: All guides are "planning version" — written before any
-> frontend code exists. They describe the agreed conventions the first
-> implementation must follow. Re-verify against `frontend/src/` once code
-> lands; update if reality diverges.
+> **Status note**: The first frontend implementation now exists under
+> `frontend/`. These guides describe the implemented conventions and should be
+> updated whenever the app changes a cross-layer contract, state strategy, or
+> UI-system boundary.
 
-**Stack snapshot**: Vue 3.4+ · Vite 5+ · TypeScript (strict) · Element Plus ·
-composables only (no Pinia for MVP) · IndexedDB (image blobs) +
-localStorage (metadata).
+**Stack snapshot**: Vue 3.5 · Vite 5 · TypeScript strict · Hybrid Claude UI
+(custom product surfaces + Element Plus utilities) · composables only (no Pinia
+for MVP) · IndexedDB image blobs + localStorage metadata.
 
 ---
 

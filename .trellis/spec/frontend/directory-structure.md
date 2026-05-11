@@ -1,7 +1,6 @@
 # Frontend Directory Structure
 
-> **Status**: Planning version. No frontend code exists yet. Re-verify
-> against `frontend/src/` once code lands.
+> **Status**: Verified by the first `frontend/` implementation.
 
 ---
 
@@ -10,7 +9,7 @@
 - Vue 3.4+ (Composition API + `<script setup>` only)
 - Vite 5+
 - TypeScript (strict)
-- Element Plus (UI)
+- Hybrid UI: custom Claude-styled product surfaces + Element Plus utilities
 - IndexedDB (image blobs) + localStorage (metadata) for local history
 - State: composables only, no Pinia (see `state-management.md`)
 
@@ -25,7 +24,7 @@ The frontend lives in `frontend/` at the repo root, fully independent from
 frontend/
 ├── index.html
 ├── src/
-│   ├── main.ts                 # Mount Vue app, register Element Plus
+│   ├── main.ts                 # Mount Vue app, import global styles
 │   ├── App.vue                 # Root layout
 │   ├── router/
 │   │   └── index.ts            # vue-router config
@@ -54,11 +53,13 @@ frontend/
 ├── public/                     # Verbatim-served static files
 ├── tests/                      # Vitest tests, mirror src/
 ├── .env.example
+├── README.md                   # Frontend-only dev/build/test notes
 ├── package.json
 ├── tsconfig.json
 ├── vite.config.ts
 ├── eslint.config.js
-└── vitest.config.ts
+├── vitest.config.ts
+└── lefthook.yml or husky config
 ```
 
 ### Naming
@@ -102,6 +103,8 @@ frontend env vars** — they are bundled into the public JS.
 - ❌ Importing from `services/` inside `components/`. Go through a composable.
 - ❌ `fetch('/api/...')` scattered across components. All HTTP lives in
   `services/api/`.
+- ❌ Importing `services/` from `views/` or `components/`. Views orchestrate
+  composables and presentational components only.
 - ❌ Mutating localStorage / IndexedDB outside `services/storage/`.
 - ❌ Default exports for components, services, or composables. Use named
   exports (Vue SFCs are the one exception — they are inherently default).

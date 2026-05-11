@@ -1,7 +1,8 @@
 # State Management
 
-> **Status**: Planning version. **MVP uses composables only — no Pinia, no
-> Vuex.** This is an explicit decision, not an oversight.
+> **Status**: Verified by the first `frontend/` implementation. **MVP uses
+> composables only — no Pinia, no Vuex.** This is an explicit decision, not an
+> oversight.
 
 ---
 
@@ -80,13 +81,15 @@ pattern is permitted.
 
 ### localStorage (`services/storage/localStorageMeta.ts`)
 
-- Key: `ref2image:history` (single JSON array)
-- Value: `ImageRecord[]` — small per-record metadata
-  (`id`, `createdAt`, `prompt`, `model`, `referenceId?`, `width`, `height`)
+- Key: `ref2image:history`.
+- Value: `{ schemaVersion: 1, records: ImageRecord[] }` where each record holds
+  small metadata (`id`, `createdAt`, `prompt`, `model`, `referenceId?`, `width`,
+  `height`).
 - Why split: localStorage is synchronous and easy to read on app boot;
   metadata is small enough to fit. Only the heavy blobs go to IndexedDB.
-- **Versioning**: include a `schemaVersion: 1` at the top level of the
-  JSON. Any breaking change bumps the version and provides a migration.
+- **Versioning**: `schemaVersion: 1` gates reads. Unknown versions or invalid
+  record shapes are treated as empty history rather than cast into the app.
+  Any breaking change bumps the version and provides a migration.
 
 ---
 
