@@ -1,20 +1,25 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router';
 
-import AppFooter from '@/components/common/AppFooter.vue';
 import AppHeader from '@/components/common/AppHeader.vue';
 </script>
 
 <template>
   <AppHeader />
-  <main>
+  <main class="app-main" aria-label="Ref2Image Studio 工作区">
     <RouterView />
   </main>
-  <AppFooter />
 </template>
 
 <style scoped>
-main {
-  min-height: calc(100vh - 240px);
+.app-main {
+  min-height: 100vh;
+  padding-top: 64px;
+}
+
+@media (max-width: 1080px) {
+  .app-main {
+    padding-top: 116px;
+  }
 }
 </style>

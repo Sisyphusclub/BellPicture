@@ -57,14 +57,12 @@ async function handleRefresh(): Promise<void> {
 </script>
 
 <template>
-  <section class="history-hero">
-    <div class="container history-hero__inner">
+  <section class="history-workspace">
+    <header class="history-workspace__header">
       <div>
-        <p class="section-kicker">本地档案</p>
-        <h1 class="display-heading">你的生成历史会保存在这个浏览器中。</h1>
-        <p>
-          元数据保存在 localStorage，生成图片保存在 IndexedDB；无需服务端账号，刷新后也能继续查看。
-        </p>
+        <p class="section-kicker">本地历史</p>
+        <h1 class="display-heading">浏览这个浏览器里的生成记录。</h1>
+        <p>选择任意卡片查看大图、提示词、模型与下载操作；也可以把提示词带回生成工作区。</p>
       </div>
       <button
         type="button"
@@ -74,76 +72,86 @@ async function handleRefresh(): Promise<void> {
       >
         {{ isHydrating ? '正在刷新…' : '刷新历史' }}
       </button>
-    </div>
-  </section>
+    </header>
 
-  <section class="history-section">
-    <div class="container history-section__grid">
-      <div class="history-section__main">
-        <p v-if="hydrateError" class="history-section__error" role="alert">
-          {{ hydrateError.message }}
-        </p>
-        <HistoryGrid :entries="entries" :selected-id="selectedId" @select="handleSelect" />
-      </div>
+    <p v-if="hydrateError" class="history-workspace__error" role="alert">
+      {{ hydrateError.message }}
+    </p>
+
+    <div class="history-workspace__grid">
+      <HistoryGrid :entries="entries" :selected-id="selectedId" @select="handleSelect" />
       <HistoryDetailPanel :entry="selectedEntry" @rerun="handleRerun" @remove="handleRemove" />
     </div>
   </section>
 </template>
 
 <style scoped>
-.history-hero {
-  padding: var(--space-section) 0 var(--space-xxl);
+.history-workspace {
+  display: grid;
+  gap: var(--space-lg);
+  min-height: 100vh;
+  padding: 96px var(--space-xl) var(--space-section);
 }
 
-.history-hero__inner {
+.history-workspace__header {
   display: flex;
+  width: min(100%, 1100px);
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-xl);
+  margin: 0 auto;
 }
 
-.history-hero .display-heading {
+.history-workspace__header .display-heading {
   max-width: 760px;
-  font-size: clamp(38px, 5vw, 58px);
+  font-size: clamp(38px, 5vw, 56px);
 }
 
-.history-hero p:not(.section-kicker) {
+.history-workspace__header p:not(.section-kicker) {
   max-width: 700px;
   margin: var(--space-md) 0 0;
   color: var(--color-body-strong);
-  font-size: 18px;
+  font-size: 17px;
 }
 
-.history-section {
-  padding-bottom: var(--space-section);
+.history-workspace__error {
+  width: min(100%, 1100px);
+  margin: 0 auto;
+  border: 1px solid rgba(198, 69, 69, 0.28);
+  border-radius: var(--radius-md);
+  background: rgba(198, 69, 69, 0.08);
+  color: var(--color-error);
+  padding: var(--space-sm) var(--space-md);
 }
 
-.history-section__grid {
+.history-workspace__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
-  gap: var(--space-xl);
+  width: min(100%, 1100px);
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+  gap: var(--space-lg);
+  margin: 0 auto;
   align-items: start;
 }
 
-.history-section__main {
-  display: grid;
-  gap: var(--space-md);
-}
-
-.history-section__error {
-  margin: 0;
-  border-left: 4px solid var(--color-error);
-  color: var(--color-error);
-  padding-left: var(--space-sm);
-}
-
-@media (max-width: 920px) {
-  .history-hero__inner,
-  .history-section__grid {
+@media (max-width: 1080px) {
+  .history-workspace__grid {
     grid-template-columns: 1fr;
   }
+}
 
-  .history-hero__inner {
+@media (max-width: 860px) {
+  .history-workspace {
+    padding-top: var(--space-xl);
+  }
+}
+
+@media (max-width: 640px) {
+  .history-workspace {
+    padding-right: var(--space-md);
+    padding-left: var(--space-md);
+  }
+
+  .history-workspace__header {
     align-items: flex-start;
     flex-direction: column;
   }

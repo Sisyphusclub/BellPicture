@@ -16,7 +16,7 @@
   --color-surface-dark: #181715;
   --color-surface-dark-elevated: #252320;
   --color-surface-dark-soft: #1f1e1b;
-  --color-on-primary: #ffffff;
+  --color-on-primary: #faf9f5;
   --color-on-dark: #faf9f5;
   --color-on-dark-soft: #a09d96;
   --color-accent-teal: #5db8a6;
@@ -35,6 +35,7 @@
   --radius-lg: 12px;
   --radius-xl: 16px;
   --radius-pill: 9999px;
+  --radius-full: 9999px;
 
   --space-xxs: 4px;
   --space-xs: 8px;

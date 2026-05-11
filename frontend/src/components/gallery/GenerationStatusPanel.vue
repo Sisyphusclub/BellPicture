@@ -17,7 +17,7 @@ withDefaults(defineProps<Props>(), {
         :class="{ 'status-panel__dot--active': isLoading }"
         aria-hidden="true"
       />
-      <span>{{ isLoading ? '工作台正在生成' : '工作台状态' }}</span>
+      <span>{{ isLoading ? '生成正在进行' : '生成准备就绪' }}</span>
     </div>
     <p>{{ message }}</p>
     <div class="status-panel__code" aria-hidden="true">
