@@ -1,0 +1,12 @@
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      glob: '*.{ts,vue,js,json}'
+      run: npx eslint {staged_files}
+    typecheck:
+      glob: '*.{ts,vue}'
+      run: npx vue-tsc --noEmit
+    format:
+      glob: '*.{ts,vue,js,json,md,css,scss}'
+      run: npx prettier --check {staged_files}
