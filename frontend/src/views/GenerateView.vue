@@ -400,9 +400,11 @@ function aspectLabel(value: AspectRatio | undefined): string {
           </article>
         </section>
 
-        <section v-else class="canvas-hint" aria-live="polite">
-          <span aria-hidden="true">✣</span>
-          <p>输入提示词，或拖入参考图，开始生成你的第一组画面。</p>
+        <section v-else class="canvas-hero" aria-live="polite">
+          <h2 class="canvas-hero__title">Turn ideas into images</h2>
+          <p class="canvas-hero__subtitle">
+            在同一窗口里保留本地历史与任务状态，并从已有结果图继续发起新的无状态编辑。
+          </p>
         </section>
 
         <div v-if="isLoading" class="floating-status floating-status--loading" aria-live="polite">
@@ -884,27 +886,32 @@ function aspectLabel(value: AspectRatio | undefined): string {
   font-weight: 800;
 }
 
-.canvas-hint {
+.canvas-hero {
   display: grid;
   place-items: center;
-  gap: var(--space-sm);
-  min-height: 320px;
-  border: 1px dashed var(--color-hairline);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.45);
-  color: var(--color-muted);
-  padding: var(--space-xl);
+  gap: var(--space-md);
+  min-height: 420px;
+  padding: var(--space-xxl) var(--space-md);
   text-align: center;
 }
 
-.canvas-hint span {
-  color: var(--color-accent-active);
-  font-size: 42px;
+.canvas-hero__title {
+  margin: 0;
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: clamp(40px, 5vw, 64px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
 }
 
-.canvas-hint p {
-  max-width: 320px;
+.canvas-hero__subtitle {
   margin: 0;
+  max-width: 560px;
+  color: var(--color-muted);
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.7;
 }
 
 .floating-status {
