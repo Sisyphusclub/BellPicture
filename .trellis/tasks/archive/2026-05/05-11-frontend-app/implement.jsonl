@@ -1,0 +1,9 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend spec index and stack snapshot for the new Vue app."}
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"Required frontend folder layout, service/composable/component boundaries, env variable rules, and forbidden patterns."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Vue SFC conventions, Element Plus utility usage, props/emits style, and component anti-patterns."}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"Composable shape, shared-state pattern, and side-effect ownership for useImageGeneration/useImageHistory/useFileUpload."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Composables-only state model plus IndexedDB/localStorage persistence contracts."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"TypeScript strictness, API boundary narrowing, and no-any/no-unsafe-cast constraints."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Lint, formatting, Vitest/jsdom, test placement, and accessibility quality bar."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"Backend error envelope and error-code semantics that frontend messages must consume."}
+{"file":".trellis/tasks/05-11-frontend-app/research/claude-design.md","reason":"Claude visual system tokens and component patterns required for the Hybrid UI implementation."}

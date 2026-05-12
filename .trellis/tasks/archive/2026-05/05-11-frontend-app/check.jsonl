@@ -1,0 +1,9 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend spec index for check coverage and status expectations."}
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"Verify the implemented frontend matches the required package layout and architectural boundaries."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Verify SFC, Element Plus utility usage, props/emits, and component composition rules."}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"Verify composables own state and side effects correctly."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Verify IndexedDB/localStorage persistence and no-Pinia state model."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Verify strict typing, runtime narrowing, no any, and API response safety."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Verify lint/test/build/a11y quality expectations."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"Verify frontend error handling matches backend error envelope and status-code semantics."}
+{"file":".trellis/tasks/05-11-frontend-app/research/claude-design.md","reason":"Verify visual implementation follows the Claude design tokens and product surface guidance."}
