@@ -71,3 +71,40 @@ Brainstormed task scope: two-step upload + generate (matches frontend ImageRecor
 ### Next Steps
 
 - None - task complete
+
+
+## Session 3: Frontend app: mockup-aligned redesign + backend count/aspectRatio
+
+**Date**: 2026-05-12
+**Task**: Frontend app: mockup-aligned redesign + backend count/aspectRatio
+**Branch**: `main`
+
+### Summary
+
+Aligned the studio UI to the warm-cream mockup with a glass palette, centered nav underline, fixed-bottom composer with count stepper + 5-aspect dropdown, and date-grouped sidebar history. Backend generate endpoint now accepts count(1-4)/aspectRatio(1:1/3:2/2:3/16:9/9:16); each call returns a batchId plus an images[] payload and the 2API provider passes n+size through. Frontend types/composables track batches end-to-end (batchId, aspectRatio, elapsedMs). Iterative visual passes via chrome-devtools MCP: typography switched to Noto Serif + LXGW WenKai Screen webfonts, hero hidden-state replaced with a flex-column 'Turn ideas into images' heading + subtitle, shadows removed from primary/composer buttons, SVG chevrons on dropdowns, empty-state project header suppressed, and a disabled-by-default delete button next to '新建生成' that wipes the current batch. History view rebuilt to match the chatgpt2api images-management reference: IMAGES kicker + 图片管理 heading, date-range filters, 4-col tile grid (cream rounded thumbnail + timestamp/copy/dimensions), modal detail. Backend tests grew 54→61 with new count/aspect cases; frontend typecheck/lint/8 tests all green.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a4e2539` | (see git log) |
+| `f8f836e` | (see git log) |
+| `c90047a` | (see git log) |
+| `eda19b6` | (see git log) |
+| `3ff4611` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
