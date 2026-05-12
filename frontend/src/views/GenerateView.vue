@@ -155,6 +155,13 @@ async function handleDeleteBatch(batchId: string): Promise<void> {
   }
 }
 
+async function handleDeleteCurrent(): Promise<void> {
+  const batch = displayedBatch.value;
+  if (!batch) return;
+  await handleDeleteBatch(batch.batchId);
+  clearLastBatch();
+}
+
 function openUploadPicker(): void {
   if (isLoading.value) return;
   fileInput.value?.click();
@@ -284,12 +291,28 @@ function aspectLabel(value: AspectRatio | undefined): string {
 <template>
   <section class="studio">
     <aside class="studio__sidebar" aria-label="生成历史">
-      <button type="button" class="sidebar-new" @click="handleNewConversation">
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 5v14M5 12h14" />
-        </svg>
-        新建生成
-      </button>
+      <div class="sidebar-actions">
+        <button type="button" class="sidebar-new" @click="handleNewConversation">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          新建生成
+        </button>
+        <button
+          type="button"
+          class="sidebar-delete"
+          :disabled="!displayedBatch"
+          :aria-label="'删除当前画布'"
+          @click="handleDeleteCurrent"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 6h18" />
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+            <path d="M10 11v6M14 11v6" />
+          </svg>
+        </button>
+      </div>
 
       <div class="sidebar-history" role="list">
         <template v-for="group in groupedSidebarBatches" :key="group.bucket">
@@ -337,7 +360,7 @@ function aspectLabel(value: AspectRatio | undefined): string {
 
     <main class="studio__main" aria-label="生成结果">
       <div class="studio__content">
-        <header class="project-header">
+        <header v-if="displayedBatch" class="project-header">
           <div class="project-header__title-block">
             <h1 class="project-header__title">
               {{ displayedTitle }}
@@ -345,13 +368,9 @@ function aspectLabel(value: AspectRatio | undefined): string {
                 <path d="m16 3 5 5L8 21H3v-5z" />
               </svg>
             </h1>
-            <p v-if="displayedBatch" class="project-header__status">
+            <p class="project-header__status">
               <span class="status-dot" aria-hidden="true" />
               已完成 · {{ displayedBatch.entries.length }} 张图
-            </p>
-            <p v-else class="project-header__status">
-              <span class="status-dot status-dot--idle" aria-hidden="true" />
-              等待生成
             </p>
           </div>
         </header>
@@ -490,7 +509,10 @@ function aspectLabel(value: AspectRatio | undefined): string {
             :aria-expanded="aspectMenuOpen"
             @click="toggleAspectMenu"
           >
-            {{ aspectLabel(aspectRatio) }}<span aria-hidden="true">⌄</span>
+            <span class="control__label">{{ aspectLabel(aspectRatio) }}</span>
+            <svg class="control__chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
           </button>
           <ul v-if="aspectMenuOpen" class="control-menu" role="listbox" :aria-labelledby="undefined">
             <li v-for="value in ASPECT_RATIOS" :key="value">
@@ -513,7 +535,10 @@ function aspectLabel(value: AspectRatio | undefined): string {
             :aria-expanded="modelMenuOpen"
             @click="toggleModelMenu"
           >
-            {{ model }}<span aria-hidden="true">⌄</span>
+            <span class="control__label">{{ model }}</span>
+            <svg class="control__chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
           </button>
           <ul v-if="modelMenuOpen" class="control-menu" role="listbox">
             <li v-for="value in modelOptions" :key="value">
@@ -559,9 +584,15 @@ function aspectLabel(value: AspectRatio | undefined): string {
   min-height: 0;
 }
 
+.sidebar-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
 .sidebar-new {
   display: inline-flex;
-  width: 100%;
+  flex: 1;
   height: 48px;
   align-items: center;
   justify-content: center;
@@ -572,8 +603,31 @@ function aspectLabel(value: AspectRatio | undefined): string {
   color: var(--color-on-primary);
   font-size: 16px;
   font-weight: 700;
-  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.12);
   cursor: pointer;
+}
+
+.sidebar-delete {
+  display: inline-grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--color-hairline);
+  border-radius: 13px;
+  background: var(--color-surface-glass-strong);
+  color: var(--color-body-strong);
+  cursor: pointer;
+}
+
+.sidebar-delete:not(:disabled):hover {
+  background: var(--color-surface-card-solid);
+  color: var(--color-error);
+}
+
+.sidebar-delete:disabled {
+  color: var(--color-muted-soft);
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .sidebar-new:hover {
@@ -887,9 +941,10 @@ function aspectLabel(value: AspectRatio | undefined): string {
 }
 
 .canvas-hero {
-  display: grid;
-  place-items: center;
-  gap: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   min-height: 420px;
   padding: var(--space-xxl) var(--space-md);
   text-align: center;
@@ -902,16 +957,16 @@ function aspectLabel(value: AspectRatio | undefined): string {
   font-size: clamp(40px, 5vw, 64px);
   font-weight: 700;
   letter-spacing: -0.01em;
-  line-height: 1.05;
+  line-height: 1;
 }
 
 .canvas-hero__subtitle {
-  margin: 0;
+  margin: 16px 0 0;
   max-width: 560px;
   color: var(--color-muted);
   font-size: 15px;
   font-style: italic;
-  line-height: 1.7;
+  line-height: 1.6;
 }
 
 .floating-status {
@@ -995,7 +1050,6 @@ function aspectLabel(value: AspectRatio | undefined): string {
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-md);
   background: var(--color-surface-glass-strong);
-  box-shadow: var(--shadow-glass);
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
 }
@@ -1008,9 +1062,7 @@ function aspectLabel(value: AspectRatio | undefined): string {
 
 .composer-shell--dragging {
   border-color: var(--color-accent);
-  box-shadow:
-    var(--shadow-glass),
-    0 0 0 3px rgba(204, 120, 92, 0.18);
+  box-shadow: 0 0 0 3px rgba(204, 120, 92, 0.18);
 }
 
 .composer-file {
@@ -1195,6 +1247,18 @@ function aspectLabel(value: AspectRatio | undefined): string {
   cursor: pointer;
 }
 
+.control__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.control__chevron {
+  flex: 0 0 auto;
+  margin-left: 8px;
+  color: var(--color-muted);
+}
+
 .control--dropdown-model button {
   width: 150px;
 }
@@ -1255,7 +1319,6 @@ function aspectLabel(value: AspectRatio | undefined): string {
   color: var(--color-on-primary);
   font-size: 16px;
   font-weight: 800;
-  box-shadow: var(--shadow-button);
   cursor: pointer;
 }
 
