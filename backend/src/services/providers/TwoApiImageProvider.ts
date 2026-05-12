@@ -5,7 +5,15 @@ import path from 'node:path';
 import { AppError } from '../../errors/AppError.js';
 import { logger } from '../../logger.js';
 import { mimeFromExt, saveOutput } from '../../storage/localStorage.js';
-import type { GenerateInput, GenerateOutput } from '../../types/image.js';
+import {
+  ASPECT_SIZE_MAP,
+  DEFAULT_ASPECT_RATIO,
+  DEFAULT_COUNT,
+  type AspectRatio,
+  type GenerateImageItem,
+  type GenerateInput,
+  type GenerateOutput,
+} from '../../types/image.js';
 
 import type { ImageGenerationProvider } from './ImageGenerationProvider.js';
 
@@ -23,10 +31,6 @@ interface OpenAIImageResponse {
 
 type FetchImpl = typeof globalThis.fetch;
 
-const DEFAULT_SIZE = '1024x1024';
-const DEFAULT_WIDTH = 1024;
-const DEFAULT_HEIGHT = 1024;
-
 export class TwoApiImageProvider implements ImageGenerationProvider {
   private readonly config: TwoApiConfig;
   private readonly fetchImpl: FetchImpl;
@@ -38,14 +42,17 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
 
   async generate(input: GenerateInput): Promise<GenerateOutput> {
     const model = input.model ?? this.config.defaultModel;
+    const aspectRatio: AspectRatio = input.aspectRatio ?? DEFAULT_ASPECT_RATIO;
+    const count = input.count ?? DEFAULT_COUNT;
+    const sizing = ASPECT_SIZE_MAP[aspectRatio];
     const hasReference = typeof input.referencePath === 'string' && input.referencePath.length > 0;
 
     const start = Date.now();
     let response: Response;
     try {
       response = hasReference
-        ? await this.callEdits(model, input.prompt, input.referencePath as string)
-        : await this.callGenerations(model, input.prompt);
+        ? await this.callEdits(model, input.prompt, input.referencePath as string, count, sizing.size)
+        : await this.callGenerations(model, input.prompt, count, sizing.size);
     } catch (err) {
       if (isTimeoutLike(err)) {
         throw new AppError(
@@ -95,35 +102,43 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
       throw new AppError('PROVIDER_ERROR', 'Provider returned malformed JSON', 502, err);
     }
 
-    const first = parsed.data?.[0];
-    if (!first || typeof first.b64_json !== 'string' || first.b64_json.length === 0) {
-      throw new AppError('PROVIDER_ERROR', 'Provider response missing b64_json data', 502);
+    const data = parsed.data ?? [];
+    if (data.length === 0) {
+      throw new AppError('PROVIDER_ERROR', 'Provider response missing data array', 502);
     }
 
-    const buffer = Buffer.from(first.b64_json, 'base64');
-    const saved = await saveOutput(buffer, 'png');
+    const images: GenerateImageItem[] = [];
+    for (const item of data) {
+      if (typeof item.b64_json !== 'string' || item.b64_json.length === 0) {
+        throw new AppError('PROVIDER_ERROR', 'Provider response missing b64_json data', 502);
+      }
+      const buffer = Buffer.from(item.b64_json, 'base64');
+      const saved = await saveOutput(buffer, 'png');
+      images.push({ outputPath: saved.absolutePath, width: sizing.width, height: sizing.height });
+    }
 
     logger.info(
       {
         durationMs: Date.now() - start,
-        outputPath: saved.absolutePath,
-        outputBytes: buffer.byteLength,
+        outputCount: images.length,
+        aspectRatio,
         hasReference,
       },
       'image generation: provider success',
     );
 
-    return {
-      outputPath: saved.absolutePath,
-      width: DEFAULT_WIDTH,
-      height: DEFAULT_HEIGHT,
-    };
+    return { images, aspectRatio };
   }
 
-  private async callGenerations(model: string, prompt: string): Promise<Response> {
+  private async callGenerations(
+    model: string,
+    prompt: string,
+    count: number,
+    size: string,
+  ): Promise<Response> {
     const url = buildUrl(this.config.baseUrl, 'v1/images/generations');
     logger.info(
-      { model, promptPreview: prompt.slice(0, 80), url },
+      { model, promptPreview: prompt.slice(0, 80), url, count, size },
       'image generation: provider request (text-to-image)',
     );
     return this.fetchImpl(url, {
@@ -135,15 +150,21 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
       body: JSON.stringify({
         model,
         prompt,
-        n: 1,
-        size: DEFAULT_SIZE,
+        n: count,
+        size,
         response_format: 'b64_json',
       }),
       signal: AbortSignal.timeout(this.config.timeoutMs),
     });
   }
 
-  private async callEdits(model: string, prompt: string, referencePath: string): Promise<Response> {
+  private async callEdits(
+    model: string,
+    prompt: string,
+    referencePath: string,
+    count: number,
+    size: string,
+  ): Promise<Response> {
     const url = buildUrl(this.config.baseUrl, 'v1/images/edits');
     const buffer = await readFile(referencePath);
     const basename = path.basename(referencePath);
@@ -159,8 +180,8 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     form.append('image', new Blob([new Uint8Array(buffer)], { type: mime }), basename);
     form.append('prompt', prompt);
     form.append('model', model);
-    form.append('n', '1');
-    form.append('size', DEFAULT_SIZE);
+    form.append('n', String(count));
+    form.append('size', size);
     form.append('response_format', 'b64_json');
 
     logger.info(
@@ -170,6 +191,8 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
         url,
         referenceFile: basename,
         referenceBytes: buffer.byteLength,
+        count,
+        size,
       },
       'image generation: provider request (image-to-image)',
     );

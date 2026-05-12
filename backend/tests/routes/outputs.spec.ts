@@ -9,9 +9,8 @@ import { saveOutput } from '../../src/storage/localStorage.js';
 
 const fakeProvider: ImageGenerationProvider = {
   generate: vi.fn(async () => ({
-    outputPath: '/dev/null/never.png',
-    width: 1024,
-    height: 1024,
+    images: [{ outputPath: '/dev/null/never.png', width: 1024, height: 1024 }],
+    aspectRatio: '1:1' as const,
   })),
 };
 

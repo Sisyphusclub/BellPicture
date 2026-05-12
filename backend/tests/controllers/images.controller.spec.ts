@@ -7,31 +7,29 @@ import { createApp } from '../../src/app.js';
 import { AppError } from '../../src/errors/AppError.js';
 import type { ImageGenerationProvider } from '../../src/services/providers/ImageGenerationProvider.js';
 import { saveOutput } from '../../src/storage/localStorage.js';
+import type { GenerateInput, GenerateOutput } from '../../src/types/image.js';
 
 const PNG_PREFIX = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
-function fakeOutput(): { provider: ImageGenerationProvider; outputPath: string } {
-  // Each test gets a fresh output file on disk so different tests don't
-  // share state.
-  let outputPath = '';
+function fakeProvider(): { provider: ImageGenerationProvider } {
   const provider: ImageGenerationProvider = {
-    generate: vi.fn(async (_input) => {
-      const saved = await saveOutput(Buffer.concat([PNG_PREFIX, Buffer.alloc(32, 0)]), 'png');
-      outputPath = saved.absolutePath;
-      return { outputPath, width: 1024, height: 1024 };
+    generate: vi.fn(async (input: GenerateInput): Promise<GenerateOutput> => {
+      const count = input.count ?? 1;
+      const aspectRatio = input.aspectRatio ?? '1:1';
+      const images = [] as GenerateOutput['images'];
+      for (let index = 0; index < count; index += 1) {
+        const saved = await saveOutput(Buffer.concat([PNG_PREFIX, Buffer.alloc(32, index)]), 'png');
+        images.push({ outputPath: saved.absolutePath, width: 1024, height: 1024 });
+      }
+      return { images, aspectRatio };
     }),
   };
-  return {
-    provider,
-    get outputPath() {
-      return outputPath;
-    },
-  };
+  return { provider };
 }
 
 describe('POST /api/images/upload', () => {
   it('accepts a PNG and returns id, filename, mime, size', async () => {
-    const { provider } = fakeOutput();
+    const { provider } = fakeProvider();
     const app = createApp({ provider });
     const png = Buffer.concat([PNG_PREFIX, Buffer.alloc(64, 0xab)]);
 
@@ -47,7 +45,7 @@ describe('POST /api/images/upload', () => {
   });
 
   it('rejects forged Content-Type with 415 (magic-bytes wins)', async () => {
-    const { provider } = fakeOutput();
+    const { provider } = fakeProvider();
     const app = createApp({ provider });
     const txt = Buffer.from('this is not really an image');
 
@@ -60,7 +58,7 @@ describe('POST /api/images/upload', () => {
   });
 
   it('returns 400 when no file is attached', async () => {
-    const { provider } = fakeOutput();
+    const { provider } = fakeProvider();
     const app = createApp({ provider });
 
     const res = await request(app).post('/api/images/upload');
@@ -70,8 +68,8 @@ describe('POST /api/images/upload', () => {
 });
 
 describe('POST /api/images/generate', () => {
-  it('text-to-image happy path: returns 200 with outputUrl + generationMode', async () => {
-    const { provider } = fakeOutput();
+  it('text-to-image happy path: returns 200 with batch + images array', async () => {
+    const { provider } = fakeProvider();
     const app = createApp({ provider });
 
     const res = await request(app)
@@ -79,18 +77,41 @@ describe('POST /api/images/generate', () => {
       .send({ prompt: 'red cube on a blue floor' });
 
     expect(res.status).toBe(200);
-    expect(res.body.id).toMatch(/^[0-9a-f-]{36}\.png$/);
-    expect(res.body.outputUrl).toBe(`/api/outputs/${res.body.id as string}`);
-    expect(res.body.filename).toBe(res.body.id);
-    expect(res.body.mime).toBe('image/png');
-    expect(res.body.width).toBe(1024);
-    expect(res.body.height).toBe(1024);
+    expect(res.body.batchId).toMatch(/^[0-9a-f-]{36}$/);
     expect(res.body.generationMode).toBe('text-to-image');
+    expect(res.body.aspectRatio).toBe('1:1');
+    expect(Array.isArray(res.body.images)).toBe(true);
+    // Default count is 2.
+    expect(res.body.images).toHaveLength(2);
+    for (const image of res.body.images) {
+      expect(image.id).toMatch(/^[0-9a-f-]{36}\.png$/);
+      expect(image.outputUrl).toBe(`/api/outputs/${image.id as string}`);
+      expect(image.filename).toBe(image.id);
+      expect(image.mime).toBe('image/png');
+      expect(image.width).toBe(1024);
+      expect(image.height).toBe(1024);
+    }
     expect(provider.generate).toHaveBeenCalledOnce();
   });
 
+  it('respects explicit count + aspectRatio', async () => {
+    const { provider } = fakeProvider();
+    const app = createApp({ provider });
+
+    const res = await request(app)
+      .post('/api/images/generate')
+      .send({ prompt: 'p', count: 3, aspectRatio: '16:9' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.images).toHaveLength(3);
+    expect(res.body.aspectRatio).toBe('16:9');
+    const call = (provider.generate as ReturnType<typeof vi.fn>).mock.calls[0]![0] as GenerateInput;
+    expect(call.count).toBe(3);
+    expect(call.aspectRatio).toBe('16:9');
+  });
+
   it('image-to-image happy path: uses an existing referenceId and reports image-to-image mode', async () => {
-    const harness = fakeOutput();
+    const harness = fakeProvider();
     const app = createApp({ provider: harness.provider });
 
     // First upload a real reference image.
@@ -115,7 +136,7 @@ describe('POST /api/images/generate', () => {
   });
 
   it('returns 400 when prompt is empty', async () => {
-    const { provider } = fakeOutput();
+    const { provider } = fakeProvider();
     const app = createApp({ provider });
 
     const res = await request(app).post('/api/images/generate').send({ prompt: '' });
@@ -124,8 +145,28 @@ describe('POST /api/images/generate', () => {
     expect(Array.isArray(res.body.error.details?.issues)).toBe(true);
   });
 
+  it('returns 400 when count is out of range', async () => {
+    const { provider } = fakeProvider();
+    const app = createApp({ provider });
+
+    const res = await request(app).post('/api/images/generate').send({ prompt: 'p', count: 5 });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('BAD_REQUEST');
+  });
+
+  it('returns 400 when aspectRatio is not in the supported set', async () => {
+    const { provider } = fakeProvider();
+    const app = createApp({ provider });
+
+    const res = await request(app)
+      .post('/api/images/generate')
+      .send({ prompt: 'p', aspectRatio: '4:3' });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('BAD_REQUEST');
+  });
+
   it('returns 400 when referenceId does not match a stored file', async () => {
-    const { provider } = fakeOutput();
+    const { provider } = fakeProvider();
     const app = createApp({ provider });
 
     const res = await request(app)

@@ -39,17 +39,24 @@ async function seedUpload(filename: string, bytes: Buffer): Promise<string> {
 }
 
 describe('TwoApiImageProvider', () => {
-  it('writes the generated image and returns the output path (text-to-image)', async () => {
+  it('writes one image per data entry and returns the array (text-to-image)', async () => {
     const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
-      jsonResponse({ created: 1, data: [{ b64_json: TINY_PNG_B64 }] }),
+      jsonResponse({
+        created: 1,
+        data: [{ b64_json: TINY_PNG_B64 }, { b64_json: TINY_PNG_B64 }],
+      }),
     );
     const provider = new TwoApiImageProvider(baseConfig, fetchMock);
 
-    const out = await provider.generate({ prompt: 'a red cube' });
+    const out = await provider.generate({ prompt: 'a red cube', count: 2, aspectRatio: '1:1' });
 
-    expect(out.width).toBe(1024);
-    expect(out.height).toBe(1024);
-    expect(out.outputPath).toMatch(/\.png$/);
+    expect(out.aspectRatio).toBe('1:1');
+    expect(out.images).toHaveLength(2);
+    for (const image of out.images) {
+      expect(image.width).toBe(1024);
+      expect(image.height).toBe(1024);
+      expect(image.outputPath).toMatch(/\.png$/);
+    }
 
     expect(fetchMock).toHaveBeenCalledOnce();
     const [calledUrl, init] = fetchMock.mock.calls[0]!;
@@ -58,9 +65,21 @@ describe('TwoApiImageProvider', () => {
     expect(body['model']).toBe('gpt-image-2');
     expect(body['prompt']).toBe('a red cube');
     expect(body['response_format']).toBe('b64_json');
-    expect(body['n']).toBe(1);
+    expect(body['n']).toBe(2);
+    expect(body['size']).toBe('1024x1024');
     const headers = (init as RequestInit).headers as Record<string, string>;
     expect(headers['authorization']).toBe('Bearer sk-test');
+  });
+
+  it('maps aspectRatio to provider size payload', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
+    );
+    const provider = new TwoApiImageProvider(baseConfig, fetchMock);
+    await provider.generate({ prompt: 'wide', count: 1, aspectRatio: '16:9' });
+    const init = fetchMock.mock.calls[0]![1] as RequestInit;
+    const body = JSON.parse(init.body as string) as Record<string, unknown>;
+    expect(body['size']).toBe('1792x1024');
   });
 
   it('calls /v1/images/edits with multipart FormData when referencePath is set (image-to-image)', async () => {
@@ -68,13 +87,21 @@ describe('TwoApiImageProvider', () => {
     const refPath = await seedUpload('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png', refBytes);
 
     const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
-      jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
+      jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }, { b64_json: TINY_PNG_B64 }] }),
     );
     const provider = new TwoApiImageProvider(baseConfig, fetchMock);
 
-    const out = await provider.generate({ prompt: 'reshape it', referencePath: refPath });
+    const out = await provider.generate({
+      prompt: 'reshape it',
+      referencePath: refPath,
+      count: 2,
+      aspectRatio: '1:1',
+    });
 
-    expect(out.outputPath).toMatch(/\.png$/);
+    expect(out.images).toHaveLength(2);
+    for (const image of out.images) {
+      expect(image.outputPath).toMatch(/\.png$/);
+    }
 
     const [calledUrl, init] = fetchMock.mock.calls[0]!;
     expect(calledUrl).toBe('https://api.example.com/v1/images/edits');
@@ -83,7 +110,7 @@ describe('TwoApiImageProvider', () => {
     const fd = form as FormData;
     expect(fd.get('prompt')).toBe('reshape it');
     expect(fd.get('model')).toBe('gpt-image-2');
-    expect(fd.get('n')).toBe('1');
+    expect(fd.get('n')).toBe('2');
     expect(fd.get('size')).toBe('1024x1024');
     expect(fd.get('response_format')).toBe('b64_json');
     const image = fd.get('image');

@@ -6,9 +6,8 @@ import type { ImageGenerationProvider } from '../../src/services/providers/Image
 
 const fakeProvider: ImageGenerationProvider = {
   generate: vi.fn(async () => ({
-    outputPath: '/dev/null/fake.png',
-    width: 1024,
-    height: 1024,
+    images: [{ outputPath: '/dev/null/fake.png', width: 1024, height: 1024 }],
+    aspectRatio: '1:1' as const,
   })),
 };
 
