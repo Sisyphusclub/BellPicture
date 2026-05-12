@@ -7,7 +7,14 @@ import {
   ImageApiError,
   uploadReferenceImage,
 } from '@/services/api/imagesApi';
-import type { GeneratedImageResult, ImageRecord } from '@/types/image';
+import {
+  DEFAULT_ASPECT_RATIO,
+  DEFAULT_COUNT,
+  type AspectRatio,
+  type GeneratedBatchResult,
+  type HistoryEntry,
+  type ImageRecord,
+} from '@/types/image';
 
 import { useImageHistory } from './useImageHistory';
 
@@ -17,16 +24,18 @@ export interface GenerateImageOptions {
   prompt: string;
   model?: string;
   referenceFile?: File;
+  count?: number;
+  aspectRatio?: AspectRatio;
 }
 
 export function useImageGeneration() {
   const isLoading = ref(false);
   const error = ref<Error | null>(null);
-  const lastResult = ref<GeneratedImageResult | null>(null);
+  const lastBatch = ref<GeneratedBatchResult | null>(null);
   const statusMessage = ref('已准备好开始新的生成。');
   const { add } = useImageHistory();
 
-  async function generate(options: GenerateImageOptions): Promise<GeneratedImageResult> {
+  async function generate(options: GenerateImageOptions): Promise<GeneratedBatchResult> {
     const prompt = options.prompt.trim();
     if (!prompt) {
       const promptError = new Error('请先描述你想生成的图片。');
@@ -38,6 +47,9 @@ export function useImageGeneration() {
     error.value = null;
     statusMessage.value = '正在准备请求内容。';
 
+    const count = options.count ?? DEFAULT_COUNT;
+    const aspectRatio = options.aspectRatio ?? DEFAULT_ASPECT_RATIO;
+
     try {
       let referenceId: string | undefined;
       if (options.referenceFile) {
@@ -48,41 +60,46 @@ export function useImageGeneration() {
 
       statusMessage.value = referenceId ? '正在结合参考图生成图片。' : '正在根据提示词生成图片。';
       const model = options.model?.trim() || DEFAULT_MODEL;
-      const requestInput: { prompt: string; referenceId?: string; model?: string } = {
+      const requestStart = Date.now();
+      const request = createGenerateRequest({
         prompt,
         model,
-      };
-      if (referenceId !== undefined) requestInput.referenceId = referenceId;
-      const request = createGenerateRequest(requestInput);
+        count,
+        aspectRatio,
+        ...(referenceId !== undefined ? { referenceId } : {}),
+      });
       const generated = await generateImage(request);
 
       statusMessage.value = '正在获取生成图片。';
-      const blob = await fetchOutputBlob(generated.outputUrl);
-      const recordInput: {
-        id: string;
-        prompt: string;
-        model: string;
-        referenceId?: string;
-        width: number;
-        height: number;
-      } = {
-        id: generated.id,
-        prompt,
-        model,
-        width: generated.width,
-        height: generated.height,
-      };
-      if (referenceId !== undefined) recordInput.referenceId = referenceId;
-      const record = createImageRecord(recordInput);
-      const entry = await add(record, blob);
-      const result: GeneratedImageResult = {
-        record,
-        imageUrl: entry.imageUrl,
+      const entries: HistoryEntry[] = [];
+      const createdAt = new Date().toISOString();
+      const elapsedMs = Date.now() - requestStart;
+
+      for (const image of generated.images) {
+        const blob = await fetchOutputBlob(image.outputUrl);
+        const record = createImageRecord({
+          id: image.id,
+          batchId: generated.batchId,
+          createdAt,
+          prompt,
+          model,
+          aspectRatio: generated.aspectRatio,
+          width: image.width,
+          height: image.height,
+          elapsedMs,
+          ...(referenceId !== undefined ? { referenceId } : {}),
+        });
+        const entry = await add(record, blob);
+        entries.push(entry);
+      }
+
+      const result: GeneratedBatchResult = {
+        batchId: generated.batchId,
+        aspectRatio: generated.aspectRatio,
         generationMode: generated.generationMode,
-        mime: generated.mime,
-        size: blob.size,
+        entries,
       };
-      lastResult.value = result;
+      lastBatch.value = result;
       statusMessage.value = '生成结果已保存到本地历史记录。';
       return result;
     } catch (unknownError) {
@@ -95,32 +112,44 @@ export function useImageGeneration() {
     }
   }
 
+  function clearLastBatch(): void {
+    lastBatch.value = null;
+  }
+
   return {
     isLoading: readonly(isLoading),
     error: readonly(error),
-    lastResult: readonly(lastResult),
+    lastBatch: readonly(lastBatch),
     statusMessage: readonly(statusMessage),
     generate,
+    clearLastBatch,
   };
 }
 
 function createImageRecord(input: {
   id: string;
+  batchId: string;
+  createdAt: string;
   prompt: string;
   model: string;
   referenceId?: string;
+  aspectRatio: AspectRatio;
   width: number;
   height: number;
+  elapsedMs?: number;
 }): ImageRecord {
   const record: ImageRecord = {
     id: input.id,
-    createdAt: new Date().toISOString(),
+    batchId: input.batchId,
+    createdAt: input.createdAt,
     prompt: input.prompt,
     model: input.model,
+    aspectRatio: input.aspectRatio,
     width: input.width,
     height: input.height,
   };
   if (input.referenceId !== undefined) record.referenceId = input.referenceId;
+  if (input.elapsedMs !== undefined) record.elapsedMs = input.elapsedMs;
   return record;
 }
 

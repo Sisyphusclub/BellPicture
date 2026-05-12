@@ -3,7 +3,7 @@ import { computed } from 'vue';
 
 import type { HistoryEntry } from '@/types/image';
 import { downloadUrl } from '@/utils/download';
-import { formatDateTime } from '@/utils/format';
+import { formatBytes, formatDateTime } from '@/utils/format';
 
 interface Props {
   entry: HistoryEntry | null;
@@ -19,6 +19,11 @@ const emit = defineEmits<{
 const generationMode = computed(() => {
   if (!props.entry) return '—';
   return props.entry.record.referenceId ? '参考图生成' : '提示词生成';
+});
+
+const fileSizeLabel = computed(() => {
+  if (!props.entry) return '—';
+  return props.entry.size === undefined ? '浏览器缓存' : formatBytes(props.entry.size);
 });
 
 function handleDownload(): void {
@@ -56,6 +61,10 @@ function handleRemove(): void {
             <dd>{{ generationMode }}</dd>
           </div>
           <div class="meta-row">
+            <dt>文件大小</dt>
+            <dd>{{ fileSizeLabel }}</dd>
+          </div>
+          <div class="meta-row">
             <dt>尺寸</dt>
             <dd>{{ entry.record.width }} × {{ entry.record.height }}</dd>
           </div>
@@ -89,19 +98,24 @@ function handleRemove(): void {
 <style scoped>
 .detail-panel {
   position: sticky;
-  top: 88px;
+  top: calc(var(--topbar-height) + 24px);
   display: grid;
   overflow: hidden;
-  max-height: calc(100vh - 112px);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface-dark);
-  color: var(--color-on-dark);
+  max-height: calc(100vh - var(--topbar-height) - 48px);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-card);
+  color: var(--color-body);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .detail-panel > img {
   width: 100%;
   max-height: 360px;
-  object-fit: cover;
+  object-fit: contain;
+  background: linear-gradient(145deg, #fffdf9, #f3eee8);
 }
 
 .detail-panel__content {
@@ -113,7 +127,7 @@ function handleRemove(): void {
 
 .detail-panel h2 {
   margin: 0;
-  color: var(--color-on-dark);
+  color: var(--color-ink);
   font-family: var(--font-display);
   font-size: 30px;
   font-weight: 400;
@@ -122,20 +136,20 @@ function handleRemove(): void {
 }
 
 .detail-panel :deep(.section-kicker) {
-  background: var(--color-surface-dark-elevated);
-  color: var(--color-on-dark);
+  background: var(--color-chip);
+  color: var(--color-ink);
 }
 
 .detail-panel :deep(.meta-row) {
-  border-color: var(--color-surface-dark-elevated);
+  border-color: var(--color-hairline-soft);
 }
 
 .detail-panel :deep(.meta-row dt) {
-  color: var(--color-on-dark-soft);
+  color: var(--color-muted);
 }
 
 .detail-panel :deep(.meta-row dd) {
-  color: var(--color-on-dark);
+  color: var(--color-body-strong);
 }
 
 .detail-panel__actions {
@@ -147,9 +161,9 @@ function handleRemove(): void {
 .detail-panel__remove {
   border: 0;
   background: transparent;
-  color: var(--color-on-dark-soft);
+  color: var(--color-error);
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
   padding: 0 var(--space-xs);
 }
 
@@ -162,13 +176,13 @@ function handleRemove(): void {
 }
 
 .detail-panel__empty span {
-  color: var(--color-primary);
+  color: var(--color-accent-active);
   font-size: 42px;
 }
 
 .detail-panel__empty p {
   margin: var(--space-sm) 0 0;
-  color: var(--color-on-dark-soft);
+  color: var(--color-muted);
 }
 
 @media (max-width: 920px) {

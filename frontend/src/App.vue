@@ -14,12 +14,12 @@ import AppHeader from '@/components/common/AppHeader.vue';
 <style scoped>
 .app-main {
   min-height: 100vh;
-  padding-top: 64px;
+  padding-top: var(--topbar-height);
 }
 
 @media (max-width: 1080px) {
   .app-main {
-    padding-top: 116px;
+    padding-top: calc(var(--topbar-height) + 36px);
   }
 }
 </style>

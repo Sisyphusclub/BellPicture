@@ -67,6 +67,9 @@ export function isImageRecord(value: unknown): value is ImageRecord {
   const width = readNumber(value, 'width');
   const height = readNumber(value, 'height');
   const referenceId = value.referenceId;
+  const batchId = value.batchId;
+  const aspectRatio = value.aspectRatio;
+  const elapsedMs = value.elapsedMs;
 
   return (
     isString(id) &&
@@ -75,6 +78,9 @@ export function isImageRecord(value: unknown): value is ImageRecord {
     isString(model) &&
     typeof width === 'number' &&
     typeof height === 'number' &&
-    (referenceId === undefined || isString(referenceId))
+    (referenceId === undefined || isString(referenceId)) &&
+    (batchId === undefined || isString(batchId)) &&
+    (aspectRatio === undefined || isString(aspectRatio)) &&
+    (elapsedMs === undefined || typeof elapsedMs === 'number')
   );
 }

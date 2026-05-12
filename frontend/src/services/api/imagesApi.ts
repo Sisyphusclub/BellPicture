@@ -1,9 +1,12 @@
-import type {
-  ApiErrorEnvelope,
-  GenerateRequest,
-  GenerateResponse,
-  GenerationMode,
-  UploadResponse,
+import {
+  ASPECT_RATIOS,
+  type ApiErrorEnvelope,
+  type AspectRatio,
+  type GenerateRequest,
+  type GenerateResponse,
+  type GenerateResponseItem,
+  type GenerationMode,
+  type UploadResponse,
 } from '@/types/image';
 import { isNumber, isOptionalString, isRecord, readNumber, readString } from '@/utils/narrowing';
 
@@ -115,7 +118,7 @@ function isUploadResponse(value: unknown): value is UploadResponse {
   );
 }
 
-function isGenerateResponse(value: unknown): value is GenerateResponse {
+function isGenerateResponseItem(value: unknown): value is GenerateResponseItem {
   if (!isRecord(value)) return false;
   return (
     isStringValue(readString(value, 'id')) &&
@@ -123,9 +126,22 @@ function isGenerateResponse(value: unknown): value is GenerateResponse {
     isStringValue(readString(value, 'filename')) &&
     isStringValue(readString(value, 'mime')) &&
     isNumber(readNumber(value, 'width')) &&
-    isNumber(readNumber(value, 'height')) &&
-    isGenerationMode(value.generationMode)
+    isNumber(readNumber(value, 'height'))
   );
+}
+
+function isGenerateResponse(value: unknown): value is GenerateResponse {
+  if (!isRecord(value)) return false;
+  if (!isStringValue(readString(value, 'batchId'))) return false;
+  if (!isAspectRatio(value.aspectRatio)) return false;
+  if (!isGenerationMode(value.generationMode)) return false;
+  const images = value.images;
+  if (!Array.isArray(images) || images.length === 0) return false;
+  return images.every(isGenerateResponseItem);
+}
+
+function isAspectRatio(value: unknown): value is AspectRatio {
+  return typeof value === 'string' && (ASPECT_RATIOS as readonly string[]).includes(value);
 }
 
 function isGenerationMode(value: unknown): value is GenerationMode {
@@ -140,6 +156,8 @@ export function createGenerateRequest(input: {
   prompt: string;
   referenceId?: string;
   model?: string;
+  count?: number;
+  aspectRatio?: AspectRatio;
 }): GenerateRequest {
   const request: GenerateRequest = {
     prompt: input.prompt,
@@ -149,6 +167,12 @@ export function createGenerateRequest(input: {
   }
   if (isOptionalString(input.model) && input.model !== undefined) {
     request.model = input.model;
+  }
+  if (typeof input.count === 'number') {
+    request.count = input.count;
+  }
+  if (input.aspectRatio !== undefined) {
+    request.aspectRatio = input.aspectRatio;
   }
   return request;
 }

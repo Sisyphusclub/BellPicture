@@ -15,7 +15,11 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background: var(--color-canvas);
+  background:
+    radial-gradient(circle at 18% 10%, rgba(255, 255, 255, 0.85), transparent 32%),
+    radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.7), transparent 34%),
+    linear-gradient(135deg, #f7f1e8 0%, #fbfaf7 45%, #f2ebdf 100%);
+  background-attachment: fixed;
   color: var(--color-body);
   font-family: var(--font-body);
   font-size: 16px;
@@ -64,7 +68,7 @@ a {
   gap: var(--space-xs);
   margin: 0 0 var(--space-sm);
   border-radius: var(--radius-pill);
-  background: var(--color-surface-card);
+  background: var(--color-chip);
   color: var(--color-ink);
   font-size: 12px;
   font-weight: 500;
@@ -75,7 +79,7 @@ a {
 
 .section-kicker::before {
   content: '✣';
-  color: var(--color-primary-active);
+  color: var(--color-accent-active);
   letter-spacing: 0;
 }
 
@@ -86,37 +90,42 @@ a {
   justify-content: center;
   gap: var(--space-xs);
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1;
   padding: 12px 20px;
   transition:
     background-color 140ms ease,
     border-color 140ms ease,
+    box-shadow 140ms ease,
     opacity 140ms ease;
 }
 
 .claude-button:disabled {
   cursor: not-allowed;
-  opacity: 0.62;
+  opacity: 0.5;
 }
 
 .claude-button--primary {
   background: var(--color-primary);
-  color: var(--color-ink);
+  color: var(--color-on-primary);
+  box-shadow: var(--shadow-button);
 }
 
-.claude-button--primary:not(:disabled):active {
+.claude-button--primary:not(:disabled):hover {
   background: var(--color-primary-active);
-  color: var(--color-on-primary);
 }
 
 .claude-button--secondary {
   border-color: var(--color-hairline);
-  background: var(--color-canvas);
+  background: var(--color-surface-glass-strong);
   color: var(--color-ink);
+}
+
+.claude-button--secondary:not(:disabled):hover {
+  background: var(--color-surface-card-solid);
 }
 
 .field-label {
@@ -124,7 +133,7 @@ a {
   margin-bottom: var(--space-xs);
   color: var(--color-body-strong);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .text-field,
@@ -132,8 +141,8 @@ a {
 .select-field {
   width: 100%;
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-md);
-  background: var(--color-canvas);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-card-solid);
   color: var(--color-ink);
   outline: none;
   padding: 12px 14px;
@@ -147,7 +156,7 @@ a {
 .text-field:focus,
 .textarea-field:focus,
 .select-field:focus {
-  border-color: var(--color-primary-active);
+  border-color: var(--color-accent-active);
   box-shadow: 0 0 0 3px rgba(204, 120, 92, 0.18);
 }
 

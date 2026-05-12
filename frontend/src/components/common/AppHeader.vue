@@ -3,43 +3,31 @@ import { RouterLink } from 'vue-router';
 
 interface ModuleItem {
   label: string;
-  to?: string;
-  disabled?: boolean;
+  to: string;
 }
 
 const modules: ModuleItem[] = [
-  { label: '画图', to: '/' },
-  { label: '号池管理', disabled: true },
-  { label: '注册机', disabled: true },
-  { label: '图片管理', to: '/history' },
-  { label: '日志管理', disabled: true },
-  { label: '设置', disabled: true },
+  { label: '画布', to: '/' },
+  { label: '历史', to: '/history' },
 ];
 </script>
 
 <template>
   <header class="app-header" aria-label="Ref2Image Studio 顶部导航">
-    <RouterLink class="brand" to="/" aria-label="返回画图工作区">
-      <span class="brand__mark" aria-hidden="true">✣</span>
-      <span class="brand__name">Ref2Image Studio</span>
-    </RouterLink>
+    <RouterLink class="brand" to="/" aria-label="返回画图工作区">Ref2Image Studio</RouterLink>
 
     <nav class="module-nav" aria-label="主模块">
-      <template v-for="module in modules" :key="module.label">
-        <RouterLink v-if="module.to" :to="module.to" class="module-nav__item">
-          {{ module.label }}
-        </RouterLink>
-        <button v-else type="button" class="module-nav__item module-nav__item--disabled" disabled>
-          {{ module.label }}
-        </button>
-      </template>
+      <RouterLink
+        v-for="module in modules"
+        :key="module.label"
+        :to="module.to"
+        class="module-nav__item"
+      >
+        <span class="module-nav__label">{{ module.label }}</span>
+      </RouterLink>
     </nav>
 
-    <div class="header-chips" aria-label="账户状态占位">
-      <span class="header-chip">管理员</span>
-      <span class="header-chip">v0.1.0</span>
-      <button type="button" class="header-chip header-chip--button">退出</button>
-    </div>
+    <div class="header-actions" aria-hidden="true" />
   </header>
 </template>
 
@@ -51,135 +39,88 @@ const modules: ModuleItem[] = [
   right: 0;
   left: 0;
   display: grid;
-  min-height: 64px;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  height: var(--topbar-height);
+  grid-template-columns: var(--sidebar-width) 1fr auto;
   align-items: center;
-  gap: var(--space-lg);
   border-bottom: 1px solid var(--color-hairline);
-  background: var(--color-canvas);
+  background: var(--color-surface-glass);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   color: var(--color-ink);
-  padding: 0 var(--space-xl);
 }
 
 .brand {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-sm);
-  min-width: max-content;
+  padding-left: 26px;
   color: var(--color-ink);
-  font-weight: 600;
-}
-
-.brand__mark {
-  display: inline-grid;
-  width: 32px;
-  height: 32px;
-  place-items: center;
-  border-radius: var(--radius-full);
-  background: var(--color-surface-dark);
-  color: var(--color-on-dark);
-  font-size: 17px;
-  line-height: 1;
-}
-
-.brand__name {
-  font-size: 15px;
-  letter-spacing: -0.01em;
+  font-family: var(--font-brand);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
   line-height: 1;
 }
 
 .module-nav {
   display: flex;
-  min-width: 0;
+  height: 100%;
   align-items: center;
   justify-content: center;
-  gap: var(--space-xs);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.module-nav::-webkit-scrollbar {
-  display: none;
+  gap: 44px;
 }
 
 .module-nav__item {
+  position: relative;
   display: inline-flex;
-  min-height: 36px;
-  flex: 0 0 auto;
+  height: 100%;
   align-items: center;
-  justify-content: center;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--color-muted);
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  padding: 8px 14px;
+  color: #5b554d;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .module-nav__item.router-link-exact-active {
-  background: var(--color-surface-card);
-  color: var(--color-ink);
+  color: #161411;
 }
 
-.module-nav__item--disabled {
-  cursor: not-allowed;
-  opacity: 0.54;
-}
-
-.header-chips {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-xs);
-  min-width: max-content;
-}
-
-.header-chip {
-  display: inline-flex;
-  min-height: 32px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--color-hairline);
+.module-nav__item.router-link-exact-active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 54px;
+  height: 2px;
+  background: #161411;
   border-radius: var(--radius-pill);
-  background: var(--color-surface-soft);
-  color: var(--color-muted);
-  font-size: 13px;
-  font-weight: 500;
-  padding: 6px 12px;
+  transform: translateX(-50%);
 }
 
-.header-chip--button {
-  color: var(--color-ink);
-  cursor: pointer;
+.header-actions {
+  width: 16px;
+  padding-right: 26px;
 }
 
 @media (max-width: 1080px) {
   .app-header {
-    grid-template-columns: 1fr auto;
-    gap: var(--space-md);
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: var(--topbar-height);
+    grid-template-rows: auto auto;
     padding: var(--space-sm) var(--space-md);
+    gap: var(--space-xs);
+  }
+
+  .brand {
+    padding-left: 0;
   }
 
   .module-nav {
-    grid-column: 1 / -1;
-    grid-row: 2;
+    height: auto;
     justify-content: flex-start;
+    gap: var(--space-lg);
   }
-}
 
-@media (max-width: 640px) {
-  .brand__name {
+  .header-actions {
     display: none;
-  }
-
-  .header-chips {
-    gap: var(--space-xxs);
-  }
-
-  .header-chip {
-    padding: 6px 9px;
   }
 }
 </style>
