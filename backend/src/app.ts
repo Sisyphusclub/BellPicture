@@ -7,6 +7,7 @@ import { env } from './config/env.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { requestLogger } from './middlewares/requestLogger.js';
 import { healthRouter } from './routes/health.js';
+import { buildHistoryRouter } from './routes/history.js';
 import { buildImagesRouter } from './routes/images.js';
 import { outputsRouter } from './routes/outputs.js';
 import type { ImageGenerationProvider } from './services/providers/ImageGenerationProvider.js';
@@ -52,6 +53,12 @@ export function createApp(deps: AppDeps): Express {
       userQuota,
       ...(deps.authMiddleware !== undefined ? { authMiddleware: deps.authMiddleware } : {}),
     }),
+  );
+  app.use(
+    '/api/history',
+    buildHistoryRouter(
+      deps.authMiddleware !== undefined ? { authMiddleware: deps.authMiddleware } : {},
+    ),
   );
   app.use('/api/outputs', outputsRouter);
 

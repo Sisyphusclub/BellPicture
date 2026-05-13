@@ -6,6 +6,8 @@ import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../src/app.js';
+import { db } from '../../src/db/drizzle.js';
+import { user } from '../../src/db/schema.js';
 import { AppError } from '../../src/errors/AppError.js';
 import type { ImageGenerationProvider } from '../../src/services/providers/ImageGenerationProvider.js';
 import { saveOutput } from '../../src/storage/localStorage.js';
@@ -29,7 +31,23 @@ function fakeProvider(): { provider: ImageGenerationProvider } {
   return { provider };
 }
 
+function ensureTestUser(userId: string): void {
+  const now = new Date();
+  db.insert(user)
+    .values({
+      id: userId,
+      name: `Test ${userId}`,
+      email: `${userId}@test.local`,
+      emailVerified: false,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoNothing()
+    .run();
+}
+
 function stubAuth(userId = `test-${randomUUID()}`): RequestHandler {
+  ensureTestUser(userId);
   return (req, _res, next) => {
     req.user = { id: userId, email: `${userId}@test.local` };
     next();

@@ -1,13 +1,23 @@
 import { betterAuth } from 'better-auth';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 
-import { sqlite } from '../db/sqlite.js';
+import { db } from '../db/drizzle.js';
+import * as schema from '../db/schema.js';
 
 import { env } from './env.js';
 
 export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
   secret: env.BETTER_AUTH_SECRET,
-  database: sqlite,
+  database: drizzleAdapter(db, {
+    provider: 'sqlite',
+    schema: {
+      user: schema.user,
+      session: schema.session,
+      account: schema.account,
+      verification: schema.verification,
+    },
+  }),
   trustedOrigins: [env.FRONTEND_ORIGIN],
   socialProviders: {
     google: {

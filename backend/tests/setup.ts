@@ -16,3 +16,8 @@ process.env.GOOGLE_CLIENT_SECRET ??= 'test-google-secret';
 process.env.FRONTEND_ORIGIN ??= 'http://localhost:5173';
 process.env.SQLITE_PATH ??= path.join(root, 'app.sqlite');
 process.env.DAILY_USER_QUOTA ??= '20';
+
+// Run drizzle migrations once for the test process. Subsequent test files share
+// the same SQLite file via the better-sqlite3 module-level singleton.
+const { runMigrations } = await import('../src/db/drizzle.js');
+runMigrations();

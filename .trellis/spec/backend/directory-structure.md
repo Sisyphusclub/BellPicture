@@ -30,17 +30,22 @@ backend/
 │   ├── app.ts                # Express app factory (no listen). Test target.
 │   ├── config/
 │   │   ├── env.ts            # Loads + validates env vars (see below)
-│   │   └── auth.ts           # Better Auth instance (Google OAuth + SQLite)
+│   │   └── auth.ts           # Better Auth instance (Google OAuth + drizzleAdapter)
 │   ├── db/
-│   │   └── sqlite.ts         # better-sqlite3 singleton (WAL + foreign_keys)
+│   │   ├── sqlite.ts         # better-sqlite3 singleton (WAL + foreign_keys)
+│   │   ├── drizzle.ts        # drizzle-orm instance + runMigrations() helper
+│   │   └── schema.ts         # drizzle schema for all 6 tables
 │   ├── routes/
 │   │   ├── images.ts         # POST /api/images/generate, /upload — gated by requireAuth
+│   │   ├── history.ts        # GET/DELETE /api/history/* — gated by requireAuth
 │   │   └── health.ts         # GET /api/health
 │   ├── controllers/          # Thin: parse req → call service → format res
-│   │   └── images.controller.ts
+│   │   ├── images.controller.ts
+│   │   └── history.controller.ts
 │   ├── services/             # Business logic. No req/res objects here.
 │   │   ├── imageGeneration.service.ts
-│   │   ├── userQuota.service.ts             # Per-user daily quota over SQLite
+│   │   ├── userQuota.service.ts             # Per-user daily quota (drizzle queries)
+│   │   ├── history.service.ts               # image_records CRUD via drizzle
 │   │   ├── quota.service.ts                 # Shared QuotaPool / QuotaSnapshot type contract
 │   │   └── providers/
 │   │       ├── ImageGenerationProvider.ts   # Interface
@@ -61,7 +66,9 @@ backend/
 ├── tmp/                      # Runtime: uploaded refs + generated images
 │   ├── uploads/              # Reference images from frontend
 │   └── outputs/              # Generated images (cleaned periodically)
-├── data/                     # Persistent SQLite file (Better Auth + user_quota). Gitignored.
+├── data/                     # Persistent SQLite file (Better Auth + user_quota + image_records). Gitignored.
+├── drizzle/                  # drizzle-kit migration SQL files + meta. Committed.
+├── drizzle.config.ts         # drizzle-kit config (schema path, dialect, dbCredentials)
 ├── .env.example              # Committed. Real .env is gitignored.
 ├── package.json
 ├── tsconfig.json

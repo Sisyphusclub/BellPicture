@@ -2,6 +2,8 @@ import type { NextFunction, Request, Response } from 'express';
 import { z, ZodError } from 'zod';
 
 import { AppError } from '../errors/AppError.js';
+import { logger } from '../logger.js';
+import { insertImageRecords, type NewImageRecord } from '../services/history.service.js';
 import {
   generateImage,
   type GenerateImageOutput,
@@ -121,6 +123,33 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           },
           { provider: deps.provider, quotaPool },
         );
+
+        const createdAt = new Date();
+        const records: NewImageRecord[] = result.images.map((image) => ({
+          id: image.filename,
+          batchId: result.batchId,
+          userId: user.id,
+          prompt: parsed.prompt,
+          model: parsed.model ?? 'gpt-image-2',
+          ...(parsed.referenceId !== undefined ? { referenceId: parsed.referenceId } : {}),
+          ...(result.aspectRatio !== undefined ? { aspectRatio: result.aspectRatio } : {}),
+          filename: image.filename,
+          mime: image.mime,
+          width: image.width,
+          height: image.height,
+          createdAt,
+        }));
+        try {
+          insertImageRecords(records);
+        } catch (insertErr) {
+          // Quota has already been consumed by the service. We log so the
+          // operator can reconcile, but we don't fail the user-visible call —
+          // the images are on disk and the response is already shaped.
+          logger.error(
+            { requestId: req.requestId, userId: user.id, batchId: result.batchId, err: insertErr },
+            'images.generate: failed to persist image_records',
+          );
+        }
 
         const body: GenerateResponse = {
           batchId: result.batchId,

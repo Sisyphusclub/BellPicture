@@ -2,8 +2,11 @@ import process from 'node:process';
 
 import { createApp } from './app.js';
 import { env } from './config/env.js';
+import { runMigrations } from './db/drizzle.js';
 import { logger } from './logger.js';
 import { TwoApiImageProvider } from './services/providers/TwoApiImageProvider.js';
+
+runMigrations();
 
 const provider = new TwoApiImageProvider({
   baseUrl: env.IMAGE_API_BASE_URL,

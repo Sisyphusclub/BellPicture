@@ -1,28 +1,12 @@
+import { eq, sql } from 'drizzle-orm';
+
 import { env } from '../config/env.js';
-import { sqlite } from '../db/sqlite.js';
+import { db } from '../db/drizzle.js';
+import { userQuota } from '../db/schema.js';
 import { AppError } from '../errors/AppError.js';
 import { logger } from '../logger.js';
 
 import type { QuotaPool, QuotaSnapshot } from './quota.service.js';
-
-sqlite.exec(`
-  CREATE TABLE IF NOT EXISTS user_quota (
-    user_id    TEXT PRIMARY KEY,
-    used_today INTEGER NOT NULL DEFAULT 0,
-    quota_date TEXT    NOT NULL
-  );
-`);
-
-const selectRow = sqlite.prepare<
-  [string],
-  { used_today: number; quota_date: string }
->('SELECT used_today, quota_date FROM user_quota WHERE user_id = ?');
-
-const upsertRow = sqlite.prepare<[string, number, string]>(
-  `INSERT INTO user_quota (user_id, used_today, quota_date)
-   VALUES (?, ?, ?)
-   ON CONFLICT(user_id) DO UPDATE SET used_today = excluded.used_today, quota_date = excluded.quota_date`,
-);
 
 function todayISO(): string {
   const now = new Date();
@@ -33,12 +17,17 @@ function todayISO(): string {
 }
 
 function readEffective(userId: string): { used: number; date: string } {
-  const row = selectRow.get(userId);
+  const rows = db
+    .select({ usedToday: userQuota.usedToday, quotaDate: userQuota.quotaDate })
+    .from(userQuota)
+    .where(eq(userQuota.userId, userId))
+    .all();
   const today = todayISO();
-  if (!row || row.quota_date !== today) {
+  const row = rows[0];
+  if (!row || row.quotaDate !== today) {
     return { used: 0, date: today };
   }
-  return { used: row.used_today, date: row.quota_date };
+  return { used: row.usedToday, date: row.quotaDate };
 }
 
 export interface UserQuotaService {
@@ -63,29 +52,37 @@ export function createUserQuotaService(): UserQuotaService {
       }
     }
 
-    const applyConsume = sqlite.transaction((n: number): QuotaSnapshot => {
-      const { used, date } = readEffective(userId);
-      if (used + n > env.DAILY_USER_QUOTA) {
-        throw new AppError('QUOTA_EXHAUSTED', 'Daily user quota is exhausted', 429, undefined, {
-          requested: n,
-          remaining: Math.max(0, env.DAILY_USER_QUOTA - used),
-          total: env.DAILY_USER_QUOTA,
-        });
-      }
-      const nextUsed = used + n;
-      upsertRow.run(userId, nextUsed, date);
-      return {
-        total: env.DAILY_USER_QUOTA,
-        remaining: Math.max(0, env.DAILY_USER_QUOTA - nextUsed),
-      };
-    });
-
     function consume(count: number): QuotaSnapshot {
-      const result = applyConsume(count);
-      logger.debug(
-        { userId, consumed: count, remaining: result.remaining },
-        'user quota: consumed',
-      );
+      const result = db.transaction((tx): QuotaSnapshot => {
+        const rows = tx
+          .select({ usedToday: userQuota.usedToday, quotaDate: userQuota.quotaDate })
+          .from(userQuota)
+          .where(eq(userQuota.userId, userId))
+          .all();
+        const today = todayISO();
+        const row = rows[0];
+        const used = !row || row.quotaDate !== today ? 0 : row.usedToday;
+        if (used + count > env.DAILY_USER_QUOTA) {
+          throw new AppError('QUOTA_EXHAUSTED', 'Daily user quota is exhausted', 429, undefined, {
+            requested: count,
+            remaining: Math.max(0, env.DAILY_USER_QUOTA - used),
+            total: env.DAILY_USER_QUOTA,
+          });
+        }
+        const nextUsed = used + count;
+        tx.insert(userQuota)
+          .values({ userId, usedToday: nextUsed, quotaDate: today })
+          .onConflictDoUpdate({
+            target: userQuota.userId,
+            set: { usedToday: sql`excluded.used_today`, quotaDate: sql`excluded.quota_date` },
+          })
+          .run();
+        return {
+          total: env.DAILY_USER_QUOTA,
+          remaining: Math.max(0, env.DAILY_USER_QUOTA - nextUsed),
+        };
+      });
+      logger.debug({ userId, consumed: count, remaining: result.remaining }, 'user quota: consumed');
       return result;
     }
 
