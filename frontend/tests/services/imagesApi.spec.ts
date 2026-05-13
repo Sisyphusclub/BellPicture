@@ -1,9 +1,32 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { generateImage, uploadReferenceImage } from '@/services/api/imagesApi';
+import {
+  fetchImageQuota,
+  generateImage,
+  registerUnauthorizedHandler,
+  uploadReferenceImage,
+} from '@/services/api/imagesApi';
 import type { ImageApiError } from '@/services/api/imagesApi';
 
 describe('imagesApi', () => {
+  it('reads GPT pool quota through the backend quota endpoint', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ total: 100, remaining: 98 }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await fetchImageQuota();
+
+    expect(result.remaining).toBe(98);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3000/api/images/quota',
+      expect.objectContaining({ credentials: 'include' }),
+    );
+  });
+
   it('uploads a reference image through the backend multipart endpoint', async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(
@@ -85,5 +108,27 @@ describe('imagesApi', () => {
       code: 'PAYLOAD_TOO_LARGE',
       requestId: 'req-1',
     } satisfies Partial<ImageApiError>);
+  });
+
+  it('invokes the registered unauthorized handler on 401 responses', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: { code: 'UNAUTHORIZED', message: 'Authentication required', requestId: 'r' },
+          }),
+          { status: 401, headers: { 'Content-Type': 'application/json' } },
+        ),
+      ),
+    );
+    const handler = vi.fn();
+    registerUnauthorizedHandler(handler);
+
+    await expect(fetchImageQuota()).rejects.toMatchObject({ status: 401 });
+    expect(handler).toHaveBeenCalledTimes(1);
+
+    // Clean up so subsequent tests don't see the spy.
+    registerUnauthorizedHandler(() => undefined);
   });
 });

@@ -24,24 +24,29 @@ The frontend lives in `frontend/` at the repo root, fully independent from
 frontend/
 ├── index.html
 ├── src/
-│   ├── main.ts                 # Mount Vue app, import global styles
-│   ├── App.vue                 # Root layout
+│   ├── main.ts                 # Mount Vue app, import global styles, wire auth interceptor
+│   ├── App.vue                 # Root layout — mounts <LoginModal/> + auto-opens it on unauthenticated session
 │   ├── router/
 │   │   └── index.ts            # vue-router config
 │   ├── views/                  # Route-level components (one per route)
 │   │   ├── GenerateView.vue
 │   │   └── HistoryView.vue
 │   ├── components/             # Reusable presentational components
-│   │   ├── common/             # Generic (Button wrappers, layout helpers)
+│   │   ├── auth/               # LoginModal + future auth surfaces
+│   │   ├── common/             # Generic (Button wrappers, layout helpers, AppHeader)
 │   │   ├── upload/             # Reference-image upload UI
 │   │   └── gallery/            # Result/history display
 │   ├── composables/            # Reusable stateful logic (use*.ts)
 │   │   ├── useImageGeneration.ts
 │   │   ├── useImageHistory.ts
-│   │   └── useFileUpload.ts
+│   │   ├── useFileUpload.ts
+│   │   ├── useAuth.ts          # Wraps Better Auth's useSession + signIn/signOut
+│   │   └── useAuthModal.ts     # Global modal open/close ref
+│   ├── lib/                    # Third-party client singletons (no Vue ref logic of our own)
+│   │   └── authClient.ts       # Better Auth Vue client (createAuthClient)
 │   ├── services/               # Pure API/IO. No Vue refs here.
 │   │   ├── api/
-│   │   │   └── imagesApi.ts    # fetch wrappers around /api/images/*
+│   │   │   └── imagesApi.ts    # fetch wrappers around /api/images/* (credentials: include + 401 handler)
 │   │   └── storage/
 │   │       ├── indexedDb.ts    # Image blob store
 │   │       └── localStorageMeta.ts  # Metadata store

@@ -6,6 +6,7 @@ import {
   type GenerateResponse,
   type GenerateResponseItem,
   type GenerationMode,
+  type QuotaResponse,
   type UploadResponse,
 } from '@/types/image';
 import { isNumber, isOptionalString, isRecord, readNumber, readString } from '@/utils/narrowing';
@@ -14,6 +15,17 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:300
   /\/$/,
   '',
 );
+
+let onUnauthorized: (() => void) | null = null;
+
+/**
+ * Register a callback fired whenever an API call returns 401 UNAUTHORIZED.
+ * Wired at app startup from `main.ts` to the auth modal. Kept here instead
+ * of importing a composable so `services/` remains Vue-free.
+ */
+export function registerUnauthorizedHandler(handler: () => void): void {
+  onUnauthorized = handler;
+}
 
 export class ImageApiError extends Error {
   public override readonly name = 'ImageApiError';
@@ -33,11 +45,29 @@ export function buildApiUrl(path: string): string {
   return `${API_BASE_URL}${path}`;
 }
 
+async function authedFetch(input: string, init: RequestInit = {}): Promise<Response> {
+  const response = await fetch(input, { credentials: 'include', ...init });
+  if (response.status === 401 && onUnauthorized) {
+    onUnauthorized();
+  }
+  return response;
+}
+
+export async function fetchImageQuota(): Promise<QuotaResponse> {
+  const response = await authedFetch(buildApiUrl('/api/images/quota'));
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw buildError(response.status, payload);
+  if (!isQuotaResponse(payload)) {
+    throw new ImageApiError(response.status, 'INVALID_RESPONSE', '额度接口返回了无法识别的响应。');
+  }
+  return payload;
+}
+
 export async function uploadReferenceImage(file: File): Promise<UploadResponse> {
   const form = new FormData();
   form.append('image', file);
 
-  const response = await fetch(buildApiUrl('/api/images/upload'), {
+  const response = await authedFetch(buildApiUrl('/api/images/upload'), {
     method: 'POST',
     body: form,
   });
@@ -50,7 +80,7 @@ export async function uploadReferenceImage(file: File): Promise<UploadResponse> 
 }
 
 export async function generateImage(request: GenerateRequest): Promise<GenerateResponse> {
-  const response = await fetch(buildApiUrl('/api/images/generate'), {
+  const response = await authedFetch(buildApiUrl('/api/images/generate'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -66,7 +96,7 @@ export async function generateImage(request: GenerateRequest): Promise<GenerateR
 }
 
 export async function fetchOutputBlob(outputUrl: string): Promise<Blob> {
-  const response = await fetch(buildApiUrl(outputUrl));
+  const response = await authedFetch(buildApiUrl(outputUrl));
   if (!response.ok) {
     const payload = await parseJsonResponse(response);
     throw buildError(response.status, payload);
@@ -106,6 +136,11 @@ function isApiErrorEnvelope(value: unknown): value is ApiErrorEnvelope {
     typeof error.requestId === 'string' &&
     (details === undefined || isRecord(details))
   );
+}
+
+function isQuotaResponse(value: unknown): value is QuotaResponse {
+  if (!isRecord(value)) return false;
+  return isNumber(readNumber(value, 'total')) && isNumber(readNumber(value, 'remaining'));
 }
 
 function isUploadResponse(value: unknown): value is UploadResponse {
