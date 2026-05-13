@@ -1,0 +1,6 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend task entry point and applicable spec map for implementers."}
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"Defines Vue frontend file organization, component/composable placement, and naming rules."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Guides Vue component design, props/events, accessibility, and presentational boundaries for the new masonry/detail UI."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Defines composable-only state patterns and local history persistence constraints used by recent creations."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"TypeScript strictness requirements relevant to computed history entries, modal state, and event handlers."}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"Encourages reusing existing history/composable behavior instead of duplicating storage or gallery logic."}

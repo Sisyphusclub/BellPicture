@@ -1,0 +1,6 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend task entry point and applicable verification expectations."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Frontend lint, test, accessibility, and browser smoke-test quality bar."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Strict TypeScript checks for nullable modal state, history entries, and clipboard handling."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Review component accessibility, keyboard behavior, props/events, and UI consistency."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Verify recent creations use existing composable/local persistence state without new global stores."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Confirm no unnecessary backend/API changes and the frontend remains aligned with existing generation/history contracts."}

@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "check 阶段对照后端测试 / typecheck / lint / 覆盖率门槛"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "verify 401 envelope 格式、AppError 用法是否合规"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "verify SQLite 初始化 / WAL / 事务一致性是否合规"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "check 阶段对照前端测试 / typecheck / lint 门槛"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "verify session/user/quota 类型契约与后端一致"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "verify 跨层数据流（cookie / 401 / quota response）是否对齐"}
+{"file": ".trellis/tasks/05-13-user-login-auth/prd.md", "reason": "verify 8 条 Acceptance Criteria 全部满足"}

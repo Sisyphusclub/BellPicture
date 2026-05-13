@@ -1,0 +1,17 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "backend spec index — load first before touching any backend file"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "新建 db/、middlewares/、config/auth.ts、services/userQuota.service.ts 必须遵循既有目录约定"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "首次引入持久化（SQLite），需严格遵守 DB 连接/事务/迁移规范"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "401 UNAUTHORIZED / quota 超限 / OAuth 错误等都需走 AppError + 标准 envelope"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "pino 日志格式：auth 事件、quota 重置、401 等都需结构化日志"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "test/typecheck/lint 与单测覆盖率要求"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "frontend spec index — load first before touching any frontend file"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "新建 lib/authClient.ts、composables/useAuth.ts、components/auth/LoginModal.vue 目录约定"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "LoginModal 与 AppHeader 修改需遵守 Vue 组件结构、Element Plus 用法、a11y 规范"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "useAuth composable + useImageGeneration 集成需遵守 composable 模式"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "全局 modal 开关、登录态管理 —— 决定用 composable 还是 store"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "session/user/quota 类型与后端契约对齐"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "test/typecheck/lint 与组件测试要求"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "quota 服务从 pool 改 per-user 涉及重构，需先看 reuse 思路"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "auth 是典型跨层特性（后端 session + 前端 cookie + 类型契约），需对齐 cross-layer 套路"}
+{"file": ".trellis/tasks/05-13-user-login-auth/research/auth-stack.md", "reason": "本任务 research 输出 —— Better Auth Express + Vue 集成、cookie 跨域、Google provider 关键代码片段"}
+{"file": ".trellis/tasks/05-13-user-login-auth/research/db-orm.md", "reason": "本任务 research 输出 —— better-sqlite3 + WAL 启用方案；PR1 暂不引入 ORM 的依据"}
