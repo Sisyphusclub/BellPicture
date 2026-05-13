@@ -3,6 +3,9 @@ export type GenerationMode = 'text-to-image' | 'image-to-image';
 export const ASPECT_RATIOS = ['1:1', '3:2', '2:3', '16:9', '9:16'] as const;
 export type AspectRatio = (typeof ASPECT_RATIOS)[number];
 
+export const ASPECT_CHOICES = ['auto', ...ASPECT_RATIOS] as const;
+export type AspectChoice = (typeof ASPECT_CHOICES)[number];
+
 export const ASPECT_RATIO_LABELS: Record<AspectRatio, string> = {
   '1:1': '1:1（正方形）',
   '3:2': '3:2（横向）',
@@ -11,10 +14,20 @@ export const ASPECT_RATIO_LABELS: Record<AspectRatio, string> = {
   '9:16': '9:16（竖屏）',
 };
 
+export const ASPECT_CHOICE_LABELS: Record<AspectChoice, string> = {
+  auto: '智能',
+  '1:1': '1:1（正方形）',
+  '3:2': '3:2（横向）',
+  '2:3': '2:3（纵向）',
+  '16:9': '16:9（宽屏）',
+  '9:16': '9:16（竖屏）',
+};
+
+export const DEFAULT_ASPECT_CHOICE: AspectChoice = 'auto';
 export const DEFAULT_ASPECT_RATIO: AspectRatio = '1:1';
-export const DEFAULT_COUNT = 2;
+export const DEFAULT_COUNT = 1;
 export const MIN_COUNT = 1;
-export const MAX_COUNT = 4;
+export const MAX_COUNT = 2;
 
 export interface ImageRecord {
   id: string;
@@ -72,6 +85,11 @@ export interface ApiErrorBody {
 
 export interface ApiErrorEnvelope {
   error: ApiErrorBody;
+}
+
+export interface QuotaResponse {
+  total: number;
+  remaining: number;
 }
 
 export interface HistoryEntry {
