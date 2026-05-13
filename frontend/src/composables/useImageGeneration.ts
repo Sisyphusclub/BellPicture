@@ -2,7 +2,6 @@ import { readonly, ref } from 'vue';
 
 import {
   createGenerateRequest,
-  fetchOutputBlob,
   generateImage,
   ImageApiError,
   uploadReferenceImage,
@@ -70,13 +69,12 @@ export function useImageGeneration() {
       });
       const generated = await generateImage(request);
 
-      statusMessage.value = '正在获取生成图片。';
+      statusMessage.value = '正在收尾。';
       const entries: HistoryEntry[] = [];
       const createdAt = new Date().toISOString();
       const elapsedMs = Date.now() - requestStart;
 
       for (const image of generated.images) {
-        const blob = await fetchOutputBlob(image.outputUrl);
         const record = createImageRecord({
           id: image.id,
           batchId: generated.batchId,
@@ -89,7 +87,7 @@ export function useImageGeneration() {
           elapsedMs,
           ...(referenceId !== undefined ? { referenceId } : {}),
         });
-        const entry = await add(record, blob);
+        const entry = add(record);
         entries.push(entry);
       }
 
@@ -100,7 +98,7 @@ export function useImageGeneration() {
         entries,
       };
       lastBatch.value = result;
-      statusMessage.value = '生成结果已保存到本地历史记录。';
+      statusMessage.value = '生成结果已写入云端历史。';
       return result;
     } catch (unknownError) {
       const displayError = toUserFacingGenerationError(unknownError);
@@ -172,6 +170,8 @@ function messageForImageApiError(error: ImageApiError): string {
       return `生成服务响应超时，请稍后重试。${requestSuffix}`;
     case 'PROVIDER_RATE_LIMITED':
       return `生成服务当前请求过多，请稍后再试。${requestSuffix}`;
+    case 'QUOTA_EXHAUSTED':
+      return `GPT 号池剩余额度不足，请稍后补充额度后再试。${requestSuffix}`;
     case 'BAD_REQUEST':
       return `请求内容无效，请检查提示词和参考图。${requestSuffix}`;
     case 'NOT_FOUND':

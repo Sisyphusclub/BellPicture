@@ -1,25 +1,20 @@
 import { computed, readonly, ref } from 'vue';
 
-import { deleteBlob, getBlob, putBlob } from '@/services/storage/indexedDb';
-import * as metaStore from '@/services/storage/localStorageMeta';
+import { deleteHistoryBatch, deleteHistoryRecord, fetchHistory } from '@/services/api/historyApi';
+import { buildApiUrl } from '@/services/api/imagesApi';
 import type { HistoryEntry, ImageRecord } from '@/types/image';
 
 const records = ref<ImageRecord[]>([]);
-const entryUrls = ref<Record<string, string>>({});
-const entrySizes = ref<Record<string, number>>({});
 const isHydrating = ref(false);
 const hydrateError = ref<Error | null>(null);
 let hydrated = false;
 
+function imageUrlFor(record: ImageRecord): string {
+  return buildApiUrl(`/api/outputs/${record.id}`);
+}
+
 const entries = computed<HistoryEntry[]>(() =>
-  records.value
-    .map((record) => {
-      const imageUrl = entryUrls.value[record.id];
-      if (!imageUrl) return null;
-      const size = entrySizes.value[record.id];
-      return size === undefined ? { record, imageUrl } : { record, imageUrl, size };
-    })
-    .filter((entry): entry is HistoryEntry => entry !== null),
+  records.value.map((record) => ({ record, imageUrl: imageUrlFor(record) })),
 );
 
 export interface GroupedBatch {
@@ -60,28 +55,18 @@ export function useImageHistory() {
     await hydrate();
   }
 
-  async function add(record: ImageRecord, blob: Blob): Promise<HistoryEntry> {
-    await putBlob(record.id, blob);
-    metaStore.put(record);
+  function add(record: ImageRecord): HistoryEntry {
     records.value = [record, ...records.value.filter((item) => item.id !== record.id)];
-    setEntryUrl(record.id, URL.createObjectURL(blob), blob.size);
-    return { record, imageUrl: entryUrls.value[record.id] ?? '', size: blob.size };
+    return { record, imageUrl: imageUrlFor(record) };
   }
 
   async function remove(id: string): Promise<void> {
-    await deleteBlob(id);
-    metaStore.remove(id);
+    await deleteHistoryRecord(id);
     records.value = records.value.filter((record) => record.id !== id);
-    revokeEntryUrl(id);
   }
 
   async function removeBatch(batchId: string): Promise<void> {
-    const ids = records.value.filter((record) => (record.batchId ?? record.id) === batchId).map((record) => record.id);
-    for (const id of ids) {
-      await deleteBlob(id);
-      metaStore.remove(id);
-      revokeEntryUrl(id);
-    }
+    await deleteHistoryBatch(batchId);
     records.value = records.value.filter((record) => (record.batchId ?? record.id) !== batchId);
   }
 
@@ -109,10 +94,7 @@ export function useImageHistory() {
 }
 
 export function resetImageHistoryForTests(): void {
-  Object.keys(entryUrls.value).forEach(revokeEntryUrl);
   records.value = [];
-  entryUrls.value = {};
-  entrySizes.value = {};
   hydrateError.value = null;
   isHydrating.value = false;
   hydrated = false;
@@ -125,51 +107,13 @@ async function hydrate(): Promise<void> {
   hydrateError.value = null;
 
   try {
-    const storedRecords = metaStore.listAll();
-    records.value = storedRecords;
-    const nextUrls: Record<string, string> = {};
-    const nextSizes: Record<string, number> = {};
-
-    for (const record of storedRecords) {
-      const blob = await getBlob(record.id);
-      if (blob) {
-        nextUrls[record.id] = URL.createObjectURL(blob);
-        nextSizes[record.id] = blob.size;
-      }
-    }
-
-    Object.keys(entryUrls.value).forEach((id) => {
-      if (nextUrls[id] === undefined) revokeEntryUrl(id);
-    });
-    entryUrls.value = nextUrls;
-    entrySizes.value = nextSizes;
-  } catch {
-    hydrateError.value = new Error('无法读取本地历史记录，请刷新页面或检查浏览器存储权限。');
+    const remote = await fetchHistory();
+    records.value = [...remote].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  } catch (err) {
+    hydrated = false;
+    hydrateError.value =
+      err instanceof Error ? err : new Error('无法从服务器加载历史，请刷新或重新登录后重试。');
   } finally {
     isHydrating.value = false;
   }
-}
-
-function setEntryUrl(id: string, url: string, size: number): void {
-  revokeEntryUrl(id);
-  entryUrls.value = {
-    ...entryUrls.value,
-    [id]: url,
-  };
-  entrySizes.value = {
-    ...entrySizes.value,
-    [id]: size,
-  };
-}
-
-function revokeEntryUrl(id: string): void {
-  const previous = entryUrls.value[id];
-  if (previous) URL.revokeObjectURL(previous);
-  const remainingUrls = { ...entryUrls.value };
-  delete remainingUrls[id];
-  entryUrls.value = remainingUrls;
-
-  const remainingSizes = { ...entrySizes.value };
-  delete remainingSizes[id];
-  entrySizes.value = remainingSizes;
 }

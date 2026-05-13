@@ -45,11 +45,10 @@ frontend/
 │   ├── lib/                    # Third-party client singletons (no Vue ref logic of our own)
 │   │   └── authClient.ts       # Better Auth Vue client (createAuthClient)
 │   ├── services/               # Pure API/IO. No Vue refs here.
-│   │   ├── api/
-│   │   │   └── imagesApi.ts    # fetch wrappers around /api/images/* (credentials: include + 401 handler)
-│   │   └── storage/
-│   │       ├── indexedDb.ts    # Image blob store
-│   │       └── localStorageMeta.ts  # Metadata store
+│   │   └── api/
+│   │       ├── httpClient.ts   # Shared API base URL + authedFetch + 401 handler registration
+│   │       ├── imagesApi.ts    # fetch wrappers around /api/images/* (uploads + generation)
+│   │       └── historyApi.ts   # fetch wrappers around /api/history/* (list + delete)
 │   ├── types/                  # Shared TS types/interfaces
 │   │   └── image.ts            # ImageRecord, GenerateRequest, etc.
 │   ├── utils/                  # Pure helpers (no IO, no Vue)
