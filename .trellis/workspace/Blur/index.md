@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 4
+- **Total Sessions**: 5
 - **Last Active**: 2026-05-13
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~145 | Active |
+| `journal-1.md` | ~179 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 5 | 2026-05-13 | History upload to backend (PR2) | `442ba18`, `dd89c73` | `main` |
 | 4 | 2026-05-13 | Login auth (PR1) + frontend UX touch-ups | `2af3775`, `3bbb38d`, `95abb85` | `main` |
 | 3 | 2026-05-12 | Frontend app: mockup-aligned redesign + backend count/aspectRatio | `a4e2539`, `f8f836e`, `c90047a`, `eda19b6`, `3ff4611` | `main` |
 | 2 | 2026-05-11 | Image endpoints: /api/images/generate + upload | `1d02e9c` | `main` |

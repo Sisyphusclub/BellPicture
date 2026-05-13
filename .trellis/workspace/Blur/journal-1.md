@@ -143,3 +143,37 @@ Three inline UX tweaks (close ratio dropdowns on outside click, add explicit 1:1
 ### Next Steps
 
 - None - task complete
+
+
+## Session 5: History upload to backend (PR2)
+
+**Date**: 2026-05-13
+**Task**: History upload to backend (PR2)
+**Branch**: `main`
+
+### Summary
+
+PR2 of the multi-user rollout. drizzle-orm + drizzle-kit now own all six SQLite tables (Better Auth core 4 via drizzleAdapter, user_quota, and the new image_records); backend writes one image_records row per generated output and exposes GET /api/history + DELETE /api/history/batch/:batchId + DELETE /api/history/:id behind requireAuth. Frontend useImageHistory is rewritten to hydrate from /api/history with <img src> pointing at /api/outputs/<id>; IndexedDB + localStorage storage modules and their tests are deleted. New httpClient.ts shares authedFetch + buildApiError between imagesApi and historyApi (extracted during check phase to fix the duplicated error-envelope guards). Specs updated: backend/database-guidelines.md rewritten for drizzle ownership + schema-change workflow, backend/directory-structure.md adds db/ + history files + drizzle/, frontend/state-management.md flips the durable layer to backend SQLite, frontend/directory-structure.md drops services/storage and adds httpClient/historyApi. PRD acknowledged trade-off: DELETE leaves orphan files in OUTPUT_DIR (PR3 will introduce per-user dirs with file lifecycle). Backend 72/72 + frontend 13/13 + lint + typecheck all green. AC4 (cross-device sharing) requires manual browser verification.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `442ba18` | (see git log) |
+| `dd89c73` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
