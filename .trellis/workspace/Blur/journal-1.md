@@ -108,3 +108,38 @@ Aligned the studio UI to the warm-cream mockup with a glass palette, centered na
 ### Next Steps
 
 - None - task complete
+
+
+## Session 4: Login auth (PR1) + frontend UX touch-ups
+
+**Date**: 2026-05-13
+**Task**: Login auth (PR1) + frontend UX touch-ups
+**Branch**: `main`
+
+### Summary
+
+Three inline UX tweaks (close ratio dropdowns on outside click, add explicit 1:1 alongside the 智能 sentinel, remove dead 中/EN language toggle) followed by full PR1 of the login feature: Better Auth + Google OAuth + better-sqlite3 per-user daily quota on the backend, with auto-popping LoginModal + 401 interceptor + account chip on the frontend. Updated 5 spec files (database/directory/error/logging on backend, directory on frontend) and PRODUCT.md to reflect the multi-account positioning. Backend 66/66 + frontend 14/14 tests + lint + typecheck all green; AC2/4/5 require manual dev-server verification once .env is filled with real Google OAuth client + BETTER_AUTH_SECRET. PR2 (history upload) and PR3 (per-user image storage) remain queued.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2af3775` | (see git log) |
+| `3bbb38d` | (see git log) |
+| `95abb85` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
