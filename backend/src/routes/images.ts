@@ -1,13 +1,26 @@
-import { Router } from 'express';
+import { Router, type RequestHandler } from 'express';
 
-import { buildImagesController } from '../controllers/images.controller.js';
+import { buildImagesController, type ImagesControllerDeps } from '../controllers/images.controller.js';
+import { requireAuth } from '../middlewares/requireAuth.js';
 import { uploadImageMiddleware } from '../middlewares/upload.js';
-import type { ImageGenerationDeps } from '../services/imageGeneration.service.js';
 
-export function buildImagesRouter(deps: ImageGenerationDeps): Router {
+export interface ImagesRouterDeps extends ImagesControllerDeps {
+  /** Optional override for the auth middleware; defaults to `requireAuth`. */
+  authMiddleware?: RequestHandler;
+}
+
+export function buildImagesRouter(deps: ImagesRouterDeps): Router {
   const router = Router();
   const controller = buildImagesController(deps);
 
+  // All image endpoints require authentication. Each handler reads the
+  // authenticated user from `req.user.id` for per-user quota tracking.
+  router.use(deps.authMiddleware ?? requireAuth);
+
+  // GET /api/images/quota -> { total, remaining } for the current user's daily quota.
+  router.get('/quota', (req, res, next) => {
+    void controller.quota(req, res, next);
+  });
   router.post('/upload', uploadImageMiddleware, (req, res, next) => {
     void controller.upload(req, res, next);
   });

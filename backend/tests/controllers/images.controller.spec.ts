@@ -1,5 +1,7 @@
 import { Buffer } from 'node:buffer';
+import { randomUUID } from 'node:crypto';
 
+import type { RequestHandler } from 'express';
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -27,10 +29,21 @@ function fakeProvider(): { provider: ImageGenerationProvider } {
   return { provider };
 }
 
+function stubAuth(userId = `test-${randomUUID()}`): RequestHandler {
+  return (req, _res, next) => {
+    req.user = { id: userId, email: `${userId}@test.local` };
+    next();
+  };
+}
+
+function buildApp(provider: ImageGenerationProvider, authMiddleware: RequestHandler = stubAuth()) {
+  return createApp({ provider, authMiddleware });
+}
+
 describe('POST /api/images/upload', () => {
   it('accepts a PNG and returns id, filename, mime, size', async () => {
     const { provider } = fakeProvider();
-    const app = createApp({ provider });
+    const app = buildApp(provider);
     const png = Buffer.concat([PNG_PREFIX, Buffer.alloc(64, 0xab)]);
 
     const res = await request(app)
@@ -46,7 +59,7 @@ describe('POST /api/images/upload', () => {
 
   it('rejects forged Content-Type with 415 (magic-bytes wins)', async () => {
     const { provider } = fakeProvider();
-    const app = createApp({ provider });
+    const app = buildApp(provider);
     const txt = Buffer.from('this is not really an image');
 
     const res = await request(app)
@@ -59,18 +72,35 @@ describe('POST /api/images/upload', () => {
 
   it('returns 400 when no file is attached', async () => {
     const { provider } = fakeProvider();
-    const app = createApp({ provider });
+    const app = buildApp(provider);
 
     const res = await request(app).post('/api/images/upload');
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('BAD_REQUEST');
+  });
+
+  it('rejects unauthenticated requests with 401', async () => {
+    // Override auth to deny — simulates "no session cookie".
+    const denyAuth: RequestHandler = (_req, _res, next) => {
+      next(new AppError('UNAUTHORIZED', 'Authentication required', 401));
+    };
+    const { provider } = fakeProvider();
+    const app = buildApp(provider, denyAuth);
+
+    const png = Buffer.concat([PNG_PREFIX, Buffer.alloc(64, 0xab)]);
+    const res = await request(app)
+      .post('/api/images/upload')
+      .attach('image', png, { filename: 'in.png', contentType: 'image/png' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe('UNAUTHORIZED');
   });
 });
 
 describe('POST /api/images/generate', () => {
   it('text-to-image happy path: returns 200 with batch + images array', async () => {
     const { provider } = fakeProvider();
-    const app = createApp({ provider });
+    const app = buildApp(provider);
 
     const res = await request(app)
       .post('/api/images/generate')
@@ -81,8 +111,7 @@ describe('POST /api/images/generate', () => {
     expect(res.body.generationMode).toBe('text-to-image');
     expect(res.body.aspectRatio).toBe('1:1');
     expect(Array.isArray(res.body.images)).toBe(true);
-    // Default count is 2.
-    expect(res.body.images).toHaveLength(2);
+    expect(res.body.images).toHaveLength(1);
     for (const image of res.body.images) {
       expect(image.id).toMatch(/^[0-9a-f-]{36}\.png$/);
       expect(image.outputUrl).toBe(`/api/outputs/${image.id as string}`);
@@ -96,23 +125,56 @@ describe('POST /api/images/generate', () => {
 
   it('respects explicit count + aspectRatio', async () => {
     const { provider } = fakeProvider();
-    const app = createApp({ provider });
+    const app = buildApp(provider);
 
     const res = await request(app)
       .post('/api/images/generate')
-      .send({ prompt: 'p', count: 3, aspectRatio: '16:9' });
+      .send({ prompt: 'p', count: 2, aspectRatio: '16:9' });
 
     expect(res.status).toBe(200);
-    expect(res.body.images).toHaveLength(3);
+    expect(res.body.images).toHaveLength(2);
     expect(res.body.aspectRatio).toBe('16:9');
     const call = (provider.generate as ReturnType<typeof vi.fn>).mock.calls[0]![0] as GenerateInput;
-    expect(call.count).toBe(3);
+    expect(call.count).toBe(2);
     expect(call.aspectRatio).toBe('16:9');
+  });
+
+  it('returns per-user daily quota and decrements after successful generation', async () => {
+    const { provider } = fakeProvider();
+    const app = buildApp(provider, stubAuth(`quota-user-${randomUUID()}`));
+
+    const before = await request(app).get('/api/images/quota');
+    expect(before.status).toBe(200);
+    expect(before.body.total).toBe(20);
+    expect(before.body.remaining).toBe(20);
+
+    await request(app).post('/api/images/generate').send({ prompt: 'quota smoke', count: 2 });
+
+    const after = await request(app).get('/api/images/quota');
+    expect(after.status).toBe(200);
+    expect(after.body.total).toBe(20);
+    expect(after.body.remaining).toBe(18);
+  });
+
+  it('isolates quota across users (A consuming does not affect B)', async () => {
+    const { provider } = fakeProvider();
+    const userA = `user-a-${randomUUID()}`;
+    const userB = `user-b-${randomUUID()}`;
+
+    const appA = buildApp(provider, stubAuth(userA));
+    const appB = buildApp(provider, stubAuth(userB));
+
+    await request(appA).post('/api/images/generate').send({ prompt: 'a', count: 2 });
+
+    const afterA = await request(appA).get('/api/images/quota');
+    const afterB = await request(appB).get('/api/images/quota');
+    expect(afterA.body.remaining).toBe(18);
+    expect(afterB.body.remaining).toBe(20);
   });
 
   it('image-to-image happy path: uses an existing referenceId and reports image-to-image mode', async () => {
     const harness = fakeProvider();
-    const app = createApp({ provider: harness.provider });
+    const app = buildApp(harness.provider);
 
     // First upload a real reference image.
     const refBytes = Buffer.concat([PNG_PREFIX, Buffer.alloc(64, 0xc3)]);
@@ -137,7 +199,7 @@ describe('POST /api/images/generate', () => {
 
   it('returns 400 when prompt is empty', async () => {
     const { provider } = fakeProvider();
-    const app = createApp({ provider });
+    const app = buildApp(provider);
 
     const res = await request(app).post('/api/images/generate').send({ prompt: '' });
     expect(res.status).toBe(400);
@@ -147,16 +209,16 @@ describe('POST /api/images/generate', () => {
 
   it('returns 400 when count is out of range', async () => {
     const { provider } = fakeProvider();
-    const app = createApp({ provider });
+    const app = buildApp(provider);
 
-    const res = await request(app).post('/api/images/generate').send({ prompt: 'p', count: 5 });
+    const res = await request(app).post('/api/images/generate').send({ prompt: 'p', count: 3 });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('BAD_REQUEST');
   });
 
   it('returns 400 when aspectRatio is not in the supported set', async () => {
     const { provider } = fakeProvider();
-    const app = createApp({ provider });
+    const app = buildApp(provider);
 
     const res = await request(app)
       .post('/api/images/generate')
@@ -167,7 +229,7 @@ describe('POST /api/images/generate', () => {
 
   it('returns 400 when referenceId does not match a stored file', async () => {
     const { provider } = fakeProvider();
-    const app = createApp({ provider });
+    const app = buildApp(provider);
 
     const res = await request(app)
       .post('/api/images/generate')
@@ -185,7 +247,7 @@ describe('POST /api/images/generate', () => {
         });
       }),
     };
-    const app = createApp({ provider });
+    const app = buildApp(provider);
     const res = await request(app).post('/api/images/generate').send({ prompt: 'x' });
     expect(res.status).toBe(429);
     expect(res.body.error.code).toBe('PROVIDER_RATE_LIMITED');
@@ -197,9 +259,39 @@ describe('POST /api/images/generate', () => {
         throw new AppError('PROVIDER_TIMEOUT', 'timed out', 504);
       }),
     };
-    const app = createApp({ provider });
+    const app = buildApp(provider);
     const res = await request(app).post('/api/images/generate').send({ prompt: 'x' });
     expect(res.status).toBe(504);
     expect(res.body.error.code).toBe('PROVIDER_TIMEOUT');
+  });
+
+  it('returns 401 when no auth session is present', async () => {
+    const denyAuth: RequestHandler = (_req, _res, next) => {
+      next(new AppError('UNAUTHORIZED', 'Authentication required', 401));
+    };
+    const { provider } = fakeProvider();
+    const app = buildApp(provider, denyAuth);
+
+    const res = await request(app).post('/api/images/generate').send({ prompt: 'p' });
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('returns 429 QUOTA_EXHAUSTED when daily quota is fully consumed', async () => {
+    const { provider } = fakeProvider();
+    const userId = `cap-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId));
+
+    // DAILY_USER_QUOTA defaults to 20, MAX_COUNT=2 per request → 10 generate calls to drain.
+    for (let i = 0; i < 10; i += 1) {
+      const res = await request(app).post('/api/images/generate').send({ prompt: 'p', count: 2 });
+      expect(res.status).toBe(200);
+    }
+
+    const overflow = await request(app)
+      .post('/api/images/generate')
+      .send({ prompt: 'p', count: 1 });
+    expect(overflow.status).toBe(429);
+    expect(overflow.body.error.code).toBe('QUOTA_EXHAUSTED');
   });
 });

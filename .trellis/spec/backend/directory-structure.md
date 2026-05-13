@@ -29,14 +29,19 @@ backend/
 │   ├── index.ts              # Entry: bootstrap Express app, listen on PORT
 │   ├── app.ts                # Express app factory (no listen). Test target.
 │   ├── config/
-│   │   └── env.ts            # Loads + validates env vars (see below)
+│   │   ├── env.ts            # Loads + validates env vars (see below)
+│   │   └── auth.ts           # Better Auth instance (Google OAuth + SQLite)
+│   ├── db/
+│   │   └── sqlite.ts         # better-sqlite3 singleton (WAL + foreign_keys)
 │   ├── routes/
-│   │   ├── images.ts         # POST /api/images/generate, /upload
+│   │   ├── images.ts         # POST /api/images/generate, /upload — gated by requireAuth
 │   │   └── health.ts         # GET /api/health
 │   ├── controllers/          # Thin: parse req → call service → format res
 │   │   └── images.controller.ts
 │   ├── services/             # Business logic. No req/res objects here.
 │   │   ├── imageGeneration.service.ts
+│   │   ├── userQuota.service.ts             # Per-user daily quota over SQLite
+│   │   ├── quota.service.ts                 # Shared QuotaPool / QuotaSnapshot type contract
 │   │   └── providers/
 │   │       ├── ImageGenerationProvider.ts   # Interface
 │   │       └── TwoApiImageProvider.ts       # MVP concrete impl
@@ -45,6 +50,7 @@ backend/
 │   ├── middlewares/
 │   │   ├── errorHandler.ts   # Final Express error middleware
 │   │   ├── requestLogger.ts
+│   │   ├── requireAuth.ts    # Validates Better Auth session, attaches req.user
 │   │   └── upload.ts         # multer wrapper
 │   ├── errors/
 │   │   └── AppError.ts       # Tagged error class hierarchy
@@ -55,6 +61,7 @@ backend/
 ├── tmp/                      # Runtime: uploaded refs + generated images
 │   ├── uploads/              # Reference images from frontend
 │   └── outputs/              # Generated images (cleaned periodically)
+├── data/                     # Persistent SQLite file (Better Auth + user_quota). Gitignored.
 ├── .env.example              # Committed. Real .env is gitignored.
 ├── package.json
 ├── tsconfig.json
@@ -95,7 +102,14 @@ outside `config/env.ts`.**
 | `UPLOAD_MAX_BYTES` | no | `10485760` | Default 10 MiB. Multer `limits.fileSize`. Positive integer; non-numeric or `<= 0` → throw on import. Oversize uploads → `AppError(PAYLOAD_TOO_LARGE, 413)`. |
 | `OUTPUT_DIR` | no | `./tmp/outputs` | Default `./tmp/outputs` |
 | `LOG_LEVEL` | no | `info` | pino level |
-| `CORS_ORIGIN` | no | `http://localhost:5173` | Vite dev origin |
+| `CORS_ORIGIN` | no | `http://localhost:5173` | Vite dev origin (legacy — superseded by `FRONTEND_ORIGIN` once auth shipped, kept for migration). |
+| `BETTER_AUTH_URL` | no | `http://localhost:3000` | Backend origin used to build OAuth callback URLs. |
+| `BETTER_AUTH_SECRET` | yes | `<32+ char random>` | Cookie-signing secret. Generate with `openssl rand -base64 32`. Never log. |
+| `GOOGLE_CLIENT_ID` | yes | `...apps.googleusercontent.com` | Configure in Google Cloud Console; redirect URI = `${BETTER_AUTH_URL}/api/auth/callback/google`. |
+| `GOOGLE_CLIENT_SECRET` | yes | `<google secret>` | Server-side only. Never log. |
+| `FRONTEND_ORIGIN` | no | `http://localhost:5173` | Allowed CORS origin for cookie-authenticated requests. |
+| `SQLITE_PATH` | no | `./data/app.sqlite` | Persistent location for the SQLite file. Directory is auto-created on boot. |
+| `DAILY_USER_QUOTA` | no | `20` | Per-user generations allowed per server-local day. |
 
 `.env.example` must list every variable with a placeholder value and a
 one-line comment.

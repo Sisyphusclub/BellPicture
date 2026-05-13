@@ -25,15 +25,22 @@ export const logger = pino({
     paths: [
       // request headers
       'req.headers.authorization',
+      'req.headers.cookie',                 // Better Auth session cookie
       'req.headers["x-api-key"]',
       // top-level keys (when an object containing the secret is logged directly)
       'apiKey',
       'IMAGE_API_KEY',
+      'GOOGLE_CLIENT_SECRET',
+      'BETTER_AUTH_SECRET',
       // one level deep (config / context / provider option objects)
       '*.apiKey',
       '*.IMAGE_API_KEY',
+      '*.GOOGLE_CLIENT_SECRET',
+      '*.BETTER_AUTH_SECRET',
       // the env object literal exported from config/env.ts
       'env.IMAGE_API_KEY',
+      'env.GOOGLE_CLIENT_SECRET',
+      'env.BETTER_AUTH_SECRET',
     ],
     censor: '[REDACTED]',
   },

@@ -24,7 +24,10 @@
     "*.{ts,js,cjs,mjs,json,md,yml,yaml}": "prettier --write"
   },
   "dependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/multer": "^2.1.0",
+    "better-auth": "^1.6.11",
+    "better-sqlite3": "^12.10.0",
     "cors": "^2.8.5",
     "express": "^4.21.1",
     "multer": "^2.1.1",

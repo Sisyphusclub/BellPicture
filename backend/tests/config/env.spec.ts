@@ -15,13 +15,21 @@ describe('config/env', () => {
   it('exports a typed env with defaults applied for optional vars', async () => {
     process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
     process.env.IMAGE_API_KEY = 'sk-test';
+    process.env.BETTER_AUTH_SECRET = 'test-secret-padding';
+    process.env.GOOGLE_CLIENT_ID = 'test-id';
+    process.env.GOOGLE_CLIENT_SECRET = 'test-secret';
     delete process.env.IMAGE_MODEL;
     delete process.env.PORT;
     delete process.env.IMAGE_API_TIMEOUT_MS;
+    delete process.env.GPT_POOL_QUOTA;
     delete process.env.UPLOAD_DIR;
     delete process.env.OUTPUT_DIR;
     delete process.env.LOG_LEVEL;
     delete process.env.CORS_ORIGIN;
+    delete process.env.BETTER_AUTH_URL;
+    delete process.env.FRONTEND_ORIGIN;
+    delete process.env.SQLITE_PATH;
+    delete process.env.DAILY_USER_QUOTA;
 
     const { env } = await import('../../src/config/env.js');
 
@@ -30,10 +38,15 @@ describe('config/env', () => {
     expect(env.IMAGE_MODEL).toBe('gpt-image-2');
     expect(env.PORT).toBe(3000);
     expect(env.IMAGE_API_TIMEOUT_MS).toBe(120_000);
+    expect(env.GPT_POOL_QUOTA).toBe(100);
     expect(env.UPLOAD_DIR).toBe('./tmp/uploads');
     expect(env.OUTPUT_DIR).toBe('./tmp/outputs');
     expect(env.LOG_LEVEL).toBe('info');
     expect(env.CORS_ORIGIN).toBe('http://localhost:5173');
+    expect(env.BETTER_AUTH_URL).toBe('http://localhost:3000');
+    expect(env.FRONTEND_ORIGIN).toBe('http://localhost:5173');
+    expect(env.SQLITE_PATH).toBe('./data/app.sqlite');
+    expect(env.DAILY_USER_QUOTA).toBe(20);
   });
 
   it('throws on import when IMAGE_API_KEY is missing', async () => {

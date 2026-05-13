@@ -22,6 +22,7 @@ Single tagged base class in `src/errors/AppError.ts`:
 ```ts
 export type ErrorCode =
   | 'BAD_REQUEST'
+  | 'UNAUTHORIZED'           // missing or invalid Better Auth session
   | 'NOT_FOUND'
   | 'UNSUPPORTED_MEDIA_TYPE'
   | 'PAYLOAD_TOO_LARGE'
@@ -139,6 +140,22 @@ boundary:
 | `referenceId` does not match a file on disk | `BAD_REQUEST` | 400 (`details.referenceId` = the id) |
 | `GET /api/outputs/:filename` filename malformed | `BAD_REQUEST` | 400 |
 | `GET /api/outputs/:filename` file missing | `NOT_FOUND` | 404 |
+
+## Auth failure mapping
+
+The `requireAuth` middleware (mounted on `/api/images/*`) translates Better
+Auth session lookups into `AppError`:
+
+| Trigger | AppError.code | HTTP |
+|---|---|---|
+| `auth.api.getSession` returns null (no cookie / expired) | `UNAUTHORIZED` | 401 |
+| `auth.api.getSession` throws unexpectedly | `UNAUTHORIZED` | 401 (cause attached; logged at `error`) |
+| Per-user daily quota would overflow on `consume` | `QUOTA_EXHAUSTED` | 429 (`details = { requested, remaining, total }`) |
+
+The frontend's `imagesApi` wrapper recognises 401 and triggers the
+registered unauthorized handler — keep the error envelope shape
+(`{ error: { code, message, requestId } }`) so the SPA can branch on
+`code === 'UNAUTHORIZED'` without parsing message text.
 
 ---
 
