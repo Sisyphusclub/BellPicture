@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "check 阶段对照后端测试 / typecheck / lint / 覆盖率门槛"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "verify history API 的 401 / 400 / 404 envelope 合规"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "verify drizzle schema、migrations、表所有权与 spec 一致"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "check 阶段对照前端测试 / typecheck / lint"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "verify history 来源切换符合更新后的 spec"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "verify history API 响应类型在 service 边界做了 narrowing"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "verify Generate → DB insert → GET /api/history → useImageHistory 的端到端数据流一致"}
+{"file": ".trellis/tasks/05-13-history-upload-to-backend/prd.md", "reason": "verify 7 条 Acceptance Criteria 全部满足"}

@@ -1,0 +1,16 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "backend spec index — load first"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "新建 db/schema.ts、db/index.ts、services/history.service.ts、controllers/history.controller.ts、routes/history.ts 需对齐目录约定（实施时还要更新该 spec 加入 drizzle 文件）"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "drizzle 接管 6 张表 + introspect + migrate 流程 必须先更新这份 spec 再加代码（PR1 已强制流程：DB 改动先改 spec）"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "history API 的 401 / 400（无效 batchId）/ 404（删除不存在）走 AppError envelope"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "history 增删 / migrate 启动等事件按 pino 规范打日志，避免 console.*"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "TS strict + Vitest + lint 门槛；drizzle 引入后保持 typecheck 干净"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "frontend spec index"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "删 services/storage/indexedDb.ts + localStorageMeta.ts；新 services/api/historyApi.ts；spec 需同步"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "useImageHistory / useImageGeneration 改造时遵守 composable 模式"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "原文写「IndexedDB blobs + localStorage metadata」 —— 本任务直接颠覆这一段，需要更新"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "history API 响应类型 / ImageRecord 与后端 schema 对齐"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端测试 / typecheck / lint 门槛"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "history 是典型跨层特性（drizzle/DB → service → API → composable → component），需对齐 cross-layer 套路"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "userQuota 切 drizzle、auth 切 drizzleAdapter 时复用现有 sqlite 单例与 QuotaPool 接口"}
+{"file": ".trellis/tasks/archive/2026-05/05-13-user-login-auth/research/db-orm.md", "reason": "PR1 留下的 research：drizzle + better-sqlite3 配置范例、drizzle-kit 工作流；本轮要落地这些建议"}
+{"file": ".trellis/tasks/archive/2026-05/05-13-user-login-auth/research/auth-stack.md", "reason": "Better Auth drizzle adapter / drizzleAdapter 用法的官方代码片段"}
