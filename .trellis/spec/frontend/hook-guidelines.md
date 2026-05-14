@@ -69,6 +69,82 @@ export function useImageGeneration() {
 
 ---
 
+## Scenario: auth-dependent server-state composables
+
+### 1. Scope / Trigger
+- Trigger: a composable reads server state that only exists for authenticated
+  users, such as image quota.
+- Scope: composables that wrap authenticated API calls and expose shared UI
+  state. Backend authorization remains authoritative.
+
+### 2. Signatures
+```ts
+interface QuotaResponse {
+  total: number;
+  remaining: number;
+}
+
+export function useImageQuota(): {
+  quota: Readonly<Ref<QuotaResponse | null>>;
+  isLoading: Readonly<Ref<boolean>>;
+  error: Readonly<Ref<Error | null>>;
+  refresh: () => Promise<void>;
+}
+```
+
+### 3. Contracts
+- Watch `useAuth()` session state when the data depends on login status.
+- Do not let a pre-login 401/network failure permanently poison logged-in UI
+  state; becoming authenticated must trigger a refresh.
+- For authenticated quota fetch failures, show the product default `{ total: 20,
+  remaining: 20 }` as an optimistic display only.
+- Successful refreshes must replace optimistic data with the server response.
+- On logout, clear quota state and invalidate in-flight requests so old user
+  data cannot overwrite the logged-out or next-user state.
+- Do not call `fetch` directly; use the service layer (`services/api/*`).
+
+### 4. Validation & Error Matrix
+| Condition | Expected behavior |
+|---|---|
+| Initial load while unauthenticated | Quota remains `null`; no permanent `额度暂不可用` after later login |
+| Session becomes authenticated | Composable refreshes quota automatically |
+| Authenticated quota fetch fails | UI can show optimistic `剩余额度 20`; `error` still records the read failure |
+| Later quota refresh succeeds | Server `{ total, remaining }` replaces optimistic fallback |
+| User logs out with request in flight | In-flight result is ignored and quota is cleared |
+
+### 5. Good/Base/Bad Cases
+- Good: login flips `isAuthenticated` and quota refreshes without a page reload.
+- Base: generation success calls `refresh()` so the server count replaces any
+  optimistic value.
+- Bad: module-level `requested = true` from an unauthenticated failure blocks
+  every future logged-in refresh.
+
+### 6. Tests Required
+- Composable test: pre-login failure followed by authentication triggers a
+  second fetch and fills quota.
+- Composable test: authenticated fetch failure yields `{ total: 20, remaining: 20 }`.
+- Composable test: successful refresh after fallback replaces remaining with the
+  server value.
+- Regression test: logout/in-flight requests cannot leak previous user quota.
+
+### 7. Wrong vs Correct
+#### Wrong
+```ts
+let requested = false;
+if (!requested) void refresh();
+```
+
+#### Correct
+```ts
+watch([isAuthLoading, isAuthenticated], ([authLoading, authenticated]) => {
+  if (authLoading) return;
+  if (authenticated) void refresh();
+  else clearQuotaAndInvalidateRequests();
+}, { immediate: true });
+```
+
+---
+
 ## Module-level vs. instance-level state
 
 By default, composables hold **per-call state** — calling `useImageGeneration()`

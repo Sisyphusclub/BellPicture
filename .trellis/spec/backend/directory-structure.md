@@ -191,6 +191,69 @@ outside `config/env.ts`.**
 `.env.example` must list every variable with a placeholder value and a
 one-line comment.
 
+## Scenario: per-user daily image quota
+
+### 1. Scope / Trigger
+- Trigger: authenticated image generation consumes a per-user quota backed by
+  SQLite.
+- Scope: `GET /api/images/quota` and `POST /api/images/generate` for logged-in
+  users. Unauthenticated users are rejected before quota logic runs.
+
+### 2. Signatures
+- Env: `DAILY_USER_QUOTA` optional positive integer, default `20`.
+- API response: `GET /api/images/quota -> 200 { total: number, remaining: number }`.
+- Service contract: `createUserQuotaService().forUser(userId)` returns a
+  `QuotaPool` with `snapshot()`, `ensureAvailable(count)`, and `consume(count)`.
+- DB row: `user_quota(user_id TEXT PRIMARY KEY, used_today INTEGER,
+  quota_date TEXT)` where `quota_date` is server-local `YYYY-MM-DD`.
+
+### 3. Contracts
+- Backend is the source of truth for quota exhaustion; frontend labels are UX
+  only.
+- `snapshot()` treats a missing row or stale `quota_date` as `used_today = 0`
+  for today's server-local date.
+- `consume(count)` runs in a transaction, validates the requested count against
+  today's effective usage, then upserts today's `used_today` and `quota_date`.
+- Successful generation decrements by the requested image count. Failed provider
+  calls must not consume quota.
+
+### 4. Validation & Error Matrix
+| Condition | Expected behavior |
+|---|---|
+| Fresh logged-in user | `GET /api/images/quota` returns `{ total: 20, remaining: 20 }` by default |
+| Same user generates `count = 2` | Next quota response has `remaining = 18` |
+| Stored row has yesterday/old `quota_date` | Today starts from `remaining = total` |
+| Request would exceed remaining quota | Throw `AppError('QUOTA_EXHAUSTED', ..., 429)` with `requested`, `remaining`, `total` details |
+| Different user consumes quota | Other users' quota rows are unaffected |
+
+### 5. Good/Base/Bad Cases
+- Good: quota resets automatically when the server-local date changes, without a
+  cron job or client-side clock.
+- Base: `DAILY_USER_QUOTA=20` means every authenticated user starts each day at
+  20 available generated images.
+- Bad: trusting a frontend-displayed remaining number to authorize generation.
+  Always call backend quota logic before consuming provider capacity.
+
+### 6. Tests Required
+- Integration: quota endpoint returns 20/20 for a fresh authenticated user.
+- Integration: generating two images changes remaining from 20 to 18.
+- Integration: quota is isolated across users.
+- Regression: a stale `quota_date` row is ignored for today's snapshot and is
+  overwritten after successful generation.
+- Error path: over-quota generation returns `QUOTA_EXHAUSTED` with 429.
+
+### 7. Wrong vs Correct
+#### Wrong
+```ts
+const remaining = row ? env.DAILY_USER_QUOTA - row.usedToday : env.DAILY_USER_QUOTA;
+```
+
+#### Correct
+```ts
+const used = !row || row.quotaDate !== todayISO() ? 0 : row.usedToday;
+const remaining = Math.max(0, env.DAILY_USER_QUOTA - used);
+```
+
 ### Convention: Soft-hide optional integrations via env presence
 
 **What**: When an integration (OAuth provider, third-party API, etc.) is
