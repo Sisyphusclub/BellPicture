@@ -36,12 +36,12 @@ describe('imageGeneration.service', () => {
     expect(result.mode).toBe('text-to-image');
     expect(result.aspectRatio).toBe('1:1');
     expect(result.batchId).toMatch(/^[0-9a-f-]{36}$/);
-    expect(result.images).toHaveLength(2);
+    expect(result.images).toHaveLength(1);
     expect(result.images[0]?.filename).toBe('out-0.png');
     expect(result.images[0]?.mime).toBe('image/png');
     expect(provider.generate).toHaveBeenCalledWith({
       prompt: 'a cat',
-      count: 2,
+      count: 1,
       aspectRatio: '1:1',
     });
   });
@@ -52,7 +52,7 @@ describe('imageGeneration.service', () => {
     expect(provider.generate).toHaveBeenCalledWith({
       prompt: 'p',
       model: 'dall-e-3',
-      count: 2,
+      count: 1,
       aspectRatio: '1:1',
     });
   });
@@ -60,14 +60,14 @@ describe('imageGeneration.service', () => {
   it('honours explicit count and aspectRatio', async () => {
     const provider = fakeProvider();
     const result = await generateImage(
-      { prompt: 'p', count: 4, aspectRatio: '16:9' },
+      { prompt: 'p', count: 2, aspectRatio: '16:9' },
       { provider },
     );
-    expect(result.images).toHaveLength(4);
+    expect(result.images).toHaveLength(2);
     expect(result.aspectRatio).toBe('16:9');
     expect(provider.generate).toHaveBeenCalledWith({
       prompt: 'p',
-      count: 4,
+      count: 2,
       aspectRatio: '16:9',
     });
   });

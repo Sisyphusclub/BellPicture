@@ -15,6 +15,7 @@ import {
 } from '../types/image.js';
 
 import type { ImageGenerationProvider } from './providers/ImageGenerationProvider.js';
+import type { QuotaPool } from './quota.service.js';
 
 export type GenerationMode = 'text-to-image' | 'image-to-image';
 
@@ -46,6 +47,7 @@ export interface GenerateImageOutput {
 
 export interface ImageGenerationDeps {
   provider: ImageGenerationProvider;
+  quotaPool?: QuotaPool;
 }
 
 /**
@@ -82,6 +84,7 @@ export async function generateImage(
   }
 
   const count = clampCount(input.count);
+  deps.quotaPool?.ensureAvailable(count);
   const aspectRatio = input.aspectRatio ?? DEFAULT_ASPECT_RATIO;
   if (!ASPECT_RATIOS.includes(aspectRatio)) {
     throw new AppError('BAD_REQUEST', `Unsupported aspect ratio: ${aspectRatio}`, 400);
@@ -109,6 +112,8 @@ export async function generateImage(
   if (result.images.length === 0) {
     throw new AppError('PROVIDER_ERROR', 'Provider returned zero images', 502);
   }
+
+  deps.quotaPool?.consume(result.images.length);
 
   return {
     batchId: randomUUID(),

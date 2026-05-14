@@ -2,9 +2,9 @@ export const ASPECT_RATIOS = ['1:1', '3:2', '2:3', '16:9', '9:16'] as const;
 export type AspectRatio = (typeof ASPECT_RATIOS)[number];
 
 export const DEFAULT_ASPECT_RATIO: AspectRatio = '1:1';
-export const DEFAULT_COUNT = 2;
+export const DEFAULT_COUNT = 1;
 export const MIN_COUNT = 1;
-export const MAX_COUNT = 4;
+export const MAX_COUNT = 2;
 
 export interface AspectSize {
   size: string;
