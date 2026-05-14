@@ -6,7 +6,7 @@
 
 html {
   min-height: 100%;
-  background: var(--color-canvas);
+  background: var(--color-canvas-clean);
   color: var(--color-ink);
   font-family: var(--font-body);
 }
@@ -15,11 +15,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background:
-    radial-gradient(circle at 18% 10%, rgba(255, 255, 255, 0.85), transparent 32%),
-    radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.7), transparent 34%),
-    linear-gradient(135deg, #f7f1e8 0%, #fbfaf7 45%, #f2ebdf 100%);
-  background-attachment: fixed;
+  background: transparent;
   color: var(--color-body);
   font-family: var(--font-body);
   font-size: 16px;

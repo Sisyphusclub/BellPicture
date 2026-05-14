@@ -108,7 +108,17 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
       </div>
       <form class="history-page__filters" @submit.prevent="handleQuery">
         <label class="history-filter">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
             <rect x="3" y="4" width="18" height="18" rx="2" />
             <path d="M16 2v4M8 2v4M3 10h18" />
           </svg>
@@ -120,7 +130,17 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
           清除筛选条件
         </button>
         <button type="submit" class="history-btn history-btn--primary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
             <circle cx="11" cy="11" r="7" />
             <path d="m20 20-3.5-3.5" />
           </svg>
@@ -136,7 +156,17 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
     <section class="history-card">
       <div class="history-card__top">
         <span class="history-card__count">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
             <rect x="3" y="3" width="18" height="18" rx="2" />
             <circle cx="9" cy="9" r="2" />
             <path d="m21 15-5-5L5 21" />
@@ -149,7 +179,17 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
           :disabled="isHydrating"
           @click="handleRefresh"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
             <path d="M3 12a9 9 0 0 1 15.5-6.3L21 8" />
             <path d="M21 3v5h-5" />
             <path d="M21 12a9 9 0 0 1-15.5 6.3L3 16" />
@@ -159,11 +199,7 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
         </button>
       </div>
 
-      <HistoryGrid
-        :entries="filteredEntries"
-        @select="handleSelect"
-        @copy-id="handleCopyId"
-      />
+      <HistoryGrid :entries="filteredEntries" @select="handleSelect" @copy-id="handleCopyId" />
     </section>
 
     <div v-if="selectedEntry" class="history-modal" role="dialog" aria-modal="true">
@@ -174,16 +210,26 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
         @click="handleCloseDetail"
       />
       <div class="history-modal__panel">
-        <button type="button" class="history-modal__close" aria-label="关闭" @click="handleCloseDetail">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button
+          type="button"
+          class="history-modal__close"
+          aria-label="关闭"
+          @click="handleCloseDetail"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <path d="M18 6 6 18M6 6l12 12" />
           </svg>
         </button>
-        <HistoryDetailPanel
-          :entry="selectedEntry"
-          @rerun="handleRerun"
-          @remove="handleRemove"
-        />
+        <HistoryDetailPanel :entry="selectedEntry" @rerun="handleRerun" @remove="handleRemove" />
         <div class="history-modal__actions">
           <button
             type="button"
@@ -202,10 +248,10 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
 .history-page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: 32px;
   min-height: calc(100vh - var(--topbar-height));
-  padding: var(--space-lg) var(--space-xl) var(--space-section);
-  width: min(100%, 1280px);
+  padding: 96px 40px var(--space-section);
+  width: min(100%, 1200px);
   margin: 0 auto;
 }
 
@@ -225,20 +271,20 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
 
 .history-page__kicker {
   margin: 0;
-  color: var(--color-muted);
+  color: oklch(44% 0.012 78deg);
   font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
+  font-weight: 700;
+  letter-spacing: 0.22em;
 }
 
 .history-page__title {
   margin: 0;
   color: var(--color-ink);
   font-family: var(--font-display);
-  font-size: clamp(32px, 4vw, 44px);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  line-height: 1.05;
+  font-size: clamp(44px, 6vw, 80px);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 0.96;
 }
 
 .history-page__filters {
@@ -254,11 +300,12 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   gap: 8px;
   height: 44px;
   padding: 0 14px;
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-glass-strong);
+  border: 1px solid oklch(24% 0.012 78deg / 0.1);
+  border-radius: 40px;
+  background: #fcfcfc;
   color: var(--color-muted);
   font-size: 14px;
+  box-shadow: 0 10px 40px 5px rgba(194, 194, 194, 0.16);
 }
 
 .history-filter:focus-within {
@@ -302,8 +349,11 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
 
 .history-btn--primary {
   border: 0;
-  background: var(--color-primary);
+  background: linear-gradient(180deg, oklch(27% 0.012 76deg), var(--color-primary));
   color: var(--color-on-primary);
+  box-shadow:
+    inset -4px -6px 25px 0 rgba(201, 201, 201, 0.08),
+    inset 4px 4px 10px 0 rgba(29, 29, 29, 0.24);
 }
 
 .history-btn--primary:not(:disabled):hover {
@@ -338,11 +388,12 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   display: grid;
   gap: var(--space-md);
   padding: var(--space-md) var(--space-md) var(--space-lg);
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-card);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid oklch(24% 0.012 78deg / 0.1);
+  border-radius: 28px;
+  background: oklch(99% 0.004 88deg / 0.82);
+  box-shadow: 0 10px 40px 5px rgba(194, 194, 194, 0.18);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .history-card__top {

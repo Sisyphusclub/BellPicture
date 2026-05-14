@@ -20,11 +20,7 @@ function fileSizeLabel(entry: HistoryEntry): string {
 
 <template>
   <div v-if="entries.length > 0" class="history-grid" aria-label="图片列表">
-    <article
-      v-for="entry in entries"
-      :key="entry.record.id"
-      class="history-tile"
-    >
+    <article v-for="entry in entries" :key="entry.record.id" class="history-tile">
       <button
         type="button"
         class="history-tile__thumb"
@@ -36,7 +32,17 @@ function fileSizeLabel(entry: HistoryEntry): string {
       <div class="history-tile__meta">
         <div class="history-tile__row history-tile__row--top">
           <span class="history-tile__date">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
               <rect x="3" y="4" width="18" height="18" rx="2" />
               <path d="M16 2v4M8 2v4M3 10h18" />
             </svg>
@@ -48,7 +54,17 @@ function fileSizeLabel(entry: HistoryEntry): string {
             aria-label="复制图片编号"
             @click="emit('copy-id', entry)"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
               <rect x="9" y="9" width="12" height="12" rx="2" />
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
             </svg>
@@ -84,15 +100,19 @@ function fileSizeLabel(entry: HistoryEntry): string {
   width: 100%;
   aspect-ratio: 1;
   padding: 0;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: linear-gradient(145deg, #fffdf9, #f3eee8);
+  border: 1px solid oklch(24% 0.012 78deg / 0.08);
+  border-radius: 22px;
+  background: linear-gradient(145deg, oklch(99% 0.004 88deg), oklch(94.8% 0.018 82deg));
   cursor: pointer;
-  transition: transform 160ms ease;
+  box-shadow: 0 10px 36px rgba(56, 49, 42, 0.08);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .history-tile__thumb:hover {
-  transform: translateY(-1px);
+  box-shadow: 0 16px 44px rgba(56, 49, 42, 0.12);
+  transform: translateY(-2px);
 }
 
 .history-tile__thumb img {
