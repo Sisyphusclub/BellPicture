@@ -10,7 +10,8 @@
 
 ## Stack
 
-- Runtime: Node.js 20+
+- Runtime: Node.js 21.5+ (the `dev` script uses Node's built-in `--env-file`
+  flag via tsx; it is GA from Node 21.5)
 - Language: TypeScript (strict mode, ESM)
 - HTTP framework: Express 4.x
 - Package manager: npm or pnpm (single-folder, no workspace)
@@ -18,6 +19,75 @@
 The backend lives in `backend/` at the repo root, fully independent from
 `frontend/`. There is no shared package — each side owns its own
 `package.json`, `tsconfig.json`, and `node_modules/`.
+
+## Scenario: backend dev auto-loads `.env`
+
+### 1. Scope / Trigger
+- Trigger: backend local-dev env wiring changed through the `package.json`
+  command signature.
+- Scope: `npm run dev` only, when executed from `backend/`. Production
+  `npm run start` does not read dotfiles; production env injection belongs to
+  the orchestrator.
+
+### 2. Signatures
+```jsonc
+{
+  "engines": { "node": ">=21.5" },
+  "scripts": {
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "start": "node dist/index.js"
+  }
+}
+```
+
+### 3. Contracts
+- `--env-file=.env` is resolved relative to the backend process cwd, so the
+  expected file is `backend/.env`.
+- `src/config/env.ts` remains the only source boundary for reading and
+  validating `process.env`.
+- `.env.example` lists the required and optional keys; real `.env` stays
+  gitignored.
+- Tests do not consume `.env`; `tests/setup.ts` provides test env values.
+- No `dotenv` / `dotenv/config` dependency or import is allowed for this path.
+
+### 4. Validation & Error Matrix
+| Condition | Expected behavior |
+|---|---|
+| `npm run dev` with complete `backend/.env` | server boots and logs `server: listening` on `PORT` |
+| `.env` missing a required key | `config/env.ts` throws `Missing required environment variable: <KEY>` |
+| `dev` script lacks `--env-file=.env` | fresh local boot fails at required-env validation |
+| Node `<21.5` runs `dev` | unsupported runtime for this repo; upgrade Node rather than adding `dotenv` |
+| Port already in use | startup fails with `EADDRINUSE`; this is not an env-loading failure |
+
+### 5. Good/Base/Bad Cases
+- Good: from `backend/`, `npm run dev` loads `backend/.env` without caller-side
+  `NODE_OPTIONS`, shell exports, or extra flags.
+- Base: `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`
+  remain independent of local `.env`.
+- Bad: importing `dotenv/config` in `src/index.ts` or `src/config/env.ts` to
+  hide a missing `--env-file` script contract.
+
+### 6. Tests Required
+- Static review: `backend/package.json` keeps the exact `dev` script and does
+  not change unrelated scripts.
+- Backend checks: `npm run lint`, `npm run typecheck`, `npm test`, and
+  `npm run build` pass.
+- Manual local smoke: stop any existing `:3000` listener, run `cd backend &&
+  npm run dev`, and confirm the existing pino `server: listening` log appears.
+
+### 7. Wrong vs Correct
+#### Wrong
+```jsonc
+"dev": "tsx watch src/index.ts"
+```
+```ts
+import 'dotenv/config';
+```
+
+#### Correct
+```jsonc
+"dev": "tsx watch --env-file=.env src/index.ts"
+```
 
 ---
 

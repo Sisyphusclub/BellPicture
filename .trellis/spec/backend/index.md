@@ -26,7 +26,7 @@ This directory contains guidelines for backend development. Fill in each file wi
 > re-checked since the first implementation; revisit when the next task
 > exercises that area.
 
-**Stack snapshot**: Node.js 20+ · TypeScript (strict) · Express 4 · pino ·
+**Stack snapshot**: Node.js 21.5+ · TypeScript (strict) · Express 4 · pino ·
 Vitest · No DB (frontend owns history). AI provider: 2API reverse proxy
 via `TwoApiImageProvider`, called server-side only.
 
