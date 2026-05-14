@@ -111,6 +111,10 @@ async function hydrate(): Promise<void> {
     records.value = [...remote].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   } catch (err) {
     hydrated = false;
+    // Upstream `authedFetch` already converts native fetch failures into
+    // ImageApiError with a Simplified-Chinese message, so `err` will almost
+    // always be an Error with localized copy. The fallback below stays as
+    // defense-in-depth for any non-Error thrown by future callers.
     hydrateError.value =
       err instanceof Error ? err : new Error('无法从服务器加载历史，请刷新或重新登录后重试。');
   } finally {

@@ -6,6 +6,8 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:300
   '',
 );
 
+const NETWORK_ERROR_MESSAGE = '无法连接到服务器，请检查网络或稍后重试。';
+
 let onUnauthorized: (() => void) | null = null;
 
 /**
@@ -36,7 +38,18 @@ export function buildApiUrl(path: string): string {
 }
 
 export async function authedFetch(input: string, init: RequestInit = {}): Promise<Response> {
-  const response = await fetch(input, { credentials: 'include', ...init });
+  let response: Response;
+  try {
+    response = await fetch(input, { credentials: 'include', ...init });
+  } catch (err) {
+    // Native fetch failures (TypeError: Failed to fetch, DNS, CORS, abort, etc.)
+    // throw raw English Error instances. Wrap them in an ImageApiError carrying
+    // a Simplified-Chinese message so every API caller in the app sees a
+    // localized failure shape and never leaks a browser-native string to the UI.
+    throw new ImageApiError(0, 'NETWORK_ERROR', NETWORK_ERROR_MESSAGE, undefined, {
+      cause: err instanceof Error ? err.message : String(err),
+    });
+  }
   if (response.status === 401 && onUnauthorized) {
     onUnauthorized();
   }

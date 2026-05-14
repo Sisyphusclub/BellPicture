@@ -1398,7 +1398,7 @@ function aspectLabel(value: AspectChoice | undefined): string {
   position: absolute;
   bottom: calc(100% + 8px);
   left: 0;
-  z-index: 8;
+  z-index: 20;
   min-width: 150px;
   margin: 0;
   padding: 6px;

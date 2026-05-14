@@ -178,6 +178,10 @@ function messageForImageApiError(error: ImageApiError): string {
       return `生成图片不存在或已被后端清理。${requestSuffix}`;
     case 'INVALID_RESPONSE':
       return `后端返回了无法识别的响应。${requestSuffix}`;
+    case 'NETWORK_ERROR':
+      // authedFetch already provides a Simplified-Chinese message for native
+      // fetch failures; surface it directly instead of appending status 0.
+      return `${error.message}${requestSuffix}`;
     case 'HTTP_ERROR':
       return `请求失败，状态码 ${error.status}。${requestSuffix}`;
     default:
