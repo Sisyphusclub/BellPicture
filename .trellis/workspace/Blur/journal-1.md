@@ -213,3 +213,37 @@ Frontend home page now matches the Figma direction: existing AppHeader pill nav 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 7: Localize history fetch errors + aspect dropdown stacking fix
+
+**Date**: 2026-05-14
+**Task**: Localize history fetch errors + aspect dropdown stacking fix
+**Branch**: `main`
+
+### Summary
+
+Followup to the masonry/quota smoke test. Centralized native-fetch-failure handling in frontend/src/services/api/httpClient.ts: authedFetch now catches TypeError/network rejections and rethrows ImageApiError(0, 'NETWORK_ERROR', '无法连接到服务器，请检查网络或稍后重试。'), so every existing and future API caller surfaces a Simplified-Chinese message instead of leaking the browser's English 'Failed to fetch' to the page. Defense-in-depth comment added to useImageHistory hydrate catch; useImageGeneration.messageForImageApiError got an explicit case 'NETWORK_ERROR' so the centralized message isn't downgraded to '生成请求失败，状态码 0。' through the generation flow. GenerateView aspect-dropdown z-index bumped 8 → 20 to win the stack over the hero subtitle (background was already opaque via --color-surface-card-solid; pure stacking fix, no markup change). New regression suite frontend/tests/services/httpClient.spec.ts (3 tests) pins TypeError→ImageApiError conversion + happy-path passthrough. Spec frontend/component-guidelines.md gained a new convention 'Wrap native fetch failures at the service layer' codifying the rule (chokepoint + caller-side rendering + cross-layer NETWORK_ERROR mapper requirement) so the next API caller can't re-trip the same bug. Frontend 16/16 tests + lint + typecheck green. Smoke screenshots from this session live under .trellis/workspace/Blur/smoke-*.png; intentionally left untracked per user — they are evidence artifacts, not source.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1c64e9f` | (see git log) |
+| `9804d39` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
