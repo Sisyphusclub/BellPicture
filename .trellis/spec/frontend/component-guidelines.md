@@ -164,6 +164,93 @@ English where translating would reduce clarity.
 
 ---
 
+## Modal accessibility contract
+
+### Convention: Page-level modal a11y baseline
+
+**What**: Every custom (non-`ElDialog`) modal/overlay component must implement
+all six behaviors below. Missing any one of them is a review-blocking defect.
+
+1. **`role="dialog"`** on the focusable surface and **`aria-modal="true"`**.
+2. **`aria-labelledby`** pointing at the visible title node (or `aria-label`
+   if there is no visible title).
+3. **Backdrop click closes** the modal — bind on the backdrop element with
+   `@click.self="close"` so inside-panel clicks don't bubble out.
+4. **Escape key closes** the modal — register a `keydown` listener on
+   `document` while open, and remove it on close / `onBeforeUnmount`.
+5. **Initial focus** moves into the panel when the modal opens (the close
+   button is the simplest target). Use `await nextTick()` before focusing
+   so the element exists in the DOM.
+6. **Close button** has a Simplified-Chinese `aria-label` (e.g.
+   `aria-label="关闭图片详情"`); icon-only buttons must never ship without one.
+
+**Why**: We hit this twice in a row — the original `/history` detail modal
+and the new `RecentCreationDetailModal` both shipped without Esc and without
+initial focus, and check caught the second one. Keyboard users were locked
+into clicking the close icon, and screen readers had no announced
+boundary.
+
+**Example** (shape, not the full SFC):
+```vue
+<script setup lang="ts">
+import { nextTick, onBeforeUnmount, ref, watch } from 'vue';
+
+const props = defineProps<{ open: boolean }>();
+const emit = defineEmits<{ (e: 'close'): void }>();
+const closeBtn = ref<HTMLButtonElement | null>(null);
+
+function onKeydown(e: KeyboardEvent): void {
+  if (e.key === 'Escape') emit('close');
+}
+
+watch(
+  () => props.open,
+  async (isOpen) => {
+    if (isOpen) {
+      document.addEventListener('keydown', onKeydown);
+      await nextTick();
+      closeBtn.value?.focus();
+    } else {
+      document.removeEventListener('keydown', onKeydown);
+    }
+  },
+  { immediate: true },
+);
+
+onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown));
+</script>
+
+<template>
+  <div v-if="open" class="modal-backdrop" @click.self="emit('close')">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="my-modal-title"
+      class="modal-panel"
+    >
+      <h2 id="my-modal-title">详情</h2>
+      <button
+        ref="closeBtn"
+        type="button"
+        aria-label="关闭详情"
+        class="modal-close"
+        @click="emit('close')"
+      >
+        ×
+      </button>
+      <!-- body -->
+    </div>
+  </div>
+</template>
+```
+
+**Related**: When `ElDialog` would do, prefer it — it implements the contract
+for free. Custom modals are only justified when the product surface needs
+visuals/transitions that `ElDialog` can't deliver cleanly (see the Hybrid
+Claude UI decision above).
+
+---
+
 ## Forbidden patterns
 
 - ❌ Options API (`export default { data() {...} }`).
