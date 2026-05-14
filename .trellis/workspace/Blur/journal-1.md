@@ -177,3 +177,39 @@ PR2 of the multi-user rollout. drizzle-orm + drizzle-kit now own all six SQLite 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 6: Floating nav + masonry recent creations + quota chip
+
+**Date**: 2026-05-14
+**Task**: Floating nav + masonry recent creations + quota chip
+**Branch**: `main`
+
+### Summary
+
+Frontend home page now matches the Figma direction: existing AppHeader pill nav stays; GenerateView gains a 最近创作 section rendering useImageHistory().entries via a new responsive RecentCreationsMasonry, with a polished empty state and a RecentCreationDetailModal that shows image, prompt, basic metadata, and a copy-prompt action wired through ElMessage. Hero prompt-showcase__grid now renders backend pool quota via the new useImageQuota composable (shared module-level ref, auto-fetch on first consumer, refresh after every successful generate, three-state copy: 读取中/暂不可用/剩余额度 N). prompt-showcase__smart is now a real button that opens an aspect-ratio dropdown defaulting to 智能 (auto sentinel — only sent to backend when not 'auto'). Generation count default lowered to 1 and hard-capped at 2 across backend types/service clamp + zod validator + frontend stepper. RecentCreationDetailModal got the full custom-modal a11y contract (role/aria/backdrop close/Escape/initial focus/aria-label on close) after check caught Esc + focus missing on first pass. /history page picked up a parallel visual refresh on HistoryView/HistoryGrid/HistoryDetailPanel + base.css + tokens.css to stay coherent with the home direction. New spec: .trellis/spec/frontend/component-guidelines.md now mandates the modal a11y baseline for all custom modals. Tests + lint + typecheck green on both packages (backend 72, frontend 13 incl. new RecentCreations.spec.ts). AC still requiring manual browser smoke: top nav vs Figma, masonry breakpoints, end-to-end empty→populated home flow, aspect dropdown selection, count stepper edges, quota chip refresh after a real /api/images/generate.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a0704f2` | (see git log) |
+| `c3a0be4` | (see git log) |
+| `3c25c1a` | (see git log) |
+| `2fd8a77` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
