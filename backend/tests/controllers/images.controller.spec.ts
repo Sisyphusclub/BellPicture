@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../src/app.js';
 import { db } from '../../src/db/drizzle.js';
-import { user } from '../../src/db/schema.js';
+import { user, userQuota } from '../../src/db/schema.js';
 import { AppError } from '../../src/errors/AppError.js';
 import type { ImageGenerationProvider } from '../../src/services/providers/ImageGenerationProvider.js';
 import { saveOutput } from '../../src/storage/localStorage.js';
@@ -188,6 +188,32 @@ describe('POST /api/images/generate', () => {
     const afterB = await request(appB).get('/api/images/quota');
     expect(afterA.body.remaining).toBe(18);
     expect(afterB.body.remaining).toBe(20);
+  });
+
+  it('resets stale daily quota rows on the next server-local day', async () => {
+    const { provider } = fakeProvider();
+    const userId = `quota-reset-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId));
+
+    db.insert(userQuota)
+      .values({ userId, usedToday: 19, quotaDate: '2000-01-01' })
+      .onConflictDoUpdate({
+        target: userQuota.userId,
+        set: { usedToday: 19, quotaDate: '2000-01-01' },
+      })
+      .run();
+
+    const before = await request(app).get('/api/images/quota');
+    expect(before.status).toBe(200);
+    expect(before.body.remaining).toBe(20);
+
+    const generated = await request(app)
+      .post('/api/images/generate')
+      .send({ prompt: 'quota reset smoke', count: 2 });
+    expect(generated.status).toBe(200);
+
+    const after = await request(app).get('/api/images/quota');
+    expect(after.body.remaining).toBe(18);
   });
 
   it('image-to-image happy path: uses an existing referenceId and reports image-to-image mode', async () => {
