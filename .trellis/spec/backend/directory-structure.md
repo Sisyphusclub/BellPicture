@@ -30,7 +30,7 @@ backend/
 │   ├── app.ts                # Express app factory (no listen). Test target.
 │   ├── config/
 │   │   ├── env.ts            # Loads + validates env vars (see below)
-│   │   └── auth.ts           # Better Auth instance (Google OAuth + drizzleAdapter)
+│   │   └── auth.ts           # Better Auth instance (email/password primary, Google OAuth soft-hidden via optional envs)
 │   ├── db/
 │   │   ├── sqlite.ts         # better-sqlite3 singleton (WAL + foreign_keys)
 │   │   ├── drizzle.ts        # drizzle-orm instance + runMigrations() helper
@@ -112,14 +112,46 @@ outside `config/env.ts`.**
 | `CORS_ORIGIN` | no | `http://localhost:5173` | Vite dev origin (legacy — superseded by `FRONTEND_ORIGIN` once auth shipped, kept for migration). |
 | `BETTER_AUTH_URL` | no | `http://localhost:3000` | Backend origin used to build OAuth callback URLs. |
 | `BETTER_AUTH_SECRET` | yes | `<32+ char random>` | Cookie-signing secret. Generate with `openssl rand -base64 32`. Never log. |
-| `GOOGLE_CLIENT_ID` | yes | `...apps.googleusercontent.com` | Configure in Google Cloud Console; redirect URI = `${BETTER_AUTH_URL}/api/auth/callback/google`. |
-| `GOOGLE_CLIENT_SECRET` | yes | `<google secret>` | Server-side only. Never log. |
+| `GOOGLE_CLIENT_ID` | no | `...apps.googleusercontent.com` | Optional. If unset, `socialProviders.google` is NOT mounted on the Better Auth instance — the Google login surface is soft-hidden. Must be set together with `GOOGLE_CLIENT_SECRET` to re-enable. Redirect URI when set: `${BETTER_AUTH_URL}/api/auth/callback/google`. |
+| `GOOGLE_CLIENT_SECRET` | no | `<google secret>` | Optional, paired with `GOOGLE_CLIENT_ID`. Server-side only. Never log. |
 | `FRONTEND_ORIGIN` | no | `http://localhost:5173` | Allowed CORS origin for cookie-authenticated requests. |
 | `SQLITE_PATH` | no | `./data/app.sqlite` | Persistent location for the SQLite file. Directory is auto-created on boot. |
 | `DAILY_USER_QUOTA` | no | `20` | Per-user generations allowed per server-local day. |
 
 `.env.example` must list every variable with a placeholder value and a
 one-line comment.
+
+### Convention: Soft-hide optional integrations via env presence
+
+**What**: When an integration (OAuth provider, third-party API, etc.) is
+optional for the MVP but kept in source for future re-enable, gate its
+registration on whether its env vars are populated. Do NOT register the
+integration with empty / placeholder values, and do NOT remove the code.
+
+**Why**: Better Auth and similar libraries reject registration with empty
+strings at boot time. Registering with `{}` is also wrong — it may pass
+type checks but fail at first request with an unhelpful runtime error.
+Source-gating keeps the integration trivially re-enableable (one env edit)
+without code review.
+
+**Example** (the locked pattern from `config/auth.ts`):
+```ts
+const socialProviders =
+  env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+    ? { google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET } }
+    : undefined;
+
+export const auth = betterAuth({
+  // ...
+  emailAndPassword: { enabled: true },
+  ...(socialProviders ? { socialProviders } : {}),
+});
+```
+
+**Caller-side rule**: The env vars MUST be marked optional in `config/env.ts`
+(typed `string | undefined`) and their `.env.example` row must say `Optional`
+in the Notes column. The corresponding spec env table row uses `no` in the
+Required column.
 
 ---
 
