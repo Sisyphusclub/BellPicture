@@ -150,6 +150,53 @@ names (`gpt-image-2`), brand/product names (`Ref2Image Studio`), and technical
 terms (`Vue`, `Vite`, `IndexedDB`, `localStorage`, `PNG/JPEG/WebP`) may remain
 English where translating would reduce clarity.
 
+### Convention: Wrap native fetch failures at the service layer
+
+**What**: Components and composables must NOT render `Error.message` straight
+from a native `fetch` rejection (e.g. `TypeError: Failed to fetch`, DNS,
+CORS, abort). Such errors must be caught at the `services/api/httpClient.ts`
+boundary and rethrown as `ImageApiError(0, 'NETWORK_ERROR', '<Simplified
+Chinese fallback>')`. Every API helper (`historyApi`, `imagesApi`, …) routes
+through `authedFetch`, which performs the wrap. Composables therefore receive
+an `ImageApiError` whose `.message` is already user-ready Chinese and can
+bind it directly to the template.
+
+**Why**: Native fetch failures are `Error` subclasses, so the common pattern
+`err instanceof Error ? err : new Error('<中文兜底>')` short-circuits and leaks
+English strings to the page. This silently violated the Simplified-Chinese
+contract on `/history` once already; wrapping at the single chokepoint
+prevents every future API caller from re-tripping it.
+
+**Example** (the chokepoint):
+```ts
+// services/api/httpClient.ts
+const NETWORK_ERROR_MESSAGE = '无法连接到服务器，请检查网络或稍后重试。';
+
+export async function authedFetch(input: string, init: RequestInit = {}): Promise<Response> {
+  let response: Response;
+  try {
+    response = await fetch(input, { credentials: 'include', ...init });
+  } catch (cause) {
+    throw new ImageApiError(0, 'NETWORK_ERROR', NETWORK_ERROR_MESSAGE, undefined, {
+      cause: cause instanceof Error ? cause.message : String(cause),
+    });
+  }
+  if (response.status === 401 && onUnauthorized) onUnauthorized();
+  return response;
+}
+```
+
+**Caller-side rule**: In composables, render `err instanceof ImageApiError`
+messages directly; reserve the `new Error('<中文兜底>')` fallback for the
+truly-unknown non-Error path as defense-in-depth, not as the primary i18n
+mechanism.
+
+**Cross-layer note**: Any code that builds a user-facing message from an
+`ImageApiError.code` (e.g. `useImageGeneration.messageForImageApiError`)
+must include an explicit `case 'NETWORK_ERROR'` that returns `error.message`
+verbatim. Falling into a `status === N` default branch will render
+`状态码 0` and obscure the network failure.
+
 ---
 
 ## Composition rules
