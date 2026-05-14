@@ -247,3 +247,38 @@ Followup to the masonry/quota smoke test. Centralized native-fetch-failure handl
 ### Next Steps
 
 - None - task complete
+
+
+## Session 8: Switch login to email/password + soft-hide Google
+
+**Date**: 2026-05-14
+**Task**: Switch login to email/password + soft-hide Google
+**Branch**: `main`
+
+### Summary
+
+Replaced the Google-only login surface with a self-serve email/password flow. Backend: enabled Better Auth's emailAndPassword plugin in config/auth.ts; gated socialProviders.google behind env presence so the backend boots cleanly with empty GOOGLE_CLIENT_ID/SECRET and the provider can be re-enabled by refilling envs (no code change). GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET typed string | undefined via new readOptionalString() helper. backend/.env.example annotates Google keys as optional. New backend integration test tests/routes/auth.spec.ts covers POST /api/auth/sign-up/email (user + credential account rows + session cookie), POST /api/auth/sign-in/email (success on real credentials), and the duplicate-email rejection. Frontend: rebuilt LoginModal with two tabs (登录 / 注册) inside the existing ElDialog. 登录 tab = email + password; 注册 tab = email + password + 昵称. Forms use ElInput; the active tab uses role=tab + aria-selected + roving tabindex. useAuth gained signInWithEmail / signUpWithEmail with Better Auth error-code → Simplified-Chinese mapping (invalid creds, USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL, INVALID_PASSWORD / INVALID_EMAIL / USER_NOT_FOUND / EMAIL_NOT_VERIFIED / PASSWORD_TOO_SHORT) and TypeError/AbortError → '无法连接到服务器，请检查网络或稍后重试。'. signInWithGoogle preserved on the composable surface but no longer rendered. Check phase fixed one defect: the original duplicate-email branch used USER_ALREADY_EXISTS instead of Better Auth's actual USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL, which would have leaked an English message — now mapped to '该邮箱已注册，请直接登录。'. Spec backend/directory-structure.md updated: auth.ts description, Google envs flipped to 'no' in the env table, and a new 'Convention: Soft-hide optional integrations via env presence' section codifies the pattern with the locked source snippet. Backend 75/75 + frontend 20/20 tests + lint + typecheck green. Manual browser smoke (register/sign-in/refresh/logout) deferred to user — needs BETTER_AUTH_SECRET + remaining required envs to boot the backend.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `867845a` | (see git log) |
+| `880e41b` | (see git log) |
+| `1053a1d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
