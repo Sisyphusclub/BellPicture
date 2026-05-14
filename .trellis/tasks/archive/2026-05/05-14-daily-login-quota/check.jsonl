@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Verify frontend changes against spec entry"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Check composable auth-aware refresh behavior"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Check shared quota/session state consistency"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Check typed quota response/fallback shape"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Check frontend lint/typecheck/test expectations"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Check backend daily quota contract remains intact"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Check backend quality bar if backend tests are touched"}

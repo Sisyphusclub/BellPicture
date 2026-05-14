@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec entry for GenerateView/composable changes"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Composable state and side-effect conventions for auth-aware quota refresh"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Shared reactive state conventions for quota/session-driven UI"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Typed API response and Vue computed/ref safety"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend lint/typecheck/test expectations"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Existing per-user daily quota/env contract and server-local reset behavior"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Backend AppError/QUOTA_EXHAUSTED contract remains authoritative"}
