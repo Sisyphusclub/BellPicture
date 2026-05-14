@@ -316,3 +316,38 @@ Updated backend dev script to load .env via tsx --env-file, documented the Node 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 10: Daily login quota
+
+**Date**: 2026-05-14
+**Task**: Daily login quota
+**Branch**: `main`
+
+### Summary
+
+Made frontend quota refresh auth-aware, added optimistic logged-in quota fallback to 20, covered backend daily quota reset, and documented frontend/backend quota contracts.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b750c12` | (see git log) |
+| `3a1689f` | (see git log) |
+| `cf4ba7f` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
