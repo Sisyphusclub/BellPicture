@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 8
+- **Total Sessions**: 9
 - **Last Active**: 2026-05-14
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~284 | Active |
+| `journal-1.md` | ~318 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 9 | 2026-05-14 | Backend dev env loading | `da4f52a`, `60f224a` | `main` |
 | 8 | 2026-05-14 | Switch login to email/password + soft-hide Google | `867845a`, `880e41b`, `1053a1d` | `main` |
 | 7 | 2026-05-14 | Localize history fetch errors + aspect dropdown stacking fix | `1c64e9f`, `9804d39` | `main` |
 | 6 | 2026-05-14 | Floating nav + masonry recent creations + quota chip | `a0704f2`, `c3a0be4`, `3c25c1a`, `2fd8a77` | `main` |

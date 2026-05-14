@@ -282,3 +282,37 @@ Replaced the Google-only login surface with a self-serve email/password flow. Ba
 ### Next Steps
 
 - None - task complete
+
+
+## Session 9: Backend dev env loading
+
+**Date**: 2026-05-14
+**Task**: Backend dev env loading
+**Branch**: `main`
+
+### Summary
+
+Updated backend dev script to load .env via tsx --env-file, documented the Node 21.5 env-loading contract, and verified backend lint/typecheck/test/build/dev startup.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `da4f52a` | (see git log) |
+| `60f224a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
