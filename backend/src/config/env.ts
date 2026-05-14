@@ -14,8 +14,8 @@ export interface Env {
   CORS_ORIGIN: string;
   BETTER_AUTH_URL: string;
   BETTER_AUTH_SECRET: string;
-  GOOGLE_CLIENT_ID: string;
-  GOOGLE_CLIENT_SECRET: string;
+  GOOGLE_CLIENT_ID: string | undefined;
+  GOOGLE_CLIENT_SECRET: string | undefined;
   FRONTEND_ORIGIN: string;
   SQLITE_PATH: string;
   DAILY_USER_QUOTA: number;
@@ -32,6 +32,12 @@ function readString(name: string, fallback?: string): string {
     }
     return fallback;
   }
+  return raw;
+}
+
+function readOptionalString(name: string): string | undefined {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return undefined;
   return raw;
 }
 
@@ -62,8 +68,8 @@ function loadEnv(): Env {
     CORS_ORIGIN: readString('CORS_ORIGIN', 'http://localhost:5173'),
     BETTER_AUTH_URL: readString('BETTER_AUTH_URL', 'http://localhost:3000'),
     BETTER_AUTH_SECRET: readString('BETTER_AUTH_SECRET'),
-    GOOGLE_CLIENT_ID: readString('GOOGLE_CLIENT_ID'),
-    GOOGLE_CLIENT_SECRET: readString('GOOGLE_CLIENT_SECRET'),
+    GOOGLE_CLIENT_ID: readOptionalString('GOOGLE_CLIENT_ID'),
+    GOOGLE_CLIENT_SECRET: readOptionalString('GOOGLE_CLIENT_SECRET'),
     FRONTEND_ORIGIN: readString('FRONTEND_ORIGIN', 'http://localhost:5173'),
     SQLITE_PATH: readString('SQLITE_PATH', './data/app.sqlite'),
     DAILY_USER_QUOTA: readInt('DAILY_USER_QUOTA', 20),

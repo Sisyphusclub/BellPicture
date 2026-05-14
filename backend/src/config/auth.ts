@@ -6,6 +6,16 @@ import * as schema from '../db/schema.js';
 
 import { env } from './env.js';
 
+const socialProviders =
+  env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+    ? {
+        google: {
+          clientId: env.GOOGLE_CLIENT_ID,
+          clientSecret: env.GOOGLE_CLIENT_SECRET,
+        },
+      }
+    : undefined;
+
 export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
   secret: env.BETTER_AUTH_SECRET,
@@ -19,10 +29,8 @@ export const auth = betterAuth({
     },
   }),
   trustedOrigins: [env.FRONTEND_ORIGIN],
-  socialProviders: {
-    google: {
-      clientId: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET,
-    },
+  emailAndPassword: {
+    enabled: true,
   },
+  ...(socialProviders ? { socialProviders } : {}),
 });

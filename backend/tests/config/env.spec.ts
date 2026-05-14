@@ -16,8 +16,8 @@ describe('config/env', () => {
     process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
     process.env.IMAGE_API_KEY = 'sk-test';
     process.env.BETTER_AUTH_SECRET = 'test-secret-padding';
-    process.env.GOOGLE_CLIENT_ID = 'test-id';
-    process.env.GOOGLE_CLIENT_SECRET = 'test-secret';
+    delete process.env.GOOGLE_CLIENT_ID;
+    delete process.env.GOOGLE_CLIENT_SECRET;
     delete process.env.IMAGE_MODEL;
     delete process.env.PORT;
     delete process.env.IMAGE_API_TIMEOUT_MS;
@@ -47,6 +47,8 @@ describe('config/env', () => {
     expect(env.FRONTEND_ORIGIN).toBe('http://localhost:5173');
     expect(env.SQLITE_PATH).toBe('./data/app.sqlite');
     expect(env.DAILY_USER_QUOTA).toBe(20);
+    expect(env.GOOGLE_CLIENT_ID).toBeUndefined();
+    expect(env.GOOGLE_CLIENT_SECRET).toBeUndefined();
   });
 
   it('throws on import when IMAGE_API_KEY is missing', async () => {
