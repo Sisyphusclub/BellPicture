@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 15
+- **Total Sessions**: 16
 - **Last Active**: 2026-05-15
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~521 | Active |
+| `journal-1.md` | ~554 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 16 | 2026-05-15 | Fix home count selector and stage overlay | `212a166` | `main` |
 | 15 | 2026-05-15 | Fix generation page mask gap and gallery publishing | `30c612d` | `main` |
 | 14 | 2026-05-15 | OpenAI-compatible image API endpoints | `1becc06`, `5b84b5c` | `main` |
 | 13 | 2026-05-15 | Fix result dock generate button | `a8f66cd` | `main` |

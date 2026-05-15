@@ -519,3 +519,36 @@ Fixed generation result page background coverage and blob-based downloads, then 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 16: Fix home count selector and stage overlay
+
+**Date**: 2026-05-15
+**Task**: Fix home count selector and stage overlay
+**Branch**: `main`
+
+### Summary
+
+Added homepage generation count controls, made the generated-result stage overlay cover the full viewport behind the floating nav, and verified GenerateView tests plus frontend checks and browser smoke.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `212a166` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
