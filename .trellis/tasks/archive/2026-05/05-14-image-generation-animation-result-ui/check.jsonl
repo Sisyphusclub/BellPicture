@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Verify frontend changes against spec entry"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Check result surface accessibility and UI consistency"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Check pending generation state handling"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Check no global store/new state anti-patterns"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Check TypeScript/Vue ref/computed safety"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Check lint/typecheck/test/browser verification"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Check reuse of existing utilities and no unnecessary abstractions"}

@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec entry for GenerateView UI changes"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Frontend file organization and route/component boundaries"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component markup, accessibility, and product UI conventions"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Composable state conventions for pending generation UI"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Shared history/generation state and no global store rule"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Vue/TypeScript computed/ref and event handler safety"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend lint/typecheck/test and browser verification expectations"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse existing generation/history/download utilities instead of new abstractions"}
