@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus';
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import RecentCreationDetailModal from '@/components/gallery/RecentCreationDetailModal.vue';
@@ -10,14 +10,7 @@ import { useImageGeneration, type GenerateImageOptions } from '@/composables/use
 import { useImageQuota } from '@/composables/useImageQuota';
 import { useImageHistory, type GroupedBatch } from '@/composables/useImageHistory';
 import { downloadUrl } from '@/utils/download';
-import {
-  DATE_BUCKET_LABELS,
-  dateBucket,
-  formatClockTime,
-  formatElapsed,
-  formatFullDateTime,
-  type DateBucket,
-} from '@/utils/format';
+import { DATE_BUCKET_LABELS, dateBucket, formatClockTime, type DateBucket } from '@/utils/format';
 import {
   ASPECT_CHOICES,
   ASPECT_CHOICE_LABELS,
@@ -38,18 +31,32 @@ const { generate, isLoading, error, lastBatch, statusMessage, clearLastBatch } =
   useImageGeneration();
 const { quota, isLoading: isQuotaLoading, refresh: refreshQuota } = useImageQuota();
 
+interface PendingGeneration {
+  id: number;
+  prompt: string;
+  model: string;
+  count: number;
+  aspectRatio: AspectChoice;
+  submittedAt: string;
+  referenceFile?: File;
+  errorMessage?: string;
+}
+
 const prompt = ref('');
 const model = ref('gpt-image-2');
 const count = ref<number>(DEFAULT_COUNT);
 const aspectRatio = ref<AspectChoice>(DEFAULT_ASPECT_CHOICE);
 const activeBatchId = ref<string | null>(null);
+const pendingGeneration = ref<PendingGeneration | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
+const composerTextareaRef = ref<HTMLTextAreaElement | null>(null);
 const isComposerDragging = ref(false);
 const aspectMenuOpen = ref(false);
 const modelMenuOpen = ref(false);
 const aspectButtonRef = ref<HTMLButtonElement | null>(null);
 const modelButtonRef = ref<HTMLButtonElement | null>(null);
 const selectedRecentEntry = ref<HistoryEntry | null>(null);
+let pendingGenerationId = 0;
 
 const modelOptions = ['gpt-image-2'] as const;
 
@@ -72,11 +79,26 @@ const displayedBatch = computed<GroupedBatch | null>(() => {
   return null;
 });
 
-const displayedTitle = computed(() => {
-  const text = displayedBatch.value?.prompt ?? '新的画布';
-  if (text.length > 24) return `${text.slice(0, 24)}…`;
-  return text;
-});
+const hasActiveSurface = computed(
+  () => pendingGeneration.value !== null || displayedBatch.value !== null,
+);
+const currentResultEntries = computed(() => displayedBatch.value?.entries ?? []);
+const isGeneratingSurface = computed(() => pendingGeneration.value !== null && isLoading.value);
+const generationErrorMessage = computed(() => pendingGeneration.value?.errorMessage ?? null);
+const hasGenerationError = computed(
+  () => generationErrorMessage.value !== null && displayedBatch.value === null,
+);
+const canSaveCurrent = computed(() => currentResultEntries.value.length > 0 && !isLoading.value);
+const surfacePrompt = computed(
+  () => pendingGeneration.value?.prompt ?? displayedBatch.value?.prompt ?? '新的生成',
+);
+const surfaceModel = computed(
+  () => pendingGeneration.value?.model ?? displayedBatch.value?.model ?? model.value,
+);
+const surfaceModelLabel = computed(() => modelDisplayName(surfaceModel.value));
+const surfaceDateLabel = computed(() =>
+  formatStageDate(pendingGeneration.value?.submittedAt ?? displayedBatch.value?.createdAt),
+);
 
 const canGenerate = computed(() => prompt.value.trim().length > 0 && !isLoading.value);
 const modeLabel = computed(() => (selectedFile.value ? '参考图生成' : '提示词生成'));
@@ -110,6 +132,8 @@ watch(
     if (nextPrompt) {
       prompt.value = nextPrompt;
       activeBatchId.value = null;
+      pendingGeneration.value = null;
+      clearLastBatch();
     }
   },
   { immediate: true },
@@ -123,26 +147,73 @@ watch(batches, (nextBatches) => {
 
 async function handleSubmit(): Promise<void> {
   if (!canGenerate.value) return;
-  activeBatchId.value = null;
-  const options: GenerateImageOptions = {
-    prompt: prompt.value,
+  await runGeneration(createSnapshotFromCurrentComposer());
+}
+
+function createSnapshotFromCurrentComposer(): PendingGeneration {
+  pendingGenerationId += 1;
+  const snapshot: PendingGeneration = {
+    id: pendingGenerationId,
+    prompt: prompt.value.trim(),
     model: model.value,
     count: count.value,
-    ...(aspectRatio.value !== 'auto' ? { aspectRatio: aspectRatio.value } : {}),
+    aspectRatio: aspectRatio.value,
+    submittedAt: new Date().toISOString(),
   };
-  if (selectedFile.value) options.referenceFile = selectedFile.value;
+  if (selectedFile.value) snapshot.referenceFile = selectedFile.value;
+  return snapshot;
+}
+
+function createSnapshotFromDisplayedBatch(batch: GroupedBatch): PendingGeneration {
+  pendingGenerationId += 1;
+  const firstRecord = batch.entries[0]?.record;
+  return {
+    id: pendingGenerationId,
+    prompt: batch.prompt,
+    model: batch.model,
+    count: Math.min(MAX_COUNT, Math.max(MIN_COUNT, batch.entries.length)),
+    aspectRatio: firstRecord?.aspectRatio ?? DEFAULT_ASPECT_CHOICE,
+    submittedAt: new Date().toISOString(),
+  };
+}
+
+function optionsFromSnapshot(snapshot: PendingGeneration): GenerateImageOptions {
+  const options: GenerateImageOptions = {
+    prompt: snapshot.prompt,
+    model: snapshot.model,
+    count: snapshot.count,
+  };
+  if (snapshot.aspectRatio !== 'auto') options.aspectRatio = snapshot.aspectRatio;
+  if (snapshot.referenceFile) options.referenceFile = snapshot.referenceFile;
+  return options;
+}
+
+async function runGeneration(snapshot: PendingGeneration): Promise<void> {
+  activeBatchId.value = null;
+  pendingGeneration.value = snapshot;
+  clearLastBatch();
+
+  prompt.value = snapshot.prompt;
+  model.value = snapshot.model;
+  count.value = snapshot.count;
+  aspectRatio.value = snapshot.aspectRatio;
 
   try {
-    const result = await generate(options);
+    const result = await generate(optionsFromSnapshot(snapshot));
     activeBatchId.value = result.batchId;
     await refreshQuota();
     ElMessage.success(`已生成 ${result.entries.length} 张图片，并保存到历史记录。`);
   } catch (unknownError) {
-    ElMessage.error(messageForError(unknownError));
+    const message = messageForError(unknownError);
+    if (pendingGeneration.value?.id === snapshot.id) {
+      pendingGeneration.value = { ...snapshot, errorMessage: message };
+    }
+    ElMessage.error(message);
   }
 }
 
 function handleSelectBatch(batch: GroupedBatch): void {
+  pendingGeneration.value = null;
   activeBatchId.value = batch.batchId;
   prompt.value = batch.prompt;
   const first = batch.entries[0];
@@ -174,6 +245,7 @@ async function handleCopyPrompt(entry: HistoryEntry): Promise<void> {
 
 function handleNewConversation(): void {
   activeBatchId.value = null;
+  pendingGeneration.value = null;
   prompt.value = '';
   clear();
   clearLastBatch();
@@ -271,6 +343,55 @@ function handleDownload(entry: HistoryEntry): void {
   downloadUrl(entry.imageUrl, entry.record.id);
 }
 
+async function handleEditPrompt(): Promise<void> {
+  const snapshot = pendingGeneration.value ?? displayedBatch.value;
+  if (!snapshot) return;
+  prompt.value = snapshot.prompt;
+  model.value = snapshot.model;
+  if ('entries' in snapshot) {
+    count.value = Math.min(MAX_COUNT, Math.max(MIN_COUNT, snapshot.entries.length));
+    aspectRatio.value = snapshot.entries[0]?.record.aspectRatio ?? DEFAULT_ASPECT_CHOICE;
+  } else {
+    count.value = snapshot.count;
+    aspectRatio.value = snapshot.aspectRatio;
+  }
+  await nextTick();
+  composerTextareaRef.value?.focus();
+}
+
+async function handleRegenerate(): Promise<void> {
+  if (isLoading.value) return;
+  const snapshot = pendingGeneration.value ?? displayedBatch.value;
+  if (!snapshot) return;
+  const nextSnapshot =
+    'entries' in snapshot
+      ? createSnapshotFromDisplayedBatch(snapshot)
+      : createSnapshotFromPending(snapshot);
+  await runGeneration(nextSnapshot);
+}
+
+function createSnapshotFromPending(snapshot: PendingGeneration): PendingGeneration {
+  pendingGenerationId += 1;
+  const next: PendingGeneration = {
+    id: pendingGenerationId,
+    prompt: snapshot.prompt,
+    model: snapshot.model,
+    count: snapshot.count,
+    aspectRatio: snapshot.aspectRatio,
+    submittedAt: new Date().toISOString(),
+  };
+  if (snapshot.referenceFile) next.referenceFile = snapshot.referenceFile;
+  return next;
+}
+
+function handleSaveCurrent(): void {
+  const batch = displayedBatch.value;
+  if (!batch) return;
+  for (const entry of batch.entries) {
+    handleDownload(entry);
+  }
+}
+
 function decreaseCount(): void {
   if (count.value > MIN_COUNT) count.value -= 1;
 }
@@ -302,7 +423,7 @@ function chooseModel(value: string): void {
 function handleDocumentClick(event: MouseEvent): void {
   if (!aspectMenuOpen.value && !modelMenuOpen.value) return;
   const target = event.target as Element | null;
-  if (target?.closest('.control--dropdown, .prompt-showcase__aspect')) return;
+  if (target?.closest('.prompt-showcase__select, .prompt-showcase__aspect')) return;
   aspectMenuOpen.value = false;
   modelMenuOpen.value = false;
 }
@@ -343,10 +464,30 @@ function aspectLabel(value: AspectChoice | undefined): string {
   if (value === 'auto') return ASPECT_CHOICE_LABELS.auto;
   return ASPECT_RATIO_LABELS[value];
 }
+
+function modelDisplayName(value: string): string {
+  return value.trim().toUpperCase();
+}
+
+function formatStageDate(iso: string | undefined): string {
+  const fallback = new Date();
+  const date = iso ? new Date(iso) : fallback;
+  if (Number.isNaN(date.getTime())) return iso ?? formatStageDate(fallback.toISOString());
+  return new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+    .format(date)
+    .replace(/\//g, '-');
+}
 </script>
 
 <template>
-  <section class="studio" :class="{ 'studio--home': !displayedBatch }">
+  <section
+    class="studio"
+    :class="{ 'studio--home': !hasActiveSurface, 'studio--stage': hasActiveSurface }"
+  >
     <input
       id="generate-reference-file"
       ref="fileInput"
@@ -456,71 +597,72 @@ function aspectLabel(value: AspectChoice | undefined): string {
 
     <main class="studio__main" aria-label="生成结果">
       <div class="studio__content">
-        <header v-if="displayedBatch" class="project-header">
-          <div class="project-header__title-block">
-            <h1 class="project-header__title">
-              {{ displayedTitle }}
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#80786f"
-                stroke-width="2"
-                aria-hidden="true"
-              >
-                <path d="m16 3 5 5L8 21H3v-5z" />
-              </svg>
-            </h1>
-            <p class="project-header__status">
-              <span class="status-dot" aria-hidden="true" />
-              已完成 · {{ displayedBatch.entries.length }} 张图
-            </p>
-          </div>
-        </header>
-
-        <section v-if="displayedBatch" class="result-list" aria-label="生成结果列表">
+        <section v-if="hasActiveSurface" class="generation-stage" aria-live="polite">
           <article
-            v-for="entry in displayedBatch.entries"
-            :key="entry.record.id"
-            class="result-card"
+            class="generation-item"
+            :class="{
+              'generation-item--loading': isGeneratingSurface,
+              'generation-item--error': hasGenerationError,
+            }"
           >
-            <div class="result-card__preview">
-              <div class="preview-frame">
-                <img :src="entry.imageUrl" :alt="`生成图 ${entry.record.id}`" />
+            <p class="generation-item__date">{{ surfaceDateLabel }}</p>
+            <h1 class="generation-item__prompt">{{ surfacePrompt }}</h1>
+            <span class="generation-item__model">✦ {{ surfaceModelLabel }}</span>
+
+            <div class="generation-visual" :aria-busy="isGeneratingSurface">
+              <div
+                v-if="currentResultEntries.length > 0"
+                class="generation-result-grid"
+                :class="{ 'generation-result-grid--multiple': currentResultEntries.length > 1 }"
+              >
+                <figure
+                  v-for="(entry, index) in currentResultEntries"
+                  :key="entry.record.id"
+                  class="generated-figure"
+                >
+                  <div class="generated-figure__frame">
+                    <img :src="entry.imageUrl" :alt="`生成结果图片 ${index + 1}`" />
+                  </div>
+                </figure>
               </div>
-              <div class="preview-meta">
-                <span>⌘ {{ entry.record.width }} × {{ entry.record.height }}</span>
-                <span>▢ {{ aspectLabel(entry.record.aspectRatio) }}</span>
-                <button type="button" class="preview-download" @click="handleDownload(entry)">
-                  下载
-                </button>
+
+              <div v-else-if="isGeneratingSurface" class="generation-placeholder" role="status">
+                <span class="generation-badge">生成中...</span>
+                <span class="generation-placeholder__status">{{ statusMessage }}</span>
+              </div>
+
+              <div v-else class="generation-error-card" role="alert">
+                <span>生成失败</span>
+                <p>{{ generationErrorMessage ?? error?.message ?? '生成失败，请稍后重试。' }}</p>
               </div>
             </div>
-            <div class="result-card__info">
-              <div>
-                <span class="info-pill">提示词</span>
-                <p class="info-prompt">{{ entry.record.prompt }}</p>
-              </div>
-              <div class="info-grid">
-                <div>
-                  <p class="info-label">模型</p>
-                  <p class="info-value">
-                    {{ entry.record.model }}
-                    <span class="info-chip">{{
-                      entry.record.referenceId ? '图生图' : '文生图'
-                    }}</span>
-                  </p>
-                </div>
-                <div>
-                  <p class="info-label">生成信息</p>
-                  <p class="info-value">
-                    {{ formatFullDateTime(entry.record.createdAt) }}
-                    <br />
-                    用时 {{ formatElapsed(entry.record.elapsedMs) }}
-                  </p>
-                </div>
-              </div>
+
+            <div class="generation-actions" aria-label="生成操作">
+              <button
+                type="button"
+                class="generation-action"
+                :disabled="isLoading"
+                @click="handleEditPrompt"
+              >
+                ✎ 重新编辑
+              </button>
+              <button
+                type="button"
+                class="generation-action"
+                :disabled="isLoading"
+                @click="handleRegenerate"
+              >
+                ↻ 再次生成
+              </button>
+              <button
+                v-if="currentResultEntries.length > 0"
+                type="button"
+                class="generation-action"
+                :disabled="!canSaveCurrent"
+                @click="handleSaveCurrent"
+              >
+                ↓ 保存
+              </button>
             </div>
           </article>
         </section>
@@ -626,23 +768,13 @@ function aspectLabel(value: AspectChoice | undefined): string {
 
           <RecentCreationsMasonry :entries="entries" @select="handleSelectRecentEntry" />
         </template>
-
-        <div v-if="isLoading" class="floating-status floating-status--loading" aria-live="polite">
-          <span>正在生成</span>
-          <p>{{ statusMessage }}</p>
-          <div class="floating-status__bar" aria-hidden="true"><span /></div>
-        </div>
-        <div v-else-if="error" class="floating-status floating-status--error" role="alert">
-          <span>生成失败</span>
-          <p>{{ error.message }}</p>
-        </div>
       </div>
     </main>
 
     <form
-      v-if="displayedBatch"
-      class="composer-shell"
-      :class="{ 'composer-shell--dragging': isComposerDragging }"
+      v-if="hasActiveSurface"
+      class="prompt-showcase prompt-showcase--dock"
+      :class="{ 'prompt-showcase--dragging': isComposerDragging }"
       aria-label="图片生成输入框"
       @submit.prevent="handleSubmit"
       @dragenter.prevent="handleDragEnter"
@@ -650,57 +782,90 @@ function aspectLabel(value: AspectChoice | undefined): string {
       @dragleave.prevent="handleDragLeave"
       @drop.prevent="handleComposerDrop"
     >
-      <div class="composer-textarea">
-        <textarea
-          id="generate-prompt"
-          v-model="prompt"
-          name="prompt"
-          placeholder="输入你想要生成的画面，也可直接粘贴图片"
-          :disabled="isLoading"
-          @paste="handlePaste"
-        />
-      </div>
+      <button
+        type="button"
+        class="prompt-showcase__add"
+        aria-label="添加参考图"
+        :disabled="isLoading"
+        @click="openUploadPicker"
+      >
+        +
+      </button>
+      <textarea
+        id="generate-prompt"
+        ref="composerTextareaRef"
+        v-model="prompt"
+        class="prompt-showcase__input"
+        name="prompt"
+        placeholder="输入你想要生成的画面，也可直接粘贴图片"
+        :disabled="isLoading"
+        @keydown="handleHeroPromptKeydown"
+        @paste="handlePaste"
+      />
 
-      <div v-if="selectedFile" class="composer-attachment">
-        <img v-if="previewUrl" :src="previewUrl" alt="已添加参考图预览" />
-        <span v-else class="composer-attachment__fallback" aria-hidden="true">图</span>
-        <span class="composer-attachment__meta">
+      <div
+        v-if="selectedFile"
+        class="prompt-showcase__attachment prompt-showcase__attachment--rich"
+      >
+        <img
+          v-if="previewUrl"
+          class="prompt-showcase__attachment-preview"
+          :src="previewUrl"
+          alt="已添加参考图预览"
+        />
+        <span v-else class="prompt-showcase__attachment-fallback" aria-hidden="true">图</span>
+        <span class="prompt-showcase__attachment-meta">
           <strong>参考图已添加</strong>
-          <span v-if="validationMessage" class="composer-attachment__warning">{{
+          <span v-if="validationMessage" class="prompt-showcase__attachment-warning">{{
             validationMessage
           }}</span>
         </span>
         <button type="button" :disabled="isLoading" @click="clear">移除</button>
       </div>
 
-      <div class="composer-controls">
-        <button
-          type="button"
-          class="control control--upload"
-          :disabled="isLoading"
-          @click="openUploadPicker"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
+      <div class="prompt-showcase__bar">
+        <div class="prompt-showcase__select prompt-showcase__model-control">
+          <button
+            ref="modelButtonRef"
+            type="button"
+            class="prompt-showcase__smart prompt-showcase__smart--model"
+            :aria-expanded="modelMenuOpen"
+            aria-label="选择生成模型"
+            @click="toggleModelMenu"
           >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <path d="m17 8-5-5-5 5" />
-            <path d="M12 3v12" />
-          </svg>
-          上传
-        </button>
-        <div class="control control--count" aria-label="已添加参考图数量">
-          {{ selectedFileSummary }}
+            <span>模型</span>
+            <strong>{{ modelDisplayName(model) }}</strong>
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+          <ul v-if="modelMenuOpen" class="prompt-showcase__menu" role="listbox">
+            <li v-for="value in modelOptions" :key="value">
+              <button
+                type="button"
+                role="option"
+                :aria-selected="value === model"
+                :class="{ 'prompt-showcase__menu-item--active': value === model }"
+                @click="chooseModel(value)"
+              >
+                {{ modelDisplayName(value) }}
+              </button>
+            </li>
+          </ul>
         </div>
-        <div class="control control--stepper" role="group" aria-label="生成数量">
+        <span class="prompt-showcase__grid">{{ quotaLabel }}</span>
+        <span class="prompt-showcase__grid">参考图 {{ selectedFileSummary }}</span>
+        <div class="prompt-showcase__stepper" role="group" aria-label="生成数量">
           <button
             type="button"
             :disabled="count <= MIN_COUNT"
@@ -709,7 +874,7 @@ function aspectLabel(value: AspectChoice | undefined): string {
           >
             −
           </button>
-          <span>{{ count }}</span>
+          <span>{{ count }} 张</span>
           <button
             type="button"
             :disabled="count >= MAX_COUNT"
@@ -719,18 +884,20 @@ function aspectLabel(value: AspectChoice | undefined): string {
             ＋
           </button>
         </div>
-        <div class="control control--dropdown">
+        <div class="prompt-showcase__aspect prompt-showcase__select">
           <button
             ref="aspectButtonRef"
             type="button"
+            class="prompt-showcase__smart"
             :aria-expanded="aspectMenuOpen"
+            aria-label="选择图片比例"
             @click="toggleAspectMenu"
           >
-            <span class="control__label">{{ aspectLabel(aspectRatio) }}</span>
+            <span>比例</span>
+            <strong>{{ aspectLabel(aspectRatio) }}</strong>
             <svg
-              class="control__chevron"
-              width="12"
-              height="12"
+              width="10"
+              height="10"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -742,18 +909,13 @@ function aspectLabel(value: AspectChoice | undefined): string {
               <path d="m6 9 6 6 6-6" />
             </svg>
           </button>
-          <ul
-            v-if="aspectMenuOpen"
-            class="control-menu"
-            role="listbox"
-            :aria-labelledby="undefined"
-          >
+          <ul v-if="aspectMenuOpen" class="prompt-showcase__menu" role="listbox">
             <li v-for="value in ASPECT_CHOICES" :key="value">
               <button
                 type="button"
                 role="option"
                 :aria-selected="value === aspectRatio"
-                :class="{ 'control-menu__item--active': value === aspectRatio }"
+                :class="{ 'prompt-showcase__menu-item--active': value === aspectRatio }"
                 @click="chooseAspect(value)"
               >
                 {{ aspectLabel(value) }}
@@ -761,49 +923,11 @@ function aspectLabel(value: AspectChoice | undefined): string {
             </li>
           </ul>
         </div>
-        <div class="control control--dropdown control--dropdown-model">
-          <button
-            ref="modelButtonRef"
-            type="button"
-            :aria-expanded="modelMenuOpen"
-            @click="toggleModelMenu"
-          >
-            <span class="control__label">{{ model }}</span>
-            <svg
-              class="control__chevron"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.4"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
-          <ul v-if="modelMenuOpen" class="control-menu" role="listbox">
-            <li v-for="value in modelOptions" :key="value">
-              <button
-                type="button"
-                role="option"
-                :aria-selected="value === model"
-                :class="{ 'control-menu__item--active': value === model }"
-                @click="chooseModel(value)"
-              >
-                {{ value }}
-              </button>
-            </li>
-          </ul>
-        </div>
-        <button type="submit" class="control control--generate" :disabled="!canGenerate">
-          <span aria-hidden="true">✧</span>
-          <span>{{ isLoading ? '正在生成…' : '生成图像' }}</span>
+        <span class="prompt-showcase__mode" aria-live="polite">{{ modeLabel }}</span>
+        <button type="submit" class="prompt-showcase__generate" :disabled="!canGenerate">
+          {{ isLoading ? '生成中' : '生成' }}
         </button>
       </div>
-      <p class="composer-mode" aria-live="polite">{{ modeLabel }}</p>
     </form>
 
     <RecentCreationDetailModal
@@ -1053,172 +1177,320 @@ function aspectLabel(value: AspectChoice | undefined): string {
   max-width: 1200px;
 }
 
-.project-header {
+.studio--stage {
+  --stage-rail-width: min(calc(100vw - 64px), 960px);
+
   display: flex;
+  min-height: calc(100vh - var(--topbar-height));
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+  isolation: isolate;
+}
+
+.studio--stage::before,
+.studio--stage::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.studio--stage::before {
+  z-index: 0;
+  height: min(54vh, 520px);
+  background:
+    radial-gradient(circle at 18% 8%, rgba(116, 184, 255, 0.36), transparent 34%),
+    radial-gradient(circle at 76% 14%, rgba(235, 136, 226, 0.3), transparent 35%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0));
+  opacity: 0.9;
+}
+
+.studio--stage::after {
+  z-index: 0;
+  height: min(44vh, 420px);
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.58) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.58) 1px, transparent 1px);
+  background-size: 112px 112px;
+  mask-image: linear-gradient(to bottom, black 0%, transparent 92%);
+  opacity: 0.46;
+}
+
+.studio--stage .studio__sidebar {
+  display: none;
+}
+
+.studio--stage .studio__main {
+  z-index: 1;
+  width: 100%;
+  min-height: calc(100vh - var(--topbar-height));
+  overflow: visible;
+  padding: 0 24px calc(var(--composer-height) + 84px);
+}
+
+.studio--stage .studio__content {
+  width: 100%;
+  max-width: none;
+}
+
+.generation-stage {
+  display: flex;
+  width: var(--stage-rail-width);
+  min-height: calc(100vh - var(--topbar-height) - var(--composer-height) - 44px);
   align-items: flex-start;
-  justify-content: space-between;
-  margin: 32px 0 20px;
+  justify-content: flex-start;
+  margin: 0 auto;
+  padding: 74px 0 0;
 }
 
-.project-header__title {
+.generation-item {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 0 6px;
-  font-size: 17px;
-  font-weight: 800;
-  letter-spacing: -0.005em;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
   color: var(--color-ink);
+  text-align: left;
 }
 
-.project-header__status {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin: 0;
-  color: #8b857c;
-  font-size: 13px;
-}
-
-.status-dot {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--color-success);
-}
-
-.status-dot--idle {
-  background: var(--color-muted-soft);
-}
-
-.result-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.result-card {
-  display: grid;
-  grid-template-columns: minmax(360px, 1.1fr) minmax(320px, 0.9fr);
-  gap: 38px;
-  min-height: 290px;
-  padding: 18px;
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-card);
-  box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.result-card__preview {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.preview-frame {
-  display: grid;
-  flex: 1;
-  min-height: 230px;
-  place-items: center;
-  overflow: hidden;
-  border: 1px solid rgba(44, 39, 33, 0.07);
-  border-radius: 14px;
-  background: linear-gradient(145deg, #fffdf9, #f3eee8);
-}
-
-.preview-frame img {
-  max-width: 100%;
-  max-height: 360px;
-  object-fit: contain;
-  border-radius: 6px;
-}
-
-.preview-meta {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  color: #8b867e;
-  font-size: 12px;
-  padding-left: 4px;
-}
-
-.preview-meta button.preview-download {
-  margin-left: auto;
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-pill);
-  background: var(--color-surface-glass-strong);
-  color: var(--color-ink);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 5px 11px;
-  cursor: pointer;
-}
-
-.preview-meta button.preview-download:hover {
-  background: var(--color-surface-card-solid);
-}
-
-.result-card__info {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 22px;
-  padding: 18px 18px 10px 0;
-}
-
-.info-pill {
-  display: inline-block;
-  border-radius: 8px;
-  padding: 5px 8px;
-  background: var(--color-chip-strong);
-  color: #6a6258;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.info-prompt {
-  margin: 10px 0 0;
-  max-width: 440px;
-  color: #37322c;
+.generation-item__date {
+  width: min(100%, 420px);
+  margin: 0 0 16px;
+  color: oklch(66% 0.014 268deg);
   font-size: 14px;
-  line-height: 1.9;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.generation-item__prompt {
+  width: min(100%, 420px);
+  margin: 0 0 14px;
+  color: #292521;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.65;
   white-space: pre-wrap;
 }
 
-.info-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  color: #8b867e;
-  font-size: 13px;
-}
-
-.info-label {
-  margin: 0 0 5px;
-  color: #3d3730;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.info-value {
-  margin: 0;
-  color: #34302b;
-  font-size: 13px;
-}
-
-.info-chip {
+.generation-item__model {
   display: inline-flex;
+  width: min(100%, 420px);
   align-items: center;
-  margin-left: 8px;
-  padding: 4px 7px;
-  border-radius: 7px;
-  background: var(--color-chip-strong);
-  color: #6b6257;
-  font-size: 11px;
+  align-self: flex-start;
+  gap: 6px;
+  margin-bottom: 18px;
+  color: #746f86;
+  font-size: 12px;
   font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.generation-visual {
+  display: grid;
+  width: 100%;
+  justify-items: start;
+}
+
+.generation-placeholder,
+.generation-error-card,
+.generated-figure__frame {
+  width: min(100%, 320px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(95, 74, 180, 0.08);
+  border-radius: 22px;
+  box-shadow: 0 22px 58px rgba(111, 99, 160, 0.08);
+}
+
+.generation-placeholder {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle, rgba(142, 116, 255, 0.34) 0 1.8px, transparent 2.4px) 0 0 / 27px 27px,
+    radial-gradient(circle at 50% 45%, rgba(159, 136, 255, 0.1), transparent 56%),
+    linear-gradient(145deg, rgba(253, 252, 255, 0.98), rgba(246, 243, 255, 0.96));
+}
+
+.generation-placeholder::before {
+  content: '';
+  position: absolute;
+  inset: -22%;
+  background: linear-gradient(
+    112deg,
+    transparent 10%,
+    rgba(255, 255, 255, 0.08) 34%,
+    rgba(255, 255, 255, 0.74) 50%,
+    rgba(255, 255, 255, 0.06) 66%,
+    transparent 90%
+  );
+  animation: placeholder-shimmer 2.2s ease-in-out infinite;
+  transform: translateX(-56%);
+}
+
+.generation-placeholder::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 46%, rgba(141, 112, 255, 0.14), transparent 54%);
+  animation: placeholder-breathe 2.4s ease-in-out infinite;
+}
+
+.generation-badge {
+  position: absolute;
+  z-index: 2;
+  top: 18px;
+  left: 18px;
+  display: inline-flex;
+  height: 30px;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  background: rgba(39, 39, 43, 0.84);
+  color: #fffaf4;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  padding: 0 13px;
+  box-shadow: 0 10px 28px rgba(38, 32, 56, 0.14);
+}
+
+.generation-placeholder__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.generation-result-grid {
+  display: grid;
+  width: min(100%, 320px);
+  gap: 14px;
+}
+
+.generation-result-grid--multiple {
+  width: min(100%, 680px);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.generated-figure {
+  margin: 0;
+}
+
+.generated-figure__frame {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.72);
+  animation: result-reveal 240ms ease-out both;
+}
+
+.generated-figure__frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.generation-error-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(255, 252, 249, 0.84);
+  color: var(--color-error);
+  padding: 24px;
+  text-align: center;
+}
+
+.generation-error-card span {
+  color: var(--color-error);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.generation-error-card p {
+  margin: 0;
+  color: #5f5550;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.generation-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 12px;
+  width: min(100%, 420px);
+  margin-top: 22px;
+}
+
+.generation-action {
+  display: inline-flex;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid rgba(44, 39, 33, 0.08);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.78);
+  color: #4b4640;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 17px;
+  box-shadow: 0 8px 22px rgba(50, 45, 40, 0.045);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.generation-action:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 10px 26px rgba(50, 45, 40, 0.075);
+  transform: translateY(-1px);
+}
+
+.generation-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+@keyframes placeholder-shimmer {
+  0% {
+    transform: translateX(-58%);
+  }
+
+  100% {
+    transform: translateX(58%);
+  }
+}
+
+@keyframes placeholder-breathe {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes result-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .canvas-hero {
@@ -1558,153 +1830,53 @@ function aspectLabel(value: AspectChoice | undefined): string {
   }
 }
 
-.floating-status {
+.prompt-showcase--dock {
   position: fixed;
-  right: var(--space-xl);
-  bottom: calc(var(--composer-height) + 36px);
-  display: grid;
-  gap: var(--space-xs);
-  max-width: 460px;
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-glass-strong);
-  color: var(--color-body-strong);
-  padding: var(--space-md);
-  z-index: 6;
-  box-shadow: var(--shadow-soft);
-}
-
-.floating-status span {
-  color: var(--color-muted);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.floating-status p {
-  margin: 0;
-}
-
-.floating-status--loading {
-  border-color: var(--color-surface-dark-elevated);
-  background: var(--color-surface-dark);
-  color: var(--color-on-dark);
-}
-
-.floating-status--loading span {
-  color: var(--color-on-dark-soft);
-}
-
-.floating-status--error {
-  border-color: rgba(198, 69, 69, 0.45);
-  background: var(--color-surface-card-solid);
-  color: var(--color-error);
-}
-
-.floating-status__bar {
-  overflow: hidden;
-  height: 6px;
-  border-radius: var(--radius-pill);
-  background: var(--color-surface-dark-elevated);
-}
-
-.floating-status__bar span {
-  display: block;
-  width: 48%;
-  height: 100%;
-  background: var(--color-on-dark);
-  animation: indeterminate 1.4s ease-in-out infinite;
-}
-
-@keyframes indeterminate {
-  0% {
-    transform: translateX(-30%);
-  }
-  100% {
-    transform: translateX(220%);
-  }
-}
-
-.composer-shell {
-  position: fixed;
-  left: calc(var(--sidebar-width) + 32px);
-  right: 32px;
+  left: 50%;
   bottom: 24px;
   z-index: 4;
-  display: grid;
-  gap: var(--space-sm);
-  margin: 0 auto;
-  max-width: 1200px;
-  padding: 12px;
-  border: 1px solid oklch(24% 0.012 78deg / 0.1);
-  border-radius: 28px;
-  background: oklch(99% 0.004 88deg / 0.9);
-  box-shadow: 0 10px 40px 5px rgba(194, 194, 194, 0.25);
+  width: var(--stage-rail-width);
+  min-height: 152px;
+  margin: 0;
+  background: oklch(99.1% 0.004 88deg / 0.92);
+  box-shadow: 0 18px 60px rgba(70, 62, 54, 0.12);
+  transform: translateX(-50%);
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
 }
 
-@media (max-width: 1480px) {
-  .composer-shell {
-    max-width: none;
-  }
-}
-
-.composer-shell--dragging {
+.prompt-showcase--dragging {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(204, 120, 92, 0.18);
+  box-shadow:
+    0 18px 60px rgba(70, 62, 54, 0.12),
+    0 0 0 3px rgba(204, 120, 92, 0.18);
 }
 
 .composer-file {
   display: none;
 }
 
-.composer-textarea {
-  position: relative;
-  min-height: 118px;
-  border: 1px solid rgba(45, 38, 30, 0.08);
-  border-radius: 14px;
-  background: linear-gradient(180deg, #fffdfa 0%, #f8f5f0 100%);
-  padding: 22px 24px;
+.prompt-showcase--dock .prompt-showcase__input {
+  height: 86px;
+  padding-top: 24px;
 }
 
-.composer-textarea textarea {
-  width: 100%;
-  height: 72px;
-  resize: none;
-  border: 0;
-  background: transparent;
-  color: #2d2924;
-  font-size: 15px;
-  line-height: 1.7;
-  outline: none;
-}
-
-.composer-textarea textarea::placeholder {
-  color: #a7a099;
-  font-weight: 600;
-}
-
-.composer-attachment {
+.prompt-showcase__attachment--rich {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-xs);
-  border: 1px solid var(--color-hairline);
-  border-radius: 12px;
-  background: var(--color-surface-card-solid);
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 10px;
+  justify-content: initial;
 }
 
-.composer-attachment img,
-.composer-attachment__fallback {
-  width: 48px;
-  height: 48px;
+.prompt-showcase__attachment-preview,
+.prompt-showcase__attachment-fallback {
+  width: 42px;
+  height: 42px;
   border-radius: 10px;
   object-fit: cover;
 }
 
-.composer-attachment__fallback {
+.prompt-showcase__attachment-fallback {
   display: grid;
   place-items: center;
   background: var(--color-surface-dark);
@@ -1712,229 +1884,113 @@ function aspectLabel(value: AspectChoice | undefined): string {
   font-family: var(--font-code);
 }
 
-.composer-attachment__meta {
+.prompt-showcase__attachment-meta {
   display: grid;
   min-width: 0;
   color: var(--color-muted);
   font-size: 13px;
 }
 
-.composer-attachment__meta strong {
+.prompt-showcase__attachment-meta strong {
   color: var(--color-ink);
 }
 
-.composer-attachment__warning {
+.prompt-showcase__attachment-warning {
   color: var(--color-warning);
 }
 
-.composer-attachment button {
-  border: 0;
-  background: transparent;
-  color: var(--color-accent-active);
-  font-weight: 600;
-  cursor: pointer;
-  padding: var(--space-xs);
+.prompt-showcase__select {
+  position: relative;
 }
 
-.composer-controls {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 2px 0;
+.prompt-showcase__model-control {
+  flex: 0 0 auto;
 }
 
-.control {
+.prompt-showcase__smart--model {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.prompt-showcase__smart--model strong {
+  color: inherit;
+}
+
+.prompt-showcase__stepper {
   display: inline-flex;
+  height: 34px;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 40px;
-  border: 1px solid var(--color-hairline);
-  border-radius: 13px;
-  background: var(--color-surface-glass-strong);
-  color: var(--color-body-strong);
-  font-size: 14px;
+  gap: 4px;
+  border-radius: 18px;
+  background: oklch(96% 0.008 86deg);
+  color: oklch(42% 0.012 78deg);
+  font-size: 13px;
   font-weight: 800;
-  box-shadow: var(--shadow-button-soft);
-  cursor: pointer;
+  padding: 0 8px;
 }
 
-.control:not(:disabled):hover {
-  background: var(--color-surface-card-solid);
-}
-
-.control:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.control--upload {
-  width: 92px;
-}
-
-.control--count {
-  width: 40px;
-  border-radius: 50%;
-  border-color: transparent;
-  background: var(--color-chip);
-  color: var(--color-muted);
-  cursor: default;
-}
-
-.control--stepper {
-  width: 138px;
-  justify-content: space-between;
-  padding: 0 6px;
-  font-size: 15px;
-}
-
-.control--stepper button {
+.prompt-showcase__stepper button {
   display: inline-grid;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   place-items: center;
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: var(--color-body-strong);
-  font-size: 16px;
-  font-weight: 800;
+  color: var(--color-ink);
   cursor: pointer;
+  font-size: 14px;
+  font-weight: 900;
 }
 
-.control--stepper button:hover:not(:disabled) {
-  background: var(--color-chip);
+.prompt-showcase__stepper button:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.72);
 }
 
-.control--stepper button:disabled {
+.prompt-showcase__stepper button:disabled {
   cursor: not-allowed;
   opacity: 0.35;
 }
 
-.control--stepper span {
-  min-width: 36px;
+.prompt-showcase__stepper span {
+  min-width: 38px;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
 
-.control--dropdown {
-  position: relative;
-}
-
-.control--dropdown button {
-  display: inline-flex;
-  width: 168px;
-  height: 40px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  border: 1px solid var(--color-hairline);
-  border-radius: 13px;
-  background: var(--color-surface-glass-strong);
-  color: var(--color-ink);
-  font-size: 14px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.control__label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.control__chevron {
-  flex: 0 0 auto;
-  margin-left: 8px;
-  color: var(--color-muted);
-}
-
-.control--dropdown-model button {
-  width: 150px;
-}
-
-.control--dropdown button:hover {
-  background: var(--color-surface-card-solid);
-}
-
-.control-menu {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 0;
-  margin: 0;
-  padding: 6px;
-  min-width: 100%;
-  list-style: none;
-  border: 1px solid var(--color-hairline);
-  border-radius: 12px;
-  background: var(--color-surface-card-solid);
-  box-shadow: var(--shadow-soft);
-  z-index: 10;
-}
-
-.control-menu li {
-  margin: 0;
-}
-
-.control-menu button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--color-body-strong);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 8px 12px;
-  cursor: pointer;
-}
-
-.control-menu button:hover {
-  background: var(--color-chip);
-}
-
-.control-menu__item--active {
+.prompt-showcase__menu-item--active {
   background: var(--color-chip-strong);
   color: var(--color-ink);
 }
 
-.control--generate {
+.prompt-showcase__mode {
+  display: inline-flex;
+  height: 34px;
+  align-items: center;
   margin-left: auto;
-  height: 46px;
-  min-width: 142px;
-  border: 0;
-  border-radius: 14px;
-  background: linear-gradient(180deg, oklch(27% 0.012 76deg), var(--color-primary));
-  color: var(--color-on-primary);
-  font-size: 16px;
-  font-weight: 800;
-  box-shadow:
-    inset -4px -6px 25px 0 rgba(201, 201, 201, 0.08),
-    inset 4px 4px 10px 0 rgba(29, 29, 29, 0.24);
-  cursor: pointer;
-}
-
-.control--generate:not(:disabled):hover {
-  background: var(--color-primary-active);
-}
-
-.composer-mode {
-  margin: 0;
-  padding: 0 4px;
-  color: var(--color-muted);
-  font-size: 12px;
-  font-weight: 600;
+  color: oklch(46% 0.012 78deg);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hero-rise,
-  .floating-status__bar span {
+  .generation-placeholder::before,
+  .generation-placeholder::after,
+  .generated-figure__frame {
     animation: none;
+  }
+
+  .generation-action {
+    transition: none;
   }
 }
 
 @media (max-width: 1180px) {
+  .generation-stage {
+    padding-top: 58px;
+  }
+
   .canvas-hero {
     padding-top: 180px;
   }
@@ -1950,29 +2006,19 @@ function aspectLabel(value: AspectChoice | undefined): string {
   .canvas-hero__title span {
     font-size: 72px;
   }
-
-  .composer-shell {
-    left: calc(var(--sidebar-width) + 18px);
-    right: 18px;
-  }
-
-  .result-card {
-    grid-template-columns: 1fr;
-  }
-
-  .result-card__info {
-    padding: 4px;
-  }
 }
 
 @media (max-width: 1100px) {
-  .composer-controls {
+  .prompt-showcase--dock .prompt-showcase__bar {
     flex-wrap: wrap;
   }
 
-  .control--generate {
-    width: 100%;
+  .prompt-showcase--dock .prompt-showcase__mode {
     margin-left: 0;
+  }
+
+  .prompt-showcase--dock .prompt-showcase__generate {
+    margin-left: auto;
   }
 }
 
@@ -1984,6 +2030,39 @@ function aspectLabel(value: AspectChoice | undefined): string {
   .studio__sidebar {
     border-right: 0;
     border-bottom: 1px solid var(--color-hairline);
+  }
+
+  .studio--stage {
+    --stage-rail-width: min(calc(100vw - 24px), 720px);
+  }
+
+  .studio--stage .studio__main {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .generation-stage {
+    padding: 42px 0 0;
+  }
+
+  .generation-item__date,
+  .generation-item__prompt,
+  .generation-item__model,
+  .generation-visual,
+  .generation-placeholder,
+  .generation-error-card,
+  .generated-figure__frame,
+  .generation-result-grid {
+    width: min(100%, 300px);
+  }
+
+  .prompt-showcase--dock .prompt-showcase__bar {
+    align-items: flex-start;
+  }
+
+  .prompt-showcase--dock .prompt-showcase__generate {
+    width: 100%;
+    margin-left: 0;
   }
 
   .canvas-hero,
@@ -1998,11 +2077,6 @@ function aspectLabel(value: AspectChoice | undefined): string {
 
   .canvas-hero__title span {
     font-size: 54px;
-  }
-
-  .composer-shell {
-    left: 12px;
-    right: 12px;
   }
 }
 </style>
