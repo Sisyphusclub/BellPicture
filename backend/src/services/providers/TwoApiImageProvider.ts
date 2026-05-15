@@ -145,7 +145,7 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        authorization: `Bearer ${this.config.apiKey}`,
+        Authorization: `Bearer ${this.config.apiKey}`,
       },
       body: JSON.stringify({
         model,
@@ -199,7 +199,7 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
 
     return this.fetchImpl(url, {
       method: 'POST',
-      headers: { authorization: `Bearer ${this.config.apiKey}` },
+      headers: { Authorization: `Bearer ${this.config.apiKey}` },
       body: form,
       signal: AbortSignal.timeout(this.config.timeoutMs),
     });

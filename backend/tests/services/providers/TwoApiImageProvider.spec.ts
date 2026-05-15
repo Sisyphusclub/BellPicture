@@ -68,7 +68,7 @@ describe('TwoApiImageProvider', () => {
     expect(body['n']).toBe(2);
     expect(body['size']).toBe('1024x1024');
     const headers = (init as RequestInit).headers as Record<string, string>;
-    expect(headers['authorization']).toBe('Bearer sk-test');
+    expect(headers['Authorization']).toBe('Bearer sk-test');
   });
 
   it('maps aspectRatio to provider size payload', async () => {
@@ -118,7 +118,7 @@ describe('TwoApiImageProvider', () => {
     expect((image as Blob).size).toBe(refBytes.length);
 
     const headers = (init as RequestInit).headers as Record<string, string>;
-    expect(headers['authorization']).toBe('Bearer sk-test');
+    expect(headers['Authorization']).toBe('Bearer sk-test');
     // We must NOT set content-type manually for FormData — let undici set
     // the multipart boundary.
     expect(headers['content-type']).toBeUndefined();
