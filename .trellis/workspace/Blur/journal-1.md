@@ -486,3 +486,36 @@ Added OpenAI-compatible /v1 image API endpoints with dedicated bearer auth, mode
 ### Next Steps
 
 - None - task complete
+
+
+## Session 15: Fix generation page mask gap and gallery publishing
+
+**Date**: 2026-05-15
+**Task**: Fix generation page mask gap and gallery publishing
+**Branch**: `main`
+
+### Summary
+
+Fixed generation result page background coverage and blob-based downloads, then added public gallery publishing with persisted visibility, homepage gallery filtering, migration, tests, and specs.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `30c612d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

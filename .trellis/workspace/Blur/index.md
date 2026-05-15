@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 14
+- **Total Sessions**: 15
 - **Last Active**: 2026-05-15
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~488 | Active |
+| `journal-1.md` | ~521 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 15 | 2026-05-15 | Fix generation page mask gap and gallery publishing | `30c612d` | `main` |
 | 14 | 2026-05-15 | OpenAI-compatible image API endpoints | `1becc06`, `5b84b5c` | `main` |
 | 13 | 2026-05-15 | Fix result dock generate button | `a8f66cd` | `main` |
 | 12 | 2026-05-15 | Backend AI API auth headers | `6108219`, `b8e6162` | `main` |
