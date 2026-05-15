@@ -152,6 +152,18 @@ Auth session lookups into `AppError`:
 | `auth.api.getSession` throws unexpectedly | `UNAUTHORIZED` | 401 (cause attached; logged at `error`) |
 | Per-user daily quota would overflow on `consume` | `QUOTA_EXHAUSTED` | 429 (`details = { requested, remaining, total }`) |
 
+The `openaiCompatAuth` middleware (mounted on `/v1/*`) translates inbound API-key
+failures into the same error envelope:
+
+| Trigger | AppError.code | HTTP |
+|---|---|---|
+| Missing `Authorization` header | `UNAUTHORIZED` | 401 |
+| Header does not use `Bearer <token>` | `UNAUTHORIZED` | 401 |
+| Bearer token does not match `OPENAI_COMPAT_API_KEY` | `UNAUTHORIZED` | 401 |
+
+Never include the presented token or configured key in `message`, `details`, or
+logs. Use a timing-safe comparison and keep `IMAGE_API_KEY` out of inbound auth.
+
 The frontend's `imagesApi` wrapper recognises 401 and triggers the
 registered unauthorized handler — keep the error envelope shape
 (`{ error: { code, message, requestId } }`) so the SPA can branch on

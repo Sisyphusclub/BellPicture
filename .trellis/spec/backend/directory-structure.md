@@ -108,10 +108,12 @@ backend/
 │   ├── routes/
 │   │   ├── images.ts         # POST /api/images/generate, /upload — gated by requireAuth
 │   │   ├── history.ts        # GET/DELETE /api/history/* — gated by requireAuth
+│   │   ├── openaiCompat.ts   # OpenAI-compatible /v1 image API — gated by openaiCompatAuth
 │   │   └── health.ts         # GET /api/health
 │   ├── controllers/          # Thin: parse req → call service → format res
 │   │   ├── images.controller.ts
-│   │   └── history.controller.ts
+│   │   ├── history.controller.ts
+│   │   └── openaiCompat.controller.ts
 │   ├── services/             # Business logic. No req/res objects here.
 │   │   ├── imageGeneration.service.ts
 │   │   ├── userQuota.service.ts             # Per-user daily quota (drizzle queries)
@@ -124,6 +126,7 @@ backend/
 │   │   └── localStorage.ts
 │   ├── middlewares/
 │   │   ├── errorHandler.ts   # Final Express error middleware
+│   │   ├── openaiCompatAuth.ts # Validates Authorization: Bearer OPENAI_COMPAT_API_KEY for /v1
 │   │   ├── requestLogger.ts
 │   │   ├── requireAuth.ts    # Validates Better Auth session, attaches req.user
 │   │   └── upload.ts         # multer wrapper
@@ -172,7 +175,8 @@ outside `config/env.ts`.**
 |---|---|---|---|
 | `PORT` | no | `3000` | Default 3000 |
 | `IMAGE_API_BASE_URL` | yes | `https://api.2api.example` | 2API reverse-proxy origin. **No `/v1` suffix and no trailing slash** — `TwoApiImageProvider` always appends `/v1/images/generations`. Trailing slashes are stripped before concat, so `https://x.com/` and `https://x.com///` are tolerated, but a base URL that already includes `/v1` will produce a double-`/v1` URL. |
-| `IMAGE_API_KEY` | yes | `sk-...` | Server-side only. Never log. |
+| `IMAGE_API_KEY` | yes | `sk-...` | Server-side only provider key. Never log or expose to API clients. |
+| `OPENAI_COMPAT_API_KEY` | yes | `ref2img_...` | Inbound bearer token for OpenAI-compatible `/v1/*` clients. Never log. |
 | `IMAGE_MODEL` | no | `gpt-image-2` | Default `gpt-image-2` |
 | `IMAGE_API_TIMEOUT_MS` | no | `120000` | Default 120000 (2 min). Must be a positive integer; non-numeric or `<= 0` → throw on `config/env.ts` import. |
 | `UPLOAD_DIR` | no | `./tmp/uploads` | Default `./tmp/uploads` |
@@ -190,6 +194,104 @@ outside `config/env.ts`.**
 
 `.env.example` must list every variable with a placeholder value and a
 one-line comment.
+
+## Scenario: OpenAI-compatible inbound `/v1` image API
+
+### 1. Scope / Trigger
+- Trigger: exposing an API-key-authenticated OpenAI-compatible image surface from
+  the backend.
+- Scope: `GET /v1/models`, `POST /v1/images/generations`,
+  `POST /v1/images/edits`, image-scene `POST /v1/chat/completions`, and
+  image-scene `POST /v1/responses`.
+
+### 2. Signatures
+- Env: `OPENAI_COMPAT_API_KEY` is required and validates inbound
+  `Authorization: Bearer <token>` on `/v1/*`.
+- App wiring: `createApp({ provider })` mounts `buildOpenAICompatRouter()` at
+  `/v1` before the first-party `/api/*` routers.
+- Auth middleware: `openaiCompatAuth(req, res, next)` accepts only bearer tokens
+  that timing-safe-equal `env.OPENAI_COMPAT_API_KEY`.
+- Models response: `GET /v1/models -> 200 { object: "list", data: Model[] }`.
+- Images response: `/v1/images/generations` and `/v1/images/edits` return
+  `{ created: number, data: Array<{ b64_json?: string; url?: string }> }`.
+
+### 3. Contracts
+- `IMAGE_API_KEY` remains provider-only. Do not use it for inbound `/v1` client
+  auth, and do not expose it to clients.
+- `/v1/*` does not use Better Auth session cookies and does not consume
+  per-user daily quota. It is an API-key surface, separate from `/api/images/*`.
+- Route handlers reuse `generateImage()`; controllers must not duplicate
+  provider HTTP calls.
+- `n` maps to `count`; default `1`; valid range is `1..MAX_COUNT` (currently 2).
+  Reject out-of-range values instead of clamping.
+- `size` maps exactly to existing aspect ratios:
+  `auto|1024x1024 -> 1:1`, `1536x1024 -> 3:2`, `1024x1536 -> 2:3`,
+  `1792x1024 -> 16:9`, `1024x1792 -> 9:16`.
+- `response_format` supports `b64_json` and `url`; default `b64_json` for
+  `/v1/images/*`.
+- `POST /v1/images/edits` supports one uploaded `image` file only. Mask files,
+  multiple image files, and remote URL fetching are out of scope.
+- Chat Completions has no official generated-image output object; image-scene
+  compatibility returns a normal `chat.completion` with Markdown output URLs in
+  `choices[0].message.content`.
+- Responses image output uses `output[]` items of type `image_generation_call`
+  with base64 `result`; an additional message item may expose local output URLs.
+
+### 4. Validation & Error Matrix
+| Condition | Expected behavior |
+|---|---|
+| Missing / non-bearer / wrong `/v1` auth | `AppError('UNAUTHORIZED', ..., 401)` before generation |
+| Missing or blank prompt | `BAD_REQUEST` 400 with safe details |
+| `n > MAX_COUNT` or non-integer `n` | `BAD_REQUEST` 400; provider not called |
+| Unsupported `size` | `BAD_REQUEST` 400 with `details.size` |
+| `stream: true` or `partial_images` | `BAD_REQUEST` 400; streaming is unsupported |
+| Edit request missing `image` | `BAD_REQUEST` 400 |
+| Edit request has `mask` or multiple images | `BAD_REQUEST` 400 |
+| Uploaded bytes are not PNG/JPEG/WebP | `UNSUPPORTED_MEDIA_TYPE` 415 |
+| Chat/responses image URL is remote `http(s)` | `BAD_REQUEST` 400; never fetch user URLs server-side |
+| Data URL reference exceeds `UPLOAD_MAX_BYTES` | `PAYLOAD_TOO_LARGE` 413 |
+
+### 5. Good/Base/Bad Cases
+- Good: `Authorization: Bearer <OPENAI_COMPAT_API_KEY>` +
+  `POST /v1/images/generations { prompt, n: 2 }` returns two OpenAI image items.
+- Base: `GET /v1/models` returns the fixed local compatibility model list without
+  contacting the upstream provider.
+- Bad: reusing `IMAGE_API_KEY` for inbound `/v1` auth, silently clamping
+  `n = 10` to `2`, or fetching arbitrary remote image URLs from user input.
+
+### 6. Tests Required
+- Integration: every `/v1` endpoint rejects missing, non-bearer, and wrong
+  bearer auth without calling the provider.
+- Integration: `/v1/models` returns all required model IDs in order.
+- Integration: generations supports `n = 2`, `b64_json`, `url`, size mapping,
+  and typed failures.
+- Integration: edits supports one uploaded reference image and rejects missing
+  image, mask, multiple images, bad bytes, invalid size, and invalid `n`.
+- Integration: chat/responses parse text prompts, reject remote URLs, accept
+  local data image URLs, and produce the documented envelopes.
+- Backend checks: `npm run lint`, `npm run typecheck`, `npm test`,
+  `npm run build`, and `git diff --check` pass for task changes.
+
+### 7. Wrong vs Correct
+#### Wrong
+```ts
+// Inbound API clients must not authenticate with the upstream provider key.
+if (token !== env.IMAGE_API_KEY) throw new AppError('UNAUTHORIZED', '...', 401);
+
+// Never fetch user-provided remote image URLs from API requests.
+const bytes = await fetch(imageUrl).then((res) => res.arrayBuffer());
+```
+
+#### Correct
+```ts
+if (!timingSafeEqual(Buffer.from(token), Buffer.from(env.OPENAI_COMPAT_API_KEY))) {
+  throw new AppError('UNAUTHORIZED', 'Invalid Authorization bearer token', 401);
+}
+
+if (url.startsWith('http://') || url.startsWith('https://')) {
+  throw new AppError('BAD_REQUEST', 'Remote image URLs are not supported', 400);
+}
+```
 
 ## Scenario: outbound AI provider authorization headers
 
@@ -351,8 +453,9 @@ Required column.
 
 - ❌ Importing `express` types inside `services/` — services must be
   framework-agnostic.
-- ❌ Calling `IMAGE_API_KEY` from any route handler. Only
-  `services/providers/TwoApiImageProvider.ts` reads it.
+- ❌ Calling `IMAGE_API_KEY` from any route handler or inbound auth middleware.
+  Only `services/providers/TwoApiImageProvider.ts` reads it. `/v1/*` clients
+  authenticate with `OPENAI_COMPAT_API_KEY` instead.
 - ❌ Writing files outside `tmp/`. Output paths must always be derived from
   `OUTPUT_DIR` / `UPLOAD_DIR`.
 - ❌ Putting business logic in `middlewares/`. Middlewares are for
