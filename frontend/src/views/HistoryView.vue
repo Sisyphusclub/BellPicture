@@ -79,11 +79,14 @@ async function handleRefresh(): Promise<void> {
   await refresh();
 }
 
-function handleDownload(entry: HistoryEntry): void {
-  downloadUrl(entry.imageUrl, entry.record.id);
-  ElMessage.success('下载已开始。');
+async function handleDownload(entry: HistoryEntry): Promise<void> {
+  try {
+    await downloadUrl(entry.imageUrl, entry.record.id);
+    ElMessage.success('下载已开始。');
+  } catch {
+    ElMessage.error('下载失败，请稍后重试。');
+  }
 }
-
 async function handleCopyId(entry: HistoryEntry): Promise<void> {
   const clipboard = navigator.clipboard;
   if (!clipboard || typeof clipboard.writeText !== 'function') {

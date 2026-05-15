@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ElMessage } from 'element-plus';
 import { computed } from 'vue';
 
 import type { HistoryEntry } from '@/types/image';
@@ -26,9 +27,14 @@ const fileSizeLabel = computed(() => {
   return props.entry.size === undefined ? '浏览器缓存' : formatBytes(props.entry.size);
 });
 
-function handleDownload(): void {
+async function handleDownload(): Promise<void> {
   if (!props.entry) return;
-  downloadUrl(props.entry.imageUrl, props.entry.record.id);
+  try {
+    await downloadUrl(props.entry.imageUrl, props.entry.record.id);
+    ElMessage.success('下载已开始。');
+  } catch {
+    ElMessage.error('下载失败，请稍后重试。');
+  }
 }
 
 function handleRerun(): void {

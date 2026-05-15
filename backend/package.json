@@ -18,7 +18,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx -e \"import { runMigrations } from './src/db/drizzle.js'; runMigrations();\"",
+    "db:migrate": "tsx --env-file=.env -e \"import { runMigrations } from './src/db/drizzle.ts'; runMigrations();\"",
     "prepare": "husky"
   },
   "lint-staged": {

@@ -11,6 +11,7 @@ const sampleRecord = (overrides: Partial<ImageRecord> = {}): ImageRecord => ({
   model: 'gpt-image-2',
   width: 1024,
   height: 1024,
+  isPublic: false,
   ...overrides,
 });
 

@@ -19,9 +19,8 @@ const visibleEntries = computed(() => props.entries.slice(0, 40));
 <template>
   <section class="recent-creations" aria-labelledby="recent-creations-title">
     <div class="recent-creations__header">
-      <p class="recent-creations__eyebrow">本地灵感</p>
-      <h2 id="recent-creations-title">最近创作</h2>
-      <p>从你的本地生成历史中预览灵感，点击图片查看提示词细节。</p>
+      <h2 id="recent-creations-title">画廊</h2>
+      <p>从画廊中预览灵感，点击图片查看提示词细节。</p>
     </div>
 
     <div
@@ -48,8 +47,8 @@ const visibleEntries = computed(() => props.entries.slice(0, 40));
 
     <div v-else class="recent-creations__empty">
       <span aria-hidden="true">✦</span>
-      <h3>还没有最近创作</h3>
-      <p>生成第一组图片后，它们会自动出现在这里。</p>
+      <h3>画廊还是空的</h3>
+      <p>开启公开后生成图片，它们会自动出现在这里。</p>
     </div>
   </section>
 </template>
@@ -66,14 +65,6 @@ const visibleEntries = computed(() => props.entries.slice(0, 40));
   gap: 8px;
   margin-bottom: 28px;
   text-align: center;
-}
-
-.recent-creations__eyebrow {
-  margin: 0;
-  color: oklch(52% 0.012 78deg);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
 }
 
 .recent-creations__header h2 {

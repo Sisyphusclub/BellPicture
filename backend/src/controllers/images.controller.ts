@@ -4,10 +4,7 @@ import { z, ZodError } from 'zod';
 import { AppError } from '../errors/AppError.js';
 import { logger } from '../logger.js';
 import { insertImageRecords, type NewImageRecord } from '../services/history.service.js';
-import {
-  generateImage,
-  type GenerateImageOutput,
-} from '../services/imageGeneration.service.js';
+import { generateImage, type GenerateImageOutput } from '../services/imageGeneration.service.js';
 import type { ImageGenerationProvider } from '../services/providers/ImageGenerationProvider.js';
 import type { QuotaSnapshot } from '../services/quota.service.js';
 import type { UserQuotaService } from '../services/userQuota.service.js';
@@ -22,6 +19,7 @@ const generateBodySchema = z.object({
   model: z.string().min(1).max(100).optional(),
   count: z.number().int().min(MIN_COUNT).max(MAX_COUNT).optional(),
   aspectRatio: z.enum(ASPECT_RATIOS).optional(),
+  isPublic: z.boolean().optional(),
 });
 
 export interface ImagesControllerDeps {
@@ -137,6 +135,7 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           mime: image.mime,
           width: image.width,
           height: image.height,
+          isPublic: parsed.isPublic ?? false,
           createdAt,
         }));
         try {

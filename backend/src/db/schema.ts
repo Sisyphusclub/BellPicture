@@ -110,6 +110,7 @@ export const imageRecords = sqliteTable(
     width: integer('width').notNull(),
     height: integer('height').notNull(),
     elapsedMs: integer('elapsed_ms'),
+    isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(false),
     createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
   },
   (t) => ({

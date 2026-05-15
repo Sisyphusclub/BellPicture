@@ -1,0 +1,1 @@
+ALTER TABLE `image_records` ADD `is_public` integer DEFAULT false NOT NULL;

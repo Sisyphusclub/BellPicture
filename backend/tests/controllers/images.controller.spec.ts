@@ -141,6 +141,20 @@ describe('POST /api/images/generate', () => {
     expect(provider.generate).toHaveBeenCalledOnce();
   });
 
+  it('persists public visibility for generated image records', async () => {
+    const { provider } = fakeProvider();
+    const userId = `public-user-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId));
+
+    await request(app)
+      .post('/api/images/generate')
+      .send({ prompt: 'publish to gallery', isPublic: true });
+
+    const history = await request(app).get('/api/history');
+    expect(history.status).toBe(200);
+    expect(history.body.records[0]).toMatchObject({ prompt: 'publish to gallery', isPublic: true });
+  });
+
   it('respects explicit count + aspectRatio', async () => {
     const { provider } = fakeProvider();
     const app = buildApp(provider);

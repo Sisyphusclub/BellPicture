@@ -21,8 +21,8 @@ with:
     "exactOptionalPropertyTypes": true,
     "useDefineForClassFields": true,
     "skipLibCheck": true,
-    "paths": { "@/*": ["./src/*"] }
-  }
+    "paths": { "@/*": ["./src/*"] },
+  },
 }
 ```
 
@@ -44,7 +44,7 @@ with:
 
 ```ts
 // src/types/image.ts
-export type GenerationMode = 'text-to-image' | 'image-to-image';
+export type GenerationMode = "text-to-image" | "image-to-image";
 
 export interface ImageRecord {
   id: string;
@@ -54,6 +54,7 @@ export interface ImageRecord {
   referenceId?: string;
   width: number;
   height: number;
+  isPublic: boolean;
 }
 
 export interface UploadResponse {
@@ -67,6 +68,7 @@ export interface GenerateRequest {
   prompt: string;
   referenceId?: string;
   model?: string;
+  isPublic?: boolean;
 }
 
 export interface GenerateResponse {
@@ -107,16 +109,16 @@ runtime validity comes from the backend. The frontend should still:
   a different shape. The schemaVersion field gates this.
 
 ```ts
-import { isRecord, isString, readNumber, readString } from '@/utils/narrowing';
+import { isRecord, isString, readNumber, readString } from "@/utils/narrowing";
 
 function isImageRecord(value: unknown): value is ImageRecord {
   if (!isRecord(value)) return false;
-  const id = readString(value, 'id');
-  const createdAt = readString(value, 'createdAt');
-  const prompt = readString(value, 'prompt');
-  const model = readString(value, 'model');
-  const width = readNumber(value, 'width');
-  const height = readNumber(value, 'height');
+  const id = readString(value, "id");
+  const createdAt = readString(value, "createdAt");
+  const prompt = readString(value, "prompt");
+  const model = readString(value, "model");
+  const width = readNumber(value, "width");
+  const height = readNumber(value, "height");
   const referenceId = value.referenceId;
 
   return (
@@ -124,8 +126,8 @@ function isImageRecord(value: unknown): value is ImageRecord {
     isString(createdAt) &&
     isString(prompt) &&
     isString(model) &&
-    typeof width === 'number' &&
-    typeof height === 'number' &&
+    typeof width === "number" &&
+    typeof height === "number" &&
     (referenceId === undefined || isString(referenceId))
   );
 }
@@ -154,23 +156,23 @@ function isImageRecord(value: unknown): value is ImageRecord {
 ### 3. Contracts
 
 - Upload response: `{ id, filename, mime, size }`.
-- Generate request: `{ prompt, referenceId?, model? }`.
-- Generate response: `{ id, outputUrl, filename, mime, width, height,
-  generationMode }` where `generationMode` is `'text-to-image' | 'image-to-image'`.
+- Generate request: `{ prompt, referenceId?, model?, count?, aspectRatio?, isPublic? }`.
+- Generate response: `{ batchId, aspectRatio, generationMode, images }` where each image has `{ id, outputUrl, filename, mime, width, height }` and `generationMode` is `'text-to-image' | 'image-to-image'`.
+- History record response: `ImageRecord` includes required `isPublic: boolean`; the homepage gallery filters on this field, while image management keeps the full list.
 - Error response: `{ error: { code, message, requestId, details? } }`.
 - Env: `VITE_API_BASE_URL` is required for real backend calls; default local
   development value is `http://localhost:3000`.
 
 ### 4. Validation & Error Matrix
 
-| Condition | Frontend behavior |
-|---|---|
-| Empty prompt | Composable throws `Error('Describe the image before generating.')` before network IO |
-| Upload response shape invalid | Throw `ImageApiError` with `INVALID_RESPONSE` |
-| Generate response shape invalid | Throw `ImageApiError` with `INVALID_RESPONSE` |
-| Backend error envelope present | Throw `ImageApiError(status, code, message, requestId, details)` |
-| Non-JSON or malformed error body | Throw `ImageApiError(status, 'HTTP_ERROR', ...)` |
-| localStorage schema mismatch | Ignore stored payload and return an empty history |
+| Condition                        | Frontend behavior                                                                    |
+| -------------------------------- | ------------------------------------------------------------------------------------ |
+| Empty prompt                     | Composable throws `Error('Describe the image before generating.')` before network IO |
+| Upload response shape invalid    | Throw `ImageApiError` with `INVALID_RESPONSE`                                        |
+| Generate response shape invalid  | Throw `ImageApiError` with `INVALID_RESPONSE`                                        |
+| Backend error envelope present   | Throw `ImageApiError(status, code, message, requestId, details)`                     |
+| Non-JSON or malformed error body | Throw `ImageApiError(status, 'HTTP_ERROR', ...)`                                     |
+| localStorage schema mismatch     | Ignore stored payload and return an empty history                                    |
 
 ### 5. Good/Base/Bad Cases
 
@@ -204,7 +206,11 @@ return payload.outputUrl;
 ```ts
 const payload: unknown = await response.json();
 if (!isGenerateResponse(payload)) {
-  throw new ImageApiError(response.status, 'INVALID_RESPONSE', 'Generation returned an invalid response');
+  throw new ImageApiError(
+    response.status,
+    "INVALID_RESPONSE",
+    "Generation returned an invalid response",
+  );
 }
 return payload.outputUrl;
 ```

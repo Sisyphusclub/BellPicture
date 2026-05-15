@@ -122,6 +122,7 @@ export function createGenerateRequest(input: {
   model?: string;
   count?: number;
   aspectRatio?: AspectRatio;
+  isPublic?: boolean;
 }): GenerateRequest {
   const request: GenerateRequest = {
     prompt: input.prompt,
@@ -137,6 +138,9 @@ export function createGenerateRequest(input: {
   }
   if (input.aspectRatio !== undefined) {
     request.aspectRatio = input.aspectRatio;
+  }
+  if (input.isPublic !== undefined) {
+    request.isPublic = input.isPublic;
   }
   return request;
 }

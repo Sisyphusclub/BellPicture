@@ -83,8 +83,29 @@ describe('GET /api/history', () => {
       expect(record.id).toMatch(/^[0-9a-f-]{36}\.png$/);
       expect(record.batchId).toMatch(/^[0-9a-f-]{36}$/);
       expect(record.filename).toBe(record.id);
+      expect(record.isPublic).toBe(false);
       expect(record.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     }
+  });
+
+  it('persists public gallery visibility on generated records', async () => {
+    const userId = `hist-public-${randomUUID()}`;
+    const provider = fakeProvider();
+    const app = createApp({ provider, authMiddleware: stubAuth(userId) });
+
+    await request(app).post('/api/images/generate').send({ prompt: 'private image', count: 1 });
+    await request(app)
+      .post('/api/images/generate')
+      .send({ prompt: 'public image', count: 1, isPublic: true });
+
+    const res = await request(app).get('/api/history');
+    expect(res.status).toBe(200);
+    expect(
+      res.body.records.find((r: { prompt: string }) => r.prompt === 'public image')?.isPublic,
+    ).toBe(true);
+    expect(
+      res.body.records.find((r: { prompt: string }) => r.prompt === 'private image')?.isPublic,
+    ).toBe(false);
   });
 
   it('isolates history between users', async () => {
@@ -101,7 +122,9 @@ describe('GET /api/history', () => {
 
     expect(aHistory.body.records.length).toBeGreaterThanOrEqual(1);
     expect(aHistory.body.records.some((r: { prompt: string }) => r.prompt === 'A only')).toBe(true);
-    expect(bHistory.body.records.some((r: { prompt: string }) => r.prompt === 'A only')).toBe(false);
+    expect(bHistory.body.records.some((r: { prompt: string }) => r.prompt === 'A only')).toBe(
+      false,
+    );
   });
 });
 
@@ -128,7 +151,9 @@ describe('DELETE /api/history/batch/:batchId', () => {
     expect(aDel.status).toBe(204);
 
     const aHistory = await request(appA).get('/api/history');
-    expect(aHistory.body.records.some((r: { batchId: string }) => r.batchId === batchId)).toBe(false);
+    expect(aHistory.body.records.some((r: { batchId: string }) => r.batchId === batchId)).toBe(
+      false,
+    );
   });
 });
 

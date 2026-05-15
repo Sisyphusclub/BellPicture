@@ -20,27 +20,31 @@ The backend lives in `backend/` at the repo root, fully independent from
 `frontend/`. There is no shared package — each side owns its own
 `package.json`, `tsconfig.json`, and `node_modules/`.
 
-## Scenario: backend dev auto-loads `.env`
+## Scenario: backend dev and migration commands auto-load `.env`
 
 ### 1. Scope / Trigger
-- Trigger: backend local-dev env wiring changed through the `package.json`
-  command signature.
-- Scope: `npm run dev` only, when executed from `backend/`. Production
-  `npm run start` does not read dotfiles; production env injection belongs to
-  the orchestrator.
+
+- Trigger: backend local-dev and local-migration env wiring changed through the
+  `package.json` command signatures.
+- Scope: `npm run dev` and `npm run db:migrate`, when executed from `backend/` or
+  through `npm --prefix backend ...`. Production `npm run start` does not read
+  dotfiles; production env injection belongs to the orchestrator.
 
 ### 2. Signatures
+
 ```jsonc
 {
   "engines": { "node": ">=21.5" },
   "scripts": {
     "dev": "tsx watch --env-file=.env src/index.ts",
-    "start": "node dist/index.js"
-  }
+    "db:migrate": "tsx --env-file=.env -e \"import { runMigrations } from './src/db/drizzle.ts'; runMigrations();\"",
+    "start": "node dist/index.js",
+  },
 }
 ```
 
 ### 3. Contracts
+
 - `--env-file=.env` is resolved relative to the backend process cwd, so the
   expected file is `backend/.env`.
 - `src/config/env.ts` remains the only source boundary for reading and
@@ -51,42 +55,55 @@ The backend lives in `backend/` at the repo root, fully independent from
 - No `dotenv` / `dotenv/config` dependency or import is allowed for this path.
 
 ### 4. Validation & Error Matrix
-| Condition | Expected behavior |
-|---|---|
-| `npm run dev` with complete `backend/.env` | server boots and logs `server: listening` on `PORT` |
-| `.env` missing a required key | `config/env.ts` throws `Missing required environment variable: <KEY>` |
-| `dev` script lacks `--env-file=.env` | fresh local boot fails at required-env validation |
-| Node `<21.5` runs `dev` | unsupported runtime for this repo; upgrade Node rather than adding `dotenv` |
-| Port already in use | startup fails with `EADDRINUSE`; this is not an env-loading failure |
+
+| Condition                                    | Expected behavior                                                           |
+| -------------------------------------------- | --------------------------------------------------------------------------- |
+| `npm run dev` with complete `backend/.env`   | server boots and logs `server: listening` on `PORT`                         |
+| `npm run db:migrate` with complete `.env`    | migrations run against `SQLITE_PATH` and log `drizzle: migrations applied`  |
+| `.env` missing a required key                | `config/env.ts` throws `Missing required environment variable: <KEY>`       |
+| `dev` / `db:migrate` lacks `--env-file=.env` | fresh local command fails at required-env validation                        |
+| Node `<21.5` runs `dev`                      | unsupported runtime for this repo; upgrade Node rather than adding `dotenv` |
+| Port already in use                          | startup fails with `EADDRINUSE`; this is not an env-loading failure         |
 
 ### 5. Good/Base/Bad Cases
+
 - Good: from `backend/`, `npm run dev` loads `backend/.env` without caller-side
   `NODE_OPTIONS`, shell exports, or extra flags.
 - Base: `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`
-  remain independent of local `.env`.
+  remain independent of local `.env`; `db:migrate` loads `.env` because the
+  database path and required env validation live behind the same config boundary.
 - Bad: importing `dotenv/config` in `src/index.ts` or `src/config/env.ts` to
   hide a missing `--env-file` script contract.
 
 ### 6. Tests Required
-- Static review: `backend/package.json` keeps the exact `dev` script and does
-  not change unrelated scripts.
+
+- Static review: `backend/package.json` keeps the exact `dev` and `db:migrate`
+  scripts and does not change unrelated scripts.
 - Backend checks: `npm run lint`, `npm run typecheck`, `npm test`, and
   `npm run build` pass.
 - Manual local smoke: stop any existing `:3000` listener, run `cd backend &&
-  npm run dev`, and confirm the existing pino `server: listening` log appears.
+npm run dev`, and confirm the existing pino `server: listening` log appears.
+- Migration smoke: `npm --prefix backend run db:migrate` succeeds with local
+  `backend/.env` and logs `drizzle: migrations applied`.
 
 ### 7. Wrong vs Correct
+
 #### Wrong
+
 ```jsonc
-"dev": "tsx watch src/index.ts"
+"dev": "tsx watch src/index.ts",
+"db:migrate": "tsx -e \"import { runMigrations } from './src/db/drizzle.js'; runMigrations();\""
 ```
+
 ```ts
-import 'dotenv/config';
+import "dotenv/config";
 ```
 
 #### Correct
+
 ```jsonc
-"dev": "tsx watch --env-file=.env src/index.ts"
+"dev": "tsx watch --env-file=.env src/index.ts",
+"db:migrate": "tsx --env-file=.env -e \"import { runMigrations } from './src/db/drizzle.ts'; runMigrations();\""
 ```
 
 ---
@@ -171,26 +188,26 @@ Loaded once in `src/config/env.ts` via `zod` (or manual validation), then
 imported elsewhere as a typed object. **Never read `process.env.X` directly
 outside `config/env.ts`.**
 
-| Variable | Required | Example | Notes |
-|---|---|---|---|
-| `PORT` | no | `3000` | Default 3000 |
-| `IMAGE_API_BASE_URL` | yes | `https://api.2api.example` | 2API reverse-proxy origin. **No `/v1` suffix and no trailing slash** — `TwoApiImageProvider` always appends `/v1/images/generations`. Trailing slashes are stripped before concat, so `https://x.com/` and `https://x.com///` are tolerated, but a base URL that already includes `/v1` will produce a double-`/v1` URL. |
-| `IMAGE_API_KEY` | yes | `sk-...` | Server-side only provider key. Never log or expose to API clients. |
-| `OPENAI_COMPAT_API_KEY` | yes | `ref2img_...` | Inbound bearer token for OpenAI-compatible `/v1/*` clients. Never log. |
-| `IMAGE_MODEL` | no | `gpt-image-2` | Default `gpt-image-2` |
-| `IMAGE_API_TIMEOUT_MS` | no | `120000` | Default 120000 (2 min). Must be a positive integer; non-numeric or `<= 0` → throw on `config/env.ts` import. |
-| `UPLOAD_DIR` | no | `./tmp/uploads` | Default `./tmp/uploads` |
-| `UPLOAD_MAX_BYTES` | no | `10485760` | Default 10 MiB. Multer `limits.fileSize`. Positive integer; non-numeric or `<= 0` → throw on import. Oversize uploads → `AppError(PAYLOAD_TOO_LARGE, 413)`. |
-| `OUTPUT_DIR` | no | `./tmp/outputs` | Default `./tmp/outputs` |
-| `LOG_LEVEL` | no | `info` | pino level |
-| `CORS_ORIGIN` | no | `http://localhost:5173` | Vite dev origin (legacy — superseded by `FRONTEND_ORIGIN` once auth shipped, kept for migration). |
-| `BETTER_AUTH_URL` | no | `http://localhost:3000` | Backend origin used to build OAuth callback URLs. |
-| `BETTER_AUTH_SECRET` | yes | `<32+ char random>` | Cookie-signing secret. Generate with `openssl rand -base64 32`. Never log. |
-| `GOOGLE_CLIENT_ID` | no | `...apps.googleusercontent.com` | Optional. If unset, `socialProviders.google` is NOT mounted on the Better Auth instance — the Google login surface is soft-hidden. Must be set together with `GOOGLE_CLIENT_SECRET` to re-enable. Redirect URI when set: `${BETTER_AUTH_URL}/api/auth/callback/google`. |
-| `GOOGLE_CLIENT_SECRET` | no | `<google secret>` | Optional, paired with `GOOGLE_CLIENT_ID`. Server-side only. Never log. |
-| `FRONTEND_ORIGIN` | no | `http://localhost:5173` | Allowed CORS origin for cookie-authenticated requests. |
-| `SQLITE_PATH` | no | `./data/app.sqlite` | Persistent location for the SQLite file. Directory is auto-created on boot. |
-| `DAILY_USER_QUOTA` | no | `20` | Per-user generations allowed per server-local day. |
+| Variable                | Required | Example                         | Notes                                                                                                                                                                                                                                                                                                                    |
+| ----------------------- | -------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `PORT`                  | no       | `3000`                          | Default 3000                                                                                                                                                                                                                                                                                                             |
+| `IMAGE_API_BASE_URL`    | yes      | `https://api.2api.example`      | 2API reverse-proxy origin. **No `/v1` suffix and no trailing slash** — `TwoApiImageProvider` always appends `/v1/images/generations`. Trailing slashes are stripped before concat, so `https://x.com/` and `https://x.com///` are tolerated, but a base URL that already includes `/v1` will produce a double-`/v1` URL. |
+| `IMAGE_API_KEY`         | yes      | `sk-...`                        | Server-side only provider key. Never log or expose to API clients.                                                                                                                                                                                                                                                       |
+| `OPENAI_COMPAT_API_KEY` | yes      | `ref2img_...`                   | Inbound bearer token for OpenAI-compatible `/v1/*` clients. Never log.                                                                                                                                                                                                                                                   |
+| `IMAGE_MODEL`           | no       | `gpt-image-2`                   | Default `gpt-image-2`                                                                                                                                                                                                                                                                                                    |
+| `IMAGE_API_TIMEOUT_MS`  | no       | `120000`                        | Default 120000 (2 min). Must be a positive integer; non-numeric or `<= 0` → throw on `config/env.ts` import.                                                                                                                                                                                                             |
+| `UPLOAD_DIR`            | no       | `./tmp/uploads`                 | Default `./tmp/uploads`                                                                                                                                                                                                                                                                                                  |
+| `UPLOAD_MAX_BYTES`      | no       | `10485760`                      | Default 10 MiB. Multer `limits.fileSize`. Positive integer; non-numeric or `<= 0` → throw on import. Oversize uploads → `AppError(PAYLOAD_TOO_LARGE, 413)`.                                                                                                                                                              |
+| `OUTPUT_DIR`            | no       | `./tmp/outputs`                 | Default `./tmp/outputs`                                                                                                                                                                                                                                                                                                  |
+| `LOG_LEVEL`             | no       | `info`                          | pino level                                                                                                                                                                                                                                                                                                               |
+| `CORS_ORIGIN`           | no       | `http://localhost:5173`         | Vite dev origin (legacy — superseded by `FRONTEND_ORIGIN` once auth shipped, kept for migration).                                                                                                                                                                                                                        |
+| `BETTER_AUTH_URL`       | no       | `http://localhost:3000`         | Backend origin used to build OAuth callback URLs.                                                                                                                                                                                                                                                                        |
+| `BETTER_AUTH_SECRET`    | yes      | `<32+ char random>`             | Cookie-signing secret. Generate with `openssl rand -base64 32`. Never log.                                                                                                                                                                                                                                               |
+| `GOOGLE_CLIENT_ID`      | no       | `...apps.googleusercontent.com` | Optional. If unset, `socialProviders.google` is NOT mounted on the Better Auth instance — the Google login surface is soft-hidden. Must be set together with `GOOGLE_CLIENT_SECRET` to re-enable. Redirect URI when set: `${BETTER_AUTH_URL}/api/auth/callback/google`.                                                  |
+| `GOOGLE_CLIENT_SECRET`  | no       | `<google secret>`               | Optional, paired with `GOOGLE_CLIENT_ID`. Server-side only. Never log.                                                                                                                                                                                                                                                   |
+| `FRONTEND_ORIGIN`       | no       | `http://localhost:5173`         | Allowed CORS origin for cookie-authenticated requests.                                                                                                                                                                                                                                                                   |
+| `SQLITE_PATH`           | no       | `./data/app.sqlite`             | Persistent location for the SQLite file. Directory is auto-created on boot.                                                                                                                                                                                                                                              |
+| `DAILY_USER_QUOTA`      | no       | `20`                            | Per-user generations allowed per server-local day.                                                                                                                                                                                                                                                                       |
 
 `.env.example` must list every variable with a placeholder value and a
 one-line comment.
@@ -198,6 +215,7 @@ one-line comment.
 ## Scenario: OpenAI-compatible inbound `/v1` image API
 
 ### 1. Scope / Trigger
+
 - Trigger: exposing an API-key-authenticated OpenAI-compatible image surface from
   the backend.
 - Scope: `GET /v1/models`, `POST /v1/images/generations`,
@@ -205,6 +223,7 @@ one-line comment.
   image-scene `POST /v1/responses`.
 
 ### 2. Signatures
+
 - Env: `OPENAI_COMPAT_API_KEY` is required and validates inbound
   `Authorization: Bearer <token>` on `/v1/*`.
 - App wiring: `createApp({ provider })` mounts `buildOpenAICompatRouter()` at
@@ -216,6 +235,7 @@ one-line comment.
   `{ created: number, data: Array<{ b64_json?: string; url?: string }> }`.
 
 ### 3. Contracts
+
 - `IMAGE_API_KEY` remains provider-only. Do not use it for inbound `/v1` client
   auth, and do not expose it to clients.
 - `/v1/*` does not use Better Auth session cookies and does not consume
@@ -238,20 +258,22 @@ one-line comment.
   with base64 `result`; an additional message item may expose local output URLs.
 
 ### 4. Validation & Error Matrix
-| Condition | Expected behavior |
-|---|---|
-| Missing / non-bearer / wrong `/v1` auth | `AppError('UNAUTHORIZED', ..., 401)` before generation |
-| Missing or blank prompt | `BAD_REQUEST` 400 with safe details |
-| `n > MAX_COUNT` or non-integer `n` | `BAD_REQUEST` 400; provider not called |
-| Unsupported `size` | `BAD_REQUEST` 400 with `details.size` |
-| `stream: true` or `partial_images` | `BAD_REQUEST` 400; streaming is unsupported |
-| Edit request missing `image` | `BAD_REQUEST` 400 |
-| Edit request has `mask` or multiple images | `BAD_REQUEST` 400 |
-| Uploaded bytes are not PNG/JPEG/WebP | `UNSUPPORTED_MEDIA_TYPE` 415 |
-| Chat/responses image URL is remote `http(s)` | `BAD_REQUEST` 400; never fetch user URLs server-side |
-| Data URL reference exceeds `UPLOAD_MAX_BYTES` | `PAYLOAD_TOO_LARGE` 413 |
+
+| Condition                                     | Expected behavior                                      |
+| --------------------------------------------- | ------------------------------------------------------ |
+| Missing / non-bearer / wrong `/v1` auth       | `AppError('UNAUTHORIZED', ..., 401)` before generation |
+| Missing or blank prompt                       | `BAD_REQUEST` 400 with safe details                    |
+| `n > MAX_COUNT` or non-integer `n`            | `BAD_REQUEST` 400; provider not called                 |
+| Unsupported `size`                            | `BAD_REQUEST` 400 with `details.size`                  |
+| `stream: true` or `partial_images`            | `BAD_REQUEST` 400; streaming is unsupported            |
+| Edit request missing `image`                  | `BAD_REQUEST` 400                                      |
+| Edit request has `mask` or multiple images    | `BAD_REQUEST` 400                                      |
+| Uploaded bytes are not PNG/JPEG/WebP          | `UNSUPPORTED_MEDIA_TYPE` 415                           |
+| Chat/responses image URL is remote `http(s)`  | `BAD_REQUEST` 400; never fetch user URLs server-side   |
+| Data URL reference exceeds `UPLOAD_MAX_BYTES` | `PAYLOAD_TOO_LARGE` 413                                |
 
 ### 5. Good/Base/Bad Cases
+
 - Good: `Authorization: Bearer <OPENAI_COMPAT_API_KEY>` +
   `POST /v1/images/generations { prompt, n: 2 }` returns two OpenAI image items.
 - Base: `GET /v1/models` returns the fixed local compatibility model list without
@@ -260,6 +282,7 @@ one-line comment.
   `n = 10` to `2`, or fetching arbitrary remote image URLs from user input.
 
 ### 6. Tests Required
+
 - Integration: every `/v1` endpoint rejects missing, non-bearer, and wrong
   bearer auth without calling the provider.
 - Integration: `/v1/models` returns all required model IDs in order.
@@ -273,29 +296,35 @@ one-line comment.
   `npm run build`, and `git diff --check` pass for task changes.
 
 ### 7. Wrong vs Correct
+
 #### Wrong
+
 ```ts
 // Inbound API clients must not authenticate with the upstream provider key.
-if (token !== env.IMAGE_API_KEY) throw new AppError('UNAUTHORIZED', '...', 401);
+if (token !== env.IMAGE_API_KEY) throw new AppError("UNAUTHORIZED", "...", 401);
 
 // Never fetch user-provided remote image URLs from API requests.
 const bytes = await fetch(imageUrl).then((res) => res.arrayBuffer());
 ```
 
 #### Correct
+
 ```ts
-if (!timingSafeEqual(Buffer.from(token), Buffer.from(env.OPENAI_COMPAT_API_KEY))) {
-  throw new AppError('UNAUTHORIZED', 'Invalid Authorization bearer token', 401);
+if (
+  !timingSafeEqual(Buffer.from(token), Buffer.from(env.OPENAI_COMPAT_API_KEY))
+) {
+  throw new AppError("UNAUTHORIZED", "Invalid Authorization bearer token", 401);
 }
 
-if (url.startsWith('http://') || url.startsWith('https://')) {
-  throw new AppError('BAD_REQUEST', 'Remote image URLs are not supported', 400);
+if (url.startsWith("http://") || url.startsWith("https://")) {
+  throw new AppError("BAD_REQUEST", "Remote image URLs are not supported", 400);
 }
 ```
 
 ## Scenario: outbound AI provider authorization headers
 
 ### 1. Scope / Trigger
+
 - Trigger: any outbound `TwoApiImageProvider` call to the configured
   OpenAI-compatible `/v1/*` AI image API.
 - Scope: currently `POST /v1/images/generations` and
@@ -304,6 +333,7 @@ if (url.startsWith('http://') || url.startsWith('https://')) {
   requests it.
 
 ### 2. Signatures
+
 - Auth header: `Authorization: Bearer ${env.IMAGE_API_KEY}` on every provider
   `fetch` call.
 - Generations: JSON body to `/v1/images/generations` with
@@ -312,6 +342,7 @@ if (url.startsWith('http://') || url.startsWith('https://')) {
   header.
 
 ### 3. Contracts
+
 - `IMAGE_API_KEY` stays server-side and is never logged directly or as a
   computed bearer token.
 - The provider fetch-options object uses the canonical `Authorization` header
@@ -322,14 +353,16 @@ if (url.startsWith('http://') || url.startsWith('https://')) {
   outbound provider authentication.
 
 ### 4. Validation & Error Matrix
-| Condition | Expected behavior |
-|---|---|
-| Text-to-image request | Outbound headers include `Authorization: Bearer <key>` and JSON `content-type` |
-| Image-to-image request | Outbound headers include `Authorization: Bearer <key>` and no manual `content-type` |
-| Missing `IMAGE_API_KEY` | `config/env.ts` required-env validation fails before provider construction |
-| Provider returns 401/403 | Existing non-2xx mapping returns `PROVIDER_ERROR` 502 without logging the token |
+
+| Condition                | Expected behavior                                                                   |
+| ------------------------ | ----------------------------------------------------------------------------------- |
+| Text-to-image request    | Outbound headers include `Authorization: Bearer <key>` and JSON `content-type`      |
+| Image-to-image request   | Outbound headers include `Authorization: Bearer <key>` and no manual `content-type` |
+| Missing `IMAGE_API_KEY`  | `config/env.ts` required-env validation fails before provider construction          |
+| Provider returns 401/403 | Existing non-2xx mapping returns `PROVIDER_ERROR` 502 without logging the token     |
 
 ### 5. Tests Required
+
 - Unit: text-to-image provider call asserts
   `headers['Authorization'] === 'Bearer sk-test'`.
 - Unit: image-to-image provider call asserts
@@ -340,35 +373,118 @@ if (url.startsWith('http://') || url.startsWith('https://')) {
   `npm run build` pass.
 
 ### 6. Wrong vs Correct
+
 #### Wrong
+
 ```ts
 headers: { authorization: `Bearer ${apiKey}` };
 headers: { Authorization: `Bearer ${apiKey}`, 'content-type': 'multipart/form-data' };
 ```
 
 #### Correct
+
 ```ts
 headers: { 'content-type': 'application/json', Authorization: `Bearer ${apiKey}` };
 headers: { Authorization: `Bearer ${apiKey}` };
 ```
 
+## Scenario: first-party public gallery flag
+
+### 1. Scope / Trigger
+
+- Trigger: the authenticated generation API gained a cross-layer visibility flag
+  that is persisted in SQLite and consumed by the homepage gallery.
+- Scope: `POST /api/images/generate`, `GET /api/history`, `image_records`, and
+  frontend filtering of history records into the homepage gallery.
+
+### 2. Signatures
+
+- Request: `POST /api/images/generate` accepts optional JSON field
+  `isPublic?: boolean` alongside `prompt`, `referenceId`, `model`, `count`, and
+  `aspectRatio`.
+- DB row: `image_records.is_public INTEGER NOT NULL DEFAULT false`.
+- History DTO: `ImageRecordDTO` includes required `isPublic: boolean`.
+- Migration: add an explicit drizzle SQL migration for `is_public`; do not rely on
+  runtime schema drift.
+
+### 3. Contracts
+
+- Omitted `isPublic` means `false`; private is the safe default.
+- `isPublic` is record-level, and every image in the same generation batch is
+  persisted with the same value from the request.
+- `/api/history` remains the owner-scoped source of truth and returns both public
+  and private records. Filtering for the homepage gallery is a frontend concern.
+- Public gallery in the current MVP is not a global multi-user feed; it is the
+  current user's public subset.
+
+### 4. Validation & Error Matrix
+
+| Condition                      | Expected behavior                                            |
+| ------------------------------ | ------------------------------------------------------------ |
+| `isPublic` omitted             | Persist `false` and return `isPublic: false` in history      |
+| `isPublic: true`               | Persist `true` for every generated image record in the batch |
+| `isPublic` is not boolean      | Zod rejects request with `BAD_REQUEST` 400                   |
+| History row predates migration | Migration default makes returned DTO `isPublic: false`       |
+
+### 5. Good/Base/Bad Cases
+
+- Good: user enables `公开`, generation succeeds, `/api/history` returns records
+  with `isPublic: true`, and the homepage gallery displays them.
+- Base: user leaves `公开` off, generated records still appear in image management
+  but not in the homepage gallery.
+- Bad: deriving public/private state from prompt text, frontend-only state, or a
+  separate unpersisted list.
+
+### 6. Tests Required
+
+- Integration: `POST /api/images/generate { isPublic: true }` persists history
+  rows with `isPublic: true`.
+- Integration: omitted `isPublic` returns private history records.
+- Frontend: generation request includes `isPublic` when the composer toggle is
+  enabled.
+- Frontend: homepage gallery receives only public entries while image management
+  keeps the full history list.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+// Public state disappears after refresh and cannot be audited.
+const galleryEntries = generatedEntries;
+```
+
+#### Correct
+
+```ts
+const records: NewImageRecord[] = result.images.map((image) => ({
+  // ...metadata,
+  isPublic: parsed.isPublic ?? false,
+}));
+```
+
+---
+
 ## Scenario: per-user daily image quota
 
 ### 1. Scope / Trigger
+
 - Trigger: authenticated image generation consumes a per-user quota backed by
   SQLite.
 - Scope: `GET /api/images/quota` and `POST /api/images/generate` for logged-in
   users. Unauthenticated users are rejected before quota logic runs.
 
 ### 2. Signatures
+
 - Env: `DAILY_USER_QUOTA` optional positive integer, default `20`.
 - API response: `GET /api/images/quota -> 200 { total: number, remaining: number }`.
 - Service contract: `createUserQuotaService().forUser(userId)` returns a
   `QuotaPool` with `snapshot()`, `ensureAvailable(count)`, and `consume(count)`.
 - DB row: `user_quota(user_id TEXT PRIMARY KEY, used_today INTEGER,
-  quota_date TEXT)` where `quota_date` is server-local `YYYY-MM-DD`.
+quota_date TEXT)` where `quota_date` is server-local `YYYY-MM-DD`.
 
 ### 3. Contracts
+
 - Backend is the source of truth for quota exhaustion; frontend labels are UX
   only.
 - `snapshot()` treats a missing row or stale `quota_date` as `used_today = 0`
@@ -379,15 +495,17 @@ headers: { Authorization: `Bearer ${apiKey}` };
   calls must not consume quota.
 
 ### 4. Validation & Error Matrix
-| Condition | Expected behavior |
-|---|---|
-| Fresh logged-in user | `GET /api/images/quota` returns `{ total: 20, remaining: 20 }` by default |
-| Same user generates `count = 2` | Next quota response has `remaining = 18` |
-| Stored row has yesterday/old `quota_date` | Today starts from `remaining = total` |
-| Request would exceed remaining quota | Throw `AppError('QUOTA_EXHAUSTED', ..., 429)` with `requested`, `remaining`, `total` details |
-| Different user consumes quota | Other users' quota rows are unaffected |
+
+| Condition                                 | Expected behavior                                                                            |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Fresh logged-in user                      | `GET /api/images/quota` returns `{ total: 20, remaining: 20 }` by default                    |
+| Same user generates `count = 2`           | Next quota response has `remaining = 18`                                                     |
+| Stored row has yesterday/old `quota_date` | Today starts from `remaining = total`                                                        |
+| Request would exceed remaining quota      | Throw `AppError('QUOTA_EXHAUSTED', ..., 429)` with `requested`, `remaining`, `total` details |
+| Different user consumes quota             | Other users' quota rows are unaffected                                                       |
 
 ### 5. Good/Base/Bad Cases
+
 - Good: quota resets automatically when the server-local date changes, without a
   cron job or client-side clock.
 - Base: `DAILY_USER_QUOTA=20` means every authenticated user starts each day at
@@ -396,6 +514,7 @@ headers: { Authorization: `Bearer ${apiKey}` };
   Always call backend quota logic before consuming provider capacity.
 
 ### 6. Tests Required
+
 - Integration: quota endpoint returns 20/20 for a fresh authenticated user.
 - Integration: generating two images changes remaining from 20 to 18.
 - Integration: quota is isolated across users.
@@ -404,12 +523,17 @@ headers: { Authorization: `Bearer ${apiKey}` };
 - Error path: over-quota generation returns `QUOTA_EXHAUSTED` with 429.
 
 ### 7. Wrong vs Correct
+
 #### Wrong
+
 ```ts
-const remaining = row ? env.DAILY_USER_QUOTA - row.usedToday : env.DAILY_USER_QUOTA;
+const remaining = row
+  ? env.DAILY_USER_QUOTA - row.usedToday
+  : env.DAILY_USER_QUOTA;
 ```
 
 #### Correct
+
 ```ts
 const used = !row || row.quotaDate !== todayISO() ? 0 : row.usedToday;
 const remaining = Math.max(0, env.DAILY_USER_QUOTA - used);
@@ -429,10 +553,16 @@ Source-gating keeps the integration trivially re-enableable (one env edit)
 without code review.
 
 **Example** (the locked pattern from `config/auth.ts`):
+
 ```ts
 const socialProviders =
   env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
-    ? { google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET } }
+    ? {
+        google: {
+          clientId: env.GOOGLE_CLIENT_ID,
+          clientSecret: env.GOOGLE_CLIENT_SECRET,
+        },
+      }
     : undefined;
 
 export const auth = betterAuth({

@@ -39,6 +39,7 @@ interface PendingGeneration {
   aspectRatio: AspectChoice;
   submittedAt: string;
   referenceFile?: File;
+  isPublic: boolean;
   errorMessage?: string;
 }
 
@@ -46,6 +47,7 @@ const prompt = ref('');
 const model = ref('gpt-image-2');
 const count = ref<number>(DEFAULT_COUNT);
 const aspectRatio = ref<AspectChoice>(DEFAULT_ASPECT_CHOICE);
+const isPublicGeneration = ref(false);
 const activeBatchId = ref<string | null>(null);
 const pendingGeneration = ref<PendingGeneration | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -83,6 +85,7 @@ const hasActiveSurface = computed(
   () => pendingGeneration.value !== null || displayedBatch.value !== null,
 );
 const currentResultEntries = computed(() => displayedBatch.value?.entries ?? []);
+const galleryEntries = computed(() => entries.value.filter((entry) => entry.record.isPublic));
 const isGeneratingSurface = computed(() => pendingGeneration.value !== null && isLoading.value);
 const generationErrorMessage = computed(() => pendingGeneration.value?.errorMessage ?? null);
 const hasGenerationError = computed(
@@ -158,6 +161,7 @@ function createSnapshotFromCurrentComposer(): PendingGeneration {
     model: model.value,
     count: count.value,
     aspectRatio: aspectRatio.value,
+    isPublic: isPublicGeneration.value,
     submittedAt: new Date().toISOString(),
   };
   if (selectedFile.value) snapshot.referenceFile = selectedFile.value;
@@ -173,6 +177,7 @@ function createSnapshotFromDisplayedBatch(batch: GroupedBatch): PendingGeneratio
     model: batch.model,
     count: Math.min(MAX_COUNT, Math.max(MIN_COUNT, batch.entries.length)),
     aspectRatio: firstRecord?.aspectRatio ?? DEFAULT_ASPECT_CHOICE,
+    isPublic: batch.entries.some((entry) => entry.record.isPublic),
     submittedAt: new Date().toISOString(),
   };
 }
@@ -185,6 +190,7 @@ function optionsFromSnapshot(snapshot: PendingGeneration): GenerateImageOptions 
   };
   if (snapshot.aspectRatio !== 'auto') options.aspectRatio = snapshot.aspectRatio;
   if (snapshot.referenceFile) options.referenceFile = snapshot.referenceFile;
+  options.isPublic = snapshot.isPublic;
   return options;
 }
 
@@ -197,6 +203,7 @@ async function runGeneration(snapshot: PendingGeneration): Promise<void> {
   model.value = snapshot.model;
   count.value = snapshot.count;
   aspectRatio.value = snapshot.aspectRatio;
+  isPublicGeneration.value = snapshot.isPublic;
 
   try {
     const result = await generate(optionsFromSnapshot(snapshot));
@@ -216,6 +223,7 @@ function handleSelectBatch(batch: GroupedBatch): void {
   pendingGeneration.value = null;
   activeBatchId.value = batch.batchId;
   prompt.value = batch.prompt;
+  isPublicGeneration.value = batch.entries.some((entry) => entry.record.isPublic);
   const first = batch.entries[0];
   if (first?.record.aspectRatio) aspectRatio.value = first.record.aspectRatio;
   count.value = Math.min(MAX_COUNT, Math.max(MIN_COUNT, batch.entries.length));
@@ -247,6 +255,7 @@ function handleNewConversation(): void {
   activeBatchId.value = null;
   pendingGeneration.value = null;
   prompt.value = '';
+  isPublicGeneration.value = false;
   clear();
   clearLastBatch();
 }
@@ -339,10 +348,9 @@ function firstClipboardImageFile(data: DataTransfer | null): File | null {
   return directFile;
 }
 
-function handleDownload(entry: HistoryEntry): void {
-  downloadUrl(entry.imageUrl, entry.record.id);
+async function handleDownload(entry: HistoryEntry): Promise<void> {
+  await downloadUrl(entry.imageUrl, entry.record.id);
 }
-
 async function handleEditPrompt(): Promise<void> {
   const snapshot = pendingGeneration.value ?? displayedBatch.value;
   if (!snapshot) return;
@@ -351,9 +359,11 @@ async function handleEditPrompt(): Promise<void> {
   if ('entries' in snapshot) {
     count.value = Math.min(MAX_COUNT, Math.max(MIN_COUNT, snapshot.entries.length));
     aspectRatio.value = snapshot.entries[0]?.record.aspectRatio ?? DEFAULT_ASPECT_CHOICE;
+    isPublicGeneration.value = snapshot.entries.some((entry) => entry.record.isPublic);
   } else {
     count.value = snapshot.count;
     aspectRatio.value = snapshot.aspectRatio;
+    isPublicGeneration.value = snapshot.isPublic;
   }
   await nextTick();
   composerTextareaRef.value?.focus();
@@ -378,17 +388,23 @@ function createSnapshotFromPending(snapshot: PendingGeneration): PendingGenerati
     model: snapshot.model,
     count: snapshot.count,
     aspectRatio: snapshot.aspectRatio,
+    isPublic: snapshot.isPublic,
     submittedAt: new Date().toISOString(),
   };
   if (snapshot.referenceFile) next.referenceFile = snapshot.referenceFile;
   return next;
 }
 
-function handleSaveCurrent(): void {
+async function handleSaveCurrent(): Promise<void> {
   const batch = displayedBatch.value;
   if (!batch) return;
-  for (const entry of batch.entries) {
-    handleDownload(entry);
+  try {
+    await Promise.all(batch.entries.map((entry) => handleDownload(entry)));
+    ElMessage.success(
+      batch.entries.length > 1 ? `已开始下载 ${batch.entries.length} 张图片。` : '下载已开始。',
+    );
+  } catch {
+    ElMessage.error('下载失败，请稍后重试。');
   }
 }
 
@@ -418,6 +434,10 @@ function chooseAspect(value: AspectChoice): void {
 function chooseModel(value: string): void {
   model.value = value;
   modelMenuOpen.value = false;
+}
+
+function togglePublicGeneration(): void {
+  if (!isLoading.value) isPublicGeneration.value = !isPublicGeneration.value;
 }
 
 function handleDocumentClick(event: MouseEvent): void {
@@ -747,7 +767,16 @@ function formatStageDate(iso: string | undefined): string {
                     </li>
                   </ul>
                 </div>
-                <span class="prompt-showcase__public">公开 <i aria-hidden="true" /></span>
+                <button
+                  type="button"
+                  class="prompt-showcase__public"
+                  :class="{ 'prompt-showcase__public--active': isPublicGeneration }"
+                  :aria-pressed="isPublicGeneration"
+                  :disabled="isLoading"
+                  @click="togglePublicGeneration"
+                >
+                  公开 <i aria-hidden="true" />
+                </button>
                 <button type="submit" class="prompt-showcase__generate" :disabled="!canGenerate">
                   {{ isLoading ? '生成中' : '生成' }}
                 </button>
@@ -766,7 +795,7 @@ function formatStageDate(iso: string | undefined): string {
             </div>
           </section>
 
-          <RecentCreationsMasonry :entries="entries" @select="handleSelectRecentEntry" />
+          <RecentCreationsMasonry :entries="galleryEntries" @select="handleSelectRecentEntry" />
         </template>
       </div>
     </main>
@@ -1184,6 +1213,7 @@ function formatStageDate(iso: string | undefined): string {
 
 .studio--stage {
   --stage-rail-width: min(calc(100vw - 64px), 960px);
+  --stage-header-bleed: var(--topbar-height);
 
   display: flex;
   min-height: calc(100vh - var(--topbar-height));
@@ -1198,13 +1228,13 @@ function formatStageDate(iso: string | undefined): string {
   content: '';
   position: absolute;
   inset-inline: 0;
-  top: 0;
+  top: calc(var(--stage-header-bleed) * -1);
   pointer-events: none;
 }
 
 .studio--stage::before {
   z-index: 0;
-  height: min(54vh, 520px);
+  height: calc(min(54vh, 520px) + var(--stage-header-bleed));
   background:
     radial-gradient(circle at 18% 8%, rgba(116, 184, 255, 0.36), transparent 34%),
     radial-gradient(circle at 76% 14%, rgba(235, 136, 226, 0.3), transparent 35%),
@@ -1214,12 +1244,13 @@ function formatStageDate(iso: string | undefined): string {
 
 .studio--stage::after {
   z-index: 0;
-  height: min(44vh, 420px);
+  height: calc(min(44vh, 420px) + var(--stage-header-bleed));
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.58) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.58) 1px, transparent 1px);
   background-size: 112px 112px;
   mask-image: linear-gradient(to bottom, black 0%, transparent 92%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 92%);
   opacity: 0.46;
 }
 
@@ -1709,9 +1740,13 @@ function formatStageDate(iso: string | undefined): string {
   align-items: center;
   gap: 8px;
   margin-left: auto;
+  border: 0;
+  background: transparent;
   color: oklch(46% 0.012 78deg);
+  cursor: pointer;
   font-size: 13px;
   font-weight: 700;
+  padding: 0;
 }
 
 .prompt-showcase__public i {
@@ -1732,6 +1767,24 @@ function formatStageDate(iso: string | undefined): string {
   height: 12px;
   border-radius: 50%;
   background: oklch(99% 0.004 88deg);
+  transition: transform 160ms ease;
+}
+
+.prompt-showcase__public--active {
+  color: var(--color-ink);
+}
+
+.prompt-showcase__public--active i {
+  background: oklch(76% 0.13 148deg);
+}
+
+.prompt-showcase__public--active i::after {
+  transform: translateX(14px);
+}
+
+.prompt-showcase__public:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
 }
 
 .prompt-showcase__generate {

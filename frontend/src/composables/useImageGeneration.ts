@@ -25,6 +25,7 @@ export interface GenerateImageOptions {
   referenceFile?: File;
   count?: number;
   aspectRatio?: AspectRatio;
+  isPublic?: boolean;
 }
 
 export function useImageGeneration() {
@@ -66,6 +67,7 @@ export function useImageGeneration() {
         count,
         aspectRatio,
         ...(referenceId !== undefined ? { referenceId } : {}),
+        isPublic: options.isPublic ?? false,
       });
       const generated = await generateImage(request);
 
@@ -85,6 +87,7 @@ export function useImageGeneration() {
           width: image.width,
           height: image.height,
           elapsedMs,
+          isPublic: options.isPublic ?? false,
           ...(referenceId !== undefined ? { referenceId } : {}),
         });
         const entry = add(record);
@@ -135,6 +138,7 @@ function createImageRecord(input: {
   width: number;
   height: number;
   elapsedMs?: number;
+  isPublic: boolean;
 }): ImageRecord {
   const record: ImageRecord = {
     id: input.id,
@@ -145,6 +149,7 @@ function createImageRecord(input: {
     aspectRatio: input.aspectRatio,
     width: input.width,
     height: input.height,
+    isPublic: input.isPublic,
   };
   if (input.referenceId !== undefined) record.referenceId = input.referenceId;
   if (input.elapsedMs !== undefined) record.elapsedMs = input.elapsedMs;

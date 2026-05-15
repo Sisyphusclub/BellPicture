@@ -10,13 +10,13 @@
 
 ## State categories
 
-| Category | Where it lives | Example |
-|---|---|---|
-| Component-local | `ref`/`reactive` inside `<script setup>` | The current input value of a form field |
-| Cross-component reactive | Module-level `ref` inside a composable (see below) | The list of generated images shown in the gallery |
-| Server / async | A composable that wraps a service call | "Is the generation request currently in flight?" |
-| Persistent (durable) | **Backend SQLite** via `/api/history` (records) + `OUTPUT_DIR` files (binaries) | The user's image history across devices |
-| Route | `vue-router` query/params | The currently-open history entry id |
+| Category                 | Where it lives                                                                  | Example                                           |
+| ------------------------ | ------------------------------------------------------------------------------- | ------------------------------------------------- |
+| Component-local          | `ref`/`reactive` inside `<script setup>`                                        | The current input value of a form field           |
+| Cross-component reactive | Module-level `ref` inside a composable (see below)                              | The list of generated images shown in the gallery |
+| Server / async           | A composable that wraps a service call                                          | "Is the generation request currently in flight?"  |
+| Persistent (durable)     | **Backend SQLite** via `/api/history` (records) + `OUTPUT_DIR` files (binaries) | The user's image history across devices           |
+| Route                    | `vue-router` query/params                                                       | The currently-open history entry id               |
 
 There is **no global store object**. Shared state is co-located with the
 composable that owns it.
@@ -27,12 +27,12 @@ composable that owns it.
 
 ```ts
 // composables/useImageHistory.ts (sketch — see source for the full version)
-import { ref, readonly, computed } from 'vue';
-import { fetchHistory, deleteHistoryBatch } from '@/services/api/historyApi';
-import { buildApiUrl } from '@/services/api/imagesApi';
-import type { ImageRecord, HistoryEntry } from '@/types/image';
+import { ref, readonly, computed } from "vue";
+import { fetchHistory, deleteHistoryBatch } from "@/services/api/historyApi";
+import { buildApiUrl } from "@/services/api/imagesApi";
+import type { ImageRecord, HistoryEntry } from "@/types/image";
 
-const records = ref<ImageRecord[]>([]);   // module-level → shared
+const records = ref<ImageRecord[]>([]); // module-level → shared
 let hydrated = false;
 
 async function hydrate() {
@@ -60,10 +60,21 @@ export function useImageHistory() {
 
   async function removeBatch(batchId: string) {
     await deleteHistoryBatch(batchId);
-    records.value = records.value.filter((r) => (r.batchId ?? r.id) !== batchId);
+    records.value = records.value.filter(
+      (r) => (r.batchId ?? r.id) !== batchId,
+    );
   }
 
-  return { records: readonly(records), entries, add, removeBatch, refresh: async () => { hydrated = false; await hydrate(); } };
+  return {
+    records: readonly(records),
+    entries,
+    add,
+    removeBatch,
+    refresh: async () => {
+      hydrated = false;
+      await hydrate();
+    },
+  };
 }
 ```
 
@@ -79,19 +90,23 @@ pattern is permitted.
 
 History records live in the `image_records` table:
 
-| Column | Type | Notes |
-|---|---|---|
-| `id` | text PK | UUID with extension (e.g. `<uuid>.png`); also the filename under `OUTPUT_DIR` |
-| `batch_id` | text | Shared across every record in the same generate batch |
-| `user_id` | text FK → `user.id`, cascade | The owner |
-| `prompt`, `model`, `reference_id?`, `aspect_ratio?` | text | Provided by the request |
-| `filename`, `mime`, `width`, `height` | text/int | Image metadata |
-| `elapsed_ms?` | int | Generation wall clock |
-| `created_at` | int (ms) | Sort key |
+| Column                                              | Type                         | Notes                                                                         |
+| --------------------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------- |
+| `id`                                                | text PK                      | UUID with extension (e.g. `<uuid>.png`); also the filename under `OUTPUT_DIR` |
+| `batch_id`                                          | text                         | Shared across every record in the same generate batch                         |
+| `user_id`                                           | text FK → `user.id`, cascade | The owner                                                                     |
+| `prompt`, `model`, `reference_id?`, `aspect_ratio?` | text                         | Provided by the request                                                       |
+| `filename`, `mime`, `width`, `height`               | text/int                     | Image metadata                                                                |
+| `elapsed_ms?`                                       | int                          | Generation wall clock                                                         |
+| `is_public`                                         | int boolean                  | Whether the generated record is shown in the homepage gallery                 |
+| `created_at`                                        | int (ms)                     | Sort key                                                                      |
 
 Indexes: `(user_id, created_at)` and `(batch_id)`.
 
-`GET /api/history` returns the current user's records sorted newest-first.
+`GET /api/history` returns the current user's records sorted newest-first,
+including the required `isPublic` boolean. Image management/history consumes the
+full list. The homepage gallery filters the same shared `entries` to
+`entry.record.isPublic === true`; do not create a second gallery-only store.
 `DELETE /api/history/batch/:batchId` and `/api/history/:id` remove rows but
 leave `OUTPUT_DIR` files in place (file cleanup is PR3's responsibility once
 files are per-user).

@@ -84,6 +84,37 @@ describe('imagesApi', () => {
     expect(result.images[0]?.outputUrl).toBe('/api/outputs/out.png');
   });
 
+  it('sends public visibility in generate requests', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          batchId: 'b-1',
+          aspectRatio: '1:1',
+          generationMode: 'text-to-image',
+          images: [
+            {
+              id: 'out.png',
+              outputUrl: '/api/outputs/out.png',
+              filename: 'out.png',
+              mime: 'image/png',
+              width: 1024,
+              height: 1024,
+            },
+          ],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await generateImage({ prompt: 'publish me', isPublic: true });
+
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toMatchObject({
+      prompt: 'publish me',
+      isPublic: true,
+    });
+  });
+
   it('throws the backend error envelope with request context', async () => {
     vi.stubGlobal(
       'fetch',

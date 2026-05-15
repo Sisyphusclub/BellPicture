@@ -16,6 +16,7 @@ export interface ImageRecordDTO {
   width: number;
   height: number;
   elapsedMs?: number;
+  isPublic: boolean;
   createdAt: string; // ISO 8601
 }
 
@@ -32,6 +33,7 @@ export interface NewImageRecord {
   width: number;
   height: number;
   elapsedMs?: number;
+  isPublic: boolean;
   createdAt: Date;
 }
 
@@ -45,6 +47,7 @@ function toDTO(row: typeof imageRecords.$inferSelect): ImageRecordDTO {
     mime: row.mime,
     width: row.width,
     height: row.height,
+    isPublic: row.isPublic,
     createdAt: row.createdAt.toISOString(),
   };
   if (row.referenceId !== null) dto.referenceId = row.referenceId;
@@ -70,6 +73,7 @@ export function insertImageRecords(records: NewImageRecord[]): void {
         width: r.width,
         height: r.height,
         elapsedMs: r.elapsedMs ?? null,
+        isPublic: r.isPublic,
         createdAt: r.createdAt,
       })),
     )

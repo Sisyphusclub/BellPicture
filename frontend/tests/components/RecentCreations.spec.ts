@@ -15,6 +15,7 @@ function createEntry(overrides: Partial<HistoryEntry['record']> = {}): HistoryEn
       width: 1024,
       height: 1536,
       aspectRatio: '2:3',
+      isPublic: true,
       ...overrides,
     },
     imageUrl: 'blob:recent-1',
@@ -23,15 +24,18 @@ function createEntry(overrides: Partial<HistoryEntry['record']> = {}): HistoryEn
 }
 
 describe('RecentCreationsMasonry', () => {
-  it('renders an empty state when there is no local history', () => {
+  it('renders an empty gallery state when there are no public entries', () => {
     const wrapper = mount(RecentCreationsMasonry, {
       props: {
         entries: [],
       },
     });
 
-    expect(wrapper.text()).toContain('还没有最近创作');
-    expect(wrapper.text()).toContain('生成第一组图片后');
+    expect(wrapper.text()).toContain('画廊');
+    expect(wrapper.text()).toContain('从画廊中预览灵感，点击图片查看提示词细节。');
+    expect(wrapper.text()).not.toContain('本地灵感');
+    expect(wrapper.text()).toContain('画廊还是空的');
+    expect(wrapper.text()).toContain('开启公开后生成图片');
   });
 
   it('emits the selected history entry when a masonry image is clicked', async () => {

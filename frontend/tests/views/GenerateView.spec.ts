@@ -17,7 +17,7 @@ interface GenerateViewHarness {
   generate: ReturnType<
     typeof vi.fn<(options: GenerateImageOptions) => Promise<GeneratedBatchResult>>
   >;
-  downloadUrl: ReturnType<typeof vi.fn<(url: string, filename: string) => void>>;
+  downloadUrl: ReturnType<typeof vi.fn<(url: string, filename: string) => Promise<void>>>;
   resolveGeneration: () => void;
 }
 
@@ -29,6 +29,23 @@ function createDeferred<T>(): Deferred<T> {
     reject = rej;
   });
   return { promise, resolve, reject };
+}
+
+function createHistoryEntry(id: string, prompt: string, isPublic: boolean): HistoryEntry {
+  return {
+    record: {
+      id,
+      batchId: `batch-${id}`,
+      createdAt: '2026-05-14T09:00:00.000Z',
+      prompt,
+      model: 'gpt-image-2',
+      aspectRatio: '1:1',
+      width: 1024,
+      height: 1024,
+      isPublic,
+    },
+    imageUrl: `http://localhost:3000/api/outputs/${id}`,
+  };
 }
 
 describe('GenerateView', () => {
@@ -59,6 +76,25 @@ describe('GenerateView', () => {
     expect(wrapper.text()).toContain('生成一张猫猫照片');
     expect(wrapper.text()).toContain('GPT-IMAGE-2');
     expect(wrapper.text()).toContain('生成中...');
+  });
+
+  it('sends public visibility when the homepage public toggle is enabled', async () => {
+    const { wrapper, generate } = await mountGenerateView();
+
+    await wrapper.get('textarea[name="heroPrompt"]').setValue('公开到画廊');
+    await wrapper.get('button.prompt-showcase__public').trigger('click');
+    await wrapper.get('form.prompt-showcase').trigger('submit');
+
+    expect(generate).toHaveBeenCalledWith(expect.objectContaining({ isPublic: true }));
+  });
+
+  it('passes only public entries to the homepage gallery', async () => {
+    const publicEntry = createHistoryEntry('public.png', '公开作品', true);
+    const privateEntry = createHistoryEntry('private.png', '私密作品', false);
+    const { wrapper } = await mountGenerateView({ entries: [publicEntry, privateEntry] });
+
+    const gallery = wrapper.getComponent({ name: 'RecentCreationsMasonryStub' });
+    expect(gallery.props('entries')).toEqual([publicEntry]);
   });
 
   it('starts a second generation from the dock composer generate button after a completed result', async () => {
@@ -134,10 +170,12 @@ describe('GenerateView', () => {
   });
 });
 
-async function mountGenerateView(): Promise<GenerateViewHarness> {
+async function mountGenerateView(
+  options: { entries?: HistoryEntry[] } = {},
+): Promise<GenerateViewHarness> {
   vi.resetModules();
 
-  const entries = ref<HistoryEntry[]>([]);
+  const entries = ref<HistoryEntry[]>(options.entries ?? []);
   const batchList = ref<GroupedBatch[]>([]);
   const batches: ComputedRef<GroupedBatch[]> = computed(() => batchList.value);
   const isLoading = ref(false);
@@ -178,6 +216,7 @@ async function mountGenerateView(): Promise<GenerateViewHarness> {
         aspectRatio: options.aspectRatio ?? '1:1',
         width: 1024,
         height: 1024,
+        isPublic: options.isPublic ?? false,
       },
       imageUrl: 'http://localhost:3000/api/outputs/generated.png',
     };
@@ -206,7 +245,9 @@ async function mountGenerateView(): Promise<GenerateViewHarness> {
 
   const refreshQuota = vi.fn<() => Promise<void>>(() => Promise.resolve());
   const removeBatch = vi.fn<(batchId: string) => Promise<void>>(() => Promise.resolve());
-  const downloadUrl = vi.fn<(url: string, filename: string) => void>();
+  const downloadUrl = vi.fn<(url: string, filename: string) => Promise<void>>(() =>
+    Promise.resolve(),
+  );
   const clearLastBatch = vi.fn(() => {
     lastBatch.value = null;
   });

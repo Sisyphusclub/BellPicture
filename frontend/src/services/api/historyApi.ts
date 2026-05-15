@@ -65,11 +65,13 @@ function isImageRecord(value: unknown): value is ImageRecord {
   const referenceId = value.referenceId;
   const aspectRatio = value.aspectRatio;
   const elapsedMs = value.elapsedMs;
+  const isPublic = value.isPublic;
   return (
     (batchId === undefined || typeof batchId === 'string') &&
     (referenceId === undefined || typeof referenceId === 'string') &&
     (aspectRatio === undefined || isAspectRatio(aspectRatio)) &&
-    (elapsedMs === undefined || typeof elapsedMs === 'number')
+    (elapsedMs === undefined || typeof elapsedMs === 'number') &&
+    typeof isPublic === 'boolean'
   );
 }
 

@@ -43,6 +43,7 @@ export interface ImageRecord {
   height: number;
   /** Wall-clock ms from request start to image saved. Optional. */
   elapsedMs?: number;
+  isPublic: boolean;
 }
 
 export interface UploadResponse {
@@ -58,6 +59,7 @@ export interface GenerateRequest {
   model?: string;
   count?: number;
   aspectRatio?: AspectRatio;
+  isPublic?: boolean;
 }
 
 export interface GenerateResponseItem {
