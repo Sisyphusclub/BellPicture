@@ -88,6 +88,29 @@ describe('GenerateView', () => {
     expect(generate).toHaveBeenCalledWith(expect.objectContaining({ isPublic: true }));
   });
 
+  it('submits the selected homepage count', async () => {
+    const { wrapper, generate } = await mountGenerateView();
+    const homeComposer = wrapper.get('form.prompt-showcase');
+    const stepper = homeComposer.get('.prompt-showcase__stepper');
+
+    expect(stepper.text()).toContain('1 张');
+
+    const increaseCountButton = stepper.get('button[aria-label="增加数量"]');
+    await increaseCountButton.trigger('click');
+
+    expect(stepper.text()).toContain('2 张');
+
+    await homeComposer.get('textarea[name="heroPrompt"]').setValue('生成两张海报');
+    await homeComposer.trigger('submit');
+
+    expect(generate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: '生成两张海报',
+        count: 2,
+      }),
+    );
+  });
+
   it('passes only public entries to the homepage gallery', async () => {
     const publicEntry = createHistoryEntry('public.png', '公开作品', true);
     const privateEntry = createHistoryEntry('private.png', '私密作品', false);

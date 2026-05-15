@@ -730,6 +730,25 @@ function formatStageDate(iso: string | undefined): string {
               <div class="prompt-showcase__bar">
                 <span class="prompt-showcase__model">✦ GPT-IMAGE-2</span>
                 <span class="prompt-showcase__grid">{{ quotaLabel }}</span>
+                <div class="prompt-showcase__stepper" role="group" aria-label="生成数量">
+                  <button
+                    type="button"
+                    :disabled="count <= MIN_COUNT"
+                    aria-label="减少数量"
+                    @click="decreaseCount"
+                  >
+                    −
+                  </button>
+                  <span>{{ count }} 张</span>
+                  <button
+                    type="button"
+                    :disabled="count >= MAX_COUNT"
+                    aria-label="增加数量"
+                    @click="increaseCount"
+                  >
+                    ＋
+                  </button>
+                </div>
                 <div class="prompt-showcase__aspect">
                   <button
                     type="button"
@@ -1213,7 +1232,6 @@ function formatStageDate(iso: string | undefined): string {
 
 .studio--stage {
   --stage-rail-width: min(calc(100vw - 64px), 960px);
-  --stage-header-bleed: var(--topbar-height);
 
   display: flex;
   min-height: calc(100vh - var(--topbar-height));
@@ -1226,31 +1244,33 @@ function formatStageDate(iso: string | undefined): string {
 .studio--stage::before,
 .studio--stage::after {
   content: '';
-  position: absolute;
-  inset-inline: 0;
-  top: calc(var(--stage-header-bleed) * -1);
+  position: fixed;
+  inset: 0;
+  z-index: 0;
   pointer-events: none;
 }
 
 .studio--stage::before {
-  z-index: 0;
-  height: calc(min(54vh, 520px) + var(--stage-header-bleed));
   background:
-    radial-gradient(circle at 18% 8%, rgba(116, 184, 255, 0.36), transparent 34%),
-    radial-gradient(circle at 76% 14%, rgba(235, 136, 226, 0.3), transparent 35%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0));
+    radial-gradient(circle at 18% 0%, rgba(116, 184, 255, 0.36), transparent 34%),
+    radial-gradient(circle at 76% 5%, rgba(235, 136, 226, 0.3), transparent 35%),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.76) 0%,
+      rgba(255, 255, 255, 0.62) 34%,
+      rgba(255, 255, 255, 0.2) 72%,
+      rgba(255, 255, 255, 0.08) 100%
+    );
   opacity: 0.9;
 }
 
 .studio--stage::after {
-  z-index: 0;
-  height: calc(min(44vh, 420px) + var(--stage-header-bleed));
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.58) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.58) 1px, transparent 1px);
   background-size: 112px 112px;
-  mask-image: linear-gradient(to bottom, black 0%, transparent 92%);
-  -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 92%);
+  mask-image: linear-gradient(to bottom, black 0%, black 42%, transparent 92%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 42%, transparent 92%);
   opacity: 0.46;
 }
 
@@ -1650,6 +1670,7 @@ function formatStageDate(iso: string | undefined): string {
   grid-column: 1 / -1;
   display: flex;
   min-height: 56px;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   border-top: 1px solid oklch(24% 0.012 78deg / 0.08);
@@ -2121,6 +2142,14 @@ function formatStageDate(iso: string | undefined): string {
   .prompt-showcase--dock .prompt-showcase__generate {
     width: 100%;
     margin-left: 0;
+  }
+
+  .prompt-showcase:not(.prompt-showcase--dock) .prompt-showcase__public {
+    margin-left: 0;
+  }
+
+  .prompt-showcase:not(.prompt-showcase--dock) .prompt-showcase__generate {
+    margin-left: auto;
   }
 
   .canvas-hero,
