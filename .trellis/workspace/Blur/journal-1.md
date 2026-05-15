@@ -552,3 +552,36 @@ Added homepage generation count controls, made the generated-result stage overla
 ### Next Steps
 
 - None - task complete
+
+
+## Session 17: Align gallery rail and stabilize aspect controls
+
+**Date**: 2026-05-15
+**Task**: Align gallery rail and stabilize aspect controls
+**Branch**: `main`
+
+### Summary
+
+Aligned the homepage gallery width to the prompt composer while preserving masonry, fixed aspect ratio selection submission, compacted long result prompts, and verified targeted frontend checks plus browser smoke.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `37be703` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
