@@ -385,3 +385,37 @@ Implemented ChatGPT-style inline generation animation and conversation-style res
 ### Next Steps
 
 - None - task complete
+
+
+## Session 12: Backend AI API auth headers
+
+**Date**: 2026-05-15
+**Task**: Backend AI API auth headers
+**Branch**: `main`
+
+### Summary
+
+Updated backend AI provider calls to send canonical Authorization bearer headers, covered generations and edits in provider tests, and documented the outbound provider auth-header contract.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6108219` | (see git log) |
+| `b8e6162` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
