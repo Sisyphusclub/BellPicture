@@ -191,6 +191,65 @@ outside `config/env.ts`.**
 `.env.example` must list every variable with a placeholder value and a
 one-line comment.
 
+## Scenario: outbound AI provider authorization headers
+
+### 1. Scope / Trigger
+- Trigger: any outbound `TwoApiImageProvider` call to the configured
+  OpenAI-compatible `/v1/*` AI image API.
+- Scope: currently `POST /v1/images/generations` and
+  `POST /v1/images/edits`. Do not add `/v1/models`,
+  `/v1/chat/completions`, or `/v1/responses` support unless a dedicated task
+  requests it.
+
+### 2. Signatures
+- Auth header: `Authorization: Bearer ${env.IMAGE_API_KEY}` on every provider
+  `fetch` call.
+- Generations: JSON body to `/v1/images/generations` with
+  `'content-type': 'application/json'`.
+- Edits: `FormData` body to `/v1/images/edits` with no manual `content-type`
+  header.
+
+### 3. Contracts
+- `IMAGE_API_KEY` stays server-side and is never logged directly or as a
+  computed bearer token.
+- The provider fetch-options object uses the canonical `Authorization` header
+  key; tests assert the same spelling.
+- Multipart boundaries are owned by undici/FormData. Manually setting
+  `content-type` for edits is forbidden.
+- Routes and controllers never read or forward the API key; provider code owns
+  outbound provider authentication.
+
+### 4. Validation & Error Matrix
+| Condition | Expected behavior |
+|---|---|
+| Text-to-image request | Outbound headers include `Authorization: Bearer <key>` and JSON `content-type` |
+| Image-to-image request | Outbound headers include `Authorization: Bearer <key>` and no manual `content-type` |
+| Missing `IMAGE_API_KEY` | `config/env.ts` required-env validation fails before provider construction |
+| Provider returns 401/403 | Existing non-2xx mapping returns `PROVIDER_ERROR` 502 without logging the token |
+
+### 5. Tests Required
+- Unit: text-to-image provider call asserts
+  `headers['Authorization'] === 'Bearer sk-test'`.
+- Unit: image-to-image provider call asserts
+  `headers['Authorization'] === 'Bearer sk-test'`.
+- Unit: image-to-image provider call asserts `headers['content-type']` is
+  `undefined`.
+- Backend checks: `npm run lint`, `npm run typecheck`, `npm test`, and
+  `npm run build` pass.
+
+### 6. Wrong vs Correct
+#### Wrong
+```ts
+headers: { authorization: `Bearer ${apiKey}` };
+headers: { Authorization: `Bearer ${apiKey}`, 'content-type': 'multipart/form-data' };
+```
+
+#### Correct
+```ts
+headers: { 'content-type': 'application/json', Authorization: `Bearer ${apiKey}` };
+headers: { Authorization: `Bearer ${apiKey}` };
+```
+
 ## Scenario: per-user daily image quota
 
 ### 1. Scope / Trigger
