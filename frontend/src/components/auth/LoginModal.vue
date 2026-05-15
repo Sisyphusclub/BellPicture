@@ -104,10 +104,7 @@ async function handleSignUp(): Promise<void> {
           type="button"
           role="tab"
           :aria-selected="mode === 'sign-in'"
-          :class="[
-            'login-modal__tab',
-            { 'login-modal__tab--active': mode === 'sign-in' },
-          ]"
+          :class="['login-modal__tab', { 'login-modal__tab--active': mode === 'sign-in' }]"
           :tabindex="mode === 'sign-in' ? 0 : -1"
           @click="switchMode('sign-in')"
         >
@@ -117,10 +114,7 @@ async function handleSignUp(): Promise<void> {
           type="button"
           role="tab"
           :aria-selected="mode === 'sign-up'"
-          :class="[
-            'login-modal__tab',
-            { 'login-modal__tab--active': mode === 'sign-up' },
-          ]"
+          :class="['login-modal__tab', { 'login-modal__tab--active': mode === 'sign-up' }]"
           :tabindex="mode === 'sign-up' ? 0 : -1"
           @click="switchMode('sign-up')"
         >
@@ -150,11 +144,7 @@ async function handleSignUp(): Promise<void> {
             :disabled="isPending"
           />
         </label>
-        <button
-          type="submit"
-          class="login-modal__submit"
-          :disabled="isPending || !canSubmitSignIn"
-        >
+        <button type="submit" class="login-modal__submit" :disabled="isPending || !canSubmitSignIn">
           {{ isPending ? '正在登录…' : '登录' }}
         </button>
       </form>
@@ -191,18 +181,12 @@ async function handleSignUp(): Promise<void> {
             :disabled="isPending"
           />
         </label>
-        <button
-          type="submit"
-          class="login-modal__submit"
-          :disabled="isPending || !canSubmitSignUp"
-        >
+        <button type="submit" class="login-modal__submit" :disabled="isPending || !canSubmitSignUp">
           {{ isPending ? '正在注册…' : '注册' }}
         </button>
       </form>
 
-      <p class="login-modal__fineprint">
-        注册即表示同意以邮箱建立账号信息。
-      </p>
+      <p class="login-modal__fineprint">注册即表示同意以邮箱建立账号信息。</p>
     </div>
   </ElDialog>
 </template>
@@ -243,7 +227,9 @@ async function handleSignUp(): Promise<void> {
   font-weight: 600;
   color: oklch(45% 0.012 78deg);
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
 }
 
 .login-modal__tab:hover:not(.login-modal__tab--active) {
@@ -288,7 +274,9 @@ async function handleSignUp(): Promise<void> {
   cursor: pointer;
   font-size: 14px;
   font-weight: 700;
-  transition: background 120ms ease, opacity 120ms ease;
+  transition:
+    background 120ms ease,
+    opacity 120ms ease;
 }
 
 .login-modal__submit:hover:not(:disabled) {

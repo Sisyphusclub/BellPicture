@@ -66,7 +66,11 @@ function initials(): string {
             :style="{ backgroundImage: `url(${user.image})` }"
             aria-hidden="true"
           />
-          <span v-else class="account-button__avatar account-button__avatar--initials" aria-hidden="true">
+          <span
+            v-else
+            class="account-button__avatar account-button__avatar--initials"
+            aria-hidden="true"
+          >
             {{ initials() }}
           </span>
           <span class="account-button__name">{{ displayName() }}</span>

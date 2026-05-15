@@ -85,4 +85,3 @@ function isApiErrorEnvelope(value: unknown): value is ApiErrorEnvelope {
     (details === undefined || isRecord(details))
   );
 }
-

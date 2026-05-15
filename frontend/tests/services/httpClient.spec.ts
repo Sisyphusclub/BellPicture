@@ -32,7 +32,10 @@ describe('authedFetch', () => {
   });
 
   it('rethrows network errors as ImageApiError instances (not raw TypeError)', async () => {
-    vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockRejectedValue(new TypeError('Failed to fetch')));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockRejectedValue(new TypeError('Failed to fetch')),
+    );
 
     let caught: unknown = null;
     try {

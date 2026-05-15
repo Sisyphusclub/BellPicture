@@ -1,8 +1,4 @@
-import {
-  ASPECT_RATIOS,
-  type AspectRatio,
-  type ImageRecord,
-} from '@/types/image';
+import { ASPECT_RATIOS, type AspectRatio, type ImageRecord } from '@/types/image';
 import { isNumber, isRecord, readNumber, readString } from '@/utils/narrowing';
 
 import {

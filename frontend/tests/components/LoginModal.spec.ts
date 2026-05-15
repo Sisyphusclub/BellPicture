@@ -64,9 +64,7 @@ function queryFields(): HTMLElement[] {
 }
 
 function querySubmit(): HTMLButtonElement | null {
-  return document.body.querySelector<HTMLButtonElement>(
-    '.login-modal__submit',
-  );
+  return document.body.querySelector<HTMLButtonElement>('.login-modal__submit');
 }
 
 function queryForm(): HTMLFormElement | null {
@@ -74,9 +72,7 @@ function queryForm(): HTMLFormElement | null {
 }
 
 function queryInputs(): HTMLInputElement[] {
-  return Array.from(
-    document.body.querySelectorAll<HTMLInputElement>('.login-modal__form input'),
-  );
+  return Array.from(document.body.querySelectorAll<HTMLInputElement>('.login-modal__form input'));
 }
 
 function setInputValue(input: HTMLInputElement, value: string): void {
