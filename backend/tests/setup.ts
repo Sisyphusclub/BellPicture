@@ -6,6 +6,7 @@ const root = mkdtempSync(path.join(tmpdir(), 'ref2image-test-'));
 
 process.env.IMAGE_API_BASE_URL ??= 'https://test.example.com';
 process.env.IMAGE_API_KEY ??= 'test-key';
+process.env.OPENAI_COMPAT_API_KEY ??= 'test-openai-compat-key';
 process.env.LOG_LEVEL ??= 'silent';
 process.env.UPLOAD_DIR ??= path.join(root, 'uploads');
 process.env.OUTPUT_DIR ??= path.join(root, 'outputs');

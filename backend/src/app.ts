@@ -9,12 +9,10 @@ import { requestLogger } from './middlewares/requestLogger.js';
 import { healthRouter } from './routes/health.js';
 import { buildHistoryRouter } from './routes/history.js';
 import { buildImagesRouter } from './routes/images.js';
+import { buildOpenAICompatRouter } from './routes/openaiCompat.js';
 import { outputsRouter } from './routes/outputs.js';
 import type { ImageGenerationProvider } from './services/providers/ImageGenerationProvider.js';
-import {
-  createUserQuotaService,
-  type UserQuotaService,
-} from './services/userQuota.service.js';
+import { createUserQuotaService, type UserQuotaService } from './services/userQuota.service.js';
 
 export interface AppDeps {
   provider: ImageGenerationProvider;
@@ -44,6 +42,8 @@ export function createApp(deps: AppDeps): Express {
   app.use(express.json({ limit: '1mb' }));
 
   const userQuota = deps.userQuota ?? createUserQuotaService();
+
+  app.use('/v1', buildOpenAICompatRouter({ provider: deps.provider }));
 
   app.use('/api', healthRouter);
   app.use(

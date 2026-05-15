@@ -4,6 +4,7 @@ export interface Env {
   PORT: number;
   IMAGE_API_BASE_URL: string;
   IMAGE_API_KEY: string;
+  OPENAI_COMPAT_API_KEY: string;
   IMAGE_MODEL: string;
   IMAGE_API_TIMEOUT_MS: number;
   GPT_POOL_QUOTA: number;
@@ -58,6 +59,7 @@ function loadEnv(): Env {
     PORT: readInt('PORT', 3000),
     IMAGE_API_BASE_URL: readString('IMAGE_API_BASE_URL'),
     IMAGE_API_KEY: readString('IMAGE_API_KEY'),
+    OPENAI_COMPAT_API_KEY: readString('OPENAI_COMPAT_API_KEY'),
     IMAGE_MODEL: readString('IMAGE_MODEL', 'gpt-image-2'),
     IMAGE_API_TIMEOUT_MS: readInt('IMAGE_API_TIMEOUT_MS', 120_000),
     GPT_POOL_QUOTA: readInt('GPT_POOL_QUOTA', 100),

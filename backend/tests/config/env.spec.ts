@@ -15,6 +15,7 @@ describe('config/env', () => {
   it('exports a typed env with defaults applied for optional vars', async () => {
     process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
     process.env.IMAGE_API_KEY = 'sk-test';
+    process.env.OPENAI_COMPAT_API_KEY = 'compat-test';
     process.env.BETTER_AUTH_SECRET = 'test-secret-padding';
     delete process.env.GOOGLE_CLIENT_ID;
     delete process.env.GOOGLE_CLIENT_SECRET;
@@ -35,6 +36,7 @@ describe('config/env', () => {
 
     expect(env.IMAGE_API_BASE_URL).toBe('https://api.example.com');
     expect(env.IMAGE_API_KEY).toBe('sk-test');
+    expect(env.OPENAI_COMPAT_API_KEY).toBe('compat-test');
     expect(env.IMAGE_MODEL).toBe('gpt-image-2');
     expect(env.PORT).toBe(3000);
     expect(env.IMAGE_API_TIMEOUT_MS).toBe(120_000);
@@ -56,6 +58,14 @@ describe('config/env', () => {
     delete process.env.IMAGE_API_KEY;
 
     await expect(import('../../src/config/env.js')).rejects.toThrow(/IMAGE_API_KEY/);
+  });
+
+  it('throws on import when OPENAI_COMPAT_API_KEY is missing', async () => {
+    process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
+    process.env.IMAGE_API_KEY = 'sk-test';
+    delete process.env.OPENAI_COMPAT_API_KEY;
+
+    await expect(import('../../src/config/env.js')).rejects.toThrow(/OPENAI_COMPAT_API_KEY/);
   });
 
   it('rejects non-positive integer for IMAGE_API_TIMEOUT_MS', async () => {
