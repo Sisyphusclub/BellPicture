@@ -452,3 +452,37 @@ Fixed the completed result page dock composer generate button so it triggers a n
 ### Next Steps
 
 - None - task complete
+
+
+## Session 14: OpenAI-compatible image API endpoints
+
+**Date**: 2026-05-15
+**Task**: OpenAI-compatible image API endpoints
+**Branch**: `main`
+
+### Summary
+
+Added OpenAI-compatible /v1 image API endpoints with dedicated bearer auth, model listing, image generation/editing, chat/responses image subsets, tests, and backend code-spec updates.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1becc06` | (see git log) |
+| `5b84b5c` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
