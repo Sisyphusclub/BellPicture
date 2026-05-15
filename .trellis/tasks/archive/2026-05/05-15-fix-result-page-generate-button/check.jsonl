@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Verify frontend task against spec entry"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Check result-page submit button interaction and accessibility"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Check generation loading state handling"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Check event handler and ref safety"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Check lint/typecheck/test/build/browser verification"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Check fix scope and reuse"}
