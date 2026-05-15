@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 12
+- **Total Sessions**: 13
 - **Last Active**: 2026-05-15
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~421 | Active |
+| `journal-1.md` | ~454 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 13 | 2026-05-15 | Fix result dock generate button | `a8f66cd` | `main` |
 | 12 | 2026-05-15 | Backend AI API auth headers | `6108219`, `b8e6162` | `main` |
 | 11 | 2026-05-15 | Image generation result UI | `c68d882`, `875cdd6` | `main` |
 | 10 | 2026-05-14 | Daily login quota | `b750c12`, `3a1689f`, `cf4ba7f` | `main` |

@@ -419,3 +419,36 @@ Updated backend AI provider calls to send canonical Authorization bearer headers
 ### Next Steps
 
 - None - task complete
+
+
+## Session 13: Fix result dock generate button
+
+**Date**: 2026-05-15
+**Task**: Fix result dock generate button
+**Branch**: `main`
+
+### Summary
+
+Fixed the completed result page dock composer generate button so it triggers a new generation, added regression coverage, and verified the behavior in browser smoke.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a8f66cd` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
