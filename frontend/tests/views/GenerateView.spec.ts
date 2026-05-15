@@ -61,6 +61,39 @@ describe('GenerateView', () => {
     expect(wrapper.text()).toContain('生成中...');
   });
 
+  it('starts a second generation from the dock composer generate button after a completed result', async () => {
+    const { wrapper, generate, resolveGeneration } = await mountGenerateView();
+
+    await wrapper.get('textarea[name="heroPrompt"]').setValue('生成一张猫猫照片');
+    await wrapper.get('form.prompt-showcase').trigger('submit');
+    resolveGeneration();
+    await flushPromises();
+
+    expect(wrapper.find('.generated-figure__frame img').exists()).toBe(true);
+
+    const dockComposer = wrapper.get('form.prompt-showcase--dock');
+    await dockComposer.get('textarea[name="prompt"]').setValue('生成一张赛博城市海报');
+
+    const increaseCountButton = dockComposer
+      .findAll('.prompt-showcase__stepper button')
+      .find((button) => button.attributes('aria-label') === '增加数量');
+    expect(increaseCountButton).toBeDefined();
+    await increaseCountButton?.trigger('click');
+
+    await dockComposer.get('button.prompt-showcase__generate').trigger('click');
+
+    expect(generate).toHaveBeenCalledTimes(2);
+    expect(generate).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        prompt: '生成一张赛博城市海报',
+        model: 'gpt-image-2',
+        count: 2,
+      }),
+    );
+    expect(wrapper.find('.generation-placeholder').exists()).toBe(true);
+    expect(wrapper.text()).toContain('生成中...');
+  });
+
   it('reveals result actions, saves the generated image, and regenerates the same prompt', async () => {
     const { wrapper, generate, downloadUrl, resolveGeneration } = await mountGenerateView();
 

@@ -924,7 +924,12 @@ function formatStageDate(iso: string | undefined): string {
           </ul>
         </div>
         <span class="prompt-showcase__mode" aria-live="polite">{{ modeLabel }}</span>
-        <button type="submit" class="prompt-showcase__generate" :disabled="!canGenerate">
+        <button
+          type="button"
+          class="prompt-showcase__generate"
+          :disabled="!canGenerate"
+          @click="handleSubmit"
+        >
           {{ isLoading ? '生成中' : '生成' }}
         </button>
       </div>
