@@ -1,0 +1,6 @@
+{"file":".trellis/spec/backend/index.md","reason":"Backend spec index and stack overview for the implementation agent."}
+{"file":".trellis/spec/backend/directory-structure.md","reason":"Express layout, env rules, route/controller/service boundaries, outbound provider auth constraints."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"AppError codes, validation mapping, and consistent JSON error envelope for new endpoints."}
+{"file":".trellis/spec/backend/logging-guidelines.md","reason":"Secret redaction and no raw Authorization logging for inbound /v1 bearer auth."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Strict TypeScript, lint/test/build requirements, and controller integration test expectations."}
+{"file":".trellis/tasks/05-15-openai-compatible-image-api-endpoints/research/openai-image-api-shapes.md","reason":"OpenAI-compatible request/response envelope research and repo-specific mapping."}
