@@ -55,7 +55,7 @@ const visibleEntries = computed(() => props.entries.slice(0, 40));
 
 <style scoped>
 .recent-creations {
-  width: min(100% - 48px, 980px);
+  width: min(100% - 48px, 960px);
   margin: 62px auto 120px;
 }
 
@@ -201,7 +201,7 @@ const visibleEntries = computed(() => props.entries.slice(0, 40));
 
 @media (max-width: 860px) {
   .recent-creations {
-    width: min(100% - 32px, 980px);
+    width: min(100% - 32px, 960px);
     margin-top: 44px;
   }
 

@@ -1,4 +1,4 @@
-import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { flushPromises, mount, type DOMWrapper, type VueWrapper } from '@vue/test-utils';
 import { computed, readonly, ref, type ComputedRef } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -46,6 +46,12 @@ function createHistoryEntry(id: string, prompt: string, isPublic: boolean): Hist
     },
     imageUrl: `http://localhost:3000/api/outputs/${id}`,
   };
+}
+
+function getButtonByText(buttons: DOMWrapper<Element>[], text: string): DOMWrapper<Element> {
+  const button = buttons.find((item) => item.text().includes(text));
+  if (!button) throw new Error(`未找到 ${text} 按钮。`);
+  return button;
 }
 
 describe('GenerateView', () => {
@@ -111,6 +117,29 @@ describe('GenerateView', () => {
     );
   });
 
+  it('submits the selected homepage aspect ratio', async () => {
+    const { wrapper, generate } = await mountGenerateView();
+    const homeComposer = wrapper.get('form.prompt-showcase');
+    const aspectControl = homeComposer.get('.prompt-showcase__aspect');
+
+    await aspectControl.get('button.prompt-showcase__smart').trigger('click');
+    await getButtonByText(aspectControl.findAll('.prompt-showcase__menu button'), '2:3').trigger(
+      'click',
+    );
+
+    expect(aspectControl.get('button.prompt-showcase__smart').text()).toContain('2:3（纵向）');
+
+    await homeComposer.get('textarea[name="heroPrompt"]').setValue('生成竖版海报');
+    await homeComposer.trigger('submit');
+
+    expect(generate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: '生成竖版海报',
+        aspectRatio: '2:3',
+      }),
+    );
+  });
+
   it('passes only public entries to the homepage gallery', async () => {
     const publicEntry = createHistoryEntry('public.png', '公开作品', true);
     const privateEntry = createHistoryEntry('private.png', '私密作品', false);
@@ -151,6 +180,52 @@ describe('GenerateView', () => {
     );
     expect(wrapper.find('.generation-placeholder').exists()).toBe(true);
     expect(wrapper.text()).toContain('生成中...');
+  });
+
+  it('submits the selected dock aspect ratio after a completed result', async () => {
+    const { wrapper, generate, resolveGeneration } = await mountGenerateView();
+
+    await wrapper.get('textarea[name="heroPrompt"]').setValue('生成一张猫猫照片');
+    await wrapper.get('form.prompt-showcase').trigger('submit');
+    resolveGeneration();
+    await flushPromises();
+
+    const dockComposer = wrapper.get('form.prompt-showcase--dock');
+    const aspectControl = dockComposer.get('.prompt-showcase__aspect');
+
+    await aspectControl.get('button.prompt-showcase__smart').trigger('click');
+    await getButtonByText(aspectControl.findAll('.prompt-showcase__menu button'), '16:9').trigger(
+      'click',
+    );
+
+    expect(aspectControl.get('button.prompt-showcase__smart').text()).toContain('16:9（宽屏）');
+
+    await dockComposer.get('textarea[name="prompt"]').setValue('生成宽屏海报');
+    await dockComposer.get('button.prompt-showcase__generate').trigger('click');
+
+    expect(generate).toHaveBeenCalledTimes(2);
+    expect(generate).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        prompt: '生成宽屏海报',
+        model: 'gpt-image-2',
+        aspectRatio: '16:9',
+      }),
+    );
+  });
+
+  it('keeps the full long result prompt available while rendering the compact prompt node', async () => {
+    const { wrapper, resolveGeneration } = await mountGenerateView();
+    const longPrompt =
+      '一张电影感海报，包含雨夜城市、霓虹灯、反光地面、远处的红色伞、细腻人物表情、复杂背景层次、柔和景深、丰富材质细节，并保持整体构图优雅克制。';
+
+    await wrapper.get('textarea[name="heroPrompt"]').setValue(longPrompt);
+    await wrapper.get('form.prompt-showcase').trigger('submit');
+    resolveGeneration();
+    await flushPromises();
+
+    const promptHeading = wrapper.get('.generation-item__prompt');
+    expect(promptHeading.text()).toBe(longPrompt);
+    expect(promptHeading.attributes('title')).toBe(longPrompt);
   });
 
   it('reveals result actions, saves the generated image, and regenerates the same prompt', async () => {

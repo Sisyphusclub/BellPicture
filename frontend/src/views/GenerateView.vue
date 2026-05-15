@@ -442,8 +442,13 @@ function togglePublicGeneration(): void {
 
 function handleDocumentClick(event: MouseEvent): void {
   if (!aspectMenuOpen.value && !modelMenuOpen.value) return;
-  const target = event.target as Element | null;
-  if (target?.closest('.prompt-showcase__select, .prompt-showcase__aspect')) return;
+  const target = event.target;
+  if (
+    target instanceof Element &&
+    target.closest('.prompt-showcase__select, .prompt-showcase__aspect')
+  ) {
+    return;
+  }
   aspectMenuOpen.value = false;
   modelMenuOpen.value = false;
 }
@@ -626,7 +631,7 @@ function formatStageDate(iso: string | undefined): string {
             }"
           >
             <p class="generation-item__date">{{ surfaceDateLabel }}</p>
-            <h1 class="generation-item__prompt">{{ surfacePrompt }}</h1>
+            <h1 class="generation-item__prompt" :title="surfacePrompt">{{ surfacePrompt }}</h1>
             <span class="generation-item__model">✦ {{ surfaceModelLabel }}</span>
 
             <div class="generation-visual" :aria-busy="isGeneratingSurface">
@@ -755,7 +760,7 @@ function formatStageDate(iso: string | undefined): string {
                     class="prompt-showcase__smart"
                     :aria-expanded="aspectMenuOpen"
                     aria-label="选择图片比例"
-                    @click="toggleAspectMenu"
+                    @click.stop="toggleAspectMenu"
                   >
                     <span>比例</span>
                     <strong>{{ aspectLabel(aspectRatio) }}</strong>
@@ -779,7 +784,8 @@ function formatStageDate(iso: string | undefined): string {
                         type="button"
                         role="option"
                         :aria-selected="value === aspectRatio"
-                        @click="chooseAspect(value)"
+                        :class="{ 'prompt-showcase__menu-item--active': value === aspectRatio }"
+                        @click.stop="chooseAspect(value)"
                       >
                         {{ aspectLabel(value) }}
                       </button>
@@ -879,7 +885,7 @@ function formatStageDate(iso: string | undefined): string {
             class="prompt-showcase__smart prompt-showcase__smart--model"
             :aria-expanded="modelMenuOpen"
             aria-label="选择生成模型"
-            @click="toggleModelMenu"
+            @click.stop="toggleModelMenu"
           >
             <span>模型</span>
             <strong>{{ modelDisplayName(model) }}</strong>
@@ -904,7 +910,7 @@ function formatStageDate(iso: string | undefined): string {
                 role="option"
                 :aria-selected="value === model"
                 :class="{ 'prompt-showcase__menu-item--active': value === model }"
-                @click="chooseModel(value)"
+                @click.stop="chooseModel(value)"
               >
                 {{ modelDisplayName(value) }}
               </button>
@@ -939,7 +945,7 @@ function formatStageDate(iso: string | undefined): string {
             class="prompt-showcase__smart"
             :aria-expanded="aspectMenuOpen"
             aria-label="选择图片比例"
-            @click="toggleAspectMenu"
+            @click.stop="toggleAspectMenu"
           >
             <span>比例</span>
             <strong>{{ aspectLabel(aspectRatio) }}</strong>
@@ -964,7 +970,7 @@ function formatStageDate(iso: string | undefined): string {
                 role="option"
                 :aria-selected="value === aspectRatio"
                 :class="{ 'prompt-showcase__menu-item--active': value === aspectRatio }"
-                @click="chooseAspect(value)"
+                @click.stop="chooseAspect(value)"
               >
                 {{ aspectLabel(value) }}
               </button>
@@ -1320,13 +1326,22 @@ function formatStageDate(iso: string | undefined): string {
 }
 
 .generation-item__prompt {
+  display: -webkit-box;
   width: min(100%, 420px);
+  max-height: 4.65em;
   margin: 0 0 14px;
+  overflow: hidden;
   color: #292521;
+  cursor: help;
   font-size: 16px;
   font-weight: 700;
-  line-height: 1.65;
-  white-space: pre-wrap;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 
 .generation-item__model {
