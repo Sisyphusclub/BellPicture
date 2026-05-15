@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Verify backend change against spec entry"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Check outbound provider auth-header contract and env boundaries"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Check required backend verification commands"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Check no unnecessary helper or abstraction was introduced"}

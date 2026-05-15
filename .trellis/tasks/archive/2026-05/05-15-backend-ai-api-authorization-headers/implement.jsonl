@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend spec entry and provider/service conventions"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "External AI provider env and outbound request contract"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend lint/typecheck/test/build requirements"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Avoid unnecessary abstractions while updating provider headers"}
