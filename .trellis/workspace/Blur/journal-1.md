@@ -351,3 +351,37 @@ Made frontend quota refresh auth-aware, added optimistic logged-in quota fallbac
 ### Next Steps
 
 - None - task complete
+
+
+## Session 11: Image generation result UI
+
+**Date**: 2026-05-15
+**Task**: Image generation result UI
+**Branch**: `main`
+
+### Summary
+
+Implemented ChatGPT-style inline generation animation and conversation-style result page, restored the homepage hero title, aligned result content with the composer, and formatted frontend files.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c68d882` | (see git log) |
+| `875cdd6` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
