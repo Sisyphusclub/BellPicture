@@ -619,3 +619,37 @@ Fixed recent creations masonry spacing, aligned popup/modal/dropdown surfaces to
 ### Next Steps
 
 - None - task complete
+
+
+## Session 19: Polish history detail modal and thumbnails
+
+**Date**: 2026-05-18
+**Task**: Polish history detail modal and thumbnails
+**Branch**: `main`
+
+### Summary
+
+Removed duplicate history detail download action, added click-to-enlarge preview and prompt field polish, and tightened history thumbnail presentation.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ddba0b9` | (see git log) |
+| `0ed5ed8` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
