@@ -585,3 +585,37 @@ Aligned the homepage gallery width to the prompt composer while preserving mason
 ### Next Steps
 
 - None - task complete
+
+
+## Session 18: Fix gallery masonry and modal preview
+
+**Date**: 2026-05-18
+**Task**: Fix gallery masonry and modal preview
+**Branch**: `main`
+
+### Summary
+
+Fixed recent creations masonry spacing, aligned popup/modal/dropdown surfaces to the no-shadow composer style, added click-to-enlarge image preview with return interaction, and bounded enlarged previews inside the viewport.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ef5efcf` | (see git log) |
+| `6c66799` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

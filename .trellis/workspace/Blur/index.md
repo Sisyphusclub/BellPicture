@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 17
-- **Last Active**: 2026-05-15
+- **Total Sessions**: 18
+- **Last Active**: 2026-05-18
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~587 | Active |
+| `journal-1.md` | ~621 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 18 | 2026-05-18 | Fix gallery masonry and modal preview | `ef5efcf`, `6c66799` | `main` |
 | 17 | 2026-05-15 | Align gallery rail and stabilize aspect controls | `37be703` | `main` |
 | 16 | 2026-05-15 | Fix home count selector and stage overlay | `212a166` | `main` |
 | 15 | 2026-05-15 | Fix generation page mask gap and gallery publishing | `30c612d` | `main` |
