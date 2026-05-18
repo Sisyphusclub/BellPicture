@@ -9,6 +9,8 @@ export const user = sqliteTable('user', {
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
   emailVerified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
+  username: text('username').unique(),
+  displayUsername: text('display_username'),
   image: text('image'),
   createdAt: integer('created_at', { mode: 'timestamp_ms' })
     .notNull()

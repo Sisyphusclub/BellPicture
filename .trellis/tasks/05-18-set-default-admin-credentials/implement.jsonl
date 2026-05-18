@@ -1,0 +1,8 @@
+{"file":".trellis/spec/backend/directory-structure.md","reason":"Backend auth/env/db changes must follow existing Express + config organization."}
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"Username field, migrations, and seeded admin account touch SQLite/Drizzle contracts."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"Username auth endpoints must return project-consistent validation and auth errors."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Backend implementation must satisfy TS strict, Vitest, and review expectations."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"LoginModal UI copy and Element Plus usage must follow frontend component conventions."}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"Auth client/composable changes must follow composable conventions."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Username auth inputs and API boundaries must remain strictly typed."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Frontend tests and a11y checks must follow project quality rules."}

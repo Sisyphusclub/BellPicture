@@ -3,8 +3,8 @@ import type * as ElementPlus from 'element-plus';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, ref } from 'vue';
 
-const signInWithEmail = vi.fn();
-const signUpWithEmail = vi.fn();
+const signInWithUsername = vi.fn();
+const signUpWithUsername = vi.fn();
 const signInWithGoogle = vi.fn();
 const logout = vi.fn();
 
@@ -23,8 +23,8 @@ vi.mock('@/composables/useAuth', () => ({
     user: computed(() => null),
     isAuthenticated,
     isLoading: computed(() => false),
-    signInWithEmail,
-    signUpWithEmail,
+    signInWithUsername,
+    signUpWithUsername,
     signInWithGoogle,
     logout,
     session: ref({ data: null, isPending: false }),
@@ -85,8 +85,8 @@ describe('LoginModal', () => {
     document.body.innerHTML = '';
     isOpen.value = true;
     isAuthenticated.value = false;
-    signInWithEmail.mockReset();
-    signUpWithEmail.mockReset();
+    signInWithUsername.mockReset();
+    signUpWithUsername.mockReset();
     signInWithGoogle.mockReset();
     close.mockReset();
   });
@@ -96,7 +96,7 @@ describe('LoginModal', () => {
     document.body.innerHTML = '';
   });
 
-  it('renders the 登录 tab by default with email + password fields', async () => {
+  it('renders the 登录 tab by default with username + password fields', async () => {
     const wrapper = mount(LoginModal, { attachTo: document.body });
     await nextTick();
 
@@ -109,12 +109,15 @@ describe('LoginModal', () => {
     expect(queryFields()).toHaveLength(2);
     expect(querySubmit()?.textContent?.trim()).toBe('登录');
 
-    expect(document.body.textContent ?? '').not.toContain('Continue with Google');
+    const bodyText = document.body.textContent ?? '';
+    expect(bodyText).toContain('用户名');
+    expect(bodyText).not.toContain('邮箱');
+    expect(bodyText).not.toContain('Continue with Google');
 
     wrapper.unmount();
   });
 
-  it('switches to the 注册 tab with 3 fields when clicked', async () => {
+  it('switches to the 注册 tab with username + password fields when clicked', async () => {
     const wrapper = mount(LoginModal, { attachTo: document.body });
     await nextTick();
 
@@ -123,14 +126,14 @@ describe('LoginModal', () => {
     await nextTick();
 
     expect(queryTabs()[1]!.getAttribute('aria-selected')).toBe('true');
-    expect(queryFields()).toHaveLength(3);
+    expect(queryFields()).toHaveLength(2);
     expect(querySubmit()?.textContent?.trim()).toBe('注册');
+    expect(queryInputs()[0]?.getAttribute('placeholder')).toBe('3-32 位小写字母、数字或下划线');
 
     wrapper.unmount();
   });
 
-  it('calls signUpWithEmail with the form payload on submit', async () => {
-    signUpWithEmail.mockResolvedValueOnce(undefined);
+  it('keeps registration submit disabled until the password has at least 8 characters', async () => {
     const wrapper = mount(LoginModal, { attachTo: document.body });
     await nextTick();
 
@@ -138,12 +141,29 @@ describe('LoginModal', () => {
     await nextTick();
 
     const inputs = queryInputs();
-    // Field order: email, password, name. ElInput's show-password may render an
-    // extra interactive element, but the actual <input> count should be 3.
-    expect(inputs.length).toBeGreaterThanOrEqual(3);
-    setInputValue(inputs[0]!, 'user@test.local');
+    setInputValue(inputs[0]!, 'admin_user');
+    setInputValue(inputs[1]!, 'short');
+    await nextTick();
+
+    expect(querySubmit()?.disabled).toBe(true);
+
+    wrapper.unmount();
+  });
+
+  it('calls signUpWithUsername with the form payload on submit', async () => {
+    signUpWithUsername.mockResolvedValueOnce(undefined);
+    const wrapper = mount(LoginModal, { attachTo: document.body });
+    await nextTick();
+
+    queryTabs()[1]!.click();
+    await nextTick();
+
+    const inputs = queryInputs();
+    // Field order: username, password. ElInput's show-password may render an
+    // extra interactive element, but the actual <input> count should be 2.
+    expect(inputs.length).toBeGreaterThanOrEqual(2);
+    setInputValue(inputs[0]!, 'admin_user');
     setInputValue(inputs[1]!, 'password123');
-    setInputValue(inputs[2]!, '小明');
     await nextTick();
 
     const form = queryForm();
@@ -152,25 +172,24 @@ describe('LoginModal', () => {
     await nextTick();
     await nextTick();
 
-    expect(signUpWithEmail).toHaveBeenCalledTimes(1);
-    expect(signUpWithEmail).toHaveBeenCalledWith({
-      email: 'user@test.local',
+    expect(signUpWithUsername).toHaveBeenCalledTimes(1);
+    expect(signUpWithUsername).toHaveBeenCalledWith({
+      username: 'admin_user',
       password: 'password123',
-      name: '小明',
     });
 
     wrapper.unmount();
   });
 
-  it('calls signInWithEmail when submitting the 登录 tab', async () => {
-    signInWithEmail.mockResolvedValueOnce(undefined);
+  it('calls signInWithUsername when submitting the 登录 tab', async () => {
+    signInWithUsername.mockResolvedValueOnce(undefined);
     const wrapper = mount(LoginModal, { attachTo: document.body });
     await nextTick();
 
     const inputs = queryInputs();
     expect(inputs.length).toBeGreaterThanOrEqual(2);
-    setInputValue(inputs[0]!, 'user@test.local');
-    setInputValue(inputs[1]!, 'password123');
+    setInputValue(inputs[0]!, 'admin');
+    setInputValue(inputs[1]!, 'admin123');
     await nextTick();
 
     const form = queryForm();
@@ -179,10 +198,10 @@ describe('LoginModal', () => {
     await nextTick();
     await nextTick();
 
-    expect(signInWithEmail).toHaveBeenCalledTimes(1);
-    expect(signInWithEmail).toHaveBeenCalledWith({
-      email: 'user@test.local',
-      password: 'password123',
+    expect(signInWithUsername).toHaveBeenCalledTimes(1);
+    expect(signInWithUsername).toHaveBeenCalledWith({
+      username: 'admin',
+      password: 'admin123',
     });
 
     wrapper.unmount();

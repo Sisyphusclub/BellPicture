@@ -1,0 +1,7 @@
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"Check migration/schema/seed behavior, hash storage, and no plaintext password persistence."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"Check invalid/duplicate username and auth error responses are consistent."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Check backend tests, lint/typecheck, and safety expectations."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Check Simplified Chinese username login/register UI copy and modal conventions."}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"Check composable API shape and shared auth state usage."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Check strict typing at username auth boundaries."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Check frontend tests and a11y expectations."}

@@ -117,12 +117,13 @@ backend/
 │   ├── app.ts                # Express app factory (no listen). Test target.
 │   ├── config/
 │   │   ├── env.ts            # Loads + validates env vars (see below)
-│   │   └── auth.ts           # Better Auth instance (email/password primary, Google OAuth soft-hidden via optional envs)
+│   │   └── auth.ts           # Better Auth instance (username/password primary, Google OAuth soft-hidden via optional envs)
 │   ├── db/
 │   │   ├── sqlite.ts         # better-sqlite3 singleton (WAL + foreign_keys)
 │   │   ├── drizzle.ts        # drizzle-orm instance + runMigrations() helper
 │   │   └── schema.ts         # drizzle schema for all 6 tables
 │   ├── routes/
+│   │   ├── auth.ts           # Username auth wrapper: sign-up/username and email-auth rejection
 │   │   ├── images.ts         # POST /api/images/generate, /upload — gated by requireAuth
 │   │   ├── history.ts        # GET/DELETE /api/history/* — gated by requireAuth
 │   │   ├── openaiCompat.ts   # OpenAI-compatible /v1 image API — gated by openaiCompatAuth
@@ -132,6 +133,7 @@ backend/
 │   │   ├── history.controller.ts
 │   │   └── openaiCompat.controller.ts
 │   ├── services/             # Business logic. No req/res objects here.
+│   │   ├── defaultAdminSeed.service.ts      # Gated local/demo admin seed via Better Auth API
 │   │   ├── imageGeneration.service.ts
 │   │   ├── userQuota.service.ts             # Per-user daily quota (drizzle queries)
 │   │   ├── history.service.ts               # image_records CRUD via drizzle
@@ -150,6 +152,7 @@ backend/
 │   ├── errors/
 │   │   └── AppError.ts       # Tagged error class hierarchy
 │   ├── utils/                # Pure helpers only (no I/O, no logger import)
+│   │   └── username.ts       # Username normalization, validation, internal email helper
 │   ├── types/                # Cross-module TS types/interfaces
 │   └── logger.ts             # Configured pino instance, exported singleton
 ├── tests/                    # Vitest tests. Mirror src/ structure.

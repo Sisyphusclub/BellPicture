@@ -74,7 +74,7 @@ file.
 
 | Table | Schema lives in | Mutation path |
 |---|---|---|
-| `user` | `src/db/schema.ts` | only Better Auth (`/api/auth/*` via drizzleAdapter) |
+| `user` | `src/db/schema.ts` | Better Auth only; username wrapper routes and seed service must mutate through `auth.handler` / `auth.api` |
 | `session` | `src/db/schema.ts` | only Better Auth |
 | `account` | `src/db/schema.ts` | only Better Auth |
 | `verification` | `src/db/schema.ts` | only Better Auth |
@@ -82,8 +82,9 @@ file.
 | `image_records` | `src/db/schema.ts` | `services/history.service.ts` only (insert from images.controller, list/delete from history.controller) |
 
 App code **must not** write to Better Auth's 4 tables directly. Read-only
-joins (`SELECT user.name FROM user JOIN user_quota ...`) via drizzle are fine
-for display/admin features.
+queries such as username uniqueness checks are fine; mutations for users,
+sessions, accounts, and verifications must go through Better Auth APIs so
+password hashing and session semantics stay library-owned.
 
 ---
 
@@ -118,11 +119,106 @@ for display/admin features.
 ### Current schema
 
 - **Better Auth core** — `user` / `session` / `account` / `verification` per
-  Better Auth docs (sqlite + ms timestamps). See
-  https://www.better-auth.com/docs/concepts/database for field semantics.
+  Better Auth docs (sqlite + ms timestamps), with project-owned username
+  extension columns on `user`: `username` (unique, normalized login key) and
+  `display_username` (normalized display value). See
+  https://www.better-auth.com/docs/concepts/database for base field semantics.
 - **`user_quota`** — `(user_id PK FK → user.id cascade, used_today int, quota_date text)`.
 - **`image_records`** — full schema documented in `src/db/schema.ts`. Indexes:
   `(user_id, created_at)` (history list query) and `(batch_id)` (per-batch delete).
+
+---
+
+## Scenario: username auth and local/demo default admin
+
+### 1. Scope / Trigger
+- Trigger: auth changed from user-facing email/password to username/password,
+  which touches DB schema, startup env, backend HTTP contracts, and frontend auth
+  calls.
+- Scope: username registration/login, Better Auth credential storage, and the
+  optional local/demo default admin seed.
+
+### 2. Signatures
+```ts
+// backend/src/config/env.ts
+interface Env {
+  SEED_DEFAULT_ADMIN: boolean;
+}
+
+// backend/src/routes/auth.ts
+POST /api/auth/sign-up/username
+body: { username: string; password: string; rememberMe?: boolean }
+
+// Better Auth username plugin route, mounted by auth.handler
+POST /api/auth/sign-in/username
+body: { username: string; password: string; rememberMe?: boolean }
+```
+
+### 3. Contracts
+- Usernames are normalized with `trim().toLowerCase()` on the frontend and
+  `toLowerCase()` at the backend boundary, then must match `^[a-z0-9_]{3,32}$`.
+- Public email/password auth routes are not a supported product surface:
+  `/api/auth/sign-up/email` and `/api/auth/sign-in/email` must return a Chinese
+  `BAD_REQUEST` telling the client to use username/password.
+- `user.username` is the unique login key. `user.display_username` stores the
+  normalized display value currently shown in account chrome.
+- The credential password must live only in Better Auth's `account.password`
+  hash field. Never write plaintext passwords or hand-roll hash storage.
+- `POST /api/auth/sign-up/username` may generate the internal Better Auth email
+  needed by the library, but this value must not become user-facing UI copy.
+- `SEED_DEFAULT_ADMIN=true` is the only switch that creates `admin` / `admin123`
+  on boot; the default is disabled. The seed must call Better Auth APIs, not
+  insert rows directly.
+
+### 4. Validation & Error Matrix
+| Condition | Expected behavior |
+|---|---|
+| Username invalid after normalization | 400 `BAD_REQUEST`, message `用户名需为 3-32 位小写字母、数字或下划线。` |
+| Password shorter than 8 on registration | 400 `BAD_REQUEST`, message `密码至少需要 8 个字符。` |
+| Username already exists | 400 `BAD_REQUEST`, message `该用户名已被占用，请换一个。` |
+| Email auth route called | 400 `BAD_REQUEST`, message `请使用用户名和密码登录或注册。` |
+| Wrong username/password on sign-in | Chinese frontend message `用户名或密码错误。` |
+| `SEED_DEFAULT_ADMIN` absent/false | No default admin user is created |
+| `SEED_DEFAULT_ADMIN=true` and admin exists | No duplicate user; seed is idempotent |
+
+### 5. Good/Base/Bad Cases
+- Good: fresh local demo database + `SEED_DEFAULT_ADMIN=true` can sign in with
+  `admin` / `admin123`; `account.password` is a hash, not `admin123`.
+- Base: registering `New_User` stores and signs in as `new_user`.
+- Bad: enabling a production deployment with an unconditional weak default admin
+  account or writing directly to `user`/`account` tables.
+
+### 6. Tests Required
+- Backend route tests for username registration, login, duplicate username,
+  invalid username, short password, and rejected email auth routes.
+- Backend seed tests for disabled, created, existing, and hash-not-plaintext
+  behavior.
+- Frontend tests for username labels/placeholders, normalized submission,
+  disabled invalid registration, and Chinese error mapping.
+- Existing image/history/quota tests must continue to pass because they depend
+  on `user.id` from the Better Auth session.
+
+### 7. Wrong vs Correct
+#### Wrong
+```ts
+await db.insert(user).values({ username: 'admin' });
+await db.insert(account).values({ password: 'admin123' });
+```
+
+#### Correct
+```ts
+if (env.SEED_DEFAULT_ADMIN) {
+  await auth.api.signUpEmail({
+    body: {
+      email: internalEmailForUsername('admin'),
+      username: 'admin',
+      displayUsername: 'admin',
+      password: 'admin123',
+      name: 'admin',
+    },
+  });
+}
+```
 
 ---
 

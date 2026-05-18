@@ -31,6 +31,7 @@ describe('config/env', () => {
     delete process.env.FRONTEND_ORIGIN;
     delete process.env.SQLITE_PATH;
     delete process.env.DAILY_USER_QUOTA;
+    delete process.env.SEED_DEFAULT_ADMIN;
 
     const { env } = await import('../../src/config/env.js');
 
@@ -49,6 +50,7 @@ describe('config/env', () => {
     expect(env.FRONTEND_ORIGIN).toBe('http://localhost:5173');
     expect(env.SQLITE_PATH).toBe('./data/app.sqlite');
     expect(env.DAILY_USER_QUOTA).toBe(20);
+    expect(env.SEED_DEFAULT_ADMIN).toBe(false);
     expect(env.GOOGLE_CLIENT_ID).toBeUndefined();
     expect(env.GOOGLE_CLIENT_SECRET).toBeUndefined();
   });
@@ -66,6 +68,28 @@ describe('config/env', () => {
     delete process.env.OPENAI_COMPAT_API_KEY;
 
     await expect(import('../../src/config/env.js')).rejects.toThrow(/OPENAI_COMPAT_API_KEY/);
+  });
+
+  it('reads SEED_DEFAULT_ADMIN only when explicitly true', async () => {
+    process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
+    process.env.IMAGE_API_KEY = 'sk-test';
+    process.env.OPENAI_COMPAT_API_KEY = 'compat-test';
+    process.env.BETTER_AUTH_SECRET = 'test-secret-padding';
+    process.env.SEED_DEFAULT_ADMIN = 'true';
+
+    const { env } = await import('../../src/config/env.js');
+
+    expect(env.SEED_DEFAULT_ADMIN).toBe(true);
+  });
+
+  it('rejects invalid SEED_DEFAULT_ADMIN values', async () => {
+    process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
+    process.env.IMAGE_API_KEY = 'sk-test';
+    process.env.OPENAI_COMPAT_API_KEY = 'compat-test';
+    process.env.BETTER_AUTH_SECRET = 'test-secret-padding';
+    process.env.SEED_DEFAULT_ADMIN = 'yes';
+
+    await expect(import('../../src/config/env.js')).rejects.toThrow(/SEED_DEFAULT_ADMIN/);
   });
 
   it('rejects non-positive integer for IMAGE_API_TIMEOUT_MS', async () => {

@@ -18,6 +18,7 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
     req.user = {
       id: session.user.id,
       email: session.user.email,
+      ...(session.user.username !== undefined ? { username: session.user.username } : {}),
       ...(session.user.name !== undefined ? { name: session.user.name } : {}),
       ...(session.user.image !== undefined ? { image: session.user.image } : {}),
     };

@@ -31,7 +31,7 @@ async function handleLogout(): Promise<void> {
 function displayName(): string {
   const u = user.value;
   if (!u) return '';
-  return u.name ?? u.email ?? '账户';
+  return u.username ?? u.name ?? '账户';
 }
 
 function initials(): string {

@@ -143,11 +143,17 @@ boundary:
 
 ## Auth failure mapping
 
-The `requireAuth` middleware (mounted on `/api/images/*`) translates Better
-Auth session lookups into `AppError`:
+The username auth wrapper and `requireAuth` middleware translate expected auth
+failures into `AppError` or Better Auth-compatible client errors with Chinese
+messages:
 
 | Trigger | AppError.code | HTTP |
 |---|---|---|
+| `POST /api/auth/sign-up/username` body is missing username/password | `BAD_REQUEST` | 400 (`details.issues` from zod) |
+| Username fails `^[a-z0-9_]{3,32}$` after normalization | `BAD_REQUEST` | 400 (`details.field = "username"`) |
+| Username already exists | `BAD_REQUEST` | 400 (`details.field = "username"`) |
+| Registration password shorter than 8 chars | `BAD_REQUEST` | 400 (`details.field = "password"`) |
+| Product-unsupported email auth routes are called | `BAD_REQUEST` | 400 |
 | `auth.api.getSession` returns null (no cookie / expired) | `UNAUTHORIZED` | 401 |
 | `auth.api.getSession` throws unexpectedly | `UNAUTHORIZED` | 401 (cause attached; logged at `error`) |
 | Per-user daily quota would overflow on `consume` | `QUOTA_EXHAUSTED` | 429 (`details = { requested, remaining, total }`) |

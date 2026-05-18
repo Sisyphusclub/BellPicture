@@ -6,6 +6,7 @@ import { auth } from './config/auth.js';
 import { env } from './config/env.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { requestLogger } from './middlewares/requestLogger.js';
+import { buildUsernameAuthRouter } from './routes/auth.js';
 import { healthRouter } from './routes/health.js';
 import { buildHistoryRouter } from './routes/history.js';
 import { buildImagesRouter } from './routes/images.js';
@@ -31,6 +32,8 @@ export function createApp(deps: AppDeps): Express {
       credentials: true,
     }),
   );
+
+  app.use('/api/auth', buildUsernameAuthRouter());
 
   // Better Auth handler must come BEFORE express.json() so OAuth callbacks
   // are not consumed by the JSON middleware.

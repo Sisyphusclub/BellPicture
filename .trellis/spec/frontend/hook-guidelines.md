@@ -145,6 +145,84 @@ watch([isAuthLoading, isAuthenticated], ([authLoading, authenticated]) => {
 
 ---
 
+## Scenario: username auth composable contract
+
+### 1. Scope / Trigger
+- Trigger: login/register changed from email/password to username/password while
+  Better Auth still owns sessions.
+- Scope: `useAuth`, auth client plugin setup, and login/register components.
+
+### 2. Signatures
+```ts
+interface SignInUsernameInput {
+  username: string;
+  password: string;
+}
+
+interface SignUpUsernameInput {
+  username: string;
+  password: string;
+}
+
+export function useAuth(): {
+  user: ComputedRef<AuthUser | null>;
+  isAuthenticated: ComputedRef<boolean>;
+  isLoading: ComputedRef<boolean>;
+  signInWithUsername(input: SignInUsernameInput): Promise<void>;
+  signUpWithUsername(input: SignUpUsernameInput): Promise<void>;
+  logout(): Promise<void>;
+}
+```
+
+### 3. Contracts
+- Components submit `username`, not `email`, for login and registration.
+- The composable trims and lowercases usernames before validation and requests.
+- Username validation is `^[a-z0-9_]{3,32}$`; registration password validation is
+  at least 8 characters.
+- Login uses Better Auth username client support (`signIn.username`).
+- Registration uses the backend wrapper route `/api/auth/sign-up/username` so
+  backend validation, uniqueness, and Better Auth hashing stay authoritative.
+- After successful sign-in or sign-up, call `session.value.refetch()` so header,
+  quota, and route guards observe the new session immediately.
+
+### 4. Validation & Error Matrix
+| Condition | Expected user-facing behavior |
+|---|---|
+| Invalid username before request | Throw `用户名需为 3-32 位小写字母、数字或下划线。` |
+| Registration password shorter than 8 | Throw `密码至少需要 8 个字符。` |
+| Wrong username/password | Throw `用户名或密码错误。` |
+| Duplicate username | Throw `该用户名已被占用，请换一个。` |
+| Native fetch/network failure | Throw `无法连接到服务器，请检查网络或稍后重试。` |
+| Unknown non-Chinese auth error | Throw a Chinese fallback, not raw English library text |
+
+### 5. Good/Base/Bad Cases
+- Good: `Admin_User` is submitted as `admin_user`, succeeds, and the session is
+  refetched before the modal closes.
+- Base: invalid username disables or rejects registration before a backend write.
+- Bad: components keep calling `signInWithEmail` or render internal generated
+  Better Auth emails in account UI.
+
+### 6. Tests Required
+- Component tests for username labels/placeholders and submitted payloads.
+- Component/composable tests for invalid username, short password, duplicate
+  username, and Chinese error mapping.
+- Regression test that the account header prefers `user.username` and does not
+  expose internal email surrogates.
+
+### 7. Wrong vs Correct
+#### Wrong
+```ts
+await signIn.email({ email, password });
+```
+
+#### Correct
+```ts
+await signIn.username({ username: normalizeUsername(username), password });
+await session.value.refetch();
+```
+
+---
+
 ## Module-level vs. instance-level state
 
 By default, composables hold **per-call state** — calling `useImageGeneration()`

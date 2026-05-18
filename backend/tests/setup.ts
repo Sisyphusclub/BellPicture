@@ -15,6 +15,7 @@ process.env.BETTER_AUTH_SECRET ??= 'test-secret-32-chars-min-padding-padding';
 process.env.FRONTEND_ORIGIN ??= 'http://localhost:5173';
 process.env.SQLITE_PATH ??= path.join(root, 'app.sqlite');
 process.env.DAILY_USER_QUOTA ??= '20';
+process.env.SEED_DEFAULT_ADMIN ??= 'false';
 
 // Run drizzle migrations once for the test process. Subsequent test files share
 // the same SQLite file via the better-sqlite3 module-level singleton.

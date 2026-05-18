@@ -20,6 +20,7 @@ export interface Env {
   FRONTEND_ORIGIN: string;
   SQLITE_PATH: string;
   DAILY_USER_QUOTA: number;
+  SEED_DEFAULT_ADMIN: boolean;
 }
 
 function readString(name: string, fallback?: string): string {
@@ -54,6 +55,16 @@ function readInt(name: string, fallback: number): number {
   return n;
 }
 
+function readBool(name: string, fallback: boolean): boolean {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return fallback;
+  if (raw === 'true') return true;
+  if (raw === 'false') return false;
+  throw new Error(
+    `Environment variable ${name} must be either "true" or "false", got: ${JSON.stringify(raw)}`,
+  );
+}
+
 function loadEnv(): Env {
   return {
     PORT: readInt('PORT', 3000),
@@ -75,6 +86,7 @@ function loadEnv(): Env {
     FRONTEND_ORIGIN: readString('FRONTEND_ORIGIN', 'http://localhost:5173'),
     SQLITE_PATH: readString('SQLITE_PATH', './data/app.sqlite'),
     DAILY_USER_QUOTA: readInt('DAILY_USER_QUOTA', 20),
+    SEED_DEFAULT_ADMIN: readBool('SEED_DEFAULT_ADMIN', false),
   };
 }
 

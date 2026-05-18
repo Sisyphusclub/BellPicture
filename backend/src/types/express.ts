@@ -10,6 +10,7 @@ declare module 'express-serve-static-core' {
 export interface AuthUser {
   id: string;
   email: string;
+  username?: string | null;
   name?: string;
   image?: string | null;
 }

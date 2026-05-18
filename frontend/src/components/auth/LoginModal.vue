@@ -8,26 +8,24 @@ import { useAuthModal } from '@/composables/useAuthModal';
 type Mode = 'sign-in' | 'sign-up';
 
 const { isOpen, close } = useAuthModal();
-const { isAuthenticated, signInWithEmail, signUpWithEmail } = useAuth();
+const { isAuthenticated, signInWithUsername, signUpWithUsername } = useAuth();
 
 const mode = ref<Mode>('sign-in');
 const isPending = ref(false);
+const MIN_PASSWORD_LENGTH = 8;
 
-const signInEmail = ref('');
+const signInUsername = ref('');
 const signInPassword = ref('');
 
-const signUpEmail = ref('');
+const signUpUsername = ref('');
 const signUpPassword = ref('');
-const signUpName = ref('');
 
 const canSubmitSignIn = computed(
-  () => signInEmail.value.trim().length > 0 && signInPassword.value.length > 0,
+  () => signInUsername.value.trim().length > 0 && signInPassword.value.length > 0,
 );
 const canSubmitSignUp = computed(
   () =>
-    signUpEmail.value.trim().length > 0 &&
-    signUpPassword.value.length > 0 &&
-    signUpName.value.trim().length > 0,
+    signUpUsername.value.trim().length > 0 && signUpPassword.value.length >= MIN_PASSWORD_LENGTH,
 );
 
 watch(isAuthenticated, (next) => {
@@ -38,11 +36,10 @@ watch(isOpen, (next) => {
   if (!next) {
     // Reset form state when the modal closes so reopening starts clean.
     mode.value = 'sign-in';
-    signInEmail.value = '';
+    signInUsername.value = '';
     signInPassword.value = '';
-    signUpEmail.value = '';
+    signUpUsername.value = '';
     signUpPassword.value = '';
-    signUpName.value = '';
     isPending.value = false;
   }
 });
@@ -56,8 +53,8 @@ async function handleSignIn(): Promise<void> {
   if (isPending.value || !canSubmitSignIn.value) return;
   isPending.value = true;
   try {
-    await signInWithEmail({
-      email: signInEmail.value.trim(),
+    await signInWithUsername({
+      username: signInUsername.value.trim(),
       password: signInPassword.value,
     });
   } catch (err) {
@@ -71,10 +68,9 @@ async function handleSignUp(): Promise<void> {
   if (isPending.value || !canSubmitSignUp.value) return;
   isPending.value = true;
   try {
-    await signUpWithEmail({
-      email: signUpEmail.value.trim(),
+    await signUpWithUsername({
+      username: signUpUsername.value.trim(),
       password: signUpPassword.value,
-      name: signUpName.value.trim(),
     });
   } catch (err) {
     ElMessage.error(err instanceof Error ? err.message : '注册失败，请稍后再试。');
@@ -125,12 +121,12 @@ async function handleSignUp(): Promise<void> {
 
       <form v-if="mode === 'sign-in'" class="login-modal__form" @submit.prevent="handleSignIn">
         <label class="login-modal__field">
-          <span class="login-modal__label">邮箱</span>
+          <span class="login-modal__label">用户名</span>
           <ElInput
-            v-model="signInEmail"
-            type="email"
-            placeholder="输入邮箱地址"
-            autocomplete="email"
+            v-model="signInUsername"
+            type="text"
+            placeholder="输入用户名"
+            autocomplete="username"
             :disabled="isPending"
           />
         </label>
@@ -152,12 +148,12 @@ async function handleSignUp(): Promise<void> {
 
       <form v-else class="login-modal__form" @submit.prevent="handleSignUp">
         <label class="login-modal__field">
-          <span class="login-modal__label">邮箱</span>
+          <span class="login-modal__label">用户名</span>
           <ElInput
-            v-model="signUpEmail"
-            type="email"
-            placeholder="输入邮箱地址"
-            autocomplete="email"
+            v-model="signUpUsername"
+            type="text"
+            placeholder="3-32 位小写字母、数字或下划线"
+            autocomplete="username"
             :disabled="isPending"
           />
         </label>
@@ -172,22 +168,12 @@ async function handleSignUp(): Promise<void> {
             :disabled="isPending"
           />
         </label>
-        <label class="login-modal__field">
-          <span class="login-modal__label">昵称</span>
-          <ElInput
-            v-model="signUpName"
-            type="text"
-            placeholder="输入昵称"
-            autocomplete="nickname"
-            :disabled="isPending"
-          />
-        </label>
         <button type="submit" class="login-modal__submit" :disabled="isPending || !canSubmitSignUp">
           {{ isPending ? '正在注册…' : '注册' }}
         </button>
       </form>
 
-      <p class="login-modal__fineprint">注册即表示同意以邮箱建立账号信息。</p>
+      <p class="login-modal__fineprint">用户名提交时会自动转为小写，仅支持字母、数字和下划线。</p>
     </div>
   </ElDialog>
 </template>
@@ -195,8 +181,6 @@ async function handleSignUp(): Promise<void> {
 <style scoped>
 :global(.login-modal__overlay.el-overlay) {
   background-color: oklch(95.5% 0.008 86deg / 0.72);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 :global(.login-modal.el-dialog) {
