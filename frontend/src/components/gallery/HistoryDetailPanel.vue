@@ -108,13 +108,10 @@ function handleRemove(): void {
   display: grid;
   overflow: hidden;
   max-height: calc(100vh - var(--topbar-height) - 48px);
-  border: 1px solid oklch(24% 0.012 78deg / 0.1);
-  border-radius: 28px;
-  background: oklch(99% 0.004 88deg / 0.86);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--color-body);
-  box-shadow: 0 10px 40px 5px rgba(194, 194, 194, 0.18);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
 }
 
 .detail-panel > img {

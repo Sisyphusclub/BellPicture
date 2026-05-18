@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
+import { useResponsiveMasonryColumnCount } from '@/composables/useResponsiveMasonryColumnCount';
 import type { HistoryEntry } from '@/types/image';
 
 interface Props {
+  entries: HistoryEntry[];
+}
+
+interface MasonryColumn {
+  id: string;
   entries: HistoryEntry[];
 }
 
@@ -13,7 +19,56 @@ const emit = defineEmits<{
   (e: 'select', entry: HistoryEntry): void;
 }>();
 
+const { columnCount } = useResponsiveMasonryColumnCount();
+
 const visibleEntries = computed(() => props.entries.slice(0, 40));
+const masonryColumns = computed(() =>
+  distributeMasonryColumns(visibleEntries.value, columnCount.value),
+);
+
+function distributeMasonryColumns(
+  entries: HistoryEntry[],
+  targetColumnCount: number,
+): MasonryColumn[] {
+  const safeColumnCount = Math.max(1, targetColumnCount);
+  const columns: MasonryColumn[] = Array.from({ length: safeColumnCount }, (_value, index) => ({
+    id: `masonry-column-${index + 1}`,
+    entries: [],
+  }));
+  const columnScores = Array.from({ length: safeColumnCount }, () => 0);
+
+  entries.forEach((entry, index) => {
+    const targetIndex = index < safeColumnCount ? index : shortestColumnIndex(columnScores);
+    const column = columns[targetIndex];
+    if (!column) return;
+
+    column.entries.push(entry);
+    columnScores[targetIndex] = (columnScores[targetIndex] ?? 0) + estimateEntryHeight(entry);
+  });
+
+  return columns;
+}
+
+function shortestColumnIndex(scores: number[]): number {
+  let shortestIndex = 0;
+  let shortestScore = scores[0] ?? 0;
+
+  for (let index = 1; index < scores.length; index += 1) {
+    const score = scores[index] ?? 0;
+    if (score < shortestScore) {
+      shortestIndex = index;
+      shortestScore = score;
+    }
+  }
+
+  return shortestIndex;
+}
+
+function estimateEntryHeight(entry: HistoryEntry): number {
+  const { width, height } = entry.record;
+  if (width <= 0 || height <= 0) return 1;
+  return height / width;
+}
 </script>
 
 <template>
@@ -28,21 +83,23 @@ const visibleEntries = computed(() => props.entries.slice(0, 40));
       class="recent-creations__masonry"
       aria-label="最近生成图片"
     >
-      <article v-for="entry in visibleEntries" :key="entry.record.id" class="recent-card">
-        <button
-          type="button"
-          class="recent-card__button"
-          :aria-label="`查看图片详情：${entry.record.prompt}`"
-          @click="emit('select', entry)"
-        >
-          <img :src="entry.imageUrl" alt="最近生成图片预览" />
-          <span class="recent-card__shade" aria-hidden="true" />
-          <span class="recent-card__meta">
-            <strong>{{ entry.record.prompt }}</strong>
-            <span>{{ entry.record.width }} × {{ entry.record.height }}</span>
-          </span>
-        </button>
-      </article>
+      <div v-for="column in masonryColumns" :key="column.id" class="recent-creations__column">
+        <article v-for="entry in column.entries" :key="entry.record.id" class="recent-card">
+          <button
+            type="button"
+            class="recent-card__button"
+            :aria-label="`查看图片详情：${entry.record.prompt}`"
+            @click="emit('select', entry)"
+          >
+            <img :src="entry.imageUrl" alt="最近生成图片预览" />
+            <span class="recent-card__shade" aria-hidden="true" />
+            <span class="recent-card__meta">
+              <strong>{{ entry.record.prompt }}</strong>
+              <span>{{ entry.record.width }} × {{ entry.record.height }}</span>
+            </span>
+          </button>
+        </article>
+      </div>
     </div>
 
     <div v-else class="recent-creations__empty">
@@ -85,15 +142,21 @@ const visibleEntries = computed(() => props.entries.slice(0, 40));
 }
 
 .recent-creations__masonry {
-  column-count: 4;
-  column-gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+  gap: 12px;
+}
+
+.recent-creations__column {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 12px;
 }
 
 .recent-card {
-  display: inline-block;
   width: 100%;
-  margin: 0 0 12px;
-  break-inside: avoid;
 }
 
 .recent-card__button {
@@ -206,13 +269,13 @@ const visibleEntries = computed(() => props.entries.slice(0, 40));
   }
 
   .recent-creations__masonry {
-    column-count: 3;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 560px) {
   .recent-creations__masonry {
-    column-count: 2;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>

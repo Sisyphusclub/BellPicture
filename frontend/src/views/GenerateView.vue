@@ -1746,10 +1746,9 @@ function formatStageDate(iso: string | undefined): string {
   min-width: 150px;
   margin: 0;
   padding: 6px;
-  border: 1px solid var(--color-hairline);
-  border-radius: 12px;
-  background: var(--color-surface-card-solid);
-  box-shadow: var(--shadow-soft);
+  border: 1px solid oklch(24% 0.012 78deg / 0.12);
+  border-radius: 16px;
+  background: oklch(99.1% 0.004 88deg / 0.96);
   list-style: none;
 }
 

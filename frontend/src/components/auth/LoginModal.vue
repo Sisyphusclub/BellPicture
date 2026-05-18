@@ -89,6 +89,7 @@ async function handleSignUp(): Promise<void> {
     v-model="isOpen"
     class="login-modal"
     width="380px"
+    modal-class="login-modal__overlay"
     :show-close="true"
     :close-on-click-modal="true"
     :close-on-press-escape="true"
@@ -192,6 +193,87 @@ async function handleSignUp(): Promise<void> {
 </template>
 
 <style scoped>
+:global(.login-modal__overlay.el-overlay) {
+  background-color: oklch(95.5% 0.008 86deg / 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+:global(.login-modal.el-dialog) {
+  --el-dialog-bg-color: oklch(99.1% 0.004 88deg / 0.96);
+  --el-dialog-border-radius: 24px;
+  --el-dialog-box-shadow: none;
+
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid oklch(24% 0.012 78deg / 0.12);
+  border-radius: 24px;
+  background: var(--el-dialog-bg-color);
+  box-shadow: none;
+}
+
+:global(.login-modal .el-dialog__header) {
+  margin: 0;
+  padding: 22px 24px 10px;
+  border-bottom: 1px solid var(--color-hairline-soft);
+}
+
+:global(.login-modal .el-dialog__body) {
+  padding: 18px 24px 22px;
+  color: var(--color-body);
+}
+
+:global(.login-modal .el-dialog__headerbtn) {
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  background: oklch(99% 0.004 88deg / 0.94);
+  box-shadow: none;
+}
+
+:global(.login-modal .el-dialog__headerbtn:focus-visible) {
+  outline: 3px solid oklch(78% 0.13 57deg / 0.78);
+  outline-offset: 3px;
+  box-shadow: none;
+}
+
+:global(.login-modal .el-dialog__headerbtn .el-dialog__close) {
+  color: var(--color-body-strong);
+}
+
+:global(.login-modal .el-input) {
+  --el-input-bg-color: transparent;
+  --el-input-border-color: transparent;
+  --el-input-hover-border-color: transparent;
+  --el-input-focus-border-color: transparent;
+  --el-input-text-color: var(--color-ink);
+  --el-input-placeholder-color: oklch(58% 0.012 78deg);
+}
+
+:global(.login-modal .el-input__wrapper) {
+  min-height: 42px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 12px;
+  background: oklch(98.8% 0.005 88deg);
+  box-shadow: none;
+}
+
+:global(.login-modal .el-input__wrapper:hover),
+:global(.login-modal .el-input.is-focus .el-input__wrapper),
+:global(.login-modal .el-input__wrapper.is-focus),
+:global(.login-modal .el-input__wrapper:focus-within) {
+  border-color: oklch(24% 0.012 78deg / 0.18);
+  box-shadow: none;
+}
+
+:global(.login-modal .el-input.is-disabled .el-input__wrapper) {
+  background: oklch(96.8% 0.006 86deg);
+  box-shadow: none;
+}
+
 .login-modal__title {
   margin: 0;
   font-family: var(--font-brand);
@@ -215,6 +297,7 @@ async function handleSignUp(): Promise<void> {
   padding: 4px;
   background: oklch(96% 0.006 84deg);
   border-radius: 10px;
+  box-shadow: none;
 }
 
 .login-modal__tab {
@@ -223,6 +306,7 @@ async function handleSignUp(): Promise<void> {
   background: transparent;
   padding: 8px 12px;
   border-radius: 8px;
+  box-shadow: none;
   font-size: 14px;
   font-weight: 600;
   color: oklch(45% 0.012 78deg);
@@ -238,8 +322,8 @@ async function handleSignUp(): Promise<void> {
 
 .login-modal__tab--active {
   background: oklch(99% 0.004 88deg);
+  box-shadow: none;
   color: var(--color-ink);
-  box-shadow: 0 1px 2px oklch(24% 0.012 78deg / 0.06);
 }
 
 .login-modal__form {
@@ -270,6 +354,7 @@ async function handleSignUp(): Promise<void> {
   border: none;
   border-radius: 12px;
   background: var(--color-accent, oklch(72% 0.16 38deg));
+  box-shadow: none;
   color: #fff;
   cursor: pointer;
   font-size: 14px;

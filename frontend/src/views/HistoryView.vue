@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus';
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 import HistoryDetailPanel from '@/components/gallery/HistoryDetailPanel.vue';
@@ -13,6 +13,7 @@ const router = useRouter();
 const { entries, isHydrating, hydrateError, refresh, remove } = useImageHistory();
 
 const selectedEntry = ref<HistoryEntry | null>(null);
+const historyModalCloseRef = ref<HTMLButtonElement | null>(null);
 const startDate = ref('');
 const endDate = ref('');
 const appliedStartDate = ref('');
@@ -37,12 +38,33 @@ watch(filteredEntries, (next) => {
   }
 });
 
+watch(selectedEntry, (next, prev) => {
+  if (next && !prev) {
+    document.addEventListener('keydown', handleHistoryModalKeydown);
+    void nextTick(() => {
+      historyModalCloseRef.value?.focus();
+    });
+  } else if (!next && prev) {
+    document.removeEventListener('keydown', handleHistoryModalKeydown);
+  }
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleHistoryModalKeydown);
+});
+
 function handleSelect(entry: HistoryEntry): void {
   selectedEntry.value = entry;
 }
 
 function handleCloseDetail(): void {
   selectedEntry.value = null;
+}
+
+function handleHistoryModalKeydown(event: KeyboardEvent): void {
+  if (event.key !== 'Escape') return;
+  event.preventDefault();
+  handleCloseDetail();
 }
 
 function handleQuery(): void {
@@ -205,18 +227,19 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
       <HistoryGrid :entries="filteredEntries" @select="handleSelect" @copy-id="handleCopyId" />
     </section>
 
-    <div v-if="selectedEntry" class="history-modal" role="dialog" aria-modal="true">
-      <button
-        type="button"
-        class="history-modal__backdrop"
-        aria-label="关闭详情"
-        @click="handleCloseDetail"
-      />
-      <div class="history-modal__panel">
+    <div v-if="selectedEntry" class="history-modal" @click.self="handleCloseDetail">
+      <div
+        class="history-modal__panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label="历史详情"
+        tabindex="-1"
+      >
         <button
+          ref="historyModalCloseRef"
           type="button"
           class="history-modal__close"
-          aria-label="关闭"
+          aria-label="关闭历史详情"
           @click="handleCloseDetail"
         >
           <svg
@@ -422,16 +445,7 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   display: grid;
   place-items: center;
   padding: var(--space-lg);
-}
-
-.history-modal__backdrop {
-  position: absolute;
-  inset: 0;
-  border: 0;
-  background: rgba(20, 17, 14, 0.45);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  cursor: pointer;
+  background: oklch(95.5% 0.008 86deg / 0.68);
 }
 
 .history-modal__panel {
@@ -441,9 +455,9 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   width: min(720px, 100%);
   max-height: calc(100vh - 96px);
   overflow: hidden;
-  border-radius: var(--radius-md);
-  background: var(--color-surface-card-solid);
-  box-shadow: var(--shadow-glass);
+  border: 1px solid oklch(24% 0.012 78deg / 0.12);
+  border-radius: 28px;
+  background: oklch(99.1% 0.004 88deg / 0.96);
 }
 
 .history-modal__close {
@@ -455,11 +469,16 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   width: 32px;
   height: 32px;
   place-items: center;
-  border: 0;
+  border: 1px solid var(--color-hairline);
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.85);
+  background: oklch(99% 0.004 88deg / 0.94);
   color: var(--color-body-strong);
   cursor: pointer;
+}
+
+.history-modal__close:focus-visible {
+  outline: 3px solid oklch(78% 0.13 57deg / 0.78);
+  outline-offset: 3px;
 }
 
 .history-modal__actions {
@@ -467,7 +486,8 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   justify-content: flex-end;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
-  border-top: 1px solid var(--color-hairline);
+  border-top: 1px solid var(--color-hairline-soft);
+  background: oklch(98.8% 0.005 88deg / 0.82);
 }
 
 @media (max-width: 860px) {

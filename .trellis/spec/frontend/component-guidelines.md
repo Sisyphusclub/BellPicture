@@ -296,6 +296,48 @@ for free. Custom modals are only justified when the product surface needs
 visuals/transitions that `ElDialog` can't deliver cleanly (see the Hybrid
 Claude UI decision above).
 
+### Convention: Composer-like popup surfaces
+
+**What**: Modal, dialog, popover, dropdown, and popup-contained preview surfaces
+must use the home composer visual vocabulary: warm off-white background, subtle
+hairline border, generous radius, and no `box-shadow`. Avoid decorative
+`backdrop-filter` / glass blur on popup surfaces; popup-contained images,
+labels, and hint pills should also avoid shadows.
+
+**Why**: Popup chrome should feel like the input composer, not like a separate
+floating SaaS layer. Drop shadows and glass blur made recent detail, history,
+login, and ratio-picker popups visually drift from the product's restrained
+workstation style.
+
+**Example**:
+```vue
+<template>
+  <div class="detail-backdrop" @click.self="emit('close')">
+    <article class="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+      <h2 id="detail-title">图片详情</h2>
+    </article>
+  </div>
+</template>
+
+<style scoped>
+.detail-backdrop {
+  background: oklch(95.5% 0.008 86deg / 0.72);
+}
+
+.detail-panel {
+  border: 1px solid var(--color-hairline);
+  border-radius: 28px;
+  background: oklch(99.1% 0.004 88deg / 0.96);
+  box-shadow: none;
+}
+</style>
+```
+
+**Related**: Element Plus dialogs are teleported outside the component subtree,
+so scoped overrides for `.el-dialog` must use a reliable global hook (for
+example `:global(.login-modal.el-dialog)`) and should set `box-shadow: none` on
+the actual rendered dialog.
+
 ---
 
 ## Forbidden patterns
