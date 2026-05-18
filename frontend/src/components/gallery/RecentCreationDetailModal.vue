@@ -209,6 +209,7 @@ onBeforeUnmount(() => {
 
 .recent-detail__panel--expanded {
   width: min(100%, 1120px);
+  height: min(100%, 760px);
   grid-template-columns: 1fr;
 }
 
@@ -287,9 +288,12 @@ onBeforeUnmount(() => {
 
 .recent-detail__viewer {
   display: grid;
-  min-height: min(760px, calc(100vh - 48px));
+  width: 100%;
+  height: 100%;
+  min-height: 0;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 18px;
+  overflow: hidden;
   padding: 26px;
   background: oklch(97.4% 0.008 86deg);
 }
@@ -323,19 +327,35 @@ onBeforeUnmount(() => {
 }
 
 .recent-detail__viewer-stage {
+  --recent-detail-viewer-stage-padding: 18px;
+
+  position: relative;
   display: grid;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
   min-height: 0;
+  max-height: 100%;
   place-items: center;
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid var(--color-hairline-soft);
   border-radius: 22px;
   background: oklch(99.1% 0.004 88deg / 0.82);
-  padding: 18px;
+  padding: var(--recent-detail-viewer-stage-padding);
 }
 
 .recent-detail__viewer-stage img {
-  max-width: min(100%, 1040px);
-  max-height: calc(100vh - 170px);
+  position: absolute;
+  inset: var(--recent-detail-viewer-stage-padding);
+  display: block;
+  width: calc(
+    100% - var(--recent-detail-viewer-stage-padding) - var(--recent-detail-viewer-stage-padding)
+  );
+  height: calc(
+    100% - var(--recent-detail-viewer-stage-padding) - var(--recent-detail-viewer-stage-padding)
+  );
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   border: 1px solid var(--color-hairline-soft);
   border-radius: 16px;
@@ -431,6 +451,11 @@ onBeforeUnmount(() => {
     overflow: auto;
   }
 
+  .recent-detail__panel--expanded {
+    height: 100%;
+    overflow: hidden;
+  }
+
   .recent-detail__close {
     top: 10px;
     right: 10px;
@@ -474,7 +499,6 @@ onBeforeUnmount(() => {
   }
 
   .recent-detail__viewer {
-    min-height: calc(100vh - 28px);
     gap: 14px;
     padding: 16px;
   }
@@ -486,11 +510,7 @@ onBeforeUnmount(() => {
   }
 
   .recent-detail__viewer-stage {
-    padding: 10px;
-  }
-
-  .recent-detail__viewer-stage img {
-    max-height: calc(100vh - 160px);
+    --recent-detail-viewer-stage-padding: 10px;
   }
 }
 </style>

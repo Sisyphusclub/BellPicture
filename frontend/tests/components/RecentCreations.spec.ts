@@ -3,6 +3,7 @@ import { nextTick } from 'vue';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import RecentCreationDetailModal from '@/components/gallery/RecentCreationDetailModal.vue';
+import recentCreationDetailModalSource from '@/components/gallery/RecentCreationDetailModal.vue?raw';
 import RecentCreationsMasonry from '@/components/gallery/RecentCreationsMasonry.vue';
 import type { HistoryEntry } from '@/types/image';
 
@@ -43,6 +44,21 @@ function setViewportWidth(width: number): void {
     writable: true,
     value: width,
   });
+}
+
+function extractStyleRules(selector: string): string[] {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const rulePattern = new RegExp(`${escapedSelector}\\s*\\{([\\s\\S]*?)\\}`, 'g');
+  return Array.from(
+    recentCreationDetailModalSource.matchAll(rulePattern),
+    (match) => match[1] ?? '',
+  );
+}
+
+function expectStyleDeclaration(rule: string, property: string, value: string): void {
+  const escapedProperty = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escapedValue = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  expect(rule).toMatch(new RegExp(`(?:^|[;\\s])${escapedProperty}\\s*:\\s*${escapedValue}\\s*;`));
 }
 
 afterEach(() => {
@@ -192,6 +208,38 @@ describe('RecentCreationDetailModal', () => {
     expect(wrapper.get('.recent-detail__viewer img').attributes('src')).toBe(entry.imageUrl);
     expect(wrapper.text()).toContain('返回详情');
     expect(document.activeElement).toBe(wrapper.get('.recent-detail__back').element);
+  });
+
+  it('bounds the enlarged image inside the modal stage', async () => {
+    const wrapper = mount(RecentCreationDetailModal, {
+      props: {
+        entry: createEntry(),
+      },
+    });
+
+    await wrapper.get('.recent-detail__image-button').trigger('click');
+
+    const stageRule = extractStyleRules('.recent-detail__viewer-stage')[0] ?? '';
+    const imageRules = extractStyleRules('.recent-detail__viewer-stage img');
+    const imageRule = imageRules[0] ?? '';
+
+    expect(wrapper.get('.recent-detail__panel').classes()).toContain(
+      'recent-detail__panel--expanded',
+    );
+    expect(wrapper.find('.recent-detail__viewer-stage').exists()).toBe(true);
+    expect(stageRule).not.toBe('');
+    expect(imageRule).not.toBe('');
+    expectStyleDeclaration(stageRule, 'height', '100%');
+    expectStyleDeclaration(stageRule, 'min-height', '0');
+    expectStyleDeclaration(stageRule, 'max-height', '100%');
+    expectStyleDeclaration(stageRule, 'overflow', 'hidden');
+    expectStyleDeclaration(imageRule, 'position', 'absolute');
+    expectStyleDeclaration(imageRule, 'inset', 'var(--recent-detail-viewer-stage-padding)');
+    expect(imageRule).toMatch(/width:\s*calc\(/);
+    expect(imageRule).toMatch(/height:\s*calc\(/);
+    expectStyleDeclaration(imageRule, 'max-height', '100%');
+    expectStyleDeclaration(imageRule, 'object-fit', 'contain');
+    expect(imageRules.join('\n')).not.toMatch(/100d?vh/);
   });
 
   it('returns from enlarged image view to the detail view', async () => {
