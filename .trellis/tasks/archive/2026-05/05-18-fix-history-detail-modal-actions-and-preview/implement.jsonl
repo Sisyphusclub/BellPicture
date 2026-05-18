@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"History detail modal is a custom popup surface and must satisfy modal a11y and no-shadow composer-style rules."}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"Any component-side state and interactions should follow Vue composable/component conventions."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"HistoryEntry props/events and preview state must remain strictly typed."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Component tests, a11y, lint, and browser smoke expectations apply."}
