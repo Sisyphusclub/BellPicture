@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ElMessage } from 'element-plus';
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import { ElConfigProvider, ElDatePicker, ElMessage } from 'element-plus';
+import zhCn from 'element-plus/es/locale/lang/zh-cn';
+import { computed, nextTick, onBeforeUnmount, ref, watch, type Component } from 'vue';
 import { useRouter } from 'vue-router';
 
 import HistoryDetailPanel from '@/components/gallery/HistoryDetailPanel.vue';
@@ -8,14 +9,29 @@ import HistoryGrid from '@/components/gallery/HistoryGrid.vue';
 import { useImageHistory } from '@/composables/useImageHistory';
 import type { HistoryEntry } from '@/types/image';
 
+type DateRange = [string, string];
+
 const router = useRouter();
 const { entries, isHydrating, hydrateError, refresh, remove } = useImageHistory();
+
+const HistoryConfigProvider: Component = ElConfigProvider;
+const HistoryDateRangePicker: Component = ElDatePicker;
+
+const datePickerProps = {
+  type: 'daterange',
+  format: 'YYYY/MM/DD',
+  valueFormat: 'YYYY-MM-DD',
+  rangeSeparator: '—',
+  startPlaceholder: '起始日期',
+  endPlaceholder: '结束日期',
+  popperClass: 'history-date-range-popper',
+  unlinkPanels: true,
+} as const;
 
 const selectedEntry = ref<HistoryEntry | null>(null);
 const isDetailImageExpanded = ref(false);
 const historyModalCloseRef = ref<HTMLButtonElement | null>(null);
-const startDate = ref('');
-const endDate = ref('');
+const selectedDateRange = ref<DateRange | null>(null);
 const appliedStartDate = ref('');
 const appliedEndDate = ref('');
 
@@ -71,13 +87,13 @@ function handleHistoryModalKeydown(event: KeyboardEvent): void {
 }
 
 function handleQuery(): void {
-  appliedStartDate.value = startDate.value;
-  appliedEndDate.value = endDate.value;
+  const [rangeStart = '', rangeEnd = ''] = selectedDateRange.value ?? [];
+  appliedStartDate.value = rangeStart;
+  appliedEndDate.value = rangeEnd;
 }
 
 function handleClearFilters(): void {
-  startDate.value = '';
-  endDate.value = '';
+  selectedDateRange.value = null;
   appliedStartDate.value = '';
   appliedEndDate.value = '';
 }
@@ -131,8 +147,9 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
         <h1 class="history-page__title">图片管理</h1>
       </div>
       <form class="history-page__filters" @submit.prevent="handleQuery">
-        <label class="history-filter">
+        <div class="history-filter" role="group" aria-label="历史日期范围筛选">
           <svg
+            class="history-filter__icon"
             width="16"
             height="16"
             viewBox="0 0 24 24"
@@ -146,10 +163,16 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
             <rect x="3" y="4" width="18" height="18" rx="2" />
             <path d="M16 2v4M8 2v4M3 10h18" />
           </svg>
-          <input v-model="startDate" type="date" aria-label="起始日期" />
-          <span class="history-filter__sep">—</span>
-          <input v-model="endDate" type="date" aria-label="结束日期" />
-        </label>
+          <component :is="HistoryConfigProvider" :locale="zhCn">
+            <component
+              :is="HistoryDateRangePicker"
+              v-model="selectedDateRange"
+              class="history-date-range"
+              v-bind="datePickerProps"
+              aria-label="历史日期范围"
+            />
+          </component>
+        </div>
         <button type="button" class="history-btn history-btn--ghost" @click="handleClearFilters">
           清除筛选条件
         </button>
@@ -322,36 +345,175 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   height: 44px;
-  padding: 0 14px;
-  border: 1px solid oklch(24% 0.012 78deg / 0.1);
-  border-radius: 40px;
-  background: #fcfcfc;
+  padding: 0 12px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-card-solid);
   color: var(--color-muted);
   font-size: 14px;
-  box-shadow: 0 10px 40px 5px rgba(194, 194, 194, 0.16);
+  box-shadow: none;
 }
 
 .history-filter:focus-within {
   border-color: var(--color-accent-active);
-  box-shadow: 0 0 0 3px rgba(204, 120, 92, 0.16);
+  box-shadow: none;
+  outline: 2px solid oklch(78% 0.13 57deg / 0.28);
+  outline-offset: 2px;
 }
 
-.history-filter input {
+.history-filter__icon {
+  flex: 0 0 auto;
+}
+
+.history-filter :deep(.history-date-range) {
+  --el-input-bg-color: transparent;
+  --el-input-border-color: transparent;
+  --el-input-hover-border-color: transparent;
+  --el-input-focus-border-color: transparent;
+  --el-input-text-color: var(--color-ink);
+  --el-text-color-placeholder: var(--color-muted-soft);
+  --el-input-icon-color: var(--color-muted);
+
+  width: 286px;
+  min-width: 0;
+  max-width: 100%;
+  height: 40px;
+  padding: 0;
   border: 0;
   background: transparent;
+  box-shadow: none;
   color: var(--color-ink);
-  outline: none;
   font: inherit;
-  min-width: 120px;
 }
 
-.history-filter input:invalid {
+.history-filter :deep(.history-date-range.el-input__wrapper),
+.history-filter :deep(.history-date-range.el-range-editor) {
+  box-shadow: none;
+}
+
+.history-filter :deep(.history-date-range .el-range-input) {
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+}
+
+.history-filter :deep(.history-date-range .el-range-input::placeholder) {
+  color: var(--color-muted-soft);
+}
+
+.history-filter :deep(.history-date-range .el-range-separator) {
+  flex: 0 0 auto;
+  padding: 0 6px;
+  color: var(--color-muted);
+  line-height: 1;
+}
+
+.history-filter :deep(.history-date-range .el-range__icon) {
+  display: none;
+}
+
+.history-filter :deep(.history-date-range .el-range__close-icon) {
   color: var(--color-muted);
 }
 
-.history-filter__sep {
+:global(.history-date-range-popper.el-popper) {
+  --el-bg-color-overlay: var(--color-surface-card-solid);
+  --el-border-color-light: var(--color-hairline);
+  --el-datepicker-active-color: var(--color-primary);
+  --el-datepicker-hover-text-color: var(--color-accent-active);
+  --el-datepicker-inrange-bg-color: oklch(93.4% 0.018 82deg / 0.62);
+  --el-datepicker-inrange-hover-bg-color: oklch(93.4% 0.018 82deg / 0.8);
+  --el-text-color-primary: var(--color-ink);
+  --el-text-color-regular: var(--color-body);
+  --el-text-color-placeholder: var(--color-muted-soft);
+
+  border: 1px solid var(--color-hairline) !important;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-card-solid);
+  box-shadow: none !important;
+  filter: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+:global(.history-date-range-popper .el-popper__arrow) {
+  display: none;
+}
+
+:global(.history-date-range-popper .el-picker-panel) {
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-body);
+  box-shadow: none;
+}
+
+:global(.history-date-range-popper .el-date-range-picker) {
+  width: min(646px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+}
+
+:global(.history-date-range-popper .el-picker-panel__body-wrapper),
+:global(.history-date-range-popper .el-picker-panel__body),
+:global(.history-date-range-popper .el-picker-panel__content) {
+  background: transparent;
+}
+
+:global(.history-date-range-popper .el-date-range-picker__header),
+:global(.history-date-range-popper .el-date-table th) {
   color: var(--color-muted);
+}
+
+:global(.history-date-range-popper .el-date-table td.in-range .el-date-table-cell) {
+  background: oklch(93.4% 0.018 82deg / 0.62);
+}
+
+:global(.history-date-range-popper .el-date-table td.today .el-date-table-cell__text) {
+  color: var(--color-accent-active);
+}
+
+:global(.history-date-range-popper .el-date-table td.start-date .el-date-table-cell__text),
+:global(.history-date-range-popper .el-date-table td.end-date .el-date-table-cell__text),
+:global(
+  .history-date-range-popper .el-date-table td.current:not(.disabled) .el-date-table-cell__text
+) {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+:global(.history-date-range-popper .el-date-table-cell__text) {
+  border-radius: calc(var(--radius-sm) - 4px);
+}
+
+@media (max-width: 720px) {
+  :global(.history-date-range-popper.el-popper) {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px);
+  }
+
+  :global(.history-date-range-popper .el-date-range-picker) {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  :global(.history-date-range-popper .el-picker-panel__body) {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  :global(.history-date-range-popper .el-date-range-picker__content) {
+    display: block;
+    width: 100%;
+    padding: 12px;
+  }
+
+  :global(.history-date-range-popper .el-date-range-picker__content.is-left) {
+    border-right: 0;
+    border-bottom: 1px solid var(--color-hairline);
+  }
 }
 
 .history-btn {
@@ -509,9 +671,13 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   }
 
   .history-filter {
-    flex-wrap: wrap;
+    width: 100%;
     height: auto;
-    padding: 8px 14px;
+    padding: 8px 12px;
+  }
+
+  .history-filter :deep(.history-date-range) {
+    width: calc(100% - 24px);
   }
 
   .history-btn {
