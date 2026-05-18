@@ -99,10 +99,10 @@ function fileSizeLabel(entry: HistoryEntry): string {
   overflow: hidden;
   width: 100%;
   aspect-ratio: 1;
-  padding: 0;
+  padding: var(--space-xs);
   border: 1px solid oklch(24% 0.012 78deg / 0.08);
-  border-radius: 22px;
-  background: linear-gradient(145deg, oklch(99% 0.004 88deg), oklch(94.8% 0.018 82deg));
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-card-solid);
   cursor: pointer;
   box-shadow: 0 10px 36px rgba(56, 49, 42, 0.08);
   transition:
@@ -118,8 +118,9 @@ function fileSizeLabel(entry: HistoryEntry): string {
 .history-tile__thumb img {
   width: 100%;
   height: 100%;
+  border-radius: calc(var(--radius-sm) - 2px);
   object-fit: contain;
-  padding: 12%;
+  padding: 0;
 }
 
 .history-tile__meta {
