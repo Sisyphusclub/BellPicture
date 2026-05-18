@@ -7,12 +7,12 @@ import HistoryDetailPanel from '@/components/gallery/HistoryDetailPanel.vue';
 import HistoryGrid from '@/components/gallery/HistoryGrid.vue';
 import { useImageHistory } from '@/composables/useImageHistory';
 import type { HistoryEntry } from '@/types/image';
-import { downloadUrl } from '@/utils/download';
 
 const router = useRouter();
 const { entries, isHydrating, hydrateError, refresh, remove } = useImageHistory();
 
 const selectedEntry = ref<HistoryEntry | null>(null);
+const isDetailImageExpanded = ref(false);
 const historyModalCloseRef = ref<HTMLButtonElement | null>(null);
 const startDate = ref('');
 const endDate = ref('');
@@ -46,6 +46,7 @@ watch(selectedEntry, (next, prev) => {
     });
   } else if (!next && prev) {
     document.removeEventListener('keydown', handleHistoryModalKeydown);
+    isDetailImageExpanded.value = false;
   }
 });
 
@@ -54,10 +55,12 @@ onBeforeUnmount(() => {
 });
 
 function handleSelect(entry: HistoryEntry): void {
+  isDetailImageExpanded.value = false;
   selectedEntry.value = entry;
 }
 
 function handleCloseDetail(): void {
+  isDetailImageExpanded.value = false;
   selectedEntry.value = null;
 }
 
@@ -84,13 +87,13 @@ function handleRerun(entry: HistoryEntry): void {
     path: '/',
     query: { prompt: entry.record.prompt },
   });
-  selectedEntry.value = null;
+  handleCloseDetail();
 }
 
 async function handleRemove(entry: HistoryEntry): Promise<void> {
   try {
     await remove(entry.record.id);
-    selectedEntry.value = null;
+    handleCloseDetail();
     ElMessage.success('历史记录已移除。');
   } catch {
     ElMessage.error('无法移除历史记录，请稍后重试。');
@@ -101,14 +104,10 @@ async function handleRefresh(): Promise<void> {
   await refresh();
 }
 
-async function handleDownload(entry: HistoryEntry): Promise<void> {
-  try {
-    await downloadUrl(entry.imageUrl, entry.record.id);
-    ElMessage.success('下载已开始。');
-  } catch {
-    ElMessage.error('下载失败，请稍后重试。');
-  }
+function handleDetailExpandedChange(expanded: boolean): void {
+  isDetailImageExpanded.value = expanded;
 }
+
 async function handleCopyId(entry: HistoryEntry): Promise<void> {
   const clipboard = navigator.clipboard;
   if (!clipboard || typeof clipboard.writeText !== 'function') {
@@ -230,16 +229,19 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
     <div v-if="selectedEntry" class="history-modal" @click.self="handleCloseDetail">
       <div
         class="history-modal__panel"
+        :class="{ 'history-modal__panel--expanded': isDetailImageExpanded }"
         role="dialog"
         aria-modal="true"
-        aria-label="历史详情"
+        :aria-labelledby="
+          isDetailImageExpanded ? 'history-detail-expanded-title' : 'history-detail-title'
+        "
         tabindex="-1"
       >
         <button
           ref="historyModalCloseRef"
           type="button"
           class="history-modal__close"
-          aria-label="关闭历史详情"
+          :aria-label="isDetailImageExpanded ? '关闭历史图片放大预览' : '关闭历史详情'"
           @click="handleCloseDetail"
         >
           <svg
@@ -255,16 +257,12 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
             <path d="M18 6 6 18M6 6l12 12" />
           </svg>
         </button>
-        <HistoryDetailPanel :entry="selectedEntry" @rerun="handleRerun" @remove="handleRemove" />
-        <div class="history-modal__actions">
-          <button
-            type="button"
-            class="history-btn history-btn--ghost"
-            @click="handleDownload(selectedEntry)"
-          >
-            下载
-          </button>
-        </div>
+        <HistoryDetailPanel
+          :entry="selectedEntry"
+          @rerun="handleRerun"
+          @remove="handleRemove"
+          @expanded-change="handleDetailExpandedChange"
+        />
       </div>
     </div>
   </section>
@@ -460,6 +458,12 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   background: oklch(99.1% 0.004 88deg / 0.96);
 }
 
+.history-modal__panel--expanded {
+  width: min(1120px, 100%);
+  height: min(760px, calc(100vh - 96px));
+  max-height: calc(100vh - 96px);
+}
+
 .history-modal__close {
   position: absolute;
   top: 14px;
@@ -481,18 +485,17 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   outline-offset: 3px;
 }
 
-.history-modal__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-  border-top: 1px solid var(--color-hairline-soft);
-  background: oklch(98.8% 0.005 88deg / 0.82);
-}
-
 @media (max-width: 860px) {
   .history-page {
     padding: var(--space-lg) var(--space-md) var(--space-xl);
+  }
+
+  .history-modal {
+    padding: 14px;
+  }
+
+  .history-modal__panel {
+    max-height: calc(100vh - 28px);
   }
 
   .history-page__header {
@@ -513,6 +516,11 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
 
   .history-btn {
     width: 100%;
+  }
+
+  .history-modal__panel--expanded {
+    height: calc(100vh - 28px);
+    max-height: calc(100vh - 28px);
   }
 }
 </style>
