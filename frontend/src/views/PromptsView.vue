@@ -235,200 +235,276 @@ function useTemplate(template: PromptTemplate): void {
       <p class="hero-badge">精选提示词库 · 内置静态模板</p>
       <h1 id="prompts-title">发现无尽创意</h1>
       <p class="hero-subtitle">探索精选提示词，一键生成你的专属大作</p>
-
-      <dl class="hero-stats" aria-label="提示词库统计">
-        <div>
-          <dt>{{ promptTemplates.length }}</dt>
-          <dd>精选提示词</dd>
-        </div>
-        <span aria-hidden="true"></span>
-        <div>
-          <dt>{{ categoryTags.length - 1 }}</dt>
-          <dd>内置分类</dd>
-        </div>
-      </dl>
-
-      <form class="prompt-search" role="search" aria-label="搜索提示词库" @submit.prevent="submitSearch">
-        <span class="prompt-search__scope">库检索</span>
-        <span class="prompt-search__icon" aria-hidden="true">⌕</span>
-        <input
-          v-model="searchKeyword"
-          type="search"
-          aria-label="搜索提示词、风格或元素"
-          placeholder="搜索提示词、风格或元素..."
-        />
-        <button type="submit">搜索</button>
-      </form>
     </header>
 
-    <nav class="category-cloud" aria-label="提示词分类">
-      <button
-        v-for="category in categoryTags"
-        :key="category.label"
-        type="button"
-        :class="{ 'is-active': selectedCategory === category.label }"
-        @click="selectCategory(category.label)"
-      >
-        {{ category.label }} <span>({{ category.count }})</span>
-      </button>
-    </nav>
-
-    <div v-if="filteredTemplates.length > 0" class="prompt-card-grid" aria-label="精选提示词卡片列表">
-      <article v-for="template in filteredTemplates" :key="template.id" class="prompt-card">
-        <figure class="prompt-card__media">
-          <img :src="template.imageUrl" :alt="`${template.title} 提示词示例图`" loading="lazy" />
-          <figcaption>{{ template.source }}</figcaption>
-        </figure>
-
-        <div class="prompt-card__body">
-          <h2>{{ template.title }}</h2>
-          <div class="prompt-card__chips" aria-label="提示词分类标签">
-            <span v-for="category in template.categories" :key="category">{{ category }}</span>
+    <section class="prompt-library-panel" aria-label="提示词库工作区">
+      <div class="prompt-library-panel__top">
+        <div>
+          <p class="prompt-library-panel__eyebrow">提示词库</p>
+          <h2>快速检索模板</h2>
+        </div>
+        <dl class="prompt-library-stats" aria-label="提示词库统计">
+          <div>
+            <dt>{{ promptTemplates.length }}</dt>
+            <dd>精选提示词</dd>
           </div>
-          <p>{{ template.prompt }}</p>
-        </div>
+          <div>
+            <dt>{{ categoryTags.length - 1 }}</dt>
+            <dd>内置分类</dd>
+          </div>
+        </dl>
+      </div>
 
-        <div class="prompt-card__actions">
-          <button type="button" class="prompt-card__copy" @click="copyPrompt(template)">
-            复制提示词
-          </button>
-          <button type="button" class="prompt-card__generate" @click="useTemplate(template)">
-            去生成 →
-          </button>
-        </div>
-      </article>
-    </div>
+      <div class="prompt-library-controls">
+        <form
+          class="prompt-search"
+          role="search"
+          aria-label="搜索提示词库"
+          @submit.prevent="submitSearch"
+        >
+          <span class="prompt-search__scope">库检索</span>
+          <span class="prompt-search__icon" aria-hidden="true">⌕</span>
+          <input
+            v-model="searchKeyword"
+            type="search"
+            aria-label="搜索提示词、风格或元素"
+            placeholder="搜索提示词、风格或元素..."
+          />
+          <button type="submit" class="prompt-btn prompt-btn--primary">搜索</button>
+        </form>
 
-    <div v-else class="prompt-empty" role="status">
-      <strong>没有找到匹配的提示词</strong>
-      <span>试试切换分类，或搜索其它风格与元素。</span>
-    </div>
+        <nav class="category-cloud" aria-label="提示词分类">
+          <button
+            v-for="category in categoryTags"
+            :key="category.label"
+            type="button"
+            :class="{ 'is-active': selectedCategory === category.label }"
+            @click="selectCategory(category.label)"
+          >
+            {{ category.label }} <span>({{ category.count }})</span>
+          </button>
+        </nav>
+      </div>
+
+      <div
+        v-if="filteredTemplates.length > 0"
+        class="prompt-card-grid"
+        aria-label="精选提示词卡片列表"
+      >
+        <article v-for="template in filteredTemplates" :key="template.id" class="prompt-card">
+          <figure class="prompt-card__media">
+            <img :src="template.imageUrl" :alt="`${template.title} 提示词示例图`" loading="lazy" />
+            <figcaption>{{ template.source }}</figcaption>
+          </figure>
+
+          <div class="prompt-card__body">
+            <h2>{{ template.title }}</h2>
+            <div class="prompt-card__chips" aria-label="提示词分类标签">
+              <span v-for="category in template.categories" :key="category">{{ category }}</span>
+            </div>
+            <p>{{ template.prompt }}</p>
+          </div>
+
+          <div class="prompt-card__actions">
+            <button
+              type="button"
+              class="prompt-btn prompt-btn--ghost prompt-card__copy"
+              @click="copyPrompt(template)"
+            >
+              复制提示词
+            </button>
+            <button
+              type="button"
+              class="prompt-btn prompt-btn--primary prompt-card__generate"
+              @click="useTemplate(template)"
+            >
+              去生成
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <div v-else class="prompt-empty" role="status">
+        <strong>没有找到匹配的提示词</strong>
+        <span>试试切换分类，或搜索其它风格与元素。</span>
+      </div>
+    </section>
   </section>
 </template>
 
 <style scoped>
 .prompts-page {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  width: min(100%, 1240px);
   min-height: 100vh;
-  padding: 78px clamp(18px, 4vw, 54px) 88px;
+  margin: 0 auto;
+  padding: 72px clamp(18px, 4vw, 40px) 88px;
   color: var(--color-ink);
 }
 
 .prompt-library-hero {
   display: grid;
-  justify-items: center;
-  width: min(100%, 1180px);
-  margin: 0 auto;
-  text-align: center;
+  justify-items: start;
+  gap: 12px;
 }
 
 .hero-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin: 0 0 22px;
-  border: 1px solid oklch(100% 0 0deg / 0.72);
+  margin: 0;
+  border: 1px solid var(--color-hairline);
   border-radius: var(--radius-pill);
-  background: oklch(100% 0 0deg / 0.5);
-  color: oklch(41% 0.045 276deg);
-  font-size: 14px;
-  font-weight: 800;
+  background: var(--color-surface-card-solid);
+  color: oklch(44% 0.012 78deg);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   line-height: 1.35;
-  padding: 10px 18px;
+  padding: 8px 14px;
 }
 
 .prompt-library-hero h1 {
-  max-width: 900px;
+  max-width: 720px;
   margin: 0;
-  color: oklch(23% 0.035 274deg);
+  color: var(--color-ink);
   font-family: var(--font-display);
-  font-size: clamp(52px, 8.8vw, 104px);
-  font-weight: 800;
-  letter-spacing: -0.075em;
-  line-height: 0.95;
+  font-size: clamp(34px, 4.2vw, 56px);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.06;
 }
 
 .hero-subtitle {
-  margin: 22px 0 0;
-  color: oklch(47% 0.04 276deg / 0.82);
-  font-size: clamp(17px, 2vw, 22px);
+  max-width: 560px;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: clamp(15px, 1.6vw, 18px);
   font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.65;
+  letter-spacing: -0.01em;
+  line-height: 1.6;
 }
 
-.hero-stats {
-  display: inline-grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 26px;
-  margin: 30px 0 0;
-}
-
-.hero-stats div {
+.prompt-library-panel {
   display: grid;
-  gap: 3px;
-  min-width: 112px;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-md) var(--space-lg);
+  border: 1px solid var(--color-hairline);
+  border-radius: 24px;
+  background: oklch(99.1% 0.004 88deg / 0.94);
+  box-shadow: none;
 }
 
-.hero-stats dt,
-.hero-stats dd {
+.prompt-library-panel__top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.prompt-library-panel__top h2 {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+}
+
+.prompt-library-panel__eyebrow {
+  margin: 0 0 6px;
+  color: oklch(44% 0.012 78deg);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.prompt-library-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
 }
 
-.hero-stats dt {
-  color: oklch(24% 0.036 274deg);
-  font-size: 26px;
-  font-weight: 950;
-  letter-spacing: -0.045em;
+.prompt-library-stats div {
+  display: grid;
+  min-width: 92px;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-card-solid);
 }
 
-.hero-stats dd {
-  color: oklch(54% 0.038 276deg / 0.78);
-  font-size: 13px;
+.prompt-library-stats dt,
+.prompt-library-stats dd {
+  margin: 0;
+}
+
+.prompt-library-stats dt {
+  color: var(--color-ink);
+  font-size: 20px;
   font-weight: 800;
+  letter-spacing: -0.035em;
 }
 
-.hero-stats > span {
-  width: 1px;
-  height: 38px;
-  background: oklch(60% 0.035 276deg / 0.26);
+.prompt-library-stats dd {
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.prompt-library-controls {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 20px;
+  background: oklch(97.6% 0.006 88deg / 0.72);
 }
 
 .prompt-search {
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: center;
-  width: min(100%, 820px);
-  min-height: 66px;
-  gap: 12px;
-  margin: 34px 0 0;
-  border: 1px solid oklch(100% 0 0deg / 0.76);
-  border-radius: 999px;
-  background: oklch(100% 0 0deg / 0.56);
-  padding: 8px;
+  min-height: 52px;
+  gap: 10px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-card-solid);
+  padding: 4px;
+  box-shadow: none;
+}
+
+.prompt-search:focus-within {
+  border-color: var(--color-accent-active);
+  outline: 2px solid oklch(78% 0.13 57deg / 0.28);
+  outline-offset: 2px;
 }
 
 .prompt-search__scope {
   display: inline-flex;
-  min-width: 86px;
-  height: 48px;
+  min-width: 74px;
+  height: 42px;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-pill);
-  background: oklch(19% 0.025 260deg);
-  color: white;
-  font-size: 14px;
-  font-weight: 900;
-  padding: 0 18px;
+  border-radius: calc(var(--radius-sm) - 4px);
+  background: oklch(93.4% 0.018 82deg / 0.72);
+  color: var(--color-body-strong);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 14px;
 }
 
 .prompt-search__icon {
   display: inline-flex;
-  width: 30px;
+  width: 28px;
   justify-content: center;
-  color: oklch(52% 0.045 274deg / 0.74);
-  font-size: 25px;
-  font-weight: 900;
+  color: var(--color-muted);
+  font-size: 22px;
+  font-weight: 800;
   line-height: 1;
 }
 
@@ -438,90 +514,126 @@ function useTemplate(template: PromptTemplate): void {
   border: 0;
   outline: none;
   background: transparent;
-  color: oklch(25% 0.035 274deg);
+  color: var(--color-ink);
   font: inherit;
-  font-size: 16px;
-  font-weight: 650;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .prompt-search input::placeholder {
-  color: oklch(57% 0.038 276deg / 0.66);
+  color: var(--color-muted-soft);
 }
 
-.prompt-search button {
-  height: 48px;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: oklch(19% 0.025 260deg);
-  color: white;
+.prompt-btn {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 15px;
-  font-weight: 950;
-  padding: 0 28px;
+  font-size: 13.5px;
+  font-weight: 800;
+  padding: 0 16px;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    opacity 140ms ease;
+}
+
+.prompt-btn:focus-visible,
+.category-cloud button:focus-visible {
+  outline: 3px solid oklch(78% 0.13 57deg / 0.72);
+  outline-offset: 3px;
+}
+
+.prompt-btn--primary {
+  border: 0;
+  background: linear-gradient(180deg, oklch(27% 0.012 76deg), var(--color-primary));
+  color: var(--color-on-primary);
+  box-shadow:
+    inset -4px -6px 25px 0 rgba(201, 201, 201, 0.08),
+    inset 4px 4px 10px 0 rgba(29, 29, 29, 0.24);
+}
+
+.prompt-btn--primary:hover {
+  background: var(--color-primary-active);
+}
+
+.prompt-btn--ghost {
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface-glass-strong);
+  color: var(--color-ink);
+}
+
+.prompt-btn--ghost:hover {
+  background: var(--color-surface-card-solid);
 }
 
 .category-cloud {
   display: flex;
-  width: min(100%, 1180px);
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  margin: 36px auto 40px;
+  justify-content: flex-start;
+  gap: 8px;
 }
 
 .category-cloud button {
   display: inline-flex;
-  min-height: 42px;
+  min-height: 36px;
   align-items: center;
-  border: 1px solid oklch(100% 0 0deg / 0.74);
+  border: 1px solid var(--color-hairline);
   border-radius: var(--radius-pill);
-  background: oklch(100% 0 0deg / 0.44);
-  color: oklch(39% 0.04 276deg / 0.9);
+  background: var(--color-surface-card-solid);
+  color: var(--color-body-strong);
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 850;
+  font-size: 13px;
+  font-weight: 750;
   gap: 4px;
-  padding: 0 17px;
+  padding: 0 13px;
+}
+
+.category-cloud button:hover {
+  background: oklch(96.2% 0.008 88deg / 0.92);
 }
 
 .category-cloud button span {
-  color: oklch(53% 0.04 276deg / 0.66);
-  font-weight: 800;
+  color: var(--color-muted);
+  font-weight: 700;
 }
 
 .category-cloud button.is-active {
-  border-color: oklch(25% 0.032 260deg);
-  background: oklch(19% 0.025 260deg);
-  color: white;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
 }
 
 .category-cloud button.is-active span {
-  color: oklch(94% 0.006 260deg / 0.78);
+  color: oklch(94% 0.006 80deg / 0.78);
 }
 
 .prompt-card-grid {
   display: grid;
-  width: min(100%, 1240px);
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 22px;
-  margin: 0 auto;
+  gap: 16px;
 }
 
 .prompt-card {
   display: grid;
   overflow: hidden;
-  border: 1px solid oklch(100% 0 0deg / 0.66);
-  border-radius: 30px;
-  background: oklch(100% 0 0deg / 0.5);
+  border: 1px solid var(--color-hairline);
+  border-radius: 18px;
+  background: var(--color-surface-card-solid);
+  box-shadow: none;
 }
 
 .prompt-card__media {
   position: relative;
-  aspect-ratio: 1 / 0.76;
+  aspect-ratio: 1 / 0.72;
   margin: 10px 10px 0;
   overflow: hidden;
-  border-radius: 23px;
-  background: oklch(94% 0.018 270deg / 0.62);
+  border: 1px solid var(--color-hairline);
+  border-radius: 14px;
+  background: oklch(94.5% 0.01 88deg / 0.82);
 }
 
 .prompt-card__media img {
@@ -533,73 +645,64 @@ function useTemplate(template: PromptTemplate): void {
 
 .prompt-card__media figcaption {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  max-width: calc(100% - 24px);
+  top: 10px;
+  right: 10px;
+  max-width: calc(100% - 20px);
   overflow: hidden;
-  border: 1px solid oklch(100% 0 0deg / 0.5);
+  border: 1px solid var(--color-hairline);
   border-radius: var(--radius-pill);
-  background: oklch(100% 0 0deg / 0.72);
-  color: oklch(28% 0.032 268deg);
+  background: oklch(99% 0.004 88deg / 0.9);
+  color: var(--color-body-strong);
   font-size: 12px;
-  font-weight: 900;
-  padding: 6px 10px;
+  font-weight: 800;
+  padding: 5px 9px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .prompt-card__body {
   display: grid;
-  gap: 11px;
-  padding: 18px 18px 0;
+  gap: 10px;
+  padding: 16px 16px 0;
 }
 
 .prompt-card__body h2 {
   margin: 0;
-  color: oklch(23% 0.035 274deg);
-  font-size: 18px;
-  font-weight: 950;
+  color: var(--color-ink);
+  font-size: 17px;
+  font-weight: 800;
   letter-spacing: -0.035em;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .prompt-card__chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 6px;
 }
 
 .prompt-card__chips span {
   display: inline-flex;
-  min-height: 26px;
+  min-height: 24px;
   align-items: center;
+  border: 1px solid var(--color-hairline);
   border-radius: var(--radius-pill);
-  background: oklch(88% 0.04 307deg / 0.55);
-  color: oklch(39% 0.085 307deg);
+  background: oklch(96.5% 0.008 88deg / 0.86);
+  color: var(--color-muted);
   font-size: 12px;
-  font-weight: 900;
-  padding: 0 10px;
-}
-
-.prompt-card__chips span:nth-child(2n) {
-  background: oklch(90% 0.04 218deg / 0.58);
-  color: oklch(36% 0.08 238deg);
-}
-
-.prompt-card__chips span:nth-child(3n) {
-  background: oklch(91% 0.05 78deg / 0.58);
-  color: oklch(40% 0.07 72deg);
+  font-weight: 800;
+  padding: 0 9px;
 }
 
 .prompt-card__body p {
   display: -webkit-box;
-  min-height: 5.15em;
+  min-height: 5.1em;
   margin: 0;
   overflow: hidden;
-  color: oklch(43% 0.037 276deg / 0.82);
+  color: var(--color-muted);
   font-size: 13.5px;
   font-weight: 600;
-  line-height: 1.72;
+  line-height: 1.7;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
   line-clamp: 3;
@@ -608,51 +711,26 @@ function useTemplate(template: PromptTemplate): void {
 .prompt-card__actions {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
-  padding: 18px;
-}
-
-.prompt-card__actions button {
-  display: inline-flex;
-  min-height: 42px;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-pill);
-  cursor: pointer;
-  font-size: 13.5px;
-  font-weight: 950;
-  padding: 0 15px;
-}
-
-.prompt-card__copy {
-  border: 1px solid oklch(100% 0 0deg / 0.72);
-  background: oklch(100% 0 0deg / 0.48);
-  color: oklch(31% 0.035 274deg);
-}
-
-.prompt-card__generate {
-  border: 0;
-  background: oklch(18% 0.025 260deg);
-  color: white;
+  padding: 16px;
 }
 
 .prompt-empty {
   display: grid;
-  width: min(100%, 680px);
   justify-items: center;
   gap: 8px;
-  margin: 0 auto;
-  border: 1px solid oklch(100% 0 0deg / 0.66);
-  border-radius: 30px;
-  background: oklch(100% 0 0deg / 0.42);
-  color: oklch(43% 0.037 276deg / 0.82);
-  padding: 40px 20px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 18px;
+  background: var(--color-surface-card-solid);
+  color: var(--color-muted);
+  padding: 42px 20px;
   text-align: center;
+  box-shadow: none;
 }
 
 .prompt-empty strong {
-  color: oklch(24% 0.035 274deg);
+  color: var(--color-ink);
   font-size: 18px;
 }
 
@@ -667,6 +745,19 @@ function useTemplate(template: PromptTemplate): void {
     padding-top: 56px;
   }
 
+  .prompt-library-panel__top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .prompt-library-stats {
+    width: 100%;
+  }
+
+  .prompt-library-stats div {
+    flex: 1;
+  }
+
   .prompt-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -674,37 +765,44 @@ function useTemplate(template: PromptTemplate): void {
 
 @media (max-width: 700px) {
   .prompts-page {
-    padding: 38px 14px 46px;
+    gap: 20px;
+    padding: 34px 14px 96px;
   }
 
   .hero-badge {
-    margin-bottom: 18px;
-    font-size: 12px;
-    padding: 9px 13px;
+    font-size: 11px;
+    padding: 7px 11px;
   }
 
   .prompt-library-hero h1 {
-    font-size: clamp(44px, 17vw, 72px);
+    font-size: clamp(32px, 10vw, 44px);
   }
 
   .hero-subtitle {
-    margin-top: 16px;
-    font-size: 16px;
+    font-size: 15px;
   }
 
-  .hero-stats {
-    gap: 18px;
-    margin-top: 24px;
+  .prompt-library-panel {
+    padding: 12px;
+    border-radius: 20px;
   }
 
-  .hero-stats div {
-    min-width: 92px;
+  .prompt-library-controls {
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .prompt-library-stats {
+    flex-direction: column;
+  }
+
+  .prompt-library-stats div {
+    width: 100%;
   }
 
   .prompt-search {
     grid-template-columns: 1fr;
-    border-radius: 28px;
-    padding: 10px;
+    padding: 8px;
   }
 
   .prompt-search__scope,
@@ -717,26 +815,24 @@ function useTemplate(template: PromptTemplate): void {
   }
 
   .prompt-search input {
-    min-height: 46px;
-    padding: 0 12px;
+    min-height: 42px;
+    padding: 0 10px;
     text-align: center;
   }
 
   .category-cloud {
-    justify-content: flex-start;
-    gap: 9px;
-    margin: 28px auto 30px;
+    gap: 7px;
   }
 
   .category-cloud button {
-    min-height: 38px;
+    min-height: 34px;
     font-size: 12.5px;
-    padding: 0 13px;
+    padding: 0 11px;
   }
 
   .prompt-card-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 14px;
   }
 
   .prompt-card__actions {
