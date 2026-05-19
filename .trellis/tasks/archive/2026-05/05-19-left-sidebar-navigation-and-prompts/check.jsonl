@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Frontend verification commands, accessibility baseline, and Simplified Chinese UI review checklist."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Check custom navigation and prompt page against SFC, UI-system, and a11y conventions."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Verify no forbidden global store/local cache is introduced while reusing history data."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Verify no any/as shortcuts and prompt template types remain strict."}

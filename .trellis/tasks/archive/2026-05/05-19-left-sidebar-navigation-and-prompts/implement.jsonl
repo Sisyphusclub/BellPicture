@@ -1,0 +1,5 @@
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"Frontend file placement, route/view/component boundaries, and no-service-import-in-views rules for navigation/page changes."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Vue SFC structure, hybrid UI rules, Simplified Chinese copy, and accessibility requirements for the new sidebar and prompt page."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Composables-only state and backend-sourced history constraints relevant to discovery/generate/history page split."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Strict TypeScript and shared type placement rules for prompt template data and component APIs."}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"Search-first and reuse guidance before splitting existing GenerateView/home behavior."}
