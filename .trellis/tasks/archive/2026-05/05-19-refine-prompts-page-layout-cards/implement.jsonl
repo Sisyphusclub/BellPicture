@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Vue SFC structure, product UI conventions, Simplified Chinese copy, and modal/surface visual rules relevant to prompt page styling."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Frontend verification, accessibility baseline, UI copy, and review checklist for visual refinement."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Strict TypeScript expectations while updating prompt template view and tests."}
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"Confirms view/component boundaries and no direct service imports while refining PromptsView."}
