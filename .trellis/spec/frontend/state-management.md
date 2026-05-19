@@ -126,6 +126,72 @@ PR3 will introduce per-user output directories with authed access.
 
 ---
 
+## Authenticated server-state hydration
+
+Private server state must wait for auth before hydrating. A composable that reads an authenticated endpoint such as `GET /api/history` must observe `useAuth()` and only call the service after `isLoading === false` and `isAuthenticated === true`.
+
+**Contract**:
+- Auth loading: do not request private data and do not clear existing state yet.
+- Authenticated: hydrate once, expose a `refresh()` path that can re-run the fetch.
+- Anonymous: clear private in-memory state, clear hydration errors, reset the hydration guard, and do not call the private endpoint.
+- Manual `refresh()` while anonymous: clear private state and return without network I/O.
+
+**Why**: `authedFetch` opens the login modal on `401`. If anonymous page load hydrates private state, discovery/prompts/history routes can trigger a login modal without the user clicking “登录”. Public browsing must stay available; the login modal is user-initiated unless a protected action explicitly requires it.
+
+**Example**:
+```ts
+export function useImageHistory() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  watch(
+    [isLoading, isAuthenticated],
+    ([authLoading, authenticated]) => {
+      if (authLoading) return;
+      if (authenticated) {
+        void hydrate();
+        return;
+      }
+      records.value = [];
+      hydrateError.value = null;
+      hydrated = false;
+    },
+    { immediate: true },
+  );
+
+  async function refresh(): Promise<void> {
+    if (!isAuthenticated.value) {
+      records.value = [];
+      hydrateError.value = null;
+      hydrated = false;
+      return;
+    }
+    hydrated = false;
+    await hydrate();
+  }
+}
+```
+
+**Required tests**:
+- Anonymous mount: assert `fetch` is not called and exposed entries are empty.
+- Authenticated mount: assert the private endpoint hydrates records.
+- Anonymous `refresh()`: assert no network request and state is cleared.
+- UI regression: mounting the app anonymously must not call `useAuthModal().open()`.
+
+**Wrong vs correct**:
+```ts
+// Wrong: anonymous visitors hit /api/history and a 401 opens LoginModal.
+export function useImageHistory() {
+  void hydrate();
+}
+
+// Correct: private hydration is gated by loaded authenticated state.
+if (!isAuthLoading.value && isAuthenticated.value) {
+  void hydrate();
+}
+```
+
+---
+
 ## Anti-patterns specifically forbidden in this project
 
 - ❌ **Pinia / Vuex / a global event bus.** If the next feature genuinely
