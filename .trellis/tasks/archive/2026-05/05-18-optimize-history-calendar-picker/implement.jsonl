@@ -1,0 +1,3 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Element Plus utility usage, Simplified Chinese labels, and custom popup surface style requirements."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Frontend test, lint, typecheck, a11y, and formatting requirements."}
+{"file":".trellis/spec/guides/index.md","reason":"Pre-modification thinking checklist for constants and reusable UI patterns."}

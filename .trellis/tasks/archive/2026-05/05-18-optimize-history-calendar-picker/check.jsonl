@@ -1,0 +1,3 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Check Element Plus date picker remains a utility, uses project styling, and keeps Simplified Chinese/a11y labels."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Check focused component tests, lint, typecheck, formatting, and browser smoke expectations."}
+{"file":".trellis/spec/guides/index.md","reason":"Check the implementation did not introduce unnecessary cross-layer or reusable-constant drift."}
