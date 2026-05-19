@@ -653,3 +653,36 @@ Removed duplicate history detail download action, added click-to-enlarge preview
 ### Next Steps
 
 - None - task complete
+
+
+## Session 20: Optimize history calendar picker
+
+**Date**: 2026-05-19
+**Task**: Optimize history calendar picker
+**Branch**: `main`
+
+### Summary
+
+Replaced the native history date inputs with a styled Element Plus date-range picker and verified range selection, query, and clear behavior.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ab4ee1a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
