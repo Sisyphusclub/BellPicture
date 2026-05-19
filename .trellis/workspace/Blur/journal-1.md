@@ -786,3 +786,36 @@ Added left sidebar/mobile navigation, discovery and prompt template pages, gated
 ### Next Steps
 
 - None - task complete
+
+
+## Session 24: Refine prompts page layout and cards
+
+**Date**: 2026-05-19
+**Task**: Refine prompts page layout and cards
+**Branch**: `main`
+
+### Summary
+
+Refined the prompts page with smaller product-scale typography, an elevated search/filter control area, a unified warm background panel, and cards aligned with the image-management visual language.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `48812cc` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
