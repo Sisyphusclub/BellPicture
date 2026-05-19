@@ -719,3 +719,36 @@ Changed the auth flow from email/password to username/password, added a gated de
 ### Next Steps
 
 - None - task complete
+
+
+## Session 22: Refine history gallery layout actions
+
+**Date**: 2026-05-19
+**Task**: Refine history gallery layout actions
+**Branch**: `main`
+
+### Summary
+
+Reduced the history page title and content-card visual weight, added accessible hover/focus quick actions for enlarge/delete on history image cards, and validated the existing expanded detail modal flow.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6f26d67` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
