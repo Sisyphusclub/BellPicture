@@ -686,3 +686,36 @@ Replaced the native history date inputs with a styled Element Plus date-range pi
 ### Next Steps
 
 - None - task complete
+
+
+## Session 21: Switch auth to username credentials
+
+**Date**: 2026-05-19
+**Task**: Switch auth to username credentials
+**Branch**: `main`
+
+### Summary
+
+Changed the auth flow from email/password to username/password, added a gated demo default admin seed, and verified the username login/register flow.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7fb62f9` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

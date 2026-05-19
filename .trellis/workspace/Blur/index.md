@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 20
+- **Total Sessions**: 21
 - **Last Active**: 2026-05-19
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~688 | Active |
+| `journal-1.md` | ~721 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 21 | 2026-05-19 | Switch auth to username credentials | `7fb62f9` | `main` |
 | 20 | 2026-05-19 | Optimize history calendar picker | `ab4ee1a` | `main` |
 | 19 | 2026-05-18 | Polish history detail modal and thumbnails | `ddba0b9`, `0ed5ed8` | `main` |
 | 18 | 2026-05-18 | Fix gallery masonry and modal preview | `ef5efcf`, `6c66799` | `main` |
