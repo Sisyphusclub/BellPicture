@@ -752,3 +752,37 @@ Reduced the history page title and content-card visual weight, added accessible 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 23: Left sidebar navigation and prompts
+
+**Date**: 2026-05-19
+**Task**: Left sidebar navigation and prompts
+**Branch**: `main`
+
+### Summary
+
+Added left sidebar/mobile navigation, discovery and prompt template pages, gated private history hydration for anonymous users, and recorded the frontend hydration contract.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7e92afb` | (see git log) |
+| `b1ab41e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
