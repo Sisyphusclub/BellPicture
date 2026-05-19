@@ -39,13 +39,28 @@ function expectStyleDeclaration(rule: string, property: string, value: string): 
 }
 
 describe('HistoryGrid', () => {
-  it('preserves thumbnail selection and copy interactions', async () => {
+  it('emits selection, copy, quick enlarge, and quick remove from separate controls', async () => {
     const entry = createEntry();
     const wrapper = mount(HistoryGrid, {
       props: {
         entries: [entry],
       },
     });
+
+    const expandButton = wrapper.get('.history-tile__action--expand');
+    const removeButton = wrapper.get('.history-tile__action--remove');
+
+    expect(expandButton.text()).toBe('放大');
+    expect(removeButton.text()).toBe('删除');
+    expect(expandButton.attributes('aria-label')).toBe(`放大查看图片：${entry.record.prompt}`);
+    expect(removeButton.attributes('aria-label')).toBe(`删除历史图片：${entry.record.prompt}`);
+
+    await expandButton.trigger('click');
+    await removeButton.trigger('click');
+
+    expect(wrapper.emitted('expand')).toEqual([[entry]]);
+    expect(wrapper.emitted('remove')).toEqual([[entry]]);
+    expect(wrapper.emitted('select')).toBeUndefined();
 
     await wrapper.get('.history-tile__thumb').trigger('click');
     await wrapper.get('.history-tile__copy').trigger('click');
@@ -54,16 +69,39 @@ describe('HistoryGrid', () => {
     expect(wrapper.emitted('copy-id')).toEqual([[entry]]);
   });
 
-  it('keeps thumbnail images close to a flat smaller-radius frame', () => {
+  it('keeps quick actions as sibling hover and focus controls on a flat thumbnail frame', () => {
+    const wrapper = mount(HistoryGrid, {
+      props: {
+        entries: [createEntry()],
+      },
+    });
+    const mediaRule = extractStyleRules('.history-tile__media')[0] ?? '';
     const thumbRule = extractStyleRules('.history-tile__thumb')[0] ?? '';
     const imageRule = extractStyleRules('.history-tile__thumb img')[0] ?? '';
+    const quickActionsRule = extractStyleRules('.history-tile__quick-actions')[0] ?? '';
+    const actionRule = extractStyleRules('.history-tile__action')[0] ?? '';
 
+    expect(wrapper.find('.history-tile__media > .history-tile__thumb').exists()).toBe(true);
+    expect(wrapper.find('.history-tile__media > .history-tile__quick-actions').exists()).toBe(true);
+    expect(wrapper.find('.history-tile__thumb .history-tile__action').exists()).toBe(false);
+    expect(historyGridSource).toMatch(
+      /history-tile__media:hover \.history-tile__quick-actions,[\s\S]*history-tile__media:focus-within \.history-tile__quick-actions[\s\S]*opacity:\s*1/,
+    );
+    expect(wrapper.get('.history-tile__quick-actions').attributes('role')).toBe('group');
+    expect(historyGridSource).toContain('aria-label="图片快捷操作"');
+
+    expectStyleDeclaration(mediaRule, 'border-radius', 'var(--radius-sm)');
+    expectStyleDeclaration(mediaRule, 'background', 'var(--color-surface-card-solid)');
     expectStyleDeclaration(thumbRule, 'padding', 'var(--space-xs)');
-    expectStyleDeclaration(thumbRule, 'border-radius', 'var(--radius-sm)');
-    expectStyleDeclaration(thumbRule, 'background', 'var(--color-surface-card-solid)');
-    expect(thumbRule).not.toMatch(/(?:linear|radial)-gradient/);
+    expectStyleDeclaration(thumbRule, 'border', '0');
+    expectStyleDeclaration(thumbRule, 'background', 'transparent');
+    expectStyleDeclaration(thumbRule, 'box-shadow', 'none');
     expectStyleDeclaration(imageRule, 'padding', '0');
     expectStyleDeclaration(imageRule, 'border-radius', 'calc(var(--radius-sm) - 2px)');
+    expectStyleDeclaration(quickActionsRule, 'opacity', '0');
+    expectStyleDeclaration(quickActionsRule, 'pointer-events', 'none');
+    expectStyleDeclaration(actionRule, 'box-shadow', 'none');
+    expect(thumbRule).not.toMatch(/(?:linear|radial)-gradient/);
     expect(imageRule).not.toMatch(/padding:\s*12%/);
   });
 });

@@ -75,7 +75,7 @@ async function mountHistoryView(entry = createEntry()): Promise<HistoryViewHarne
           required: true,
         },
       },
-      emits: ['select', 'copy-id'],
+      emits: ['select', 'expand', 'remove', 'copy-id'],
       template:
         '<div class="history-grid-stub"><button type="button" class="history-grid-stub__select" @click="$emit(\'select\', entries[0])">打开详情</button></div>',
     },
@@ -128,6 +128,22 @@ describe('HistoryDetailPanel', () => {
     expect(titleRule).toMatch(/font-size:\s*clamp\(23px,\s*2\.4vw,\s*28px\)/);
     expectStyleDeclaration(promptFieldRule, 'border-radius', 'var(--radius-xs)');
     expectStyleDeclaration(promptFieldRule, 'box-shadow', 'none');
+  });
+
+  it('can mount directly in enlarged image preview mode', () => {
+    const entry = createEntry();
+    const wrapper = mount(HistoryDetailPanel, {
+      props: {
+        entry,
+        initialExpanded: true,
+      },
+    });
+
+    expect(wrapper.get('.detail-panel').classes()).toContain('detail-panel--expanded');
+    expect(wrapper.find('.detail-panel__viewer').exists()).toBe(true);
+    expect(wrapper.find('.detail-panel__content').exists()).toBe(false);
+    expect(wrapper.get('#history-detail-expanded-title').text()).toBe('图片放大预览');
+    expect(wrapper.get('.detail-panel__viewer img').attributes('src')).toBe(entry.imageUrl);
   });
 
   it('opens an enlarged image preview and returns to the detail view', async () => {

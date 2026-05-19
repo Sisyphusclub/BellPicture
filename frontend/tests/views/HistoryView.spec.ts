@@ -1,5 +1,5 @@
 import { enableAutoUnmount, mount, type DOMWrapper, type VueWrapper } from '@vue/test-utils';
-import { h, ref, type PropType, type SetupContext } from 'vue';
+import { h, nextTick, ref, type PropType, type SetupContext } from 'vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import historyViewSource from '@/views/HistoryView.vue?raw';
@@ -63,9 +63,19 @@ function renderedEntryIds(wrapper: VueWrapper): string[] {
     .map((item) => item.attributes('src')?.split('/').pop() ?? '');
 }
 
-async function mountHistoryView(
-  initialEntries: HistoryEntry[] = defaultEntries(),
-): Promise<VueWrapper> {
+function extractStyleRules(selector: string): string[] {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const rulePattern = new RegExp(`${escapedSelector}\\s*\\{([\\s\\S]*?)\\}`, 'g');
+  return Array.from(historyViewSource.matchAll(rulePattern), (match) => match[1] ?? '');
+}
+
+function expectStyleDeclaration(rule: string, property: string, value: string): void {
+  const escapedProperty = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escapedValue = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  expect(rule).toMatch(new RegExp(`(?:^|[;\\s])${escapedProperty}\\s*:\\s*${escapedValue}\\s*;`));
+}
+
+async function mountHistoryView(initialEntries: HistoryEntry[] = defaultEntries()) {
   vi.resetModules();
 
   const entries = ref(initialEntries);
@@ -191,8 +201,59 @@ async function mountHistoryView(
   }));
 
   const HistoryView = (await import('@/views/HistoryView.vue')).default;
-  return mount(HistoryView);
+  const wrapper = mount(HistoryView);
+
+  return { wrapper, remove, refresh };
 }
+
+describe('HistoryView layout and quick actions', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('uses a calmer page title and a flattened history card surface', () => {
+    const titleRule = extractStyleRules('.history-page__title')[0] ?? '';
+    const cardRule = extractStyleRules('.history-card')[0] ?? '';
+
+    expect(titleRule).not.toContain('clamp(44px, 6vw, 80px)');
+    expectStyleDeclaration(titleRule, 'font-size', 'clamp(34px, 4.2vw, 56px)');
+    expectStyleDeclaration(cardRule, 'border', '1px solid var(--color-hairline)');
+    expectStyleDeclaration(cardRule, 'background', 'oklch(99.1% 0.004 88deg / 0.94)');
+    expectStyleDeclaration(cardRule, 'box-shadow', 'none');
+    expect(cardRule).not.toMatch(/backdrop-filter/i);
+    expect(cardRule).not.toMatch(/blur\(/i);
+  });
+
+  it('opens quick enlarge directly in the expanded history detail modal', async () => {
+    const entry = createEntry('quick-expand.png', '2026-05-18T08:00:00.000Z', '放大预览作品');
+    const { wrapper } = await mountHistoryView([entry]);
+
+    await wrapper.get('.history-tile__action--expand').trigger('click');
+    await nextTick();
+
+    expect(wrapper.get('.history-modal__panel').classes()).toContain(
+      'history-modal__panel--expanded',
+    );
+    expect(wrapper.get('.history-modal__panel').attributes('aria-labelledby')).toBe(
+      'history-detail-expanded-title',
+    );
+    expect(wrapper.get('.history-modal__close').attributes('aria-label')).toBe(
+      '关闭历史图片放大预览',
+    );
+    expect(wrapper.find('.detail-panel__viewer').exists()).toBe(true);
+    expect(wrapper.text()).toContain('返回详情');
+  });
+
+  it('uses the existing remove path from the quick delete action without opening detail', async () => {
+    const entry = createEntry('quick-delete.png', '2026-05-18T08:00:00.000Z', '待删除作品');
+    const { wrapper, remove } = await mountHistoryView([entry]);
+
+    await wrapper.get('.history-tile__action--remove').trigger('click');
+
+    expect(remove).toHaveBeenCalledWith(entry.record.id);
+    expect(wrapper.find('.history-modal').exists()).toBe(false);
+  });
+});
 
 describe('HistoryView date range filter', () => {
   beforeEach(() => {
@@ -200,7 +261,7 @@ describe('HistoryView date range filter', () => {
   });
 
   it('uses the styled Element Plus range picker instead of native date inputs', async () => {
-    const wrapper = await mountHistoryView();
+    const { wrapper } = await mountHistoryView();
     const picker = wrapper.get('[data-testid="date-range-picker"]');
 
     expect(historyViewSource).not.toMatch(/type\s*=\s*["']date["']/);
@@ -221,7 +282,7 @@ describe('HistoryView date range filter', () => {
   });
 
   it('applies the selected date range only after querying', async () => {
-    const wrapper = await mountHistoryView();
+    const { wrapper } = await mountHistoryView();
 
     expect(renderedEntryIds(wrapper)).toEqual([
       'before.png',
@@ -244,7 +305,7 @@ describe('HistoryView date range filter', () => {
   });
 
   it('clears the pending range and applied date filter from the filter action', async () => {
-    const wrapper = await mountHistoryView();
+    const { wrapper } = await mountHistoryView();
 
     await getButtonByText(wrapper, '选择日期范围').trigger('click');
     await wrapper.get('form.history-page__filters').trigger('submit');

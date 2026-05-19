@@ -75,6 +75,11 @@ function handleSelect(entry: HistoryEntry): void {
   selectedEntry.value = entry;
 }
 
+function handleExpand(entry: HistoryEntry): void {
+  isDetailImageExpanded.value = true;
+  selectedEntry.value = entry;
+}
+
 function handleCloseDetail(): void {
   isDetailImageExpanded.value = false;
   selectedEntry.value = null;
@@ -246,7 +251,13 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
         </button>
       </div>
 
-      <HistoryGrid :entries="filteredEntries" @select="handleSelect" @copy-id="handleCopyId" />
+      <HistoryGrid
+        :entries="filteredEntries"
+        @select="handleSelect"
+        @expand="handleExpand"
+        @remove="handleRemove"
+        @copy-id="handleCopyId"
+      />
     </section>
 
     <div v-if="selectedEntry" class="history-modal" @click.self="handleCloseDetail">
@@ -282,6 +293,7 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
         </button>
         <HistoryDetailPanel
           :entry="selectedEntry"
+          :initial-expanded="isDetailImageExpanded"
           @rerun="handleRerun"
           @remove="handleRemove"
           @expanded-change="handleDetailExpandedChange"
@@ -328,7 +340,7 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   margin: 0;
   color: var(--color-ink);
   font-family: var(--font-display);
-  font-size: clamp(44px, 6vw, 80px);
+  font-size: clamp(34px, 4.2vw, 56px);
   font-weight: 500;
   letter-spacing: -0.04em;
   line-height: 0.96;
@@ -574,12 +586,10 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   display: grid;
   gap: var(--space-md);
   padding: var(--space-md) var(--space-md) var(--space-lg);
-  border: 1px solid oklch(24% 0.012 78deg / 0.1);
-  border-radius: 28px;
-  background: oklch(99% 0.004 88deg / 0.82);
-  box-shadow: 0 10px 40px 5px rgba(194, 194, 194, 0.18);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--color-hairline);
+  border-radius: 24px;
+  background: oklch(99.1% 0.004 88deg / 0.94);
+  box-shadow: none;
 }
 
 .history-card__top {

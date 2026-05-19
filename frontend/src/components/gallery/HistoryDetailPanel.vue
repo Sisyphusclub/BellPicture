@@ -8,9 +8,12 @@ import { formatBytes, formatDateTime } from '@/utils/format';
 
 interface Props {
   entry: HistoryEntry | null;
+  initialExpanded?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  initialExpanded: false,
+});
 
 const emit = defineEmits<{
   (e: 'rerun', entry: HistoryEntry): void;
@@ -20,7 +23,7 @@ const emit = defineEmits<{
 
 const imageButtonRef = ref<HTMLButtonElement | null>(null);
 const backButtonRef = ref<HTMLButtonElement | null>(null);
-const isImageExpanded = ref(false);
+const isImageExpanded = ref(props.initialExpanded);
 
 const HISTORY_TITLE_MAX_LENGTH = 18;
 const HISTORY_TITLE_BREAK_PATTERN = /[，,。！？!?；;\n]/;

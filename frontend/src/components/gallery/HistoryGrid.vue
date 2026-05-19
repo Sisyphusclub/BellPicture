@@ -10,6 +10,8 @@ defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'select', entry: HistoryEntry): void;
+  (e: 'expand', entry: HistoryEntry): void;
+  (e: 'remove', entry: HistoryEntry): void;
   (e: 'copy-id', entry: HistoryEntry): void;
 }>();
 
@@ -21,14 +23,34 @@ function fileSizeLabel(entry: HistoryEntry): string {
 <template>
   <div v-if="entries.length > 0" class="history-grid" aria-label="图片列表">
     <article v-for="entry in entries" :key="entry.record.id" class="history-tile">
-      <button
-        type="button"
-        class="history-tile__thumb"
-        :aria-label="`打开图片详情：${entry.record.prompt}`"
-        @click="emit('select', entry)"
-      >
-        <img :src="entry.imageUrl" alt="生成历史图片预览" />
-      </button>
+      <div class="history-tile__media">
+        <button
+          type="button"
+          class="history-tile__thumb"
+          :aria-label="`打开图片详情：${entry.record.prompt}`"
+          @click="emit('select', entry)"
+        >
+          <img :src="entry.imageUrl" alt="生成历史图片预览" />
+        </button>
+        <div class="history-tile__quick-actions" role="group" aria-label="图片快捷操作">
+          <button
+            type="button"
+            class="history-tile__action history-tile__action--expand"
+            :aria-label="`放大查看图片：${entry.record.prompt}`"
+            @click.stop="emit('expand', entry)"
+          >
+            放大
+          </button>
+          <button
+            type="button"
+            class="history-tile__action history-tile__action--remove"
+            :aria-label="`删除历史图片：${entry.record.prompt}`"
+            @click.stop="emit('remove', entry)"
+          >
+            删除
+          </button>
+        </div>
+      </div>
       <div class="history-tile__meta">
         <div class="history-tile__row history-tile__row--top">
           <span class="history-tile__date">
@@ -95,32 +117,92 @@ function fileSizeLabel(entry: HistoryEntry): string {
   gap: 10px;
 }
 
-.history-tile__thumb {
+.history-tile__media {
+  position: relative;
   overflow: hidden;
-  width: 100%;
-  aspect-ratio: 1;
-  padding: var(--space-xs);
   border: 1px solid oklch(24% 0.012 78deg / 0.08);
   border-radius: var(--radius-sm);
   background: var(--color-surface-card-solid);
-  cursor: pointer;
-  box-shadow: 0 10px 36px rgba(56, 49, 42, 0.08);
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease;
 }
 
-.history-tile__thumb:hover {
-  box-shadow: 0 16px 44px rgba(56, 49, 42, 0.12);
-  transform: translateY(-2px);
+.history-tile__thumb {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1;
+  place-items: center;
+  padding: var(--space-xs);
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.history-tile__media:hover .history-tile__thumb,
+.history-tile__media:focus-within .history-tile__thumb {
+  background: oklch(98.4% 0.006 88deg / 0.72);
+}
+
+.history-tile__thumb:focus-visible,
+.history-tile__action:focus-visible,
+.history-tile__copy:focus-visible {
+  outline: 3px solid oklch(78% 0.13 57deg / 0.78);
+  outline-offset: -3px;
 }
 
 .history-tile__thumb img {
+  display: block;
   width: 100%;
   height: 100%;
   border-radius: calc(var(--radius-sm) - 2px);
   object-fit: contain;
   padding: 0;
+}
+
+.history-tile__quick-actions {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.history-tile__media:hover .history-tile__quick-actions,
+.history-tile__media:focus-within .history-tile__quick-actions {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.history-tile__action {
+  display: inline-flex;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  background: oklch(99% 0.004 88deg / 0.94);
+  box-shadow: none;
+  color: var(--color-ink);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 12px;
+}
+
+.history-tile__action:hover {
+  background: var(--color-chip);
+}
+
+.history-tile__action--remove {
+  color: var(--color-error);
 }
 
 .history-tile__meta {
