@@ -105,7 +105,7 @@ function handleClearFilters(): void {
 
 function handleRerun(entry: HistoryEntry): void {
   void router.push({
-    path: '/',
+    path: '/generate',
     query: { prompt: entry.record.prompt },
   });
   handleCloseDetail();
@@ -340,10 +340,10 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   margin: 0;
   color: var(--color-ink);
   font-family: var(--font-display);
-  font-size: clamp(34px, 4.2vw, 56px);
-  font-weight: 500;
-  letter-spacing: -0.04em;
-  line-height: 0.96;
+  font-size: clamp(30px, 3.2vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
 }
 
 .history-page__filters {

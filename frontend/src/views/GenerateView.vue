@@ -23,6 +23,14 @@ import {
   type HistoryEntry,
 } from '@/types/image';
 
+interface Props {
+  mode?: 'discover' | 'generate';
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  mode: 'discover',
+});
+
 const route = useRoute();
 const router = useRouter();
 const { entries, batches, removeBatch } = useImageHistory();
@@ -81,8 +89,13 @@ const displayedBatch = computed<GroupedBatch | null>(() => {
   return null;
 });
 
-const hasActiveSurface = computed(
+const hasGeneratedSurface = computed(
   () => pendingGeneration.value !== null || displayedBatch.value !== null,
+);
+const isGenerateWorkspace = computed(() => props.mode === 'generate');
+const hasActiveSurface = computed(() => hasGeneratedSurface.value || isGenerateWorkspace.value);
+const shouldShowWorkspaceEmpty = computed(
+  () => isGenerateWorkspace.value && !hasGeneratedSurface.value,
 );
 const currentResultEntries = computed(() => displayedBatch.value?.entries ?? []);
 const galleryEntries = computed(() => entries.value.filter((entry) => entry.record.isPublic));
@@ -623,7 +636,20 @@ function formatStageDate(iso: string | undefined): string {
     <main class="studio__main" aria-label="生成结果">
       <div class="studio__content">
         <section v-if="hasActiveSurface" class="generation-stage" aria-live="polite">
+          <article v-if="shouldShowWorkspaceEmpty" class="generation-item generation-item--empty">
+            <p class="generation-item__date">生成工作区</p>
+            <h1 class="generation-item__prompt">从下方输入框开始生成图片</h1>
+            <span class="generation-item__model">✦ {{ modelDisplayName(model) }}</span>
+
+            <div class="generation-visual" aria-label="生成结果占位区">
+              <div class="generation-empty-card" aria-hidden="true">
+                <span class="generation-empty-card__mark">✣</span>
+              </div>
+            </div>
+          </article>
+
           <article
+            v-else
             class="generation-item"
             :class="{
               'generation-item--loading': isGeneratingSurface,
@@ -696,7 +722,7 @@ function formatStageDate(iso: string | undefined): string {
           <section class="canvas-hero" aria-live="polite">
             <p class="canvas-hero__kicker hero-rise hero-rise--1">REF2IMAGE STUDIO</p>
             <h2 class="canvas-hero__title hero-rise hero-rise--2">
-              Turn your <span>idea</span> into images
+              Turn your idea <span>into images</span>
             </h2>
             <p class="canvas-hero__subtitle hero-rise hero-rise--3">
               用 GPT-IMAGE-2 将你的创意变为精美图片，只需描述你脑海中的画面
@@ -1237,7 +1263,7 @@ function formatStageDate(iso: string | undefined): string {
 }
 
 .studio--stage {
-  --stage-rail-width: min(calc(100vw - 64px), 960px);
+  --stage-rail-width: min(calc(100vw - var(--app-sidebar-width) - 92px), 960px);
 
   display: flex;
   min-height: calc(100vh - var(--topbar-height));
@@ -1365,6 +1391,7 @@ function formatStageDate(iso: string | undefined): string {
 
 .generation-placeholder,
 .generation-error-card,
+.generation-empty-card,
 .generated-figure__frame {
   width: min(100%, 320px);
   aspect-ratio: 1;
@@ -1486,6 +1513,31 @@ function formatStageDate(iso: string | undefined): string {
   color: #5f5550;
   font-size: 13px;
   line-height: 1.7;
+}
+
+.generation-item--empty .generation-item__prompt {
+  cursor: default;
+}
+
+.generation-empty-card {
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.6) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(rgba(255, 255, 255, 0.6) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(145deg, rgba(253, 252, 255, 0.9), rgba(245, 241, 232, 0.86));
+  color: oklch(69% 0.012 78deg);
+}
+
+.generation-empty-card__mark {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  border: 1px dashed oklch(24% 0.012 78deg / 0.14);
+  border-radius: 20px;
+  background: oklch(99.1% 0.004 88deg / 0.74);
+  font-size: 28px;
 }
 
 .generation-actions {
@@ -1925,7 +1977,7 @@ function formatStageDate(iso: string | undefined): string {
 
 .prompt-showcase--dock {
   position: fixed;
-  left: 50%;
+  left: calc(var(--app-sidebar-width) + 28px + (100vw - var(--app-sidebar-width) - 28px) / 2);
   bottom: 24px;
   z-index: 4;
   width: var(--stage-rail-width);
@@ -2129,6 +2181,10 @@ function formatStageDate(iso: string | undefined): string {
     --stage-rail-width: min(calc(100vw - 24px), 720px);
   }
 
+  .prompt-showcase--dock {
+    left: 50%;
+  }
+
   .studio--stage .studio__main {
     padding-right: 12px;
     padding-left: 12px;
@@ -2144,6 +2200,7 @@ function formatStageDate(iso: string | undefined): string {
   .generation-visual,
   .generation-placeholder,
   .generation-error-card,
+  .generation-empty-card,
   .generated-figure__frame,
   .generation-result-grid {
     width: min(100%, 300px);

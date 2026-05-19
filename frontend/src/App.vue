@@ -1,23 +1,8 @@
 <script setup lang="ts">
-import { watch } from 'vue';
 import { RouterView } from 'vue-router';
 
 import LoginModal from '@/components/auth/LoginModal.vue';
 import AppHeader from '@/components/common/AppHeader.vue';
-import { useAuth } from '@/composables/useAuth';
-import { useAuthModal } from '@/composables/useAuthModal';
-
-const { isAuthenticated, isLoading } = useAuth();
-const { open } = useAuthModal();
-
-// 当 session 加载完成且未登录时，自动弹出登录 modal。
-watch(
-  [isLoading, isAuthenticated],
-  ([loading, authed]) => {
-    if (!loading && !authed) open();
-  },
-  { immediate: true },
-);
 </script>
 
 <template>
@@ -30,11 +15,13 @@ watch(
     </video>
     <div class="app-backdrop__gradient" />
   </div>
-  <AppHeader />
-  <main class="app-main" aria-label="Ref2Image Studio 工作区">
-    <RouterView />
-  </main>
-  <LoginModal />
+  <div class="app-shell">
+    <AppHeader />
+    <main class="app-main" aria-label="Ref2Image Studio 工作区">
+      <RouterView />
+    </main>
+    <LoginModal />
+  </div>
 </template>
 
 <style scoped>
@@ -65,16 +52,22 @@ watch(
   );
 }
 
-.app-main {
+.app-shell {
   position: relative;
   z-index: 1;
   min-height: 100vh;
-  padding-top: var(--topbar-height);
 }
 
-@media (max-width: 1080px) {
+.app-main {
+  min-height: 100vh;
+  padding-left: calc(var(--app-sidebar-width) + 28px);
+}
+
+@media (max-width: 760px) {
   .app-main {
-    padding-top: calc(var(--topbar-height) + 36px);
+    padding-right: 0;
+    padding-bottom: 92px;
+    padding-left: 0;
   }
 }
 </style>

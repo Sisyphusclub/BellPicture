@@ -1,5 +1,6 @@
-import { computed, readonly, ref } from 'vue';
+import { computed, readonly, ref, watch } from 'vue';
 
+import { useAuth } from '@/composables/useAuth';
 import { deleteHistoryBatch, deleteHistoryRecord, fetchHistory } from '@/services/api/historyApi';
 import { buildApiUrl } from '@/services/api/imagesApi';
 import type { HistoryEntry, ImageRecord } from '@/types/image';
@@ -48,9 +49,30 @@ const batches = computed<GroupedBatch[]>(() => {
 });
 
 export function useImageHistory() {
-  void hydrate();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+
+  watch(
+    [isAuthLoading, isAuthenticated],
+    ([authLoading, authenticated]) => {
+      if (authLoading) return;
+      if (authenticated) {
+        void hydrate();
+        return;
+      }
+      records.value = [];
+      hydrateError.value = null;
+      hydrated = false;
+    },
+    { immediate: true },
+  );
 
   async function refresh(): Promise<void> {
+    if (!isAuthenticated.value) {
+      records.value = [];
+      hydrateError.value = null;
+      hydrated = false;
+      return;
+    }
     hydrated = false;
     await hydrate();
   }

@@ -79,8 +79,9 @@
   --space-section: 96px;
 
   /* === Layout === */
+  --app-sidebar-width: 86px;
   --sidebar-width: 280px;
-  --topbar-height: 64px;
+  --topbar-height: 0px;
   --composer-height: 188px;
   --container-width: 1200px;
 }

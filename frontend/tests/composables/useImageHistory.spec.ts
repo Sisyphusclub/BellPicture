@@ -1,7 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, ref } from 'vue';
 
 import { useImageHistory, resetImageHistoryForTests } from '@/composables/useImageHistory';
 import type { ImageRecord } from '@/types/image';
+
+const authenticated = ref(true);
+const authLoading = ref(false);
+
+vi.mock('@/composables/useAuth', () => ({
+  useAuth: () => ({
+    isAuthenticated: computed(() => authenticated.value),
+    isLoading: computed(() => authLoading.value),
+  }),
+}));
 
 const sampleRecord = (overrides: Partial<ImageRecord> = {}): ImageRecord => ({
   id: 'generated.png',
@@ -17,6 +28,8 @@ const sampleRecord = (overrides: Partial<ImageRecord> = {}): ImageRecord => ({
 
 describe('useImageHistory', () => {
   beforeEach(() => {
+    authenticated.value = true;
+    authLoading.value = false;
     resetImageHistoryForTests();
     vi.unstubAllGlobals();
   });
@@ -41,7 +54,7 @@ describe('useImageHistory', () => {
     expect(entries.value[0]?.imageUrl).toBe('http://localhost:3000/api/outputs/generated.png');
   });
 
-  it('hydrates from /api/history when accessed', async () => {
+  it('hydrates from /api/history when authenticated', async () => {
     const remote: ImageRecord = sampleRecord({ id: 'remote.png', prompt: 'cloud copy' });
     vi.stubGlobal(
       'fetch',
@@ -57,5 +70,17 @@ describe('useImageHistory', () => {
     await new Promise((resolve) => setTimeout(resolve, 5));
 
     expect(entries.value.some((entry) => entry.record.prompt === 'cloud copy')).toBe(true);
+  });
+
+  it('does not request private history for anonymous visitors', async () => {
+    authenticated.value = false;
+    const fetchMock = vi.fn<typeof fetch>();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { entries } = useImageHistory();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(entries.value).toEqual([]);
   });
 });

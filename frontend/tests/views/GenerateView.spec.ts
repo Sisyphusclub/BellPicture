@@ -21,6 +21,8 @@ interface GenerateViewHarness {
   resolveGeneration: () => void;
 }
 
+type GenerateViewMode = 'discover' | 'generate';
+
 function createDeferred<T>(): Deferred<T> {
   let resolve!: (value: T) => void;
   let reject!: (reason: Error) => void;
@@ -82,6 +84,18 @@ describe('GenerateView', () => {
     expect(wrapper.text()).toContain('生成一张猫猫照片');
     expect(wrapper.text()).toContain('GPT-IMAGE-2');
     expect(wrapper.text()).toContain('生成中...');
+  });
+
+  it('renders a non-selectable empty workspace on the generate route', async () => {
+    const { wrapper } = await mountGenerateView({ mode: 'generate' });
+
+    expect(wrapper.classes()).toContain('studio--stage');
+    expect(wrapper.find('.canvas-hero').exists()).toBe(false);
+    expect(wrapper.findComponent({ name: 'RecentCreationsMasonryStub' }).exists()).toBe(false);
+    expect(wrapper.find('.generation-empty-card').exists()).toBe(true);
+    expect(wrapper.find('.generation-actions').exists()).toBe(false);
+    expect(wrapper.find('form.prompt-showcase--dock').exists()).toBe(true);
+    expect(wrapper.text()).toContain('从下方输入框开始生成图片');
   });
 
   it('sends public visibility when the homepage public toggle is enabled', async () => {
@@ -269,7 +283,7 @@ describe('GenerateView', () => {
 });
 
 async function mountGenerateView(
-  options: { entries?: HistoryEntry[] } = {},
+  options: { entries?: HistoryEntry[]; mode?: GenerateViewMode } = {},
 ): Promise<GenerateViewHarness> {
   vi.resetModules();
 
@@ -430,7 +444,11 @@ async function mountGenerateView(
   }));
 
   const GenerateView = (await import('@/views/GenerateView.vue')).default;
-  const wrapper = mount(GenerateView);
+  const wrapper = mount(GenerateView, {
+    props: {
+      mode: options.mode ?? 'discover',
+    },
+  });
 
   return {
     wrapper,

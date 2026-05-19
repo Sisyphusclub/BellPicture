@@ -7,11 +7,13 @@ import { RouterLink } from 'vue-router';
     <div class="container app-footer__inner">
       <div>
         <p class="app-footer__brand"><span aria-hidden="true">✣</span> Ref2Image Studio</p>
-        <p class="app-footer__copy">由你的后端驱动、优先保存在本地的参考图生图工作台。</p>
+        <p class="app-footer__copy">由你的后端驱动，串联发现、生图与图片管理的参考图生图工作台。</p>
       </div>
       <nav class="app-footer__links" aria-label="页脚导航">
-        <RouterLink to="/">生成</RouterLink>
-        <RouterLink to="/history">历史</RouterLink>
+        <RouterLink to="/">发现</RouterLink>
+        <RouterLink to="/generate">生图</RouterLink>
+        <RouterLink to="/prompts">提示词</RouterLink>
+        <RouterLink to="/history">图片管理</RouterLink>
       </nav>
     </div>
   </footer>
