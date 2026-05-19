@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Vue SFC, typed emits, Simplified Chinese copy, custom modal a11y, and composer-like popup surface conventions apply to this UI change."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Vitest, a11y, no English user-facing copy, and validation expectations for frontend changes."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Typed component APIs and strict TypeScript rules apply when adding HistoryGrid emits and HistoryDetailPanel props."}
+{"file":".trellis/spec/guides/index.md","reason":"Pre-modification thinking guide and search-before-changing-value rule were used for the history title/card/grid styles."}

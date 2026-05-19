@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Check modal a11y, Simplified Chinese labels, and composer-like no-shadow popup surface behavior."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Check relevant Vitest coverage, typecheck, accessibility baseline, and no forbidden frontend patterns."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Check strict typed props/emits and no unsafe casts introduced by interaction changes."}
+{"file":".trellis/spec/guides/index.md","reason":"Check that changed style values were searched and regression points are covered."}
