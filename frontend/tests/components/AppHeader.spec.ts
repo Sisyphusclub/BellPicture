@@ -55,13 +55,8 @@ describe('AppHeader', () => {
     });
 
     const links = wrapper.findAllComponents(RouterLinkStub);
-    expect(links.map((link) => link.props('to'))).toEqual(['/', '/', '/generate', '/prompts', '/history']);
-    expect(wrapper.findAll('.sidebar-nav__link').map((link) => link.text())).toEqual([
-      '发现',
-      '生图',
-      '提示词',
-      '图片管理',
-    ]);
+    expect(links.map((link) => link.props('to'))).toEqual(['/', '/', '/generate', '/history']);
+    expect(wrapper.findAll('.sidebar-nav__link').map((link) => link.text())).toEqual(['发现', '生图', '图片管理']);
     expect(wrapper.find('.sidebar-account').text()).toContain('登录');
   });
 

@@ -12,7 +12,6 @@ import { RouterLink } from 'vue-router';
       <nav class="app-footer__links" aria-label="页脚导航">
         <RouterLink to="/">发现</RouterLink>
         <RouterLink to="/generate">生图</RouterLink>
-        <RouterLink to="/prompts">提示词</RouterLink>
         <RouterLink to="/history">图片管理</RouterLink>
       </nav>
     </div>

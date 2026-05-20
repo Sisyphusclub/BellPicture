@@ -3,7 +3,6 @@ import { createRouter, createWebHistory } from 'vue-router';
 import DiscoverView from '@/views/DiscoverView.vue';
 import GenerateView from '@/views/GenerateView.vue';
 import HistoryView from '@/views/HistoryView.vue';
-import PromptsView from '@/views/PromptsView.vue';
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -18,11 +17,6 @@ export const router = createRouter({
       name: 'generate',
       component: GenerateView,
       props: { mode: 'generate' },
-    },
-    {
-      path: '/prompts',
-      name: 'prompts',
-      component: PromptsView,
     },
     {
       path: '/history',

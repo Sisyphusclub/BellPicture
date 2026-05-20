@@ -3,20 +3,18 @@ import { ElMessage } from 'element-plus';
 import { computed, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 
-import logoMarkUrl from '@/assets/ref2image-logo-mark.svg';
 import { useAuth } from '@/composables/useAuth';
 import { useAuthModal } from '@/composables/useAuthModal';
 
 interface NavItem {
   label: string;
   to: string;
-  icon: 'discover' | 'generate' | 'prompt' | 'images';
+  icon: 'discover' | 'generate' | 'images';
 }
 
 const navItems: NavItem[] = [
   { label: '发现', to: '/', icon: 'discover' },
   { label: '生图', to: '/generate', icon: 'generate' },
-  { label: '提示词', to: '/prompts', icon: 'prompt' },
   { label: '图片管理', to: '/history', icon: 'images' },
 ];
 
@@ -64,7 +62,7 @@ function initials(): string {
 <template>
   <header class="app-sidebar" aria-label="Ref2Image 主导航">
     <RouterLink class="sidebar-brand" to="/" aria-label="返回发现首页">
-      <img class="sidebar-brand__mark" :src="logoMarkUrl" alt="Ref2Image Studio 标志" />
+      <img class="sidebar-brand__mark" src="/brand/logo.png" alt="Ref2Image Studio 标志" />
     </RouterLink>
 
     <nav class="sidebar-nav" aria-label="主要导航">
@@ -102,19 +100,6 @@ function initials(): string {
           >
             <path d="M12 3v4M12 17v4M3 12h4M17 12h4" />
             <path d="m6.2 6.2 2.8 2.8M15 15l2.8 2.8M17.8 6.2 15 9M9 15l-2.8 2.8" />
-          </svg>
-          <svg
-            v-else-if="item.icon === 'prompt'"
-            width="23"
-            height="23"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M12 3.5 14.6 9l5.9.8-4.3 4.1 1 5.8L12 17l-5.2 2.7 1-5.8-4.3-4.1L9.4 9 12 3.5Z" />
           </svg>
           <svg
             v-else
