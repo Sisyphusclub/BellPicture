@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend task entrypoint and required guideline index."}
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"Defines public/ as verbatim-served static assets and frontend layout conventions."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"AppHeader is a Vue SFC component; follow component conventions."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Implementation should pass frontend lint/typecheck and preserve a11y baseline."}

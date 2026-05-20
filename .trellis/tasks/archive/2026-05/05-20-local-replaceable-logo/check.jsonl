@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend task entrypoint and guideline index for review."}
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"Verify static asset placement under public/."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Verify AppHeader component change follows Vue SFC conventions."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Verify lint/typecheck and a11y expectations."}

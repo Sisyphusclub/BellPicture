@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend task entrypoint and required guideline index."}
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"Locate Vue components and frontend structure."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"RecentCreationDetailModal is a Vue SFC component."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Maintain accessibility and pass lint/typecheck."}
