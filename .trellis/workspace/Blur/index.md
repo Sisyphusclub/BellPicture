@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 24
-- **Last Active**: 2026-05-19
+- **Total Sessions**: 25
+- **Last Active**: 2026-05-20
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~821 | Active |
+| `journal-1.md` | ~854 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 25 | 2026-05-20 | Remove prompts page entry points | `8188e17` | `main` |
 | 24 | 2026-05-19 | Refine prompts page layout and cards | `48812cc` | `main` |
 | 23 | 2026-05-19 | Left sidebar navigation and prompts | `7e92afb`, `b1ab41e` | `main` |
 | 22 | 2026-05-19 | Refine history gallery layout actions | `6f26d67` | `main` |

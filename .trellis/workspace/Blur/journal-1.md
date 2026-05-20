@@ -819,3 +819,36 @@ Refined the prompts page with smaller product-scale typography, an elevated sear
 ### Next Steps
 
 - None - task complete
+
+
+## Session 25: Remove prompts page entry points
+
+**Date**: 2026-05-20
+**Task**: Remove prompts page entry points
+**Branch**: `main`
+
+### Summary
+
+Removed the /prompts product entry from router, header, and footer navigation, updated tests, archived the completed Trellis task, and left unrelated WIP untouched.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8188e17` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
