@@ -1,0 +1,6 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Verify changes remain within the Vue/Vite/custom UI frontend conventions."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Check Hybrid UI boundary, Simplified Chinese copy, modal a11y, and popup surface compliance."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Run frontend quality checklist: lint, typecheck, accessibility, and browser verification expectations."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Check TypeScript strictness if component scripts or tests change."}
+{"file":".trellis/tasks/05-25-unify-frontend-ui-design-system/research/heroui-theming.md","reason":"Verify semantic token and component-state cleanup aligns with researched HeroUI-inspired approach."}
+{"file":".trellis/tasks/05-25-unify-frontend-ui-design-system/research/current-ui-audit.md","reason":"Verify the implementation addresses the identified UI drift hotspots without unrelated behavior changes."}

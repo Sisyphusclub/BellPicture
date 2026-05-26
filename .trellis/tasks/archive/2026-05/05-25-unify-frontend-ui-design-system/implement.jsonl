@@ -1,0 +1,7 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend stack snapshot and convention index for Vue/Vite/custom UI boundaries."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Custom SFC, Hybrid Claude UI, Simplified Chinese copy, modal a11y, and popup surface conventions."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Frontend lint/typecheck/test/accessibility quality bar for implementation."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"TypeScript strictness rules for any component or composable edits."}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"Avoid duplicating UI primitives when normalizing shared styles and component vocabulary."}
+{"file":".trellis/tasks/05-25-unify-frontend-ui-design-system/research/heroui-theming.md","reason":"Transferable HeroUI theming model: semantic variables, OKLCH roles, state tokens, typography and component variants."}
+{"file":".trellis/tasks/05-25-unify-frontend-ui-design-system/research/current-ui-audit.md","reason":"Current UI inconsistency hotspots and target files for token/base/page/modal cleanup."}
