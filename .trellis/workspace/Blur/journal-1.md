@@ -852,3 +852,37 @@ Removed the /prompts product entry from router, header, and footer navigation, u
 ### Next Steps
 
 - None - task complete
+
+
+## Session 26: Unify frontend UI design system
+
+**Date**: 2026-05-26
+**Task**: Unify frontend UI design system
+**Branch**: `main`
+
+### Summary
+
+Unified the frontend UI token and component vocabulary across active routes, verified browser surfaces, fixed Element Plus dialog Chinese aria locale, and documented the convention.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `80460b9` | (see git log) |
+| `12ee8f0` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
