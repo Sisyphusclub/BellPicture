@@ -296,6 +296,38 @@ for free. Custom modals are only justified when the product surface needs
 visuals/transitions that `ElDialog` can't deliver cleanly (see the Hybrid
 Claude UI decision above).
 
+### Convention: Element Plus dialog locale
+
+**What**: Any component that renders `ElDialog` must ensure Element Plus locale is
+Simplified Chinese for built-in accessibility strings. If the app is not using a
+global `app.use(ElementPlus, { locale: zhCn })`, wrap the dialog in
+`ElConfigProvider` with `:locale="zhCn"`.
+
+**Why**: `ElDialog`'s built-in close button can otherwise expose the default
+English accessible name `Close this dialog`, which violates the app-wide
+Simplified Chinese `aria-label` contract even when the visible dialog content is
+Chinese.
+
+**Example**:
+```vue
+<script setup lang="ts">
+import { ElConfigProvider, ElDialog } from 'element-plus';
+import zhCn from 'element-plus/es/locale/lang/zh-cn';
+</script>
+
+<template>
+  <ElConfigProvider :locale="zhCn">
+    <ElDialog v-model="open" class="login-modal" title="登录 Ref2Image Studio">
+      <!-- body -->
+    </ElDialog>
+  </ElConfigProvider>
+</template>
+```
+
+**Tests Required**: Component tests for `ElDialog` wrappers must assert the
+rendered `.el-dialog__headerbtn` has a Simplified Chinese `aria-label`, e.g.
+`关闭此对话框`.
+
 ### Convention: Composer-like popup surfaces
 
 **What**: Modal, dialog, popover, dropdown, and popup-contained preview surfaces
