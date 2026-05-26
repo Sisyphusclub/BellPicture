@@ -87,7 +87,7 @@ function estimateEntryHeight(entry: HistoryEntry): number {
         <article v-for="entry in column.entries" :key="entry.record.id" class="recent-card">
           <button
             type="button"
-            class="recent-card__button"
+            class="recent-card__button image-surface"
             :aria-label="`查看图片详情：${entry.record.prompt}`"
             @click="emit('select', entry)"
           >
@@ -112,7 +112,7 @@ function estimateEntryHeight(entry: HistoryEntry): number {
 
 <style scoped>
 .recent-creations {
-  width: min(100% - 48px, 960px);
+  width: min(100% - var(--space-xxl), var(--content-width-narrow));
   margin: 62px auto 120px;
 }
 
@@ -128,16 +128,17 @@ function estimateEntryHeight(entry: HistoryEntry): number {
   margin: 0;
   color: var(--color-ink);
   font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 800;
+  font-size: var(--text-section-title-size);
+  font-weight: var(--font-weight-title);
   letter-spacing: -0.03em;
+  line-height: 1.12;
 }
 
 .recent-creations__header p:last-child {
   max-width: 420px;
   margin: 0;
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: var(--text-label-size);
   line-height: 1.7;
 }
 
@@ -145,14 +146,14 @@ function estimateEntryHeight(entry: HistoryEntry): number {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: start;
-  gap: 12px;
+  gap: var(--space-sm);
 }
 
 .recent-creations__column {
   display: grid;
   min-width: 0;
   align-content: start;
-  gap: 12px;
+  gap: var(--space-sm);
 }
 
 .recent-card {
@@ -162,21 +163,25 @@ function estimateEntryHeight(entry: HistoryEntry): number {
 .recent-card__button {
   position: relative;
   display: block;
-  overflow: hidden;
   width: 100%;
   padding: 0;
-  border: 1px solid rgba(44, 39, 33, 0.08);
-  border-radius: 10px;
-  background: var(--color-surface-card-solid);
-  box-shadow: 0 8px 20px rgba(45, 38, 30, 0.08);
+  border-radius: calc(var(--radius-image) - 2px);
+  box-shadow: var(--shadow-soft);
   cursor: pointer;
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
-.recent-card__button:hover,
-.recent-card__button:focus-visible {
-  outline: none;
+.recent-card__button:hover {
+  box-shadow: var(--shadow-surface);
   transform: translateY(-2px);
-  box-shadow: 0 16px 36px rgba(45, 38, 30, 0.14);
+}
+
+.recent-card__button:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+  box-shadow: var(--shadow-surface);
 }
 
 .recent-card__button img {
@@ -201,7 +206,7 @@ function estimateEntryHeight(entry: HistoryEntry): number {
   left: 10px;
   display: grid;
   gap: 3px;
-  color: white;
+  color: var(--color-on-dark);
   opacity: 0;
   text-align: left;
   transform: translateY(6px);
@@ -235,10 +240,10 @@ function estimateEntryHeight(entry: HistoryEntry): number {
   display: grid;
   min-height: 220px;
   place-items: center;
-  gap: 8px;
-  border: 1px dashed rgba(44, 39, 33, 0.14);
-  border-radius: 24px;
-  background: oklch(99% 0.004 88deg / 0.68);
+  gap: var(--space-xs);
+  border: 1px dashed var(--color-hairline);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface-card);
   color: var(--color-muted);
   text-align: center;
 }

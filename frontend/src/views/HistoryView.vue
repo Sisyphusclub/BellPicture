@@ -152,7 +152,7 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
         <h1 class="history-page__title">图片管理</h1>
       </div>
       <form class="history-page__filters" @submit.prevent="handleQuery">
-        <div class="history-filter" role="group" aria-label="历史日期范围筛选">
+        <div class="history-filter text-field" role="group" aria-label="历史日期范围筛选">
           <svg
             class="history-filter__icon"
             width="16"
@@ -178,10 +178,14 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
             />
           </component>
         </div>
-        <button type="button" class="history-btn history-btn--ghost" @click="handleClearFilters">
+        <button
+          type="button"
+          class="history-btn claude-button claude-button--secondary"
+          @click="handleClearFilters"
+        >
           清除筛选条件
         </button>
-        <button type="submit" class="history-btn history-btn--primary">
+        <button type="submit" class="history-btn claude-button claude-button--primary">
           <svg
             width="16"
             height="16"
@@ -205,7 +209,7 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
       {{ hydrateError.message }}
     </p>
 
-    <section class="history-card">
+    <section class="history-card surface-panel">
       <div class="history-card__top">
         <span class="history-card__count">
           <svg
@@ -227,7 +231,7 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
         </span>
         <button
           type="button"
-          class="history-btn history-btn--ghost"
+          class="history-btn claude-button claude-button--secondary"
           :disabled="isHydrating"
           @click="handleRefresh"
         >
@@ -262,7 +266,7 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
 
     <div v-if="selectedEntry" class="history-modal" @click.self="handleCloseDetail">
       <div
-        class="history-modal__panel"
+        class="history-modal__panel popup-panel"
         :class="{ 'history-modal__panel--expanded': isDetailImageExpanded }"
         role="dialog"
         aria-modal="true"
@@ -274,7 +278,7 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
         <button
           ref="historyModalCloseRef"
           type="button"
-          class="history-modal__close"
+          class="history-modal__close icon-button"
           :aria-label="isDetailImageExpanded ? '关闭历史图片放大预览' : '关闭历史详情'"
           @click="handleCloseDetail"
         >
@@ -306,12 +310,12 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
 <style scoped>
 .history-page {
   display: flex;
-  flex-direction: column;
-  gap: 32px;
+  width: min(100%, var(--content-width));
   min-height: calc(100vh - var(--topbar-height));
-  padding: 96px 40px var(--space-section);
-  width: min(100%, 1200px);
+  flex-direction: column;
+  gap: var(--space-xl);
   margin: 0 auto;
+  padding: var(--space-section) 40px var(--space-section);
 }
 
 .history-page__header {
@@ -330,9 +334,9 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
 
 .history-page__kicker {
   margin: 0;
-  color: oklch(44% 0.012 78deg);
-  font-size: 12px;
-  font-weight: 700;
+  color: var(--color-body-strong);
+  font-size: var(--text-caption-size);
+  font-weight: var(--font-weight-label);
   letter-spacing: 0.22em;
 }
 
@@ -340,8 +344,8 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   margin: 0;
   color: var(--color-ink);
   font-family: var(--font-display);
-  font-size: clamp(30px, 3.2vw, 44px);
-  font-weight: 700;
+  font-size: var(--text-page-title-size);
+  font-weight: var(--font-weight-title);
   letter-spacing: -0.035em;
   line-height: 1.08;
 }
@@ -355,24 +359,19 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
 
 .history-filter {
   display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  width: auto;
+  height: var(--control-height-lg);
   min-width: 0;
-  height: 44px;
-  padding: 0 12px;
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-card-solid);
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 0 var(--space-sm);
   color: var(--color-muted);
-  font-size: 14px;
-  box-shadow: none;
+  font-size: var(--text-body-sm-size);
 }
 
 .history-filter:focus-within {
-  border-color: var(--color-accent-active);
-  box-shadow: none;
-  outline: 2px solid oklch(78% 0.13 57deg / 0.28);
-  outline-offset: 2px;
+  border-color: var(--field-border-focus);
+  box-shadow: var(--field-focus-ring);
 }
 
 .history-filter__icon {
@@ -384,8 +383,8 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   --el-input-border-color: transparent;
   --el-input-hover-border-color: transparent;
   --el-input-focus-border-color: transparent;
-  --el-input-text-color: var(--color-ink);
-  --el-text-color-placeholder: var(--color-muted-soft);
+  --el-input-text-color: var(--field-foreground);
+  --el-text-color-placeholder: var(--field-placeholder);
   --el-input-icon-color: var(--color-muted);
 
   width: 286px;
@@ -435,8 +434,8 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   --el-border-color-light: var(--color-hairline);
   --el-datepicker-active-color: var(--color-primary);
   --el-datepicker-hover-text-color: var(--color-accent-active);
-  --el-datepicker-inrange-bg-color: oklch(93.4% 0.018 82deg / 0.62);
-  --el-datepicker-inrange-hover-bg-color: oklch(93.4% 0.018 82deg / 0.8);
+  --el-datepicker-inrange-bg-color: var(--color-accent-soft);
+  --el-datepicker-inrange-hover-bg-color: var(--color-chip-strong);
   --el-text-color-primary: var(--color-ink);
   --el-text-color-regular: var(--color-body);
   --el-text-color-placeholder: var(--color-muted-soft);
@@ -479,7 +478,7 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
 }
 
 :global(.history-date-range-popper .el-date-table td.in-range .el-date-table-cell) {
-  background: oklch(93.4% 0.018 82deg / 0.62);
+  background: var(--color-accent-soft);
 }
 
 :global(.history-date-range-popper .el-date-table td.today .el-date-table-cell__text) {
@@ -529,55 +528,14 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
 }
 
 .history-btn {
-  display: inline-flex;
-  height: 44px;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 0 18px;
-  border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition:
-    background-color 140ms ease,
-    border-color 140ms ease,
-    opacity 140ms ease;
-}
-
-.history-btn--primary {
-  border: 0;
-  background: linear-gradient(180deg, oklch(27% 0.012 76deg), var(--color-primary));
-  color: var(--color-on-primary);
-  box-shadow:
-    inset -4px -6px 25px 0 rgba(201, 201, 201, 0.08),
-    inset 4px 4px 10px 0 rgba(29, 29, 29, 0.24);
-}
-
-.history-btn--primary:not(:disabled):hover {
-  background: var(--color-primary-active);
-}
-
-.history-btn--ghost {
-  border: 1px solid var(--color-hairline);
-  background: var(--color-surface-glass-strong);
-  color: var(--color-ink);
-}
-
-.history-btn--ghost:not(:disabled):hover {
-  background: var(--color-surface-card-solid);
-}
-
-.history-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+  min-height: var(--control-height-lg);
 }
 
 .history-page__error {
   margin: 0;
-  border: 1px solid rgba(198, 69, 69, 0.28);
+  border: 1px solid var(--color-error-soft);
   border-radius: var(--radius-sm);
-  background: rgba(198, 69, 69, 0.08);
+  background: var(--color-error-soft);
   color: var(--color-error);
   padding: var(--space-sm) var(--space-md);
 }
@@ -586,9 +544,6 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   display: grid;
   gap: var(--space-md);
   padding: var(--space-md) var(--space-md) var(--space-lg);
-  border: 1px solid var(--color-hairline);
-  border-radius: 24px;
-  background: oklch(99.1% 0.004 88deg / 0.94);
   box-shadow: none;
 }
 
@@ -614,20 +569,17 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   z-index: 30;
   display: grid;
   place-items: center;
+  background: var(--color-overlay-backdrop);
   padding: var(--space-lg);
-  background: oklch(95.5% 0.008 86deg / 0.68);
 }
 
 .history-modal__panel {
   position: relative;
   display: flex;
-  flex-direction: column;
   width: min(720px, 100%);
   max-height: calc(100vh - 96px);
+  flex-direction: column;
   overflow: hidden;
-  border: 1px solid oklch(24% 0.012 78deg / 0.12);
-  border-radius: 28px;
-  background: oklch(99.1% 0.004 88deg / 0.96);
 }
 
 .history-modal__panel--expanded {
@@ -641,20 +593,8 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   top: 14px;
   right: 14px;
   z-index: 2;
-  display: inline-grid;
   width: 32px;
   height: 32px;
-  place-items: center;
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-pill);
-  background: oklch(99% 0.004 88deg / 0.94);
-  color: var(--color-body-strong);
-  cursor: pointer;
-}
-
-.history-modal__close:focus-visible {
-  outline: 3px solid oklch(78% 0.13 57deg / 0.78);
-  outline-offset: 3px;
 }
 
 @media (max-width: 860px) {

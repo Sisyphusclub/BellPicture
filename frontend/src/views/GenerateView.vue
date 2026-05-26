@@ -539,7 +539,11 @@ function formatStageDate(iso: string | undefined): string {
 
     <aside class="studio__sidebar" aria-label="生成历史">
       <div class="sidebar-actions">
-        <button type="button" class="sidebar-new" @click="handleNewConversation">
+        <button
+          type="button"
+          class="sidebar-new claude-button claude-button--primary"
+          @click="handleNewConversation"
+        >
           <svg
             width="19"
             height="19"
@@ -556,7 +560,7 @@ function formatStageDate(iso: string | undefined): string {
         </button>
         <button
           type="button"
-          class="sidebar-delete"
+          class="sidebar-delete icon-button"
           :disabled="!displayedBatch"
           :aria-label="'删除当前画布'"
           @click="handleDeleteCurrent"
@@ -615,7 +619,7 @@ function formatStageDate(iso: string | undefined): string {
         <p v-if="batches.length === 0" class="sidebar-empty">尚无历史记录。生成第一张图试试吧。</p>
       </div>
 
-      <button type="button" class="sidebar-all" @click="goToHistoryPage">
+      <button type="button" class="sidebar-all claude-button claude-button--secondary" @click="goToHistoryPage">
         <svg
           width="17"
           height="17"
@@ -691,7 +695,7 @@ function formatStageDate(iso: string | undefined): string {
             <div class="generation-actions" aria-label="生成操作">
               <button
                 type="button"
-                class="generation-action"
+                class="generation-action claude-button claude-button--secondary"
                 :disabled="isLoading"
                 @click="handleEditPrompt"
               >
@@ -699,7 +703,7 @@ function formatStageDate(iso: string | undefined): string {
               </button>
               <button
                 type="button"
-                class="generation-action"
+                class="generation-action claude-button claude-button--secondary"
                 :disabled="isLoading"
                 @click="handleRegenerate"
               >
@@ -708,7 +712,7 @@ function formatStageDate(iso: string | undefined): string {
               <button
                 v-if="currentResultEntries.length > 0"
                 type="button"
-                class="generation-action"
+                class="generation-action claude-button claude-button--secondary"
                 :disabled="!canSaveCurrent"
                 @click="handleSaveCurrent"
               >
@@ -738,7 +742,7 @@ function formatStageDate(iso: string | undefined): string {
             >
               <button
                 type="button"
-                class="prompt-showcase__add"
+                class="prompt-showcase__add icon-button"
                 aria-label="添加参考图"
                 :disabled="isLoading"
                 @click="openUploadPicker"
@@ -828,7 +832,7 @@ function formatStageDate(iso: string | undefined): string {
                 >
                   公开 <i aria-hidden="true" />
                 </button>
-                <button type="submit" class="prompt-showcase__generate" :disabled="!canGenerate">
+                <button type="submit" class="prompt-showcase__generate claude-button claude-button--primary" :disabled="!canGenerate">
                   {{ isLoading ? '生成中' : '生成' }}
                 </button>
               </div>
@@ -864,7 +868,7 @@ function formatStageDate(iso: string | undefined): string {
     >
       <button
         type="button"
-        class="prompt-showcase__add"
+        class="prompt-showcase__add icon-button"
         aria-label="添加参考图"
         :disabled="isLoading"
         @click="openUploadPicker"
@@ -1006,7 +1010,7 @@ function formatStageDate(iso: string | undefined): string {
         <span class="prompt-showcase__mode" aria-live="polite">{{ modeLabel }}</span>
         <button
           type="button"
-          class="prompt-showcase__generate"
+          class="prompt-showcase__generate claude-button claude-button--primary"
           :disabled="!canGenerate"
           @click="handleSubmit"
         >
@@ -1033,14 +1037,14 @@ function formatStageDate(iso: string | undefined): string {
 
 .studio__sidebar {
   display: flex;
+  min-height: 0;
   flex-direction: column;
   gap: var(--space-lg);
-  border-right: 1px solid oklch(24% 0.012 78deg / 0.08);
-  background: oklch(99% 0.004 88deg / 0.58);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  border-right: 1px solid var(--color-hairline-soft);
+  background: var(--color-surface-sidebar);
   padding: 28px 20px 22px;
-  min-height: 0;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .studio--home {
@@ -1067,39 +1071,18 @@ function formatStageDate(iso: string | undefined): string {
 }
 
 .sidebar-new {
-  display: inline-flex;
   flex: 1;
-  height: 48px;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  border: none;
-  border-radius: 14px;
-  background: linear-gradient(180deg, oklch(25% 0.012 76deg), var(--color-primary));
-  color: var(--color-on-primary);
-  font-size: 15px;
-  font-weight: 700;
-  box-shadow:
-    inset -4px -6px 25px 0 rgba(201, 201, 201, 0.08),
-    inset 4px 4px 10px 0 rgba(29, 29, 29, 0.24);
-  cursor: pointer;
+  min-height: var(--control-height-lg);
 }
 
 .sidebar-delete {
-  display: inline-grid;
-  width: 48px;
-  height: 48px;
+  width: var(--control-height-lg);
+  height: var(--control-height-lg);
   flex: 0 0 auto;
-  place-items: center;
-  border: 1px solid var(--color-hairline);
-  border-radius: 13px;
-  background: var(--color-surface-glass-strong);
-  color: var(--color-body-strong);
-  cursor: pointer;
 }
 
 .sidebar-delete:not(:disabled):hover {
-  background: var(--color-surface-card-solid);
+  background: var(--button-secondary-bg-hover);
   color: var(--color-error);
 }
 
@@ -1107,10 +1090,6 @@ function formatStageDate(iso: string | undefined): string {
   color: var(--color-muted-soft);
   cursor: not-allowed;
   opacity: 0.5;
-}
-
-.sidebar-new:hover {
-  background: var(--color-primary-active);
 }
 
 .sidebar-history {
@@ -1197,7 +1176,7 @@ function formatStageDate(iso: string | undefined): string {
 
 .sidebar-item__title {
   overflow: hidden;
-  color: #34302b;
+  color: var(--color-body);
   font-size: 14px;
   font-weight: 700;
   text-overflow: ellipsis;
@@ -1205,14 +1184,14 @@ function formatStageDate(iso: string | undefined): string {
 }
 
 .sidebar-item__meta {
-  color: #8e887f;
+  color: var(--color-muted);
   font-size: 12px;
 }
 
 .sidebar-item__more {
   border: 0;
   background: transparent;
-  color: #514b44;
+  color: var(--color-body-strong);
   font-weight: 900;
   letter-spacing: 1px;
   cursor: pointer;
@@ -1233,21 +1212,7 @@ function formatStageDate(iso: string | undefined): string {
 }
 
 .sidebar-all {
-  display: inline-flex;
-  height: 46px;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: 1px solid var(--color-hairline);
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.55);
-  color: #3d3934;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.sidebar-all:hover {
-  background: var(--color-surface-card-solid);
+  min-height: var(--control-height-lg);
 }
 
 .studio__main {
@@ -1345,8 +1310,8 @@ function formatStageDate(iso: string | undefined): string {
 .generation-item__date {
   width: min(100%, 420px);
   margin: 0 0 16px;
-  color: oklch(66% 0.014 268deg);
-  font-size: 14px;
+  color: var(--color-muted);
+  font-size: var(--text-body-sm-size);
   font-weight: 600;
   letter-spacing: 0.01em;
 }
@@ -1357,10 +1322,10 @@ function formatStageDate(iso: string | undefined): string {
   max-height: 4.65em;
   margin: 0 0 14px;
   overflow: hidden;
-  color: #292521;
+  color: var(--color-body-strong);
   cursor: help;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: var(--text-body-size);
+  font-weight: var(--font-weight-title);
   line-height: 1.55;
   overflow-wrap: anywhere;
   text-overflow: ellipsis;
@@ -1377,8 +1342,8 @@ function formatStageDate(iso: string | undefined): string {
   align-self: flex-start;
   gap: 6px;
   margin-bottom: 18px;
-  color: #746f86;
-  font-size: 12px;
+  color: var(--color-muted);
+  font-size: var(--text-caption-size);
   font-weight: 800;
   letter-spacing: -0.01em;
 }
@@ -1395,9 +1360,9 @@ function formatStageDate(iso: string | undefined): string {
 .generated-figure__frame {
   width: min(100%, 320px);
   aspect-ratio: 1;
-  border: 1px solid rgba(95, 74, 180, 0.08);
-  border-radius: 22px;
-  box-shadow: 0 22px 58px rgba(111, 99, 160, 0.08);
+  border: 1px solid var(--color-hairline-soft);
+  border-radius: var(--radius-image-lg);
+  box-shadow: var(--shadow-surface);
 }
 
 .generation-placeholder {
@@ -1443,7 +1408,7 @@ function formatStageDate(iso: string | undefined): string {
   align-items: center;
   border-radius: var(--radius-pill);
   background: rgba(39, 39, 43, 0.84);
-  color: #fffaf4;
+  color: var(--color-on-dark);
   font-size: 13px;
   font-weight: 800;
   letter-spacing: -0.01em;
@@ -1479,7 +1444,7 @@ function formatStageDate(iso: string | undefined): string {
   display: grid;
   place-items: center;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--color-surface-glass);
   animation: result-reveal 240ms ease-out both;
 }
 
@@ -1495,10 +1460,10 @@ function formatStageDate(iso: string | undefined): string {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  background: rgba(255, 252, 249, 0.84);
+  gap: var(--space-sm);
+  background: var(--color-overlay);
   color: var(--color-error);
-  padding: 24px;
+  padding: var(--space-lg);
   text-align: center;
 }
 
@@ -1510,7 +1475,7 @@ function formatStageDate(iso: string | undefined): string {
 
 .generation-error-card p {
   margin: 0;
-  color: #5f5550;
+  color: var(--color-body);
   font-size: 13px;
   line-height: 1.7;
 }
@@ -1534,9 +1499,9 @@ function formatStageDate(iso: string | undefined): string {
   width: 72px;
   height: 72px;
   place-items: center;
-  border: 1px dashed oklch(24% 0.012 78deg / 0.14);
-  border-radius: 20px;
-  background: oklch(99.1% 0.004 88deg / 0.74);
+  border: 1px dashed var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-overlay);
   font-size: 28px;
 }
 
@@ -1550,37 +1515,16 @@ function formatStageDate(iso: string | undefined): string {
 }
 
 .generation-action {
-  display: inline-flex;
-  height: 38px;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: 1px solid rgba(44, 39, 33, 0.08);
+  min-height: 38px;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.78);
-  color: #4b4640;
-  cursor: pointer;
-  font-size: 13px;
+  font-size: var(--text-label-size);
   font-weight: 800;
   padding: 0 17px;
-  box-shadow: 0 8px 22px rgba(50, 45, 40, 0.045);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  transition:
-    transform 160ms ease,
-    background-color 160ms ease,
-    box-shadow 160ms ease;
+  box-shadow: var(--shadow-button-soft);
 }
 
 .generation-action:not(:disabled):hover {
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 10px 26px rgba(50, 45, 40, 0.075);
   transform: translateY(-1px);
-}
-
-.generation-action:disabled {
-  cursor: not-allowed;
-  opacity: 0.48;
 }
 
 @keyframes placeholder-shimmer {
@@ -1659,7 +1603,7 @@ function formatStageDate(iso: string | undefined): string {
 .canvas-hero__subtitle {
   max-width: 620px;
   margin: 0 0 18px;
-  color: #373a46;
+  color: var(--color-body);
   font-size: 18px;
   line-height: 1.72;
   opacity: 0.8;
@@ -1668,28 +1612,25 @@ function formatStageDate(iso: string | undefined): string {
 .prompt-showcase {
   position: relative;
   display: grid;
-  width: min(100%, 960px);
+  width: min(100%, var(--content-width-narrow));
   min-height: 172px;
   grid-template-columns: auto 1fr;
   grid-template-rows: 1fr auto;
-  column-gap: 12px;
   overflow: visible;
-  border: 1px solid oklch(24% 0.012 78deg / 0.12);
-  border-radius: 24px;
-  background: oklch(99.1% 0.004 88deg / 0.94);
-  box-shadow: 0 18px 60px rgba(70, 62, 54, 0.08);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-panel);
+  background: var(--color-overlay);
+  box-shadow: var(--shadow-composer);
+  column-gap: var(--space-sm);
   text-align: left;
 }
 
 .prompt-showcase__add {
-  width: 44px;
-  height: 44px;
+  width: var(--control-height-lg);
+  height: var(--control-height-lg);
   margin: 20px 0 0 20px;
-  border: 1px dashed oklch(24% 0.012 78deg / 0.18);
-  border-radius: 12px;
-  background: oklch(98.8% 0.005 88deg);
-  color: oklch(70% 0.01 78deg);
-  cursor: pointer;
+  border-style: dashed;
+  color: var(--color-muted);
   font-size: 24px;
   font-weight: 500;
 }
@@ -1708,7 +1649,7 @@ function formatStageDate(iso: string | undefined): string {
 }
 
 .prompt-showcase__input::placeholder {
-  color: oklch(31% 0.012 78deg);
+  color: var(--field-placeholder);
   opacity: 0.82;
 }
 
@@ -1718,10 +1659,10 @@ function formatStageDate(iso: string | undefined): string {
   align-items: center;
   justify-content: space-between;
   margin: 0 20px 12px;
-  border-radius: 12px;
-  background: oklch(96.4% 0.01 86deg);
-  color: oklch(42% 0.012 78deg);
-  font-size: 13px;
+  border-radius: var(--radius-sm);
+  background: var(--pill-bg);
+  color: var(--pill-fg);
+  font-size: var(--text-label-size);
   padding: 8px 10px;
 }
 
@@ -1740,7 +1681,7 @@ function formatStageDate(iso: string | undefined): string {
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-  border-top: 1px solid oklch(24% 0.012 78deg / 0.08);
+  border-top: 1px solid var(--color-hairline-soft);
   padding: 10px 20px 12px;
 }
 
@@ -1758,14 +1699,14 @@ function formatStageDate(iso: string | undefined): string {
 
 .prompt-showcase__grid {
   display: inline-flex;
-  height: 34px;
+  height: var(--control-height-sm);
   align-items: center;
-  border-radius: 18px;
-  background: oklch(96% 0.008 86deg);
-  color: oklch(42% 0.012 78deg);
-  font-size: 13px;
+  border-radius: var(--radius-pill);
+  background: var(--pill-bg);
+  color: var(--pill-fg);
+  font-size: var(--text-label-size);
   font-weight: 800;
-  padding: 0 12px;
+  padding: 0 var(--space-sm);
 }
 
 .prompt-showcase__aspect {
@@ -1774,16 +1715,16 @@ function formatStageDate(iso: string | undefined): string {
 
 .prompt-showcase__smart {
   display: inline-flex;
-  height: 34px;
+  height: var(--control-height-sm);
   align-items: center;
-  gap: 8px;
+  gap: var(--space-xs);
   border: 0;
-  border-radius: 18px;
-  background: oklch(96% 0.008 86deg);
-  color: oklch(42% 0.012 78deg);
+  border-radius: var(--radius-pill);
+  background: var(--pill-bg);
+  color: var(--pill-fg);
   cursor: pointer;
-  font-size: 13px;
-  padding: 0 12px;
+  font-size: var(--text-label-size);
+  padding: 0 var(--space-sm);
 }
 
 .prompt-showcase__smart strong {
@@ -1798,9 +1739,10 @@ function formatStageDate(iso: string | undefined): string {
   min-width: 150px;
   margin: 0;
   padding: 6px;
-  border: 1px solid oklch(24% 0.012 78deg / 0.12);
-  border-radius: 16px;
-  background: oklch(99.1% 0.004 88deg / 0.96);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-overlay);
+  box-shadow: none;
   list-style: none;
 }
 
@@ -1825,13 +1767,13 @@ function formatStageDate(iso: string | undefined): string {
 .prompt-showcase__public {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-xs);
   margin-left: auto;
   border: 0;
   background: transparent;
-  color: oklch(46% 0.012 78deg);
+  color: var(--color-body);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--text-label-size);
   font-weight: 700;
   padding: 0;
 }
@@ -1842,7 +1784,7 @@ function formatStageDate(iso: string | undefined): string {
   width: 32px;
   height: 18px;
   border-radius: 999px;
-  background: oklch(82% 0.006 86deg);
+  background: var(--color-chip-strong);
 }
 
 .prompt-showcase__public i::after {
@@ -1853,7 +1795,7 @@ function formatStageDate(iso: string | undefined): string {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: oklch(99% 0.004 88deg);
+  background: var(--color-overlay);
   transition: transform 160ms ease;
 }
 
@@ -1862,7 +1804,7 @@ function formatStageDate(iso: string | undefined): string {
 }
 
 .prompt-showcase__public--active i {
-  background: oklch(76% 0.13 148deg);
+  background: var(--color-success);
 }
 
 .prompt-showcase__public--active i::after {
@@ -1875,23 +1817,10 @@ function formatStageDate(iso: string | undefined): string {
 }
 
 .prompt-showcase__generate {
-  height: 40px;
   min-width: 72px;
-  border: 0;
-  border-radius: 20px;
-  background: oklch(72% 0.006 86deg);
-  color: var(--color-on-primary);
-  cursor: pointer;
-  font-size: 13px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-label-size);
   font-weight: 800;
-  padding: 0 20px;
-}
-
-.prompt-showcase__generate:not(:disabled) {
-  background: linear-gradient(180deg, oklch(27% 0.012 76deg), var(--color-primary));
-  box-shadow:
-    inset -4px -6px 25px 0 rgba(201, 201, 201, 0.08),
-    inset 4px 4px 10px 0 rgba(29, 29, 29, 0.24);
 }
 
 .hero-daily {
@@ -1977,24 +1906,24 @@ function formatStageDate(iso: string | undefined): string {
 
 .prompt-showcase--dock {
   position: fixed;
-  left: calc(var(--app-sidebar-width) + 28px + (100vw - var(--app-sidebar-width) - 28px) / 2);
-  bottom: 24px;
   z-index: 4;
+  bottom: var(--space-lg);
+  left: calc(var(--app-sidebar-width) + 28px + (100vw - var(--app-sidebar-width) - 28px) / 2);
   width: var(--stage-rail-width);
   min-height: 152px;
   margin: 0;
-  background: oklch(99.1% 0.004 88deg / 0.92);
-  box-shadow: 0 18px 60px rgba(70, 62, 54, 0.12);
+  background: var(--color-overlay);
+  box-shadow: var(--shadow-composer);
   transform: translateX(-50%);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .prompt-showcase--dragging {
   border-color: var(--color-accent);
   box-shadow:
-    0 18px 60px rgba(70, 62, 54, 0.12),
-    0 0 0 3px rgba(204, 120, 92, 0.18);
+    var(--shadow-composer),
+    var(--field-focus-ring);
 }
 
 .composer-file {
@@ -2063,15 +1992,15 @@ function formatStageDate(iso: string | undefined): string {
 
 .prompt-showcase__stepper {
   display: inline-flex;
-  height: 34px;
+  height: var(--control-height-sm);
   align-items: center;
-  gap: 4px;
-  border-radius: 18px;
-  background: oklch(96% 0.008 86deg);
-  color: oklch(42% 0.012 78deg);
-  font-size: 13px;
+  gap: var(--space-xxs);
+  border-radius: var(--radius-pill);
+  background: var(--pill-bg);
+  color: var(--pill-fg);
+  font-size: var(--text-label-size);
   font-weight: 800;
-  padding: 0 8px;
+  padding: 0 var(--space-xs);
 }
 
 .prompt-showcase__stepper button {
@@ -2089,7 +2018,7 @@ function formatStageDate(iso: string | undefined): string {
 }
 
 .prompt-showcase__stepper button:not(:disabled):hover {
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--color-overlay);
 }
 
 .prompt-showcase__stepper button:disabled {
@@ -2108,13 +2037,27 @@ function formatStageDate(iso: string | undefined): string {
   color: var(--color-ink);
 }
 
+.sidebar-item__select:focus-visible,
+.sidebar-item__more:focus-visible,
+.sidebar-all:focus-visible,
+.prompt-showcase__add:focus-visible,
+.prompt-showcase__attachment button:focus-visible,
+.prompt-showcase__smart:focus-visible,
+.prompt-showcase__menu button:focus-visible,
+.prompt-showcase__public:focus-visible,
+.prompt-showcase__stepper button:focus-visible,
+.prompt-showcase__generate:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
 .prompt-showcase__mode {
   display: inline-flex;
-  height: 34px;
+  height: var(--control-height-sm);
   align-items: center;
   margin-left: auto;
-  color: oklch(46% 0.012 78deg);
-  font-size: 13px;
+  color: var(--color-body);
+  font-size: var(--text-label-size);
   font-weight: 700;
 }
 

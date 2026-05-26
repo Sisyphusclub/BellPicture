@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import { nextTick, onBeforeUnmount, ref, watch } from 'vue';
 
-import { ASPECT_RATIO_LABELS, DEFAULT_ASPECT_RATIO, type HistoryEntry } from '@/types/image';
-import { formatBytes, formatFullDateTime } from '@/utils/format';
+import type { HistoryEntry } from '@/types/image';
+import { formatFullDateTime } from '@/utils/format';
 
 interface Props {
   entry: HistoryEntry | null;
@@ -16,24 +16,8 @@ const emit = defineEmits<{
 }>();
 
 const closeButtonRef = ref<HTMLButtonElement | null>(null);
-const imageButtonRef = ref<HTMLButtonElement | null>(null);
-const backButtonRef = ref<HTMLButtonElement | null>(null);
-const isImageExpanded = ref(false);
-
-const aspectRatioLabel = computed(() => {
-  const value = props.entry?.record.aspectRatio ?? DEFAULT_ASPECT_RATIO;
-  return ASPECT_RATIO_LABELS[value];
-});
-
-const generationModeLabel = computed(() => (props.entry?.record.referenceId ? '图生图' : '文生图'));
-
-const fileSizeLabel = computed(() => {
-  if (!props.entry) return '本地缓存';
-  return props.entry.size === undefined ? '本地缓存' : formatBytes(props.entry.size);
-});
 
 function requestClose(): void {
-  isImageExpanded.value = false;
   emit('close');
 }
 
@@ -49,21 +33,9 @@ function handleCopyPrompt(): void {
   emit('copy-prompt', props.entry);
 }
 
-function openExpandedImage(): void {
-  isImageExpanded.value = true;
-}
-
-function returnToDetails(): void {
-  isImageExpanded.value = false;
-}
-
 watch(
   () => props.entry,
   (next, prev) => {
-    if (next !== prev) {
-      isImageExpanded.value = false;
-    }
-
     if (next && !prev) {
       document.addEventListener('keydown', handleKeydown);
       void nextTick(() => {
@@ -76,20 +48,6 @@ watch(
   { immediate: true },
 );
 
-watch(isImageExpanded, (expanded) => {
-  if (!props.entry) return;
-
-  void nextTick(() => {
-    if (!props.entry) return;
-
-    if (expanded) {
-      backButtonRef.value?.focus();
-    } else {
-      imageButtonRef.value?.focus();
-    }
-  });
-});
-
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleKeydown);
 });
@@ -98,88 +56,77 @@ onBeforeUnmount(() => {
 <template>
   <div v-if="entry" class="recent-detail" @click.self="requestClose">
     <article
-      class="recent-detail__panel"
-      :class="{ 'recent-detail__panel--expanded': isImageExpanded }"
+      class="recent-detail__shell"
       role="dialog"
       aria-modal="true"
       aria-labelledby="recent-detail-title"
       tabindex="-1"
     >
-      <button
-        ref="closeButtonRef"
-        type="button"
-        class="recent-detail__close"
-        aria-label="关闭图片详情"
-        @click="requestClose"
-      >
-        ×
-      </button>
+      <div class="recent-detail__stage" aria-label="图片预览">
+        <img :src="entry.imageUrl" alt="选中的最近创作图片" />
+      </div>
 
-      <section v-if="isImageExpanded" class="recent-detail__viewer" aria-label="放大图片预览">
-        <header class="recent-detail__viewer-header">
-          <button
-            ref="backButtonRef"
-            type="button"
-            class="recent-detail__back"
-            aria-label="返回图片详情"
-            @click="returnToDetails"
-          >
-            返回详情
-          </button>
-          <h2 id="recent-detail-title">图片放大预览</h2>
-        </header>
-        <div class="recent-detail__viewer-stage">
-          <img :src="entry.imageUrl" alt="放大查看的最近创作图片" />
-        </div>
-      </section>
+      <aside class="recent-detail__inspector" aria-label="提示词与操作">
+        <button
+          ref="closeButtonRef"
+          type="button"
+          class="recent-detail__close"
+          aria-label="关闭图片详情"
+          @click="requestClose"
+        >
+          ×
+        </button>
 
-      <template v-else>
-        <div class="recent-detail__image">
-          <button
-            ref="imageButtonRef"
-            type="button"
-            class="recent-detail__image-button"
-            aria-label="放大查看选中的图片"
-            title="放大查看图片"
-            @click="openExpandedImage"
-          >
-            <img :src="entry.imageUrl" alt="选中的最近创作图片" />
-            <span class="recent-detail__image-hint" aria-hidden="true">点击放大</span>
-          </button>
-        </div>
-        <div class="recent-detail__content">
-          <p class="recent-detail__eyebrow">图片详情</p>
-          <h2 id="recent-detail-title">最近创作提示词</h2>
-          <div class="recent-detail__prompt-panel" tabindex="0" aria-label="提示词内容">
+        <section class="recent-detail__prompt-card" aria-labelledby="recent-detail-title">
+          <header class="recent-detail__prompt-header">
+            <h2 id="recent-detail-title">提示词</h2>
+            <button
+              type="button"
+              class="recent-detail__copy"
+              aria-label="复制提示词"
+              @click="handleCopyPrompt"
+            >
+              <svg aria-hidden="true" viewBox="0 0 16 16">
+                <path d="M5.2 4.4V3.1c0-.7.5-1.2 1.2-1.2h6.1c.7 0 1.2.5 1.2 1.2v6.1c0 .7-.5 1.2-1.2 1.2h-1.3" />
+                <rect width="8.5" height="8.5" x="2.3" y="5.6" rx="1.2" />
+              </svg>
+              <span>复制</span>
+            </button>
+          </header>
+          <div class="recent-detail__prompt-scroll" tabindex="0" aria-label="提示词内容">
             <p class="recent-detail__prompt">{{ entry.record.prompt }}</p>
           </div>
-          <button type="button" class="recent-detail__copy" @click="handleCopyPrompt">
-            复制提示词
+        </section>
+
+        <p class="recent-detail__meta" aria-label="图片元数据">
+          <span>{{ entry.record.model }}</span>
+          <span aria-hidden="true">·</span>
+          <time :datetime="entry.record.createdAt">{{ formatFullDateTime(entry.record.createdAt) }}</time>
+        </p>
+
+        <div class="recent-detail__actions" aria-label="图片操作">
+          <a class="recent-detail__save" :href="entry.imageUrl" download aria-label="保存图片">
+            <svg aria-hidden="true" viewBox="0 0 20 20">
+              <path d="M10 3.2v8.3" />
+              <path d="m6.8 8.4 3.2 3.2 3.2-3.2" />
+              <path d="M4.2 14.8h11.6" />
+            </svg>
+            <span>保存</span>
+          </a>
+          <button
+            type="button"
+            class="recent-detail__remix"
+            aria-label="复制提示词做同款"
+            @click="handleCopyPrompt"
+          >
+            <svg aria-hidden="true" viewBox="0 0 20 20">
+              <path d="M10 2.7 11.4 7l4.3 1.4-4.3 1.4L10 14.1 8.6 9.8 4.3 8.4 8.6 7 10 2.7Z" />
+              <path d="m15.4 12.2.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7.7-2.1Z" />
+            </svg>
+            <span>做同款</span>
           </button>
-          <dl class="recent-detail__meta">
-            <div>
-              <dt>模型</dt>
-              <dd>{{ entry.record.model }} · {{ generationModeLabel }}</dd>
-            </div>
-            <div>
-              <dt>尺寸</dt>
-              <dd>{{ entry.record.width }} × {{ entry.record.height }}</dd>
-            </div>
-            <div>
-              <dt>比例</dt>
-              <dd>{{ aspectRatioLabel }}</dd>
-            </div>
-            <div>
-              <dt>大小</dt>
-              <dd>{{ fileSizeLabel }}</dd>
-            </div>
-            <div>
-              <dt>时间</dt>
-              <dd>{{ formatFullDateTime(entry.record.createdAt) }}</dd>
-            </div>
-          </dl>
         </div>
-      </template>
+      </aside>
     </article>
   </div>
 </template>
@@ -191,326 +138,281 @@ onBeforeUnmount(() => {
   z-index: 60;
   display: grid;
   place-items: center;
-  padding: 24px;
-  background: oklch(95.5% 0.008 86deg / 0.68);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 38% 50%, var(--color-inspection-surface-soft), transparent 42%),
+    var(--color-inspection-backdrop);
+  padding: clamp(18px, 4vw, 54px);
+  backdrop-filter: blur(16px) brightness(0.56);
+  -webkit-backdrop-filter: blur(16px) brightness(0.56);
 }
 
-.recent-detail__panel {
+.recent-detail__shell {
   position: relative;
   display: grid;
-  width: min(100%, 960px);
-  max-height: min(760px, calc(100vh - 48px));
-  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
-  overflow: hidden;
-  border: 1px solid oklch(24% 0.012 78deg / 0.12);
-  border-radius: 28px;
-  background: oklch(99.1% 0.004 88deg / 0.96);
+  width: min(100%, 1180px);
+  height: min(100%, 760px);
+  max-height: calc(100vh - clamp(36px, 8vw, 108px));
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 330px);
+  align-items: center;
+  gap: clamp(24px, 4vw, 54px);
 }
 
-.recent-detail__panel--expanded {
-  width: min(100%, 1120px);
-  height: min(100%, 760px);
-  grid-template-columns: 1fr;
+.recent-detail__stage {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  place-items: center;
+}
+
+.recent-detail__stage img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(100%, 760px);
+  max-height: min(100%, 72vh);
+  object-fit: contain;
+  border-radius: 18px;
+  background: var(--color-inspection-surface-soft);
+}
+
+.recent-detail__inspector {
+  position: relative;
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  color: var(--color-inspection-foreground);
 }
 
 .recent-detail__close {
   position: absolute;
-  top: 14px;
-  right: 14px;
-  z-index: 3;
+  top: -48px;
+  right: 0;
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   place-items: center;
-  border: 1px solid rgba(44, 39, 33, 0.1);
+  border: 1px solid var(--color-inspection-border);
   border-radius: 50%;
-  background: oklch(99% 0.004 88deg / 0.86);
-  color: var(--color-ink);
+  background: var(--color-inspection-surface);
+  color: var(--color-inspection-foreground);
   cursor: pointer;
-  font-size: 24px;
+  font-size: 23px;
   line-height: 1;
 }
 
-.recent-detail__image {
+.recent-detail__prompt-card {
   display: grid;
-  min-height: 520px;
-  place-items: center;
-  overflow: hidden;
-  background: oklch(97.4% 0.008 86deg);
-  padding: 28px;
-}
-
-.recent-detail__image-button {
-  position: relative;
-  display: grid;
-  width: 100%;
-  min-height: inherit;
-  place-items: center;
-  border: 0;
-  border-radius: 22px;
-  background: transparent;
-  cursor: zoom-in;
-  padding: 0;
-}
-
-.recent-detail__image-button:focus-visible,
-.recent-detail__back:focus-visible,
-.recent-detail__close:focus-visible,
-.recent-detail__copy:focus-visible,
-.recent-detail__prompt-panel:focus-visible {
-  outline: 3px solid oklch(78% 0.13 57deg / 0.78);
-  outline-offset: 3px;
-}
-
-.recent-detail__image-button img {
-  max-width: 100%;
-  max-height: 660px;
-  object-fit: contain;
-  border: 1px solid var(--color-hairline-soft);
-  border-radius: 14px;
-}
-
-.recent-detail__image-hint {
-  position: absolute;
-  bottom: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 1px solid var(--color-hairline);
-  border-radius: 999px;
-  background: oklch(99% 0.004 88deg / 0.94);
-  color: var(--color-ink);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  padding: 7px 12px;
-  pointer-events: none;
-}
-
-.recent-detail__viewer {
-  display: grid;
-  width: 100%;
-  height: 100%;
   min-height: 0;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 18px;
-  overflow: hidden;
-  padding: 26px;
-  background: oklch(97.4% 0.008 86deg);
+  gap: var(--space-sm);
+  border: 1px solid var(--color-inspection-border);
+  border-radius: var(--radius-md);
+  background: var(--color-inspection-surface);
+  padding: 18px;
 }
 
-.recent-detail__viewer-header {
+.recent-detail__prompt-header {
   display: flex;
-  min-width: 0;
   align-items: center;
-  gap: 16px;
-  padding-right: 54px;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.recent-detail__back {
-  flex: 0 0 auto;
-  height: 38px;
-  border: 1px solid rgba(44, 39, 33, 0.12);
-  border-radius: 999px;
-  background: oklch(99% 0.004 88deg / 0.9);
-  color: var(--color-ink);
+.recent-detail__prompt-header h2 {
+  margin: 0;
+  color: var(--color-inspection-muted);
+  font-size: var(--text-caption-size);
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
+.recent-detail__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--color-inspection-muted);
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 800;
-  padding: 0 16px;
-}
-
-.recent-detail__viewer h2 {
-  margin: 0;
-  color: var(--color-ink);
-  font-size: 22px;
-  letter-spacing: -0.03em;
-}
-
-.recent-detail__viewer-stage {
-  --recent-detail-viewer-stage-padding: 18px;
-
-  position: relative;
-  display: grid;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  min-height: 0;
-  max-height: 100%;
-  place-items: center;
-  overflow: hidden;
-  border: 1px solid var(--color-hairline-soft);
-  border-radius: 22px;
-  background: oklch(99.1% 0.004 88deg / 0.82);
-  padding: var(--recent-detail-viewer-stage-padding);
-}
-
-.recent-detail__viewer-stage img {
-  position: absolute;
-  inset: var(--recent-detail-viewer-stage-padding);
-  display: block;
-  width: calc(
-    100% - var(--recent-detail-viewer-stage-padding) - var(--recent-detail-viewer-stage-padding)
-  );
-  height: calc(
-    100% - var(--recent-detail-viewer-stage-padding) - var(--recent-detail-viewer-stage-padding)
-  );
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  border: 1px solid var(--color-hairline-soft);
-  border-radius: 16px;
-}
-
-.recent-detail__content {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  overflow: auto;
-  padding: 42px 34px 34px;
-}
-
-.recent-detail__eyebrow {
-  margin: 0;
-  color: var(--color-muted);
   font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  font-weight: 700;
+  padding: 2px 0;
 }
 
-.recent-detail__content h2 {
-  margin: 0;
-  color: var(--color-ink);
-  font-size: 22px;
-  letter-spacing: -0.03em;
+.recent-detail__copy svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
 }
 
-.recent-detail__prompt-panel {
-  max-height: min(210px, 30vh);
+.recent-detail__prompt-scroll {
+  max-height: min(44vh, 320px);
   overflow: auto;
-  border: 1px solid rgba(44, 39, 33, 0.08);
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(255, 253, 250, 0.82), rgba(248, 241, 232, 0.72));
-  padding: 14px 16px;
+  padding-right: 4px;
 }
 
 .recent-detail__prompt {
   margin: 0;
-  color: var(--color-body);
+  color: var(--color-inspection-foreground);
   font-size: 13px;
   letter-spacing: 0.01em;
-  line-height: 1.62;
+  line-height: 1.68;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
 
-.recent-detail__copy {
-  align-self: flex-start;
-  height: 40px;
-  border: 0;
-  border-radius: 20px;
-  background: linear-gradient(180deg, oklch(27% 0.012 76deg), var(--color-primary));
-  color: var(--color-on-primary);
-  cursor: pointer;
-  font-weight: 800;
-  padding: 0 18px;
-}
-
 .recent-detail__meta {
-  display: grid;
-  gap: 10px;
-  margin: 4px 0 0;
-}
-
-.recent-detail__meta div {
-  display: grid;
-  gap: 4px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--color-hairline-soft);
-}
-
-.recent-detail__meta dt {
-  color: var(--color-muted);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.recent-detail__meta dd {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
   margin: 0;
-  color: var(--color-body-strong);
-  font-size: 13px;
+  color: var(--color-on-dark-soft);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
-@media (max-width: 760px) {
+.recent-detail__meta span:first-child,
+.recent-detail__meta time {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-detail__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.recent-detail__save,
+.recent-detail__remix {
+  display: inline-flex;
+  height: var(--control-height-lg);
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-size: var(--text-body-sm-size);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.recent-detail__save svg,
+.recent-detail__remix svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.recent-detail__remix svg {
+  fill: currentColor;
+  stroke-width: 0;
+}
+
+.recent-detail__save {
+  border: 1px solid var(--color-inspection-border);
+  background: var(--color-inspection-surface-soft);
+  color: var(--color-inspection-foreground);
+}
+
+.recent-detail__remix {
+  border: 0;
+  background: var(--color-inspection-accent);
+  color: var(--color-on-accent);
+}
+
+.recent-detail__close:focus-visible,
+.recent-detail__copy:focus-visible,
+.recent-detail__prompt-scroll:focus-visible,
+.recent-detail__save:focus-visible,
+.recent-detail__remix:focus-visible {
+  outline: 3px solid var(--color-inspection-focus);
+  outline-offset: 3px;
+}
+
+.recent-detail__close:hover,
+.recent-detail__copy:hover,
+.recent-detail__save:hover {
+  filter: brightness(1.08);
+}
+
+.recent-detail__remix:hover {
+  background: var(--color-inspection-accent-hover);
+}
+
+@media (max-width: 900px) {
   .recent-detail {
-    padding: 14px;
-  }
-
-  .recent-detail__panel {
-    max-height: calc(100vh - 28px);
-    grid-template-columns: 1fr;
+    align-items: start;
     overflow: auto;
+    padding: 18px;
   }
 
-  .recent-detail__panel--expanded {
-    height: 100%;
-    overflow: hidden;
+  .recent-detail__shell {
+    height: auto;
+    max-height: none;
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .recent-detail__stage {
+    min-height: 44vh;
+  }
+
+  .recent-detail__stage img {
+    max-height: 58vh;
   }
 
   .recent-detail__close {
-    top: 10px;
-    right: 10px;
+    top: -6px;
+    right: 0;
+    transform: translateY(-100%);
   }
 
-  .recent-detail__image {
-    min-height: 280px;
-    padding: 16px;
+  .recent-detail__inspector {
+    align-content: start;
+  }
+}
+
+@media (max-width: 520px) {
+  .recent-detail {
+    padding: 50px 14px 18px;
   }
 
-  .recent-detail__image-button {
-    min-height: 280px;
+  .recent-detail__stage {
+    min-height: 36vh;
   }
 
-  .recent-detail__image-button img {
-    max-height: 360px;
+  .recent-detail__stage img {
+    max-height: 48vh;
+    border-radius: 14px;
   }
 
-  .recent-detail__image-hint {
-    bottom: 12px;
+  .recent-detail__prompt-card {
+    border-radius: 16px;
+    padding: 15px;
   }
 
-  .recent-detail__content {
-    gap: 12px;
-    padding: 24px 18px 22px;
+  .recent-detail__prompt-scroll {
+    max-height: 210px;
   }
 
-  .recent-detail__content h2,
-  .recent-detail__viewer h2 {
-    font-size: 20px;
-  }
-
-  .recent-detail__prompt-panel {
-    max-height: 160px;
-    padding: 12px;
-  }
-
-  .recent-detail__prompt {
-    font-size: 12.5px;
-    line-height: 1.55;
-  }
-
-  .recent-detail__viewer {
-    gap: 14px;
-    padding: 16px;
-  }
-
-  .recent-detail__viewer-header {
-    flex-wrap: wrap;
-    gap: 10px;
-    padding-right: 48px;
-  }
-
-  .recent-detail__viewer-stage {
-    --recent-detail-viewer-stage-padding: 10px;
+  .recent-detail__actions {
+    grid-template-columns: 1fr;
   }
 }
 </style>

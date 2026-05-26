@@ -159,15 +159,15 @@ function initials(): string {
   width: var(--app-sidebar-width);
   flex-direction: column;
   align-items: center;
-  gap: 26px;
-  border: 1px solid rgba(54, 62, 72, 0.08);
-  border-radius: 24px;
-  background: linear-gradient(180deg, rgba(235, 247, 255, 0.76), rgba(255, 255, 255, 0.78));
-  box-shadow: 0 18px 44px rgba(48, 88, 126, 0.08);
+  gap: var(--space-lg);
+  border: 1px solid var(--color-hairline-soft);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface-sidebar);
+  box-shadow: var(--shadow-soft);
   color: var(--color-body);
   padding: 18px 8px;
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .sidebar-brand {
@@ -176,13 +176,21 @@ function initials(): string {
   height: 58px;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid rgba(44, 39, 33, 0.08);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.48);
+  border: 1px solid var(--color-hairline-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-glass);
 }
 
 .sidebar-brand.router-link-exact-active {
-  background: rgba(255, 255, 255, 0.48);
+  background: var(--color-surface-glass);
+}
+
+.sidebar-brand:focus-visible,
+.sidebar-nav__link:focus-visible,
+.sidebar-account:focus-visible,
+.sidebar-account-menu button:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
 }
 
 .sidebar-brand__mark {
@@ -206,11 +214,11 @@ function initials(): string {
   justify-items: center;
   gap: 5px;
   border: 0;
-  border-radius: 18px;
+  border-radius: var(--radius-md);
   background: transparent;
-  color: rgba(31, 29, 26, 0.7);
+  color: var(--color-muted);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--text-caption-size);
   font-weight: 800;
   line-height: 1.25;
   padding: 10px 4px;
@@ -220,12 +228,12 @@ function initials(): string {
 .sidebar-nav__link:hover,
 .sidebar-account:hover,
 .sidebar-nav__link.router-link-exact-active {
-  background: rgba(255, 255, 255, 0.56);
+  background: var(--color-surface-glass-strong);
   color: var(--color-ink);
 }
 
 .sidebar-nav__link.router-link-exact-active {
-  box-shadow: inset 0 0 0 1px rgba(44, 39, 33, 0.07);
+  box-shadow: inset 0 0 0 1px var(--color-hairline-soft);
 }
 
 .sidebar-nav__icon {
@@ -257,11 +265,11 @@ function initials(): string {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(44, 39, 33, 0.08);
-  background: linear-gradient(135deg, #e5edff, #ffd8e9);
+  border: 1px solid var(--color-hairline-soft);
+  background: linear-gradient(135deg, var(--color-accent-soft), var(--color-chip));
   color: var(--color-ink);
   font-family: var(--font-brand);
-  font-size: 13px;
+  font-size: var(--text-label-size);
   font-weight: 900;
 }
 
@@ -272,8 +280,9 @@ function initials(): string {
   min-width: 132px;
   padding: 6px;
   border: 1px solid var(--color-hairline);
-  border-radius: 16px;
-  background: oklch(99.1% 0.004 88deg / 0.96);
+  border-radius: var(--radius-md);
+  background: var(--color-overlay);
+  box-shadow: none;
 }
 
 .sidebar-account-menu button {

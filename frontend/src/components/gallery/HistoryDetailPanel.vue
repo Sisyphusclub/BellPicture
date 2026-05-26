@@ -160,7 +160,7 @@ function handleRemove(): void {
               <dt>提示词</dt>
               <dd>
                 <textarea
-                  class="detail-panel__prompt-field"
+                  class="detail-panel__prompt-field textarea-field"
                   :value="entry.record.prompt"
                   readonly
                   aria-label="完整提示词"
@@ -203,7 +203,13 @@ function handleRemove(): void {
             >
               下载
             </button>
-            <button type="button" class="detail-panel__remove" @click="handleRemove">移除</button>
+            <button
+              type="button"
+              class="detail-panel__remove claude-button claude-button--danger"
+              @click="handleRemove"
+            >
+              移除
+            </button>
           </div>
         </div>
       </template>
@@ -241,7 +247,7 @@ function handleRemove(): void {
   max-height: 360px;
   place-items: center;
   overflow: hidden;
-  background: linear-gradient(145deg, #fffdf9, #f3eee8);
+  background: linear-gradient(145deg, var(--color-surface), var(--color-canvas-soft));
 }
 
 .detail-panel__image-button {
@@ -260,7 +266,7 @@ function handleRemove(): void {
 .detail-panel__back:focus-visible,
 .detail-panel__remove:focus-visible,
 .detail-panel__actions .claude-button:focus-visible {
-  outline: 3px solid oklch(78% 0.13 57deg / 0.78);
+  outline: 3px solid var(--color-focus);
   outline-offset: 3px;
 }
 
@@ -274,16 +280,16 @@ function handleRemove(): void {
   position: absolute;
   bottom: 18px;
   left: 50%;
-  transform: translateX(-50%);
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-pill);
-  background: oklch(99% 0.004 88deg / 0.94);
+  background: var(--color-overlay);
   color: var(--color-ink);
-  font-size: 12px;
+  font-size: var(--text-caption-size);
   font-weight: 800;
   letter-spacing: 0.04em;
   padding: 7px 12px;
   pointer-events: none;
+  transform: translateX(-50%);
 }
 
 .detail-panel__viewer {
@@ -292,10 +298,10 @@ function handleRemove(): void {
   height: 100%;
   min-height: 0;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 18px;
+  gap: var(--space-md);
   overflow: hidden;
-  padding: 26px;
-  background: oklch(97.4% 0.008 86deg);
+  background: var(--color-canvas);
+  padding: var(--space-lg);
 }
 
 .detail-panel__viewer-header {
@@ -308,16 +314,16 @@ function handleRemove(): void {
 
 .detail-panel__back {
   flex: 0 0 auto;
-  height: 38px;
-  border: 1px solid rgba(44, 39, 33, 0.12);
+  height: var(--control-height-md);
+  border: 1px solid var(--color-hairline);
   border-radius: var(--radius-pill);
-  background: oklch(99% 0.004 88deg / 0.9);
+  background: var(--color-overlay);
   box-shadow: none;
   color: var(--color-ink);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--text-label-size);
   font-weight: 800;
-  padding: 0 16px;
+  padding: 0 var(--space-md);
 }
 
 .detail-panel__viewer-title {
@@ -343,8 +349,8 @@ function handleRemove(): void {
   place-items: center;
   overflow: hidden;
   border: 1px solid var(--color-hairline-soft);
-  border-radius: 22px;
-  background: oklch(99.1% 0.004 88deg / 0.82);
+  border-radius: var(--radius-image-lg);
+  background: var(--color-overlay);
   padding: var(--history-detail-viewer-stage-padding);
 }
 
@@ -375,8 +381,8 @@ function handleRemove(): void {
   margin: 0;
   color: var(--color-ink);
   font-family: var(--font-display);
-  font-size: clamp(23px, 2.4vw, 28px);
-  font-weight: 450;
+  font-size: var(--text-section-title-size);
+  font-weight: var(--font-weight-title);
   letter-spacing: -0.03em;
   line-height: 1.12;
 }
@@ -390,23 +396,13 @@ function handleRemove(): void {
 }
 
 .detail-panel__prompt-field {
-  display: block;
-  width: 100%;
   min-height: 92px;
-  resize: vertical;
-  border: 1px solid var(--color-hairline-soft);
-  border-radius: var(--radius-xs);
-  background: oklch(99% 0.004 88deg / 0.84);
-  box-shadow: none;
   color: var(--color-body-strong);
-  font: inherit;
-  font-size: 14px;
+  font-size: var(--text-body-sm-size);
   line-height: 1.55;
-  padding: 13px 15px;
 }
 
 .detail-panel__prompt-field:focus {
-  border-color: var(--color-accent-active);
   outline: none;
 }
 
@@ -439,17 +435,7 @@ function handleRemove(): void {
 }
 
 .detail-panel__remove {
-  border: 0;
-  background: transparent;
-  color: var(--color-error);
-  cursor: pointer;
-  font-weight: 600;
-  padding: 0 var(--space-xs);
-}
-
-.detail-panel__actions .detail-panel__remove {
-  box-shadow: none;
-  filter: none;
+  padding: 0 var(--space-md);
 }
 
 .detail-panel__empty {

@@ -67,6 +67,10 @@ function querySubmit(): HTMLButtonElement | null {
   return document.body.querySelector<HTMLButtonElement>('.login-modal__submit');
 }
 
+function queryCloseButton(): HTMLButtonElement | null {
+  return document.body.querySelector<HTMLButtonElement>('.login-modal .el-dialog__headerbtn');
+}
+
 function queryForm(): HTMLFormElement | null {
   return document.body.querySelector<HTMLFormElement>('.login-modal__form');
 }
@@ -108,6 +112,7 @@ describe('LoginModal', () => {
 
     expect(queryFields()).toHaveLength(2);
     expect(querySubmit()?.textContent?.trim()).toBe('登录');
+    expect(queryCloseButton()?.getAttribute('aria-label')).toBe('关闭此对话框');
 
     const bodyText = document.body.textContent ?? '';
     expect(bodyText).toContain('用户名');

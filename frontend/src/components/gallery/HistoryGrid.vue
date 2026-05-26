@@ -23,7 +23,7 @@ function fileSizeLabel(entry: HistoryEntry): string {
 <template>
   <div v-if="entries.length > 0" class="history-grid" aria-label="图片列表">
     <article v-for="entry in entries" :key="entry.record.id" class="history-tile">
-      <div class="history-tile__media">
+      <div class="history-tile__media image-surface">
         <button
           type="button"
           class="history-tile__thumb"
@@ -94,7 +94,7 @@ function fileSizeLabel(entry: HistoryEntry): string {
         </div>
         <div class="history-tile__row history-tile__row--bottom">
           <span>{{ fileSizeLabel(entry) }}</span>
-          <span>{{ entry.record.width }} x {{ entry.record.height }}</span>
+          <span>{{ entry.record.width }} × {{ entry.record.height }}</span>
         </div>
       </div>
     </article>
@@ -119,10 +119,6 @@ function fileSizeLabel(entry: HistoryEntry): string {
 
 .history-tile__media {
   position: relative;
-  overflow: hidden;
-  border: 1px solid oklch(24% 0.012 78deg / 0.08);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-card-solid);
 }
 
 .history-tile__thumb {
@@ -141,13 +137,13 @@ function fileSizeLabel(entry: HistoryEntry): string {
 
 .history-tile__media:hover .history-tile__thumb,
 .history-tile__media:focus-within .history-tile__thumb {
-  background: oklch(98.4% 0.006 88deg / 0.72);
+  background: var(--color-image-surface-hover);
 }
 
 .history-tile__thumb:focus-visible,
 .history-tile__action:focus-visible,
 .history-tile__copy:focus-visible {
-  outline: 3px solid oklch(78% 0.13 57deg / 0.78);
+  outline: 3px solid var(--color-focus);
   outline-offset: -3px;
 }
 
@@ -183,22 +179,22 @@ function fileSizeLabel(entry: HistoryEntry): string {
 
 .history-tile__action {
   display: inline-flex;
-  height: 32px;
+  height: var(--control-height-sm);
   align-items: center;
   justify-content: center;
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-pill);
-  background: oklch(99% 0.004 88deg / 0.94);
+  background: var(--color-overlay);
   box-shadow: none;
   color: var(--color-ink);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--text-label-size);
   font-weight: 800;
-  padding: 0 12px;
+  padding: 0 var(--space-sm);
 }
 
 .history-tile__action:hover {
-  background: var(--color-chip);
+  background: var(--pill-bg-hover);
 }
 
 .history-tile__action--remove {
@@ -217,7 +213,7 @@ function fileSizeLabel(entry: HistoryEntry): string {
   justify-content: space-between;
   gap: var(--space-sm);
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: var(--text-label-size);
 }
 
 .history-tile__row--top {

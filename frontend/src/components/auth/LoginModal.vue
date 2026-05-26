@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ElDialog, ElInput, ElMessage } from 'element-plus';
-import { computed, ref, watch } from 'vue';
+import { ElConfigProvider, ElDialog, ElInput, ElMessage } from 'element-plus';
+import zhCn from 'element-plus/es/locale/lang/zh-cn';
+import { computed, ref, watch, type Component } from 'vue';
 
 import { useAuth } from '@/composables/useAuth';
 import { useAuthModal } from '@/composables/useAuthModal';
@@ -9,6 +10,8 @@ type Mode = 'sign-in' | 'sign-up';
 
 const { isOpen, close } = useAuthModal();
 const { isAuthenticated, signInWithUsername, signUpWithUsername } = useAuth();
+
+const LoginConfigProvider: Component = ElConfigProvider;
 
 const mode = ref<Mode>('sign-in');
 const isPending = ref(false);
@@ -81,117 +84,119 @@ async function handleSignUp(): Promise<void> {
 </script>
 
 <template>
-  <ElDialog
-    v-model="isOpen"
-    class="login-modal"
-    width="380px"
-    modal-class="login-modal__overlay"
-    :show-close="true"
-    :close-on-click-modal="true"
-    :close-on-press-escape="true"
-    align-center
-    aria-label="登录 Ref2Image Studio"
-  >
-    <template #header>
-      <h2 class="login-modal__title">Ref2Image Studio</h2>
-    </template>
-    <div class="login-modal__body">
-      <div class="login-modal__tabs" role="tablist" aria-label="账号操作">
-        <button
-          type="button"
-          role="tab"
-          :aria-selected="mode === 'sign-in'"
-          :class="['login-modal__tab', { 'login-modal__tab--active': mode === 'sign-in' }]"
-          :tabindex="mode === 'sign-in' ? 0 : -1"
-          @click="switchMode('sign-in')"
-        >
-          登录
-        </button>
-        <button
-          type="button"
-          role="tab"
-          :aria-selected="mode === 'sign-up'"
-          :class="['login-modal__tab', { 'login-modal__tab--active': mode === 'sign-up' }]"
-          :tabindex="mode === 'sign-up' ? 0 : -1"
-          @click="switchMode('sign-up')"
-        >
-          注册
-        </button>
+  <component :is="LoginConfigProvider" :locale="zhCn">
+    <ElDialog
+      v-model="isOpen"
+      class="login-modal"
+      width="380px"
+      modal-class="login-modal__overlay"
+      :show-close="true"
+      :close-on-click-modal="true"
+      :close-on-press-escape="true"
+      align-center
+      aria-label="登录 Ref2Image Studio"
+    >
+      <template #header>
+        <h2 class="login-modal__title">Ref2Image Studio</h2>
+      </template>
+      <div class="login-modal__body">
+        <div class="login-modal__tabs" role="tablist" aria-label="账号操作">
+          <button
+            type="button"
+            role="tab"
+            :aria-selected="mode === 'sign-in'"
+            :class="['login-modal__tab', { 'login-modal__tab--active': mode === 'sign-in' }]"
+            :tabindex="mode === 'sign-in' ? 0 : -1"
+            @click="switchMode('sign-in')"
+          >
+            登录
+          </button>
+          <button
+            type="button"
+            role="tab"
+            :aria-selected="mode === 'sign-up'"
+            :class="['login-modal__tab', { 'login-modal__tab--active': mode === 'sign-up' }]"
+            :tabindex="mode === 'sign-up' ? 0 : -1"
+            @click="switchMode('sign-up')"
+          >
+            注册
+          </button>
+        </div>
+
+        <form v-if="mode === 'sign-in'" class="login-modal__form" @submit.prevent="handleSignIn">
+          <label class="login-modal__field">
+            <span class="login-modal__label">用户名</span>
+            <ElInput
+              v-model="signInUsername"
+              type="text"
+              placeholder="输入用户名"
+              autocomplete="username"
+              :disabled="isPending"
+            />
+          </label>
+          <label class="login-modal__field">
+            <span class="login-modal__label">密码</span>
+            <ElInput
+              v-model="signInPassword"
+              type="password"
+              placeholder="输入密码"
+              autocomplete="current-password"
+              show-password
+              :disabled="isPending"
+            />
+          </label>
+          <button type="submit" class="login-modal__submit" :disabled="isPending || !canSubmitSignIn">
+            {{ isPending ? '正在登录…' : '登录' }}
+          </button>
+        </form>
+
+        <form v-else class="login-modal__form" @submit.prevent="handleSignUp">
+          <label class="login-modal__field">
+            <span class="login-modal__label">用户名</span>
+            <ElInput
+              v-model="signUpUsername"
+              type="text"
+              placeholder="3-32 位小写字母、数字或下划线"
+              autocomplete="username"
+              :disabled="isPending"
+            />
+          </label>
+          <label class="login-modal__field">
+            <span class="login-modal__label">密码</span>
+            <ElInput
+              v-model="signUpPassword"
+              type="password"
+              placeholder="输入密码（至少 8 个字符）"
+              autocomplete="new-password"
+              show-password
+              :disabled="isPending"
+            />
+          </label>
+          <button type="submit" class="login-modal__submit" :disabled="isPending || !canSubmitSignUp">
+            {{ isPending ? '正在注册…' : '注册' }}
+          </button>
+        </form>
+
+        <p class="login-modal__fineprint">用户名提交时会自动转为小写，仅支持字母、数字和下划线。</p>
       </div>
-
-      <form v-if="mode === 'sign-in'" class="login-modal__form" @submit.prevent="handleSignIn">
-        <label class="login-modal__field">
-          <span class="login-modal__label">用户名</span>
-          <ElInput
-            v-model="signInUsername"
-            type="text"
-            placeholder="输入用户名"
-            autocomplete="username"
-            :disabled="isPending"
-          />
-        </label>
-        <label class="login-modal__field">
-          <span class="login-modal__label">密码</span>
-          <ElInput
-            v-model="signInPassword"
-            type="password"
-            placeholder="输入密码"
-            autocomplete="current-password"
-            show-password
-            :disabled="isPending"
-          />
-        </label>
-        <button type="submit" class="login-modal__submit" :disabled="isPending || !canSubmitSignIn">
-          {{ isPending ? '正在登录…' : '登录' }}
-        </button>
-      </form>
-
-      <form v-else class="login-modal__form" @submit.prevent="handleSignUp">
-        <label class="login-modal__field">
-          <span class="login-modal__label">用户名</span>
-          <ElInput
-            v-model="signUpUsername"
-            type="text"
-            placeholder="3-32 位小写字母、数字或下划线"
-            autocomplete="username"
-            :disabled="isPending"
-          />
-        </label>
-        <label class="login-modal__field">
-          <span class="login-modal__label">密码</span>
-          <ElInput
-            v-model="signUpPassword"
-            type="password"
-            placeholder="输入密码（至少 8 个字符）"
-            autocomplete="new-password"
-            show-password
-            :disabled="isPending"
-          />
-        </label>
-        <button type="submit" class="login-modal__submit" :disabled="isPending || !canSubmitSignUp">
-          {{ isPending ? '正在注册…' : '注册' }}
-        </button>
-      </form>
-
-      <p class="login-modal__fineprint">用户名提交时会自动转为小写，仅支持字母、数字和下划线。</p>
-    </div>
-  </ElDialog>
+    </ElDialog>
+  </component>
 </template>
 
 <style scoped>
 :global(.login-modal__overlay.el-overlay) {
-  background-color: oklch(95.5% 0.008 86deg / 0.72);
+  background-color: var(--color-overlay-backdrop);
 }
 
 :global(.login-modal.el-dialog) {
-  --el-dialog-bg-color: oklch(99.1% 0.004 88deg / 0.96);
-  --el-dialog-border-radius: 24px;
+  --el-dialog-bg-color: var(--color-overlay);
+  --el-dialog-border-radius: var(--radius-panel);
   --el-dialog-box-shadow: none;
 
   overflow: hidden;
   padding: 0;
-  border: 1px solid oklch(24% 0.012 78deg / 0.12);
-  border-radius: 24px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-panel);
   background: var(--el-dialog-bg-color);
   box-shadow: none;
 }
@@ -214,12 +219,12 @@ async function handleSignUp(): Promise<void> {
   height: 32px;
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-pill);
-  background: oklch(99% 0.004 88deg / 0.94);
+  background: var(--color-overlay);
   box-shadow: none;
 }
 
 :global(.login-modal .el-dialog__headerbtn:focus-visible) {
-  outline: 3px solid oklch(78% 0.13 57deg / 0.78);
+  outline: 3px solid var(--color-focus);
   outline-offset: 3px;
   box-shadow: none;
 }
@@ -233,28 +238,32 @@ async function handleSignUp(): Promise<void> {
   --el-input-border-color: transparent;
   --el-input-hover-border-color: transparent;
   --el-input-focus-border-color: transparent;
-  --el-input-text-color: var(--color-ink);
-  --el-input-placeholder-color: oklch(58% 0.012 78deg);
+  --el-input-text-color: var(--field-foreground);
+  --el-input-placeholder-color: var(--field-placeholder);
 }
 
 :global(.login-modal .el-input__wrapper) {
-  min-height: 42px;
-  border: 1px solid var(--color-hairline);
-  border-radius: 12px;
-  background: oklch(98.8% 0.005 88deg);
+  min-height: var(--control-height-lg);
+  border: 1px solid var(--field-border);
+  border-radius: var(--field-radius);
+  background: var(--field-background);
   box-shadow: none;
 }
 
-:global(.login-modal .el-input__wrapper:hover),
+:global(.login-modal .el-input__wrapper:hover) {
+  border-color: var(--field-border-hover);
+  box-shadow: none;
+}
+
 :global(.login-modal .el-input.is-focus .el-input__wrapper),
 :global(.login-modal .el-input__wrapper.is-focus),
 :global(.login-modal .el-input__wrapper:focus-within) {
-  border-color: oklch(24% 0.012 78deg / 0.18);
-  box-shadow: none;
+  border-color: var(--field-border-focus);
+  box-shadow: var(--field-focus-ring);
 }
 
 :global(.login-modal .el-input.is-disabled .el-input__wrapper) {
-  background: oklch(96.8% 0.006 86deg);
+  background: var(--color-surface-tertiary);
   box-shadow: none;
 }
 
@@ -277,10 +286,10 @@ async function handleSignUp(): Promise<void> {
 .login-modal__tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  padding: 4px;
-  background: oklch(96% 0.006 84deg);
-  border-radius: 10px;
+  gap: var(--space-xxs);
+  padding: var(--space-xxs);
+  background: var(--color-surface-tertiary);
+  border-radius: var(--radius-sm);
   box-shadow: none;
 }
 
@@ -289,15 +298,20 @@ async function handleSignUp(): Promise<void> {
   border: none;
   background: transparent;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: calc(var(--radius-sm) - 4px);
   box-shadow: none;
-  font-size: 14px;
-  font-weight: 600;
-  color: oklch(45% 0.012 78deg);
+  font-size: var(--text-body-sm-size);
+  font-weight: 700;
+  color: var(--color-muted);
   cursor: pointer;
   transition:
     background 120ms ease,
     color 120ms ease;
+}
+
+.login-modal__tab:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
 }
 
 .login-modal__tab:hover:not(.login-modal__tab--active) {
@@ -305,7 +319,7 @@ async function handleSignUp(): Promise<void> {
 }
 
 .login-modal__tab--active {
-  background: oklch(99% 0.004 88deg);
+  background: var(--color-overlay);
   box-shadow: none;
   color: var(--color-ink);
 }
@@ -323,33 +337,38 @@ async function handleSignUp(): Promise<void> {
 }
 
 .login-modal__label {
-  font-size: 12px;
-  font-weight: 600;
-  color: oklch(35% 0.012 78deg);
+  color: var(--color-body-strong);
+  font-size: var(--text-caption-size);
+  font-weight: var(--font-weight-label);
 }
 
 .login-modal__submit {
   display: inline-flex;
+  width: 100%;
+  min-height: var(--control-height-lg);
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 44px;
-  margin-top: 4px;
+  margin-top: var(--space-xxs);
   border: none;
-  border-radius: 12px;
-  background: var(--color-accent, oklch(72% 0.16 38deg));
+  border-radius: var(--control-radius);
+  background: var(--color-accent);
   box-shadow: none;
-  color: #fff;
+  color: var(--color-on-accent);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--text-body-sm-size);
   font-weight: 700;
   transition:
     background 120ms ease,
     opacity 120ms ease;
 }
 
+.login-modal__submit:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
 .login-modal__submit:hover:not(:disabled) {
-  opacity: 0.92;
+  background: var(--color-accent-hover);
 }
 
 .login-modal__submit:disabled {
@@ -359,7 +378,7 @@ async function handleSignUp(): Promise<void> {
 
 .login-modal__fineprint {
   margin: 0;
-  color: oklch(55% 0.01 78deg);
+  color: var(--color-muted);
   font-size: 11px;
   text-align: center;
 }
