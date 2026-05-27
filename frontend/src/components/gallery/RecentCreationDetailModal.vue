@@ -137,25 +137,29 @@ onBeforeUnmount(() => {
   inset: 0;
   z-index: 60;
   display: grid;
-  place-items: center;
+  align-items: center;
+  justify-items: center;
   overflow: hidden;
   background:
     radial-gradient(circle at 38% 50%, var(--color-inspection-surface-soft), transparent 42%),
     var(--color-inspection-backdrop);
-  padding: clamp(18px, 4vw, 54px);
+  padding: clamp(18px, 3.6vw, 44px);
   backdrop-filter: blur(16px) brightness(0.56);
   -webkit-backdrop-filter: blur(16px) brightness(0.56);
 }
 
 .recent-detail__shell {
+  --recent-detail-shell-height: min(720px, calc(100dvh - clamp(36px, 7.2vw, 88px)));
+  --recent-detail-stage-padding: clamp(10px, 1.6vw, 18px);
+
   position: relative;
   display: grid;
   width: min(100%, 1180px);
-  height: min(100%, 760px);
-  max-height: calc(100vh - clamp(36px, 8vw, 108px));
+  height: var(--recent-detail-shell-height);
+  max-height: var(--recent-detail-shell-height);
   grid-template-columns: minmax(0, 1fr) minmax(280px, 330px);
-  align-items: center;
-  gap: clamp(24px, 4vw, 54px);
+  align-items: stretch;
+  gap: clamp(22px, 3.6vw, 46px);
 }
 
 .recent-detail__stage {
@@ -165,14 +169,16 @@ onBeforeUnmount(() => {
   min-width: 0;
   min-height: 0;
   place-items: center;
+  overflow: hidden;
+  padding: var(--recent-detail-stage-padding);
 }
 
 .recent-detail__stage img {
   display: block;
   width: auto;
   height: auto;
-  max-width: min(100%, 760px);
-  max-height: min(100%, 72vh);
+  max-width: min(100%, 820px);
+  max-height: calc(var(--recent-detail-shell-height) - (var(--recent-detail-stage-padding) * 2));
   object-fit: contain;
   border-radius: 18px;
   background: var(--color-inspection-surface-soft);
@@ -181,10 +187,13 @@ onBeforeUnmount(() => {
 .recent-detail__inspector {
   position: relative;
   display: grid;
-  align-content: center;
+  align-self: center;
+  align-content: start;
   gap: 14px;
   width: 100%;
+  max-height: 100%;
   min-width: 0;
+  min-height: 0;
   color: var(--color-inspection-foreground);
 }
 
@@ -213,6 +222,7 @@ onBeforeUnmount(() => {
   border-radius: var(--radius-md);
   background: var(--color-inspection-surface);
   padding: 18px;
+  overflow: hidden;
 }
 
 .recent-detail__prompt-header {
@@ -254,7 +264,7 @@ onBeforeUnmount(() => {
 }
 
 .recent-detail__prompt-scroll {
-  max-height: min(44vh, 320px);
+  max-height: min(34dvh, 260px);
   overflow: auto;
   padding-right: 4px;
 }
@@ -371,9 +381,12 @@ onBeforeUnmount(() => {
 
   .recent-detail__stage {
     min-height: 44vh;
+    overflow: visible;
+    padding: 0;
   }
 
   .recent-detail__stage img {
+    max-width: 100%;
     max-height: 58vh;
   }
 

@@ -1,18 +1,16 @@
 <script setup lang="ts">
 import { ElConfigProvider, ElDatePicker, ElMessage } from 'element-plus';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
-import { computed, nextTick, onBeforeUnmount, ref, watch, type Component } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, ref, type Component } from 'vue';
 
-import HistoryDetailPanel from '@/components/gallery/HistoryDetailPanel.vue';
 import HistoryGrid from '@/components/gallery/HistoryGrid.vue';
+import RecentCreationDetailModal from '@/components/gallery/RecentCreationDetailModal.vue';
 import { useImageHistory } from '@/composables/useImageHistory';
 import type { HistoryEntry } from '@/types/image';
 
 type DateRange = [string, string];
 
-const router = useRouter();
-const { entries, isHydrating, hydrateError, refresh, remove } = useImageHistory();
+const { entries, hydrateError, remove } = useImageHistory();
 
 const HistoryConfigProvider: Component = ElConfigProvider;
 const HistoryDateRangePicker: Component = ElDatePicker;
@@ -21,123 +19,118 @@ const datePickerProps = {
   type: 'daterange',
   format: 'YYYY/MM/DD',
   valueFormat: 'YYYY-MM-DD',
-  rangeSeparator: '—',
+  rangeSeparator: '至',
   startPlaceholder: '起始日期',
   endPlaceholder: '结束日期',
   popperClass: 'history-date-range-popper',
   unlinkPanels: true,
 } as const;
 
-const selectedEntry = ref<HistoryEntry | null>(null);
-const isDetailImageExpanded = ref(false);
-const historyModalCloseRef = ref<HTMLButtonElement | null>(null);
+const selectedPreviewEntry = ref<HistoryEntry | null>(null);
 const selectedDateRange = ref<DateRange | null>(null);
+const searchInput = ref('');
+const appliedSearchQuery = ref('');
 const appliedStartDate = ref('');
 const appliedEndDate = ref('');
+
+const normalizedSearchQuery = computed(() =>
+  appliedSearchQuery.value.trim().toLocaleLowerCase('zh-CN'),
+);
 
 const filteredEntries = computed(() => {
   const startMs = appliedStartDate.value ? Date.parse(`${appliedStartDate.value}T00:00:00`) : null;
   const endMs = appliedEndDate.value ? Date.parse(`${appliedEndDate.value}T23:59:59.999`) : null;
+  const query = normalizedSearchQuery.value;
+
   return entries.value.filter((entry) => {
     const ts = Date.parse(entry.record.createdAt);
     if (startMs !== null && ts < startMs) return false;
     if (endMs !== null && ts > endMs) return false;
+    if (query && !assetSearchText(entry).includes(query)) return false;
     return true;
   });
 });
 
-const totalLabel = computed(() => `共 ${filteredEntries.value.length} 张`);
-
-watch(filteredEntries, (next) => {
-  if (selectedEntry.value && !next.some((e) => e.record.id === selectedEntry.value?.record.id)) {
-    selectedEntry.value = null;
+const canClearFilters = computed(
+  () =>
+    searchInput.value.trim().length > 0 ||
+    appliedSearchQuery.value.length > 0 ||
+    selectedDateRange.value !== null ||
+    appliedStartDate.value.length > 0 ||
+    appliedEndDate.value.length > 0,
+);
+const appliedFilterChips = computed(() => {
+  const chips: string[] = [];
+  const query = appliedSearchQuery.value.trim();
+  if (query) chips.push(`搜索：${query}`);
+  if (appliedStartDate.value || appliedEndDate.value) {
+    chips.push(`日期：${appliedStartDate.value || '不限'} 至 ${appliedEndDate.value || '不限'}`);
   }
+  return chips;
 });
-
-watch(selectedEntry, (next, prev) => {
-  if (next && !prev) {
-    document.addEventListener('keydown', handleHistoryModalKeydown);
-    void nextTick(() => {
-      historyModalCloseRef.value?.focus();
-    });
-  } else if (!next && prev) {
-    document.removeEventListener('keydown', handleHistoryModalKeydown);
-    isDetailImageExpanded.value = false;
-  }
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener('keydown', handleHistoryModalKeydown);
-});
-
-function handleSelect(entry: HistoryEntry): void {
-  isDetailImageExpanded.value = false;
-  selectedEntry.value = entry;
-}
 
 function handleExpand(entry: HistoryEntry): void {
-  isDetailImageExpanded.value = true;
-  selectedEntry.value = entry;
+  selectedPreviewEntry.value = entry;
 }
 
-function handleCloseDetail(): void {
-  isDetailImageExpanded.value = false;
-  selectedEntry.value = null;
-}
-
-function handleHistoryModalKeydown(event: KeyboardEvent): void {
-  if (event.key !== 'Escape') return;
-  event.preventDefault();
-  handleCloseDetail();
+function handleClosePreview(): void {
+  selectedPreviewEntry.value = null;
 }
 
 function handleQuery(): void {
   const [rangeStart = '', rangeEnd = ''] = selectedDateRange.value ?? [];
   appliedStartDate.value = rangeStart;
   appliedEndDate.value = rangeEnd;
+  appliedSearchQuery.value = searchInput.value.trim();
 }
 
 function handleClearFilters(): void {
   selectedDateRange.value = null;
+  searchInput.value = '';
+  appliedSearchQuery.value = '';
   appliedStartDate.value = '';
   appliedEndDate.value = '';
 }
 
-function handleRerun(entry: HistoryEntry): void {
-  void router.push({
-    path: '/generate',
-    query: { prompt: entry.record.prompt },
-  });
-  handleCloseDetail();
+function assetSearchText(entry: HistoryEntry): string {
+  return [
+    entry.record.prompt,
+    entry.record.id,
+    entry.record.batchId,
+    entry.record.model,
+    entry.record.aspectRatio,
+    entry.record.isPublic ? '已发布 公开' : '未发布 私密',
+  ]
+    .filter((item): item is string => typeof item === 'string' && item.length > 0)
+    .join(' ')
+    .toLocaleLowerCase('zh-CN');
 }
 
 async function handleRemove(entry: HistoryEntry): Promise<void> {
   try {
     await remove(entry.record.id);
-    handleCloseDetail();
-    ElMessage.success('历史记录已移除。');
+    if (selectedPreviewEntry.value?.record.id === entry.record.id) {
+      selectedPreviewEntry.value = null;
+    }
+    ElMessage.success('资产已移除。');
   } catch {
-    ElMessage.error('无法移除历史记录，请稍后重试。');
+    ElMessage.error('无法移除资产，请稍后重试。');
   }
 }
 
-async function handleRefresh(): Promise<void> {
-  await refresh();
+async function handleCopyPrompt(entry: HistoryEntry): Promise<void> {
+  await copyText(entry.record.prompt, '提示词已复制。');
 }
 
-function handleDetailExpandedChange(expanded: boolean): void {
-  isDetailImageExpanded.value = expanded;
-}
-
-async function handleCopyId(entry: HistoryEntry): Promise<void> {
+async function copyText(text: string, successMessage: string): Promise<void> {
   const clipboard = navigator.clipboard;
   if (!clipboard || typeof clipboard.writeText !== 'function') {
     ElMessage.error('当前浏览器不支持自动复制。');
     return;
   }
   try {
-    await clipboard.writeText(entry.record.id);
-    ElMessage.success('图片编号已复制。');
+    await clipboard.writeText(text);
+    ElMessage.success(successMessage);
   } catch {
     ElMessage.error('复制失败。');
   }
@@ -148,11 +141,39 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   <section class="history-page">
     <header class="history-page__header">
       <div class="history-page__title-block">
-        <p class="history-page__kicker">IMAGES</p>
-        <h1 class="history-page__title">图片管理</h1>
+        <p class="history-page__kicker">ASSETS</p>
+        <h1 class="history-page__title">个人资产</h1>
+        <p class="history-page__lede">按时间整理你的生成作品，快速检索、预览与复用提示词。</p>
       </div>
+    </header>
+
+    <section class="asset-console" aria-label="资产筛选">
       <form class="history-page__filters" @submit.prevent="handleQuery">
-        <div class="history-filter text-field" role="group" aria-label="历史日期范围筛选">
+        <label class="history-search text-field" aria-label="搜索资产">
+          <svg
+            class="history-filter__icon"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+          <input
+            v-model="searchInput"
+            type="search"
+            name="assetSearch"
+            placeholder="搜索提示词、编号或状态"
+            aria-label="搜索资产"
+          />
+        </label>
+        <div class="history-filter text-field" role="group" aria-label="资产日期范围筛选">
           <svg
             class="history-filter__icon"
             width="16"
@@ -181,129 +202,37 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
         <button
           type="button"
           class="history-btn claude-button claude-button--secondary"
+          :disabled="!canClearFilters"
           @click="handleClearFilters"
         >
-          清除筛选条件
+          清除筛选
         </button>
         <button type="submit" class="history-btn claude-button claude-button--primary">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" />
-          </svg>
           查询
         </button>
       </form>
-    </header>
+      <div v-if="appliedFilterChips.length > 0" class="asset-filter-chips" aria-label="已应用筛选">
+        <span v-for="chip in appliedFilterChips" :key="chip">{{ chip }}</span>
+      </div>
+    </section>
 
     <p v-if="hydrateError" class="history-page__error" role="alert">
       {{ hydrateError.message }}
     </p>
 
-    <section class="history-card surface-panel">
-      <div class="history-card__top">
-        <span class="history-card__count">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <circle cx="9" cy="9" r="2" />
-            <path d="m21 15-5-5L5 21" />
-          </svg>
-          {{ totalLabel }}
-        </span>
-        <button
-          type="button"
-          class="history-btn claude-button claude-button--secondary"
-          :disabled="isHydrating"
-          @click="handleRefresh"
-        >
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M3 12a9 9 0 0 1 15.5-6.3L21 8" />
-            <path d="M21 3v5h-5" />
-            <path d="M21 12a9 9 0 0 1-15.5 6.3L3 16" />
-            <path d="M3 21v-5h5" />
-          </svg>
-          {{ isHydrating ? '正在刷新…' : '刷新' }}
-        </button>
-      </div>
-
+    <section class="history-card" aria-label="个人资产列表">
       <HistoryGrid
         :entries="filteredEntries"
-        @select="handleSelect"
         @expand="handleExpand"
         @remove="handleRemove"
-        @copy-id="handleCopyId"
       />
     </section>
 
-    <div v-if="selectedEntry" class="history-modal" @click.self="handleCloseDetail">
-      <div
-        class="history-modal__panel popup-panel"
-        :class="{ 'history-modal__panel--expanded': isDetailImageExpanded }"
-        role="dialog"
-        aria-modal="true"
-        :aria-labelledby="
-          isDetailImageExpanded ? 'history-detail-expanded-title' : 'history-detail-title'
-        "
-        tabindex="-1"
-      >
-        <button
-          ref="historyModalCloseRef"
-          type="button"
-          class="history-modal__close icon-button"
-          :aria-label="isDetailImageExpanded ? '关闭历史图片放大预览' : '关闭历史详情'"
-          @click="handleCloseDetail"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M18 6 6 18M6 6l12 12" />
-          </svg>
-        </button>
-        <HistoryDetailPanel
-          :entry="selectedEntry"
-          :initial-expanded="isDetailImageExpanded"
-          @rerun="handleRerun"
-          @remove="handleRemove"
-          @expanded-change="handleDetailExpandedChange"
-        />
-      </div>
-    </div>
+    <RecentCreationDetailModal
+      :entry="selectedPreviewEntry"
+      @close="handleClosePreview"
+      @copy-prompt="handleCopyPrompt"
+    />
   </section>
 </template>
 
@@ -315,7 +244,7 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   flex-direction: column;
   gap: var(--space-xl);
   margin: 0 auto;
-  padding: var(--space-section) 40px var(--space-section);
+  padding: 72px 40px var(--space-section);
 }
 
 .history-page__header {
@@ -328,35 +257,54 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
 
 .history-page__title-block {
   display: flex;
+  max-width: 620px;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .history-page__kicker {
   margin: 0;
-  color: var(--color-body-strong);
+  color: var(--color-muted);
   font-size: var(--text-caption-size);
   font-weight: var(--font-weight-label);
-  letter-spacing: 0.22em;
+  letter-spacing: 0.2em;
 }
 
 .history-page__title {
   margin: 0;
   color: var(--color-ink);
   font-family: var(--font-display);
-  font-size: var(--text-page-title-size);
+  font-size: clamp(34px, 4.2vw, 56px);
   font-weight: var(--font-weight-title);
   letter-spacing: -0.035em;
-  line-height: 1.08;
+  line-height: 1.04;
+}
+
+.history-page__lede {
+  max-width: 560px;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-body-sm-size);
+  line-height: 1.7;
+}
+.asset-console {
+  display: grid;
+  gap: var(--space-md);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
 }
 
 .history-page__filters {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto auto auto;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
 }
 
+.history-search,
 .history-filter {
   display: inline-flex;
   width: auto;
@@ -369,13 +317,46 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   font-size: var(--text-body-sm-size);
 }
 
+.history-search:focus-within,
 .history-filter:focus-within {
   border-color: var(--field-border-focus);
   box-shadow: var(--field-focus-ring);
 }
 
+.history-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  outline: none;
+}
+
+.history-search input::placeholder {
+  color: var(--color-muted-soft);
+}
+
 .history-filter__icon {
   flex: 0 0 auto;
+}
+
+.asset-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.asset-filter-chips span {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: oklch(95% 0.006 88deg / 0.72);
+  color: var(--color-body);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 9px;
 }
 
 .history-filter :deep(.history-date-range) {
@@ -543,71 +524,12 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
 .history-card {
   display: grid;
   gap: var(--space-md);
-  padding: var(--space-md) var(--space-md) var(--space-lg);
   box-shadow: none;
-}
-
-.history-card__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
-}
-
-.history-card__count {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--color-muted);
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.history-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  display: grid;
-  place-items: center;
-  background: var(--color-overlay-backdrop);
-  padding: var(--space-lg);
-}
-
-.history-modal__panel {
-  position: relative;
-  display: flex;
-  width: min(720px, 100%);
-  max-height: calc(100vh - 96px);
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.history-modal__panel--expanded {
-  width: min(1120px, 100%);
-  height: min(760px, calc(100vh - 96px));
-  max-height: calc(100vh - 96px);
-}
-
-.history-modal__close {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  z-index: 2;
-  width: 32px;
-  height: 32px;
 }
 
 @media (max-width: 860px) {
   .history-page {
     padding: var(--space-lg) var(--space-md) var(--space-xl);
-  }
-
-  .history-modal {
-    padding: 14px;
-  }
-
-  .history-modal__panel {
-    max-height: calc(100vh - 28px);
   }
 
   .history-page__header {
@@ -616,10 +538,11 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
   }
 
   .history-page__filters {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     align-items: stretch;
   }
 
+  .history-search,
   .history-filter {
     width: 100%;
     height: auto;
@@ -632,11 +555,6 @@ async function handleCopyId(entry: HistoryEntry): Promise<void> {
 
   .history-btn {
     width: 100%;
-  }
-
-  .history-modal__panel--expanded {
-    height: calc(100vh - 28px);
-    max-height: calc(100vh - 28px);
   }
 }
 </style>

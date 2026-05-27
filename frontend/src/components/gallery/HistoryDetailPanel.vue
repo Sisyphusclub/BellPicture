@@ -115,7 +115,7 @@ function handleRemove(): void {
   <aside
     class="detail-panel"
     :class="{ 'detail-panel--expanded': isImageExpanded }"
-    aria-label="历史详情"
+    aria-label="资产详情"
   >
     <template v-if="entry">
       <section v-if="isImageExpanded" class="detail-panel__viewer" aria-label="放大图片预览">
@@ -124,7 +124,7 @@ function handleRemove(): void {
             ref="backButtonRef"
             type="button"
             class="detail-panel__back"
-            aria-label="返回历史详情"
+            aria-label="返回资产详情"
             @click="returnToDetails"
           >
             返回详情
@@ -134,7 +134,7 @@ function handleRemove(): void {
           </h2>
         </header>
         <div class="detail-panel__viewer-stage">
-          <img :src="entry.imageUrl" alt="放大查看的历史图片" />
+          <img :src="entry.imageUrl" alt="放大查看的资产图片" />
         </div>
       </section>
 
@@ -144,11 +144,11 @@ function handleRemove(): void {
             ref="imageButtonRef"
             type="button"
             class="detail-panel__image-button"
-            aria-label="放大查看选中的历史图片"
+            aria-label="放大查看选中的资产图片"
             title="放大查看图片"
             @click="openExpandedImage"
           >
-            <img :src="entry.imageUrl" alt="选中的生成历史图片" />
+            <img :src="entry.imageUrl" alt="选中的资产图片" />
             <span class="detail-panel__image-hint" aria-hidden="true">点击放大</span>
           </button>
         </div>
@@ -216,7 +216,7 @@ function handleRemove(): void {
     </template>
     <div v-else class="detail-panel__empty">
       <span aria-hidden="true">✣</span>
-      <p>选择一张历史卡片，查看提示词、元数据和下载操作。</p>
+      <p>选择一项资产，查看提示词、元数据和下载操作。</p>
     </div>
   </aside>
 </template>

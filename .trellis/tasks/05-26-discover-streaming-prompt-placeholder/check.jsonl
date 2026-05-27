@@ -1,0 +1,5 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Verify frontend stack and custom UI conventions."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Check Simplified Chinese copy, modal a11y, and product UI boundary."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Run frontend lint/typecheck/test/a11y quality checklist."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Check strict TypeScript and component API safety."}

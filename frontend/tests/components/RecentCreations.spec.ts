@@ -136,9 +136,8 @@ describe('RecentCreationDetailModal', () => {
 
     expect(wrapper.text()).toContain('一只橙色猫坐在复古相机旁边');
     expect(wrapper.text()).toContain('gpt-image-2');
-    expect(wrapper.text()).toContain('1024 × 1536');
-    expect(wrapper.find('.recent-detail__prompt-panel').exists()).toBe(true);
-    expect(wrapper.find('.recent-detail__prompt-panel .recent-detail__prompt').exists()).toBe(true);
+    expect(wrapper.find('.recent-detail__prompt-card').exists()).toBe(true);
+    expect(wrapper.find('.recent-detail__prompt-card .recent-detail__prompt').exists()).toBe(true);
 
     await wrapper.get('.recent-detail__copy').trigger('click');
 
@@ -156,11 +155,11 @@ describe('RecentCreationDetailModal', () => {
     await nextTick();
     await nextTick();
 
-    const dialog = wrapper.get('.recent-detail__panel');
+    const dialog = wrapper.get('.recent-detail__shell');
     expect(dialog.attributes('role')).toBe('dialog');
     expect(dialog.attributes('aria-modal')).toBe('true');
     expect(dialog.attributes('aria-labelledby')).toBe('recent-detail-title');
-    expect(wrapper.get('#recent-detail-title').text()).toBe('最近创作提示词');
+    expect(wrapper.get('#recent-detail-title').text()).toBe('提示词');
     expect(document.activeElement).toBe(wrapper.get('.recent-detail__close').element);
   });
 
@@ -189,87 +188,38 @@ describe('RecentCreationDetailModal', () => {
     expect(wrapper.emitted('close')).toHaveLength(1);
   });
 
-  it('opens an enlarged image view from the accessible image control', async () => {
-    const entry = createEntry();
+  it('keeps portrait images and inspector bounded inside the desktop viewport', () => {
+    const longPrompt = '一张纵向电影海报，包含雨夜、霓虹、人物、建筑、反光地面、细密雨丝、远处灯牌与安静氛围。'.repeat(6);
     const wrapper = mount(RecentCreationDetailModal, {
-      attachTo: document.body,
       props: {
-        entry,
+        entry: createEntry({ prompt: longPrompt, width: 1024, height: 1792 }),
       },
     });
 
-    const imageButton = wrapper.get('.recent-detail__image-button');
-    expect(imageButton.attributes('aria-label')).toBe('放大查看选中的图片');
+    const shellRule = extractStyleRules('.recent-detail__shell')[0] ?? '';
+    const stageRule = extractStyleRules('.recent-detail__stage')[0] ?? '';
+    const imageRule = extractStyleRules('.recent-detail__stage img')[0] ?? '';
+    const inspectorRule = extractStyleRules('.recent-detail__inspector')[0] ?? '';
+    const promptScrollRule = extractStyleRules('.recent-detail__prompt-scroll')[0] ?? '';
 
-    await imageButton.trigger('click');
-    await nextTick();
-
-    expect(wrapper.find('.recent-detail__viewer').exists()).toBe(true);
-    expect(wrapper.get('.recent-detail__viewer img').attributes('src')).toBe(entry.imageUrl);
-    expect(wrapper.text()).toContain('返回详情');
-    expect(document.activeElement).toBe(wrapper.get('.recent-detail__back').element);
-  });
-
-  it('bounds the enlarged image inside the modal stage', async () => {
-    const wrapper = mount(RecentCreationDetailModal, {
-      props: {
-        entry: createEntry(),
-      },
-    });
-
-    await wrapper.get('.recent-detail__image-button').trigger('click');
-
-    const stageRule = extractStyleRules('.recent-detail__viewer-stage')[0] ?? '';
-    const imageRules = extractStyleRules('.recent-detail__viewer-stage img');
-    const imageRule = imageRules[0] ?? '';
-
-    expect(wrapper.get('.recent-detail__panel').classes()).toContain(
-      'recent-detail__panel--expanded',
-    );
-    expect(wrapper.find('.recent-detail__viewer-stage').exists()).toBe(true);
+    expect(wrapper.get('.recent-detail__stage img').attributes('src')).toBe('blob:recent-1');
+    expect(wrapper.text()).toContain(longPrompt);
+    expect(shellRule).not.toBe('');
     expect(stageRule).not.toBe('');
     expect(imageRule).not.toBe('');
-    expectStyleDeclaration(stageRule, 'height', '100%');
-    expectStyleDeclaration(stageRule, 'min-height', '0');
-    expectStyleDeclaration(stageRule, 'max-height', '100%');
+    expect(inspectorRule).not.toBe('');
+    expect(promptScrollRule).not.toBe('');
+    expectStyleDeclaration(shellRule, '--recent-detail-shell-height', 'min(720px, calc(100dvh - clamp(36px, 7.2vw, 88px)))');
+    expectStyleDeclaration(shellRule, '--recent-detail-stage-padding', 'clamp(10px, 1.6vw, 18px)');
+    expectStyleDeclaration(shellRule, 'height', 'var(--recent-detail-shell-height)');
+    expectStyleDeclaration(shellRule, 'max-height', 'var(--recent-detail-shell-height)');
     expectStyleDeclaration(stageRule, 'overflow', 'hidden');
-    expectStyleDeclaration(imageRule, 'position', 'absolute');
-    expectStyleDeclaration(imageRule, 'inset', 'var(--recent-detail-viewer-stage-padding)');
-    expect(imageRule).toMatch(/width:\s*calc\(/);
-    expect(imageRule).toMatch(/height:\s*calc\(/);
-    expectStyleDeclaration(imageRule, 'max-height', '100%');
+    expectStyleDeclaration(stageRule, 'padding', 'var(--recent-detail-stage-padding)');
+    expectStyleDeclaration(imageRule, 'max-height', 'calc(var(--recent-detail-shell-height) - (var(--recent-detail-stage-padding) * 2))');
     expectStyleDeclaration(imageRule, 'object-fit', 'contain');
-    expect(imageRules.join('\n')).not.toMatch(/100d?vh/);
-  });
-
-  it('returns from enlarged image view to the detail view', async () => {
-    const wrapper = mount(RecentCreationDetailModal, {
-      props: {
-        entry: createEntry(),
-      },
-    });
-
-    await wrapper.get('.recent-detail__image-button').trigger('click');
-    await wrapper.get('.recent-detail__back').trigger('click');
-
-    expect(wrapper.find('.recent-detail__viewer').exists()).toBe(false);
-    expect(wrapper.find('.recent-detail__content').exists()).toBe(true);
-  });
-
-  it('resets enlarged image view after close and reopen', async () => {
-    const wrapper = mount(RecentCreationDetailModal, {
-      props: {
-        entry: createEntry(),
-      },
-    });
-
-    await wrapper.get('.recent-detail__image-button').trigger('click');
-    await wrapper.get('.recent-detail__close').trigger('click');
-    await wrapper.setProps({ entry: null });
-    await wrapper.setProps({ entry: createEntry({ id: 'recent-2.png' }) });
-
-    expect(wrapper.find('.recent-detail__viewer').exists()).toBe(false);
-    expect(wrapper.find('.recent-detail__image-button').exists()).toBe(true);
+    expectStyleDeclaration(inspectorRule, 'max-height', '100%');
+    expectStyleDeclaration(inspectorRule, 'min-height', '0');
+    expectStyleDeclaration(promptScrollRule, 'overflow', 'auto');
   });
 
   it('emits close when the close button is clicked', async () => {

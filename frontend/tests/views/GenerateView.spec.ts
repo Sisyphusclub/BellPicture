@@ -3,6 +3,7 @@ import { computed, readonly, ref, type ComputedRef } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { GenerateImageOptions } from '@/composables/useImageGeneration';
+import generateViewSource from '@/views/GenerateView.vue?raw';
 import type { GroupedBatch } from '@/composables/useImageHistory';
 import type { GeneratedBatchResult, HistoryEntry } from '@/types/image';
 
@@ -18,10 +19,49 @@ interface GenerateViewHarness {
     typeof vi.fn<(options: GenerateImageOptions) => Promise<GeneratedBatchResult>>
   >;
   downloadUrl: ReturnType<typeof vi.fn<(url: string, filename: string) => Promise<void>>>;
+  routerPush: ReturnType<typeof vi.fn<(path: string) => void>>;
   resolveGeneration: () => void;
+  resolveGenerationWithOptions: (overrides: { id: string; prompt?: string }) => void;
 }
 
 type GenerateViewMode = 'discover' | 'generate';
+
+function createMatchMedia(matches: boolean): typeof window.matchMedia {
+  return vi.fn((query: string): MediaQueryList => {
+    const listeners = new Set<EventListenerOrEventListenerObject>();
+    const legacyListeners = new Set<(this: MediaQueryList, ev: MediaQueryListEvent) => unknown>();
+    const mediaQueryList: MediaQueryList = {
+      matches,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn((event: string, listener: EventListenerOrEventListenerObject) => {
+        if (event === 'change') listeners.add(listener);
+      }),
+      removeEventListener: vi.fn((event: string, listener: EventListenerOrEventListenerObject) => {
+        if (event === 'change') listeners.delete(listener);
+      }),
+      addListener: vi.fn(
+        (listener: ((this: MediaQueryList, ev: MediaQueryListEvent) => unknown) | null) => {
+          if (listener) legacyListeners.add(listener);
+        },
+      ),
+      removeListener: vi.fn(
+        (listener: ((this: MediaQueryList, ev: MediaQueryListEvent) => unknown) | null) => {
+          if (listener) legacyListeners.delete(listener);
+        },
+      ),
+      dispatchEvent: vi.fn((event: Event) => {
+        listeners.forEach((listener) => {
+          if (typeof listener === 'function') listener.call(mediaQueryList, event);
+          else listener.handleEvent(event);
+        });
+        legacyListeners.forEach((listener) => listener.call(mediaQueryList, event as MediaQueryListEvent));
+        return true;
+      }),
+    };
+    return mediaQueryList;
+  });
+}
 
 function createDeferred<T>(): Deferred<T> {
   let resolve!: (value: T) => void;
@@ -33,7 +73,12 @@ function createDeferred<T>(): Deferred<T> {
   return { promise, resolve, reject };
 }
 
-function createHistoryEntry(id: string, prompt: string, isPublic: boolean): HistoryEntry {
+function createHistoryEntry(
+  id: string,
+  prompt: string,
+  isPublic: boolean,
+  overrides: Partial<HistoryEntry['record']> = {},
+): HistoryEntry {
   return {
     record: {
       id,
@@ -45,6 +90,7 @@ function createHistoryEntry(id: string, prompt: string, isPublic: boolean): Hist
       width: 1024,
       height: 1024,
       isPublic,
+      ...overrides,
     },
     imageUrl: `http://localhost:3000/api/outputs/${id}`,
   };
@@ -56,20 +102,96 @@ function getButtonByText(buttons: DOMWrapper<Element>[], text: string): DOMWrapp
   return button;
 }
 
+function extractStyleRules(selector: string): string[] {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const rulePattern = new RegExp(`${escapedSelector}\\s*\\{([\\s\\S]*?)\\}`, 'g');
+  return Array.from(generateViewSource.matchAll(rulePattern), (match) => match[1] ?? '');
+}
+
+function expectStyleDeclaration(rule: string, property: string, value: string): void {
+  const escapedProperty = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escapedValue = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  expect(rule).toMatch(new RegExp(`(?:^|[;\\s])${escapedProperty}\\s*:\\s*${escapedValue}\\s*;`));
+}
+
 describe('GenerateView', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.useRealTimers();
+    window.matchMedia = createMatchMedia(false);
   });
 
-  it('submitting a prompt immediately opens the inline generation surface', async () => {
-    const { wrapper, generate } = await mountGenerateView();
+  it('shows a visual-only streaming suggestion in the empty discover hero prompt', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const { wrapper } = await mountGenerateView();
+
+    const suggestion = wrapper.get('.prompt-showcase__suggestion');
+    const textarea = wrapper.get('textarea[name="heroPrompt"]');
+    const textareaElement = textarea.element as HTMLTextAreaElement;
+
+    expect(suggestion.attributes('aria-hidden')).toBe('true');
+    expect(suggestion.text()).toBe('一');
+    expect(textareaElement.value).toBe('');
+    expect(textarea.attributes('placeholder')).toBe('');
+
+    await vi.advanceTimersByTimeAsync(180);
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.get('.prompt-showcase__suggestion').text()).toBe('一间');
+    expect(textareaElement.value).toBe('');
+  });
+
+  it('hides the discover hero suggestion while focused or filled without mutating the prompt', async () => {
+    const { wrapper } = await mountGenerateView();
+    const textarea = wrapper.get('textarea[name="heroPrompt"]');
+    const textareaElement = textarea.element as HTMLTextAreaElement;
+
+    expect(wrapper.find('.prompt-showcase__suggestion').exists()).toBe(true);
+
+    await textarea.trigger('focus');
+
+    expect(wrapper.find('.prompt-showcase__suggestion').exists()).toBe(false);
+    expect(textarea.attributes('placeholder')).toBe('请输入你的创意（按 Enter 发送，Shift+Enter 换行）');
+    expect(textareaElement.value).toBe('');
+
+    await textarea.setValue('我的真实提示词');
+    await textarea.trigger('blur');
+
+    expect(wrapper.find('.prompt-showcase__suggestion').exists()).toBe(false);
+    expect(textareaElement.value).toBe('我的真实提示词');
+  });
+
+  it('uses a static hero suggestion for reduced-motion users', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    window.matchMedia = createMatchMedia(true);
+    const { wrapper } = await mountGenerateView();
+
+    expect(wrapper.get('.prompt-showcase__suggestion').text()).toBe(
+      '一间清晨阳光洒入的复古书房，木质书桌上摆着咖啡、手稿与一束白色小花。',
+    );
+    expect(wrapper.find('.prompt-showcase__suggestion i').exists()).toBe(false);
+  });
+
+  it('does not apply the discover hero suggestion to the generate route dock composer', async () => {
+    const { wrapper } = await mountGenerateView({ mode: 'generate' });
+
+    expect(wrapper.find('.prompt-showcase__suggestion').exists()).toBe(false);
+    expect(wrapper.get('textarea[name="prompt"]').attributes('placeholder')).toBe(
+      '输入你想要生成的画面，也可直接粘贴图片',
+    );
+  });
+
+  it('submitting a discover prompt switches to the generate route and opens the inline generation surface', async () => {
+    const { wrapper, generate, routerPush } = await mountGenerateView();
 
     expect(wrapper.get('.canvas-hero__title').text()).toBe('Turn your idea into images');
 
     await wrapper.get('textarea[name="heroPrompt"]').setValue('生成一张猫猫照片');
     await wrapper.get('form.prompt-showcase').trigger('submit');
 
+    expect(routerPush).toHaveBeenCalledWith('/generate');
     expect(generate).toHaveBeenCalledWith(
       expect.objectContaining({
         prompt: '生成一张猫猫照片',
@@ -86,15 +208,81 @@ describe('GenerateView', () => {
     expect(wrapper.text()).toContain('生成中...');
   });
 
-  it('renders a non-selectable empty workspace on the generate route', async () => {
+  it('renders historical generated batches as a vertical feed in the generate workspace', async () => {
+    const olderEntry = createHistoryEntry('older.png', '上一轮的复古书房', false, {
+      batchId: 'batch-older',
+      createdAt: '2026-05-14T09:00:00.000Z',
+    });
+    const latestEntry = createHistoryEntry('latest.png', '最新完成的电影海报', true, {
+      batchId: 'batch-latest',
+      createdAt: '2026-05-15T09:00:00.000Z',
+    });
+    const { wrapper } = await mountGenerateView({
+      mode: 'generate',
+      entries: [latestEntry, olderEntry],
+      batches: [
+        {
+          batchId: 'batch-latest',
+          createdAt: '2026-05-15T09:00:00.000Z',
+          prompt: '最新完成的电影海报',
+          model: 'gpt-image-2',
+          entries: [latestEntry],
+        },
+        {
+          batchId: 'batch-older',
+          createdAt: '2026-05-14T09:00:00.000Z',
+          prompt: '上一轮的复古书房',
+          model: 'gpt-image-2',
+          entries: [olderEntry],
+        },
+      ],
+    });
+
+    const feedItems = wrapper.findAll('.generation-feed > .generation-item');
+    const stageRules = extractStyleRules('.studio--stage');
+    const stageRule = stageRules[0] ?? '';
+    const narrowStageRule = stageRules[1] ?? '';
+    const stageMainRule = extractStyleRules('.studio--stage .studio__main')[0] ?? '';
+    const feedRule = extractStyleRules('.generation-feed')[0] ?? '';
+    const itemRule = extractStyleRules('.generation-item')[0] ?? '';
+    const visualRule = extractStyleRules('.generation-visual')[0] ?? '';
+    const frameRule = extractStyleRules('.generated-figure__frame')[0] ?? '';
+
+    expect(feedItems).toHaveLength(2);
+    expectStyleDeclaration(stageRule, '--generation-card-width', '304px');
+    expectStyleDeclaration(stageRule, '--generation-feed-align-offset', '8px');
+    expectStyleDeclaration(narrowStageRule, '--generation-feed-align-offset', '0px');
+    expectStyleDeclaration(stageMainRule, 'grid-column', '1 / -1');
+    expectStyleDeclaration(feedRule, 'width', 'min(100%, var(--generation-card-width))');
+    expect(feedRule).not.toMatch(/margin-left\s*:/);
+    expectStyleDeclaration(feedRule, 'gap', '48px');
+    expectStyleDeclaration(feedRule, 'transform', 'translateX(var(--generation-feed-align-offset))');
+    expectStyleDeclaration(itemRule, 'align-items', 'stretch');
+    expectStyleDeclaration(visualRule, 'justify-items', 'stretch');
+    expectStyleDeclaration(frameRule, 'width', '100%');
+    expect(feedItems[0]?.text()).toContain('最新完成的电影海报');
+    expect(feedItems[0]?.text()).toContain('GPT-IMAGE-2 · 已保存 · 1 张图');
+    expect(feedItems[1]?.text()).toContain('上一轮的复古书房');
+    expect(wrapper.findAll('.generated-figure__frame img')).toHaveLength(2);
+    expect(wrapper.text()).toContain('重新编辑');
+    expect(wrapper.text()).toContain('再次生成');
+    expect(wrapper.text()).toContain('保存');
+  });
+
+  it('omits the framed empty workspace card while preserving generate route context', async () => {
     const { wrapper } = await mountGenerateView({ mode: 'generate' });
 
     expect(wrapper.classes()).toContain('studio--stage');
     expect(wrapper.find('.canvas-hero').exists()).toBe(false);
     expect(wrapper.findComponent({ name: 'RecentCreationsMasonryStub' }).exists()).toBe(false);
-    expect(wrapper.find('.generation-empty-card').exists()).toBe(true);
+    expect(wrapper.find('.generation-empty-card').exists()).toBe(false);
+    expect(wrapper.find('.generation-visual').exists()).toBe(false);
     expect(wrapper.find('.generation-actions').exists()).toBe(false);
     expect(wrapper.find('form.prompt-showcase--dock').exists()).toBe(true);
+    expect(wrapper.get('textarea[name="prompt"]').attributes('placeholder')).toBe(
+      '输入你想要生成的画面，也可直接粘贴图片',
+    );
+    expect(wrapper.text()).toContain('生成工作区');
     expect(wrapper.text()).toContain('从下方输入框开始生成图片');
   });
 
@@ -168,6 +356,7 @@ describe('GenerateView', () => {
 
     await wrapper.get('textarea[name="heroPrompt"]').setValue('生成一张猫猫照片');
     await wrapper.get('form.prompt-showcase').trigger('submit');
+    await wrapper.setProps({ mode: 'generate' });
     resolveGeneration();
     await flushPromises();
 
@@ -196,11 +385,58 @@ describe('GenerateView', () => {
     expect(wrapper.text()).toContain('生成中...');
   });
 
+  it('sends public visibility when the dock public toggle is enabled', async () => {
+    const { wrapper, generate, resolveGeneration } = await mountGenerateView();
+
+    await wrapper.get('textarea[name="heroPrompt"]').setValue('生成一张猫猫照片');
+    await wrapper.get('form.prompt-showcase').trigger('submit');
+    await wrapper.setProps({ mode: 'generate' });
+    resolveGeneration();
+    await flushPromises();
+
+    const dockComposer = wrapper.get('form.prompt-showcase--dock');
+    await dockComposer.get('textarea[name="prompt"]').setValue('公开的工作区作品');
+    await dockComposer.get('button.prompt-showcase__public').trigger('click');
+    await dockComposer.get('button.prompt-showcase__generate').trigger('click');
+
+    expect(generate).toHaveBeenCalledTimes(2);
+    expect(generate).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        prompt: '公开的工作区作品',
+        isPublic: true,
+      }),
+    );
+  });
+
+  it('preserves previous generated results above the dock composer after another generation completes', async () => {
+    const { wrapper, resolveGenerationWithOptions } = await mountGenerateView();
+
+    await wrapper.get('textarea[name="heroPrompt"]').setValue('第一轮生成的猫猫照片');
+    await wrapper.get('form.prompt-showcase').trigger('submit');
+    await wrapper.setProps({ mode: 'generate' });
+    resolveGenerationWithOptions({ id: 'first.png' });
+    await flushPromises();
+
+    const dockComposer = wrapper.get('form.prompt-showcase--dock');
+    await dockComposer.get('textarea[name="prompt"]').setValue('第二轮生成的赛博城市');
+    await dockComposer.get('button.prompt-showcase__generate').trigger('click');
+    resolveGenerationWithOptions({ id: 'second.png' });
+    await flushPromises();
+
+    const feedItems = wrapper.findAll('.generation-feed > .generation-item');
+
+    expect(feedItems).toHaveLength(2);
+    expect(feedItems[0]?.text()).toContain('第二轮生成的赛博城市');
+    expect(feedItems[1]?.text()).toContain('第一轮生成的猫猫照片');
+    expect(wrapper.findAll('.generated-figure__frame img')).toHaveLength(2);
+  });
+
   it('submits the selected dock aspect ratio after a completed result', async () => {
     const { wrapper, generate, resolveGeneration } = await mountGenerateView();
 
     await wrapper.get('textarea[name="heroPrompt"]').setValue('生成一张猫猫照片');
     await wrapper.get('form.prompt-showcase').trigger('submit');
+    await wrapper.setProps({ mode: 'generate' });
     resolveGeneration();
     await flushPromises();
 
@@ -234,6 +470,7 @@ describe('GenerateView', () => {
 
     await wrapper.get('textarea[name="heroPrompt"]').setValue(longPrompt);
     await wrapper.get('form.prompt-showcase').trigger('submit');
+    await wrapper.setProps({ mode: 'generate' });
     resolveGeneration();
     await flushPromises();
 
@@ -242,11 +479,34 @@ describe('GenerateView', () => {
     expect(promptHeading.attributes('title')).toBe(longPrompt);
   });
 
+  it('returns to the discover hero after a routed generation completes', async () => {
+    const { wrapper, resolveGeneration } = await mountGenerateView();
+
+    await wrapper.get('textarea[name="heroPrompt"]').setValue('生成一张猫猫照片');
+    await wrapper.get('form.prompt-showcase').trigger('submit');
+    expect(wrapper.find('form.prompt-showcase--dock').exists()).toBe(true);
+
+    await wrapper.setProps({ mode: 'generate' });
+    resolveGeneration();
+    await flushPromises();
+
+    expect(wrapper.find('.generated-figure__frame img').exists()).toBe(true);
+    expect(wrapper.find('form.prompt-showcase--dock').exists()).toBe(true);
+
+    await wrapper.setProps({ mode: 'discover' });
+
+    expect(wrapper.find('.canvas-hero').exists()).toBe(true);
+    expect(wrapper.findComponent({ name: 'RecentCreationsMasonryStub' }).exists()).toBe(true);
+    expect(wrapper.find('form.prompt-showcase--dock').exists()).toBe(false);
+    expect(wrapper.text()).toContain('Turn your idea');
+  });
+
   it('reveals result actions, saves the generated image, and regenerates the same prompt', async () => {
     const { wrapper, generate, downloadUrl, resolveGeneration } = await mountGenerateView();
 
     await wrapper.get('textarea[name="heroPrompt"]').setValue('生成一张猫猫照片');
     await wrapper.get('form.prompt-showcase').trigger('submit');
+    await wrapper.setProps({ mode: 'generate' });
     resolveGeneration();
     await flushPromises();
 
@@ -283,12 +543,12 @@ describe('GenerateView', () => {
 });
 
 async function mountGenerateView(
-  options: { entries?: HistoryEntry[]; mode?: GenerateViewMode } = {},
+  options: { entries?: HistoryEntry[]; batches?: GroupedBatch[]; mode?: GenerateViewMode } = {},
 ): Promise<GenerateViewHarness> {
   vi.resetModules();
 
   const entries = ref<HistoryEntry[]>(options.entries ?? []);
-  const batchList = ref<GroupedBatch[]>([]);
+  const batchList = ref<GroupedBatch[]>(options.batches ?? []);
   const batches: ComputedRef<GroupedBatch[]> = computed(() => batchList.value);
   const isLoading = ref(false);
   const error = ref<Error | null>(null);
@@ -314,36 +574,37 @@ async function mountGenerateView(
     },
   );
 
-  function createResult(): GeneratedBatchResult {
+  function createResult(overrides: { id: string; prompt?: string } = { id: 'generated.png' }): GeneratedBatchResult {
     const options = lastOptions.value;
     if (!options) throw new Error('测试未提交生成请求。');
-    const createdAt = '2026-05-14T09:00:00.000Z';
+    const createdAt = new Date(Date.UTC(2026, 4, 14, 9, batchList.value.length)).toISOString();
     const entry: HistoryEntry = {
       record: {
-        id: 'generated.png',
-        batchId: 'batch-1',
+        id: overrides.id,
+        batchId: `batch-${overrides.id}`,
         createdAt,
-        prompt: options.prompt,
+        prompt: overrides.prompt ?? options.prompt,
         model: options.model ?? 'gpt-image-2',
         aspectRatio: options.aspectRatio ?? '1:1',
         width: 1024,
         height: 1024,
         isPublic: options.isPublic ?? false,
       },
-      imageUrl: 'http://localhost:3000/api/outputs/generated.png',
+      imageUrl: `http://localhost:3000/api/outputs/${overrides.id}`,
     };
-    entries.value = [entry];
+    entries.value = [entry, ...entries.value.filter((item) => item.record.id !== entry.record.id)];
     batchList.value = [
       {
-        batchId: 'batch-1',
+        batchId: entry.record.batchId ?? entry.record.id,
         createdAt,
-        prompt: options.prompt,
-        model: options.model ?? 'gpt-image-2',
+        prompt: entry.record.prompt,
+        model: entry.record.model,
         entries: [entry],
       },
+      ...batchList.value.filter((batch) => batch.batchId !== (entry.record.batchId ?? entry.record.id)),
     ];
     return {
-      batchId: 'batch-1',
+      batchId: entry.record.batchId ?? entry.record.id,
       aspectRatio: options.aspectRatio ?? '1:1',
       generationMode: options.referenceFile ? 'image-to-image' : 'text-to-image',
       entries: [entry],
@@ -355,11 +616,17 @@ async function mountGenerateView(
     generation.value = createDeferred<GeneratedBatchResult>();
   }
 
+  function resolveGenerationWithOptions(overrides: { id: string; prompt?: string }): void {
+    generation.value.resolve(createResult(overrides));
+    generation.value = createDeferred<GeneratedBatchResult>();
+  }
+
   const refreshQuota = vi.fn<() => Promise<void>>(() => Promise.resolve());
   const removeBatch = vi.fn<(batchId: string) => Promise<void>>(() => Promise.resolve());
   const downloadUrl = vi.fn<(url: string, filename: string) => Promise<void>>(() =>
     Promise.resolve(),
   );
+  const routerPush = vi.fn<(path: string) => void>();
   const clearLastBatch = vi.fn(() => {
     lastBatch.value = null;
   });
@@ -373,7 +640,7 @@ async function mountGenerateView(
 
   vi.doMock('vue-router', () => ({
     useRoute: () => ({ query: {} }),
-    useRouter: () => ({ push: vi.fn() }),
+    useRouter: () => ({ push: routerPush }),
   }));
 
   vi.doMock('@/components/gallery/RecentCreationsMasonry.vue', () => ({
@@ -454,6 +721,8 @@ async function mountGenerateView(
     wrapper,
     generate,
     downloadUrl,
+    routerPush,
     resolveGeneration,
+    resolveGenerationWithOptions,
   };
 }

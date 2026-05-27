@@ -1,14 +1,10 @@
-import { enableAutoUnmount, mount, type VueWrapper } from '@vue/test-utils';
-import { nextTick, readonly, ref } from 'vue';
+import { enableAutoUnmount, mount } from '@vue/test-utils';
+import { nextTick } from 'vue';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import HistoryDetailPanel from '@/components/gallery/HistoryDetailPanel.vue';
 import historyDetailPanelSource from '@/components/gallery/HistoryDetailPanel.vue?raw';
 import type { HistoryEntry } from '@/types/image';
-
-interface HistoryViewHarness {
-  wrapper: VueWrapper;
-}
 
 enableAutoUnmount(afterEach);
 
@@ -37,54 +33,14 @@ function extractStyleRules(selector: string): string[] {
   return Array.from(historyDetailPanelSource.matchAll(rulePattern), (match) => match[1] ?? '');
 }
 
+function extractStyleRule(selector: string): string {
+  return extractStyleRules(selector)[0] ?? '';
+}
+
 function expectStyleDeclaration(rule: string, property: string, value: string): void {
   const escapedProperty = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const escapedValue = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   expect(rule).toMatch(new RegExp(`(?:^|[;\\s])${escapedProperty}\\s*:\\s*${escapedValue}\\s*;`));
-}
-
-async function mountHistoryView(entry = createEntry()): Promise<HistoryViewHarness> {
-  vi.resetModules();
-
-  const entries = ref<HistoryEntry[]>([entry]);
-  const isHydrating = ref(false);
-  const hydrateError = ref<Error | null>(null);
-
-  vi.doMock('vue-router', () => ({
-    useRouter: () => ({
-      push: vi.fn(() => Promise.resolve()),
-    }),
-  }));
-
-  vi.doMock('@/composables/useImageHistory', () => ({
-    useImageHistory: () => ({
-      entries: readonly(entries),
-      isHydrating: readonly(isHydrating),
-      hydrateError: readonly(hydrateError),
-      refresh: vi.fn(() => Promise.resolve()),
-      remove: vi.fn(() => Promise.resolve()),
-    }),
-  }));
-
-  vi.doMock('@/components/gallery/HistoryGrid.vue', () => ({
-    default: {
-      name: 'HistoryGridStub',
-      props: {
-        entries: {
-          type: Array,
-          required: true,
-        },
-      },
-      emits: ['select', 'expand', 'remove', 'copy-id'],
-      template:
-        '<div class="history-grid-stub"><button type="button" class="history-grid-stub__select" @click="$emit(\'select\', entries[0])">打开详情</button></div>',
-    },
-  }));
-
-  const HistoryView = (await import('@/views/HistoryView.vue')).default;
-  const wrapper = mount(HistoryView, { attachTo: document.body });
-
-  return { wrapper };
 }
 
 afterEach(() => {
@@ -119,15 +75,15 @@ describe('HistoryDetailPanel', () => {
 
     const promptField = wrapper.get('.detail-panel__prompt-field').element as HTMLTextAreaElement;
     const titleRule = extractStyleRules('.detail-panel__title')[0] ?? '';
-    const promptFieldRule = extractStyleRules('.detail-panel__prompt-field')[0] ?? '';
+    const promptFieldRule = extractStyleRule('.detail-panel__prompt-field');
 
     expect(wrapper.get('#history-detail-title').text()).toBe('一间暖色调的复古影像工作室');
     expect(wrapper.get('.detail-panel__prompt-row dt').text()).toBe('提示词');
     expect(promptField.value).toBe(prompt);
     expect(promptField.readOnly).toBe(true);
-    expect(titleRule).toMatch(/font-size:\s*clamp\(23px,\s*2\.4vw,\s*28px\)/);
-    expectStyleDeclaration(promptFieldRule, 'border-radius', 'var(--radius-xs)');
-    expectStyleDeclaration(promptFieldRule, 'box-shadow', 'none');
+    expectStyleDeclaration(titleRule, 'font-size', 'var(--text-section-title-size)');
+    expectStyleDeclaration(promptFieldRule, 'min-height', '92px');
+    expectStyleDeclaration(promptFieldRule, 'font-size', 'var(--text-body-sm-size)');
   });
 
   it('can mount directly in enlarged image preview mode', () => {
@@ -156,7 +112,7 @@ describe('HistoryDetailPanel', () => {
     });
 
     const imageButton = wrapper.get('.detail-panel__image-button');
-    expect(imageButton.attributes('aria-label')).toBe('放大查看选中的历史图片');
+    expect(imageButton.attributes('aria-label')).toBe('放大查看选中的资产图片');
 
     await imageButton.trigger('click');
     await nextTick();
@@ -186,16 +142,14 @@ describe('HistoryDetailPanel', () => {
     await wrapper.get('.detail-panel__image-button').trigger('click');
 
     const actionButtonRule = extractStyleRules('.detail-panel__actions .claude-button')[0] ?? '';
-    const removeButtonRule =
-      extractStyleRules('.detail-panel__actions .detail-panel__remove')[0] ?? '';
+    const removeButtonRule = extractStyleRule('.detail-panel__remove');
     const stageRule = extractStyleRules('.detail-panel__viewer-stage')[0] ?? '';
     const imageRule = extractStyleRules('.detail-panel__viewer-stage img')[0] ?? '';
 
     expect(wrapper.get('.detail-panel').classes()).toContain('detail-panel--expanded');
     expectStyleDeclaration(actionButtonRule, 'box-shadow', 'none');
     expectStyleDeclaration(actionButtonRule, 'filter', 'none');
-    expectStyleDeclaration(removeButtonRule, 'box-shadow', 'none');
-    expectStyleDeclaration(removeButtonRule, 'filter', 'none');
+    expectStyleDeclaration(removeButtonRule, 'padding', '0 var(--space-md)');
     expect(`${actionButtonRule}\n${removeButtonRule}`).not.toMatch(/drop-shadow/i);
     expectStyleDeclaration(stageRule, 'height', '100%');
     expectStyleDeclaration(stageRule, 'min-height', '0');
@@ -208,57 +162,5 @@ describe('HistoryDetailPanel', () => {
     expectStyleDeclaration(imageRule, 'max-height', '100%');
     expectStyleDeclaration(imageRule, 'object-fit', 'contain');
     expect(imageRule).not.toMatch(/object-fit:\s*cover/);
-  });
-});
-
-describe('HistoryView detail modal', () => {
-  it('renders only the panel download action after opening detail', async () => {
-    const { wrapper } = await mountHistoryView();
-
-    await wrapper.get('.history-grid-stub__select').trigger('click');
-    await nextTick();
-
-    const modal = wrapper.get('.history-modal__panel');
-    const downloadButtons = modal.findAll('button').filter((button) => button.text() === '下载');
-
-    expect(modal.attributes('aria-labelledby')).toBe('history-detail-title');
-    expect(wrapper.get('.history-modal__close').attributes('aria-label')).toBe('关闭历史详情');
-    expect(modal.find('.history-modal__actions').exists()).toBe(false);
-    expect(modal.findAll('.detail-panel__actions button').map((button) => button.text())).toEqual([
-      '用此提示词再生成',
-      '下载',
-      '移除',
-    ]);
-    expect(downloadButtons).toHaveLength(1);
-  });
-
-  it('keeps backdrop and Escape close behavior from the enlarged preview', async () => {
-    const { wrapper } = await mountHistoryView();
-
-    await wrapper.get('.history-grid-stub__select').trigger('click');
-    await wrapper.get('.detail-panel__image-button').trigger('click');
-    await nextTick();
-
-    expect(wrapper.get('.history-modal__panel').classes()).toContain(
-      'history-modal__panel--expanded',
-    );
-    expect(wrapper.get('.history-modal__panel').attributes('aria-labelledby')).toBe(
-      'history-detail-expanded-title',
-    );
-    expect(wrapper.get('.history-modal__close').attributes('aria-label')).toBe(
-      '关闭历史图片放大预览',
-    );
-
-    await wrapper.get('.history-modal').trigger('click');
-    await nextTick();
-
-    expect(wrapper.find('.history-modal').exists()).toBe(false);
-
-    await wrapper.get('.history-grid-stub__select').trigger('click');
-    await wrapper.get('.detail-panel__image-button').trigger('click');
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-    await nextTick();
-
-    expect(wrapper.find('.history-modal').exists()).toBe(false);
   });
 });

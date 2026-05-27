@@ -31,6 +31,15 @@ const props = withDefaults(defineProps<Props>(), {
   mode: 'discover',
 });
 
+const HERO_PROMPT_SUGGESTIONS = [
+  '一间清晨阳光洒入的复古书房，木质书桌上摆着咖啡、手稿与一束白色小花。',
+  '雨夜城市街角的电影感人像，霓虹倒影铺在湿润路面，色调克制而温暖。',
+  '为独立咖啡品牌设计一张极简海报，奶油色背景、手写字标与柔和产品摄影。',
+  '一只戴着丝绒披肩的橘猫坐在老式相机旁，像旧杂志封面的主角。',
+  '未来感植物实验室，透明玻璃温室里漂浮着发光叶片与细密水雾。',
+] as const;
+const DEFAULT_HERO_PROMPT_SUGGESTION = HERO_PROMPT_SUGGESTIONS[0];
+
 const route = useRoute();
 const router = useRouter();
 const { entries, batches, removeBatch } = useImageHistory();
@@ -51,6 +60,32 @@ interface PendingGeneration {
   errorMessage?: string;
 }
 
+interface GenerationFeedPendingItem {
+  type: 'pending';
+  key: string;
+  prompt: string;
+  model: string;
+  createdAt: string;
+  statusLabel: string;
+  entries: HistoryEntry[];
+  snapshot: PendingGeneration;
+  errorMessage?: string;
+}
+
+interface GenerationFeedBatchItem {
+  type: 'batch';
+  key: string;
+  prompt: string;
+  model: string;
+  createdAt: string;
+  statusLabel: string;
+  entries: HistoryEntry[];
+  batch: GroupedBatch;
+  isActive: boolean;
+}
+
+type GenerationFeedItem = GenerationFeedPendingItem | GenerationFeedBatchItem;
+
 const prompt = ref('');
 const model = ref('gpt-image-2');
 const count = ref<number>(DEFAULT_COUNT);
@@ -66,9 +101,29 @@ const modelMenuOpen = ref(false);
 const aspectButtonRef = ref<HTMLButtonElement | null>(null);
 const modelButtonRef = ref<HTMLButtonElement | null>(null);
 const selectedRecentEntry = ref<HistoryEntry | null>(null);
+const isHeroPromptFocused = ref(false);
+const activeHeroSuggestion = ref<string>(DEFAULT_HERO_PROMPT_SUGGESTION);
+const streamedHeroSuggestion = ref<string>('');
+const hasReducedMotion = ref(false);
 let pendingGenerationId = 0;
+let heroSuggestionTimer: number | null = null;
+let heroSuggestionIndex = 0;
+let heroSuggestionCharIndex = 0;
+let reducedMotionMediaQuery: MediaQueryList | null = null;
+let isHeroSuggestionReady = false;
 
 const modelOptions = ['gpt-image-2'] as const;
+
+const fallbackLastBatch = computed<GroupedBatch | null>(() => {
+  if (!lastBatch.value) return null;
+  return {
+    batchId: lastBatch.value.batchId,
+    createdAt: lastBatch.value.entries[0]?.record.createdAt ?? new Date().toISOString(),
+    prompt: lastBatch.value.entries[0]?.record.prompt ?? prompt.value,
+    model: lastBatch.value.entries[0]?.record.model ?? model.value,
+    entries: [...lastBatch.value.entries],
+  };
+});
 
 const displayedBatch = computed<GroupedBatch | null>(() => {
   if (activeBatchId.value) {
@@ -78,44 +133,87 @@ const displayedBatch = computed<GroupedBatch | null>(() => {
   if (lastBatch.value) {
     const fromLast = batches.value.find((batch) => batch.batchId === lastBatch.value?.batchId);
     if (fromLast) return fromLast;
-    return {
-      batchId: lastBatch.value.batchId,
-      createdAt: lastBatch.value.entries[0]?.record.createdAt ?? new Date().toISOString(),
-      prompt: lastBatch.value.entries[0]?.record.prompt ?? prompt.value,
-      model: lastBatch.value.entries[0]?.record.model ?? model.value,
-      entries: [...lastBatch.value.entries],
-    };
+    return fallbackLastBatch.value;
   }
-  return null;
+  return batches.value[0] ?? null;
+});
+
+const generationFeedItems = computed<GenerationFeedItem[]>(() => {
+  const items: GenerationFeedItem[] = [];
+  const pending = pendingGeneration.value;
+
+  if (pending) {
+    const matchedBatch = activeBatchId.value
+      ? batches.value.find((batch) => batch.batchId === activeBatchId.value)
+      : null;
+    if (!matchedBatch || isLoading.value || pending.errorMessage) {
+      items.push({
+        type: 'pending',
+        key: `pending-${pending.id}`,
+        prompt: pending.prompt,
+        model: pending.model,
+        createdAt: pending.submittedAt,
+        statusLabel: pending.errorMessage ? '生成失败' : '生成中...',
+        entries: [],
+        snapshot: pending,
+        ...(pending.errorMessage !== undefined ? { errorMessage: pending.errorMessage } : {}),
+      });
+    }
+  }
+
+  for (const batch of batches.value) {
+    items.push({
+      type: 'batch',
+      key: batch.batchId,
+      prompt: batch.prompt,
+      model: batch.model,
+      createdAt: batch.createdAt,
+      statusLabel: '已保存',
+      entries: batch.entries,
+      batch,
+      isActive: batch.batchId === activeBatchId.value,
+    });
+  }
+
+  const fallback = fallbackLastBatch.value;
+  const hasFallback = items.some(
+    (item) => item.type === 'batch' && item.batch.batchId === fallback?.batchId,
+  );
+  if (fallback && !hasFallback) {
+    items.push({
+      type: 'batch',
+      key: fallback.batchId,
+      prompt: fallback.prompt,
+      model: fallback.model,
+      createdAt: fallback.createdAt,
+      statusLabel: '已保存',
+      entries: fallback.entries,
+      batch: fallback,
+      isActive: fallback.batchId === activeBatchId.value,
+    });
+  }
+
+  return items;
 });
 
 const hasGeneratedSurface = computed(
-  () => pendingGeneration.value !== null || displayedBatch.value !== null,
+  () => pendingGeneration.value !== null || generationFeedItems.value.length > 0,
 );
 const isGenerateWorkspace = computed(() => props.mode === 'generate');
-const hasActiveSurface = computed(() => hasGeneratedSurface.value || isGenerateWorkspace.value);
+const hasActiveSurface = computed(
+  () =>
+    isGenerateWorkspace.value || (props.mode === 'discover' && pendingGeneration.value !== null),
+);
 const shouldShowWorkspaceEmpty = computed(
   () => isGenerateWorkspace.value && !hasGeneratedSurface.value,
 );
-const currentResultEntries = computed(() => displayedBatch.value?.entries ?? []);
 const galleryEntries = computed(() => entries.value.filter((entry) => entry.record.isPublic));
-const isGeneratingSurface = computed(() => pendingGeneration.value !== null && isLoading.value);
-const generationErrorMessage = computed(() => pendingGeneration.value?.errorMessage ?? null);
-const hasGenerationError = computed(
-  () => generationErrorMessage.value !== null && displayedBatch.value === null,
+const shouldShowHeroSuggestion = computed(
+  () => !hasActiveSurface.value && prompt.value.length === 0 && !isHeroPromptFocused.value,
 );
-const canSaveCurrent = computed(() => currentResultEntries.value.length > 0 && !isLoading.value);
-const surfacePrompt = computed(
-  () => pendingGeneration.value?.prompt ?? displayedBatch.value?.prompt ?? '新的生成',
+const heroSuggestionText = computed(() =>
+  hasReducedMotion.value ? activeHeroSuggestion.value : streamedHeroSuggestion.value,
 );
-const surfaceModel = computed(
-  () => pendingGeneration.value?.model ?? displayedBatch.value?.model ?? model.value,
-);
-const surfaceModelLabel = computed(() => modelDisplayName(surfaceModel.value));
-const surfaceDateLabel = computed(() =>
-  formatStageDate(pendingGeneration.value?.submittedAt ?? displayedBatch.value?.createdAt),
-);
-
 const canGenerate = computed(() => prompt.value.trim().length > 0 && !isLoading.value);
 const modeLabel = computed(() => (selectedFile.value ? '参考图生成' : '提示词生成'));
 const selectedFileSummary = computed(() => (selectedFile.value ? '1' : '0'));
@@ -161,9 +259,24 @@ watch(batches, (nextBatches) => {
   if (!exists) activeBatchId.value = null;
 });
 
+watch(shouldShowHeroSuggestion, (isVisible) => {
+  if (!isHeroSuggestionReady) return;
+  if (!isVisible || hasReducedMotion.value) {
+    stopHeroSuggestionTimer();
+    return;
+  }
+  if (heroSuggestionCharIndex >= activeHeroSuggestion.value.length) {
+    scheduleNextHeroSuggestion();
+  } else {
+    scheduleHeroSuggestionTick(220);
+  }
+});
+
 async function handleSubmit(): Promise<void> {
   if (!canGenerate.value) return;
-  await runGeneration(createSnapshotFromCurrentComposer());
+  const snapshot = createSnapshotFromCurrentComposer();
+  if (props.mode === 'discover') void router.push('/generate');
+  await runGeneration(snapshot);
 }
 
 function createSnapshotFromCurrentComposer(): PendingGeneration {
@@ -221,6 +334,7 @@ async function runGeneration(snapshot: PendingGeneration): Promise<void> {
   try {
     const result = await generate(optionsFromSnapshot(snapshot));
     activeBatchId.value = result.batchId;
+    if (pendingGeneration.value?.id === snapshot.id) pendingGeneration.value = null;
     await refreshQuota();
     ElMessage.success(`已生成 ${result.entries.length} 张图片，并保存到历史记录。`);
   } catch (unknownError) {
@@ -324,6 +438,14 @@ function handleHeroPromptKeydown(event: KeyboardEvent): void {
   void handleSubmit();
 }
 
+function handleHeroPromptFocus(): void {
+  isHeroPromptFocused.value = true;
+}
+
+function handleHeroPromptBlur(): void {
+  isHeroPromptFocused.value = false;
+}
+
 function handleDragEnter(): void {
   if (!isLoading.value) isComposerDragging.value = true;
 }
@@ -364,33 +486,70 @@ function firstClipboardImageFile(data: DataTransfer | null): File | null {
 async function handleDownload(entry: HistoryEntry): Promise<void> {
   await downloadUrl(entry.imageUrl, entry.record.id);
 }
-async function handleEditPrompt(): Promise<void> {
-  const snapshot = pendingGeneration.value ?? displayedBatch.value;
+
+async function handleEditPrompt(
+  item: GenerationFeedItem | PendingGeneration | GroupedBatch | null = null,
+): Promise<void> {
+  const snapshot = snapshotFromEditableTarget(item ?? pendingGeneration.value ?? displayedBatch.value);
   if (!snapshot) return;
   prompt.value = snapshot.prompt;
   model.value = snapshot.model;
-  if ('entries' in snapshot) {
-    count.value = Math.min(MAX_COUNT, Math.max(MIN_COUNT, snapshot.entries.length));
-    aspectRatio.value = snapshot.entries[0]?.record.aspectRatio ?? DEFAULT_ASPECT_CHOICE;
-    isPublicGeneration.value = snapshot.entries.some((entry) => entry.record.isPublic);
-  } else {
-    count.value = snapshot.count;
-    aspectRatio.value = snapshot.aspectRatio;
-    isPublicGeneration.value = snapshot.isPublic;
-  }
+  count.value = snapshot.count;
+  aspectRatio.value = snapshot.aspectRatio;
+  isPublicGeneration.value = snapshot.isPublic;
   await nextTick();
   composerTextareaRef.value?.focus();
 }
 
-async function handleRegenerate(): Promise<void> {
+async function handleRegenerate(
+  item: GenerationFeedItem | PendingGeneration | GroupedBatch | null = null,
+): Promise<void> {
   if (isLoading.value) return;
-  const snapshot = pendingGeneration.value ?? displayedBatch.value;
+  const snapshot = snapshotFromEditableTarget(item ?? pendingGeneration.value ?? displayedBatch.value);
   if (!snapshot) return;
-  const nextSnapshot =
-    'entries' in snapshot
-      ? createSnapshotFromDisplayedBatch(snapshot)
-      : createSnapshotFromPending(snapshot);
+  const nextSnapshot = createSnapshotFromPending(snapshot);
   await runGeneration(nextSnapshot);
+}
+
+function snapshotFromEditableTarget(
+  target: GenerationFeedItem | PendingGeneration | GroupedBatch | null,
+): PendingGeneration | null {
+  if (!target) return null;
+  if ('type' in target) {
+    if (target.type === 'pending') return target.snapshot;
+    return createSnapshotFromDisplayedBatch(target.batch);
+  }
+  if ('batchId' in target) return createSnapshotFromDisplayedBatch(target);
+  return target;
+}
+
+function itemHasSavedImages(item: GenerationFeedItem): boolean {
+  return item.entries.length > 0;
+}
+
+function itemIsGenerating(item: GenerationFeedItem): boolean {
+  return item.type === 'pending' && isLoading.value && item.errorMessage === undefined;
+}
+
+function itemErrorMessage(item: GenerationFeedItem): string | null {
+  return item.type === 'pending' ? (item.errorMessage ?? null) : null;
+}
+
+function itemStatusMeta(item: GenerationFeedItem): string {
+  const imageCount = item.type === 'pending' ? item.snapshot.count : item.entries.length;
+  return [modelDisplayName(item.model), item.statusLabel, `${imageCount} 张图`].join(' · ');
+}
+
+async function handleSaveFeedItem(item: GenerationFeedItem): Promise<void> {
+  if (!itemHasSavedImages(item)) return;
+  try {
+    await Promise.all(item.entries.map((entry) => handleDownload(entry)));
+    ElMessage.success(
+      item.entries.length > 1 ? `已开始下载 ${item.entries.length} 张图片。` : '下载已开始。',
+    );
+  } catch {
+    ElMessage.error('下载失败，请稍后重试。');
+  }
 }
 
 function createSnapshotFromPending(snapshot: PendingGeneration): PendingGeneration {
@@ -406,19 +565,6 @@ function createSnapshotFromPending(snapshot: PendingGeneration): PendingGenerati
   };
   if (snapshot.referenceFile) next.referenceFile = snapshot.referenceFile;
   return next;
-}
-
-async function handleSaveCurrent(): Promise<void> {
-  const batch = displayedBatch.value;
-  if (!batch) return;
-  try {
-    await Promise.all(batch.entries.map((entry) => handleDownload(entry)));
-    ElMessage.success(
-      batch.entries.length > 1 ? `已开始下载 ${batch.entries.length} 张图片。` : '下载已开始。',
-    );
-  } catch {
-    ElMessage.error('下载失败，请稍后重试。');
-  }
 }
 
 function decreaseCount(): void {
@@ -466,12 +612,114 @@ function handleDocumentClick(event: MouseEvent): void {
   modelMenuOpen.value = false;
 }
 
+function initializeHeroSuggestion(): void {
+  heroSuggestionIndex = randomSuggestionIndex();
+  setActiveHeroSuggestion(
+    HERO_PROMPT_SUGGESTIONS[heroSuggestionIndex] ?? DEFAULT_HERO_PROMPT_SUGGESTION,
+  );
+}
+
+function randomSuggestionIndex(): number {
+  return Math.floor(Math.random() * HERO_PROMPT_SUGGESTIONS.length);
+}
+
+function setActiveHeroSuggestion(suggestion: string): void {
+  activeHeroSuggestion.value = suggestion;
+  if (hasReducedMotion.value) {
+    streamedHeroSuggestion.value = suggestion;
+    heroSuggestionCharIndex = suggestion.length;
+  } else {
+    heroSuggestionCharIndex = Math.min(1, suggestion.length);
+    streamedHeroSuggestion.value = suggestion.slice(0, heroSuggestionCharIndex);
+  }
+}
+
+function scheduleHeroSuggestionTick(delay = 120): void {
+  if (!isHeroSuggestionReady || !shouldShowHeroSuggestion.value) return;
+  stopHeroSuggestionTimer();
+  heroSuggestionTimer = window.setTimeout(runHeroSuggestionTick, delay);
+}
+
+function runHeroSuggestionTick(): void {
+  if (hasReducedMotion.value) {
+    stopHeroSuggestionTimer();
+    streamedHeroSuggestion.value = activeHeroSuggestion.value;
+    return;
+  }
+
+  if (heroSuggestionCharIndex < activeHeroSuggestion.value.length) {
+    heroSuggestionCharIndex += 1;
+    streamedHeroSuggestion.value = activeHeroSuggestion.value.slice(0, heroSuggestionCharIndex);
+    scheduleHeroSuggestionTick(72 + Math.round(Math.random() * 58));
+    return;
+  }
+
+  scheduleNextHeroSuggestion();
+}
+
+function scheduleNextHeroSuggestion(): void {
+  if (!isHeroSuggestionReady || !shouldShowHeroSuggestion.value) return;
+  stopHeroSuggestionTimer();
+  heroSuggestionTimer = window.setTimeout(() => {
+    heroSuggestionIndex = nextSuggestionIndex(heroSuggestionIndex);
+    setActiveHeroSuggestion(
+      HERO_PROMPT_SUGGESTIONS[heroSuggestionIndex] ?? DEFAULT_HERO_PROMPT_SUGGESTION,
+    );
+    scheduleHeroSuggestionTick(220);
+  }, 2400 + Math.round(Math.random() * 900));
+}
+
+function nextSuggestionIndex(currentIndex: number): number {
+  if (HERO_PROMPT_SUGGESTIONS.length <= 1) return 0;
+  let nextIndex = randomSuggestionIndex();
+  if (nextIndex === currentIndex) nextIndex = (nextIndex + 1) % HERO_PROMPT_SUGGESTIONS.length;
+  return nextIndex;
+}
+
+function stopHeroSuggestionTimer(): void {
+  if (heroSuggestionTimer === null) return;
+  window.clearTimeout(heroSuggestionTimer);
+  heroSuggestionTimer = null;
+}
+
+function handleReducedMotionChange(event: MediaQueryListEvent): void {
+  hasReducedMotion.value = event.matches;
+  if (event.matches) {
+    stopHeroSuggestionTimer();
+    streamedHeroSuggestion.value = activeHeroSuggestion.value;
+    heroSuggestionCharIndex = activeHeroSuggestion.value.length;
+  } else {
+    setActiveHeroSuggestion(activeHeroSuggestion.value);
+    if (shouldShowHeroSuggestion.value) scheduleHeroSuggestionTick(180);
+  }
+}
+
 onMounted(() => {
   document.addEventListener('click', handleDocumentClick);
+  isHeroSuggestionReady = true;
+  initializeHeroSuggestion();
+  if (typeof window.matchMedia === 'function') {
+    reducedMotionMediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    hasReducedMotion.value = reducedMotionMediaQuery.matches;
+    if (hasReducedMotion.value) {
+      streamedHeroSuggestion.value = activeHeroSuggestion.value;
+      heroSuggestionCharIndex = activeHeroSuggestion.value.length;
+    } else {
+      heroSuggestionCharIndex = Math.min(1, activeHeroSuggestion.value.length);
+      streamedHeroSuggestion.value = activeHeroSuggestion.value.slice(0, heroSuggestionCharIndex);
+      if (shouldShowHeroSuggestion.value) scheduleHeroSuggestionTick(180);
+    }
+    reducedMotionMediaQuery.addEventListener('change', handleReducedMotionChange);
+  } else {
+    if (shouldShowHeroSuggestion.value) scheduleHeroSuggestionTick(180);
+  }
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick);
+  isHeroSuggestionReady = false;
+  stopHeroSuggestionTimer();
+  reducedMotionMediaQuery?.removeEventListener('change', handleReducedMotionChange);
 });
 
 function goToHistoryPage(): void {
@@ -644,82 +892,80 @@ function formatStageDate(iso: string | undefined): string {
             <p class="generation-item__date">生成工作区</p>
             <h1 class="generation-item__prompt">从下方输入框开始生成图片</h1>
             <span class="generation-item__model">✦ {{ modelDisplayName(model) }}</span>
-
-            <div class="generation-visual" aria-label="生成结果占位区">
-              <div class="generation-empty-card" aria-hidden="true">
-                <span class="generation-empty-card__mark">✣</span>
-              </div>
-            </div>
           </article>
 
-          <article
-            v-else
-            class="generation-item"
-            :class="{
-              'generation-item--loading': isGeneratingSurface,
-              'generation-item--error': hasGenerationError,
-            }"
-          >
-            <p class="generation-item__date">{{ surfaceDateLabel }}</p>
-            <h1 class="generation-item__prompt" :title="surfacePrompt">{{ surfacePrompt }}</h1>
-            <span class="generation-item__model">✦ {{ surfaceModelLabel }}</span>
+          <div v-else class="generation-feed" aria-label="生成结果记录">
+            <article
+              v-for="item in generationFeedItems"
+              :key="item.key"
+              class="generation-item"
+              :class="{
+                'generation-item--loading': itemIsGenerating(item),
+                'generation-item--error': itemErrorMessage(item),
+                'generation-item--active': item.type === 'batch' && item.isActive,
+              }"
+            >
+              <p class="generation-item__date">{{ formatStageDate(item.createdAt) }}</p>
+              <h2 class="generation-item__prompt" :title="item.prompt">{{ item.prompt }}</h2>
+              <span class="generation-item__model">✦ {{ itemStatusMeta(item) }}</span>
 
-            <div class="generation-visual" :aria-busy="isGeneratingSurface">
-              <div
-                v-if="currentResultEntries.length > 0"
-                class="generation-result-grid"
-                :class="{ 'generation-result-grid--multiple': currentResultEntries.length > 1 }"
-              >
-                <figure
-                  v-for="(entry, index) in currentResultEntries"
-                  :key="entry.record.id"
-                  class="generated-figure"
+              <div class="generation-visual" :aria-busy="itemIsGenerating(item)">
+                <div
+                  v-if="itemHasSavedImages(item)"
+                  class="generation-result-grid"
+                  :class="{ 'generation-result-grid--multiple': item.entries.length > 1 }"
                 >
-                  <div class="generated-figure__frame">
-                    <img :src="entry.imageUrl" :alt="`生成结果图片 ${index + 1}`" />
-                  </div>
-                </figure>
+                  <figure
+                    v-for="(entry, index) in item.entries"
+                    :key="entry.record.id"
+                    class="generated-figure"
+                  >
+                    <div class="generated-figure__frame">
+                      <img :src="entry.imageUrl" :alt="`生成结果图片 ${index + 1}`" />
+                    </div>
+                  </figure>
+                </div>
+
+                <div v-else-if="itemIsGenerating(item)" class="generation-placeholder" role="status">
+                  <span class="generation-badge">生成中...</span>
+                  <span class="generation-placeholder__status">{{ statusMessage }}</span>
+                </div>
+
+                <div v-else class="generation-error-card" role="alert">
+                  <span>生成失败</span>
+                  <p>{{ itemErrorMessage(item) ?? error?.message ?? '生成失败，请稍后重试。' }}</p>
+                </div>
               </div>
 
-              <div v-else-if="isGeneratingSurface" class="generation-placeholder" role="status">
-                <span class="generation-badge">生成中...</span>
-                <span class="generation-placeholder__status">{{ statusMessage }}</span>
+              <div class="generation-actions" aria-label="生成操作">
+                <button
+                  type="button"
+                  class="generation-action claude-button claude-button--secondary"
+                  :disabled="isLoading"
+                  @click="handleEditPrompt(item)"
+                >
+                  ✎ 重新编辑
+                </button>
+                <button
+                  type="button"
+                  class="generation-action claude-button claude-button--secondary"
+                  :disabled="isLoading"
+                  @click="handleRegenerate(item)"
+                >
+                  ↻ 再次生成
+                </button>
+                <button
+                  v-if="itemHasSavedImages(item)"
+                  type="button"
+                  class="generation-action claude-button claude-button--secondary"
+                  :disabled="isLoading"
+                  @click="handleSaveFeedItem(item)"
+                >
+                  ↓ 保存
+                </button>
               </div>
-
-              <div v-else class="generation-error-card" role="alert">
-                <span>生成失败</span>
-                <p>{{ generationErrorMessage ?? error?.message ?? '生成失败，请稍后重试。' }}</p>
-              </div>
-            </div>
-
-            <div class="generation-actions" aria-label="生成操作">
-              <button
-                type="button"
-                class="generation-action claude-button claude-button--secondary"
-                :disabled="isLoading"
-                @click="handleEditPrompt"
-              >
-                ✎ 重新编辑
-              </button>
-              <button
-                type="button"
-                class="generation-action claude-button claude-button--secondary"
-                :disabled="isLoading"
-                @click="handleRegenerate"
-              >
-                ↻ 再次生成
-              </button>
-              <button
-                v-if="currentResultEntries.length > 0"
-                type="button"
-                class="generation-action claude-button claude-button--secondary"
-                :disabled="!canSaveCurrent"
-                @click="handleSaveCurrent"
-              >
-                ↓ 保存
-              </button>
-            </div>
-          </article>
+            </article>
+          </div>
         </section>
 
         <template v-else>
@@ -749,15 +995,30 @@ function formatStageDate(iso: string | undefined): string {
               >
                 +
               </button>
-              <textarea
-                v-model="prompt"
-                class="prompt-showcase__input"
-                name="heroPrompt"
-                placeholder="请输入你的创意（按 Enter 发送，Shift+Enter 换行）"
-                :disabled="isLoading"
-                @keydown="handleHeroPromptKeydown"
-                @paste="handlePaste"
-              />
+              <div class="prompt-showcase__input-wrap">
+                <p
+                  v-if="shouldShowHeroSuggestion"
+                  class="prompt-showcase__suggestion"
+                  aria-hidden="true"
+                >
+                  <span>{{ heroSuggestionText }}</span>
+                  <i v-if="!hasReducedMotion" aria-hidden="true" />
+                </p>
+                <textarea
+                  v-model="prompt"
+                  class="prompt-showcase__input"
+                  name="heroPrompt"
+                  aria-label="描述你想生成的画面"
+                  :placeholder="
+                    shouldShowHeroSuggestion ? '' : '请输入你的创意（按 Enter 发送，Shift+Enter 换行）'
+                  "
+                  :disabled="isLoading"
+                  @focus="handleHeroPromptFocus"
+                  @blur="handleHeroPromptBlur"
+                  @keydown="handleHeroPromptKeydown"
+                  @paste="handlePaste"
+                />
+              </div>
               <div v-if="selectedFile" class="prompt-showcase__attachment">
                 <span>参考图已添加</span>
                 <button type="button" :disabled="isLoading" @click="clear">移除</button>
@@ -1010,6 +1271,16 @@ function formatStageDate(iso: string | undefined): string {
         <span class="prompt-showcase__mode" aria-live="polite">{{ modeLabel }}</span>
         <button
           type="button"
+          class="prompt-showcase__public"
+          :class="{ 'prompt-showcase__public--active': isPublicGeneration }"
+          :aria-pressed="isPublicGeneration"
+          :disabled="isLoading"
+          @click="togglePublicGeneration"
+        >
+          公开 <i aria-hidden="true" />
+        </button>
+        <button
+          type="button"
           class="prompt-showcase__generate claude-button claude-button--primary"
           :disabled="!canGenerate"
           @click="handleSubmit"
@@ -1228,12 +1499,17 @@ function formatStageDate(iso: string | undefined): string {
 }
 
 .studio--stage {
-  --stage-rail-width: min(calc(100vw - var(--app-sidebar-width) - 92px), 960px);
+  --stage-rail-width: min(
+    calc(100vw - var(--app-sidebar-width) - var(--sidebar-width) - 92px),
+    960px
+  );
+  --generation-card-width: 304px;
+  --generation-feed-align-offset: 8px;
 
-  display: flex;
+  display: grid;
   min-height: calc(100vh - var(--topbar-height));
-  flex-direction: column;
-  align-items: center;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  align-items: stretch;
   overflow-x: hidden;
   isolation: isolate;
 }
@@ -1277,6 +1553,7 @@ function formatStageDate(iso: string | undefined): string {
 
 .studio--stage .studio__main {
   z-index: 1;
+  grid-column: 1 / -1;
   width: 100%;
   min-height: calc(100vh - var(--topbar-height));
   overflow: visible;
@@ -1295,38 +1572,47 @@ function formatStageDate(iso: string | undefined): string {
   align-items: flex-start;
   justify-content: flex-start;
   margin: 0 auto;
-  padding: 74px 0 0;
+  padding: 68px 0 0;
+}
+
+.generation-feed {
+  display: flex;
+  width: min(100%, var(--generation-card-width));
+  flex-direction: column;
+  gap: 48px;
+  transform: translateX(var(--generation-feed-align-offset));
 }
 
 .generation-item {
   display: flex;
   width: 100%;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   color: var(--color-ink);
+  scroll-margin: 96px;
   text-align: left;
 }
 
 .generation-item__date {
-  width: min(100%, 420px);
-  margin: 0 0 16px;
+  width: 100%;
+  margin: 0 0 10px;
   color: var(--color-muted);
-  font-size: var(--text-body-sm-size);
-  font-weight: 600;
+  font-size: var(--text-caption-size);
+  font-weight: 700;
   letter-spacing: 0.01em;
 }
 
 .generation-item__prompt {
   display: -webkit-box;
-  width: min(100%, 420px);
-  max-height: 4.65em;
-  margin: 0 0 14px;
+  width: 100%;
+  max-height: 4.4em;
+  margin: 0 0 8px;
   overflow: hidden;
   color: var(--color-body-strong);
   cursor: help;
-  font-size: var(--text-body-size);
+  font-size: 15px;
   font-weight: var(--font-weight-title);
-  line-height: 1.55;
+  line-height: 1.48;
   overflow-wrap: anywhere;
   text-overflow: ellipsis;
   white-space: normal;
@@ -1337,28 +1623,33 @@ function formatStageDate(iso: string | undefined): string {
 
 .generation-item__model {
   display: inline-flex;
-  width: min(100%, 420px);
+  width: 100%;
   align-items: center;
   align-self: flex-start;
   gap: 6px;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
   color: var(--color-muted);
   font-size: var(--text-caption-size);
   font-weight: 800;
   letter-spacing: -0.01em;
 }
 
+.generation-item--active .generation-item__date::after {
+  content: ' · 当前';
+  color: var(--color-body);
+  font-weight: 800;
+}
+
 .generation-visual {
   display: grid;
   width: 100%;
-  justify-items: start;
+  justify-items: stretch;
 }
 
 .generation-placeholder,
 .generation-error-card,
-.generation-empty-card,
 .generated-figure__frame {
-  width: min(100%, 320px);
+  width: 100%;
   aspect-ratio: 1;
   border: 1px solid var(--color-hairline-soft);
   border-radius: var(--radius-image-lg);
@@ -1427,13 +1718,13 @@ function formatStageDate(iso: string | undefined): string {
 
 .generation-result-grid {
   display: grid;
-  width: min(100%, 320px);
-  gap: 14px;
+  width: 100%;
+  gap: 12px;
 }
 
 .generation-result-grid--multiple {
-  width: min(100%, 680px);
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .generated-figure {
@@ -1484,42 +1775,21 @@ function formatStageDate(iso: string | undefined): string {
   cursor: default;
 }
 
-.generation-empty-card {
-  display: grid;
-  place-items: center;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.6) 1px, transparent 1px) 0 0 / 32px 32px,
-    linear-gradient(rgba(255, 255, 255, 0.6) 1px, transparent 1px) 0 0 / 32px 32px,
-    linear-gradient(145deg, rgba(253, 252, 255, 0.9), rgba(245, 241, 232, 0.86));
-  color: oklch(69% 0.012 78deg);
-}
-
-.generation-empty-card__mark {
-  display: grid;
-  width: 72px;
-  height: 72px;
-  place-items: center;
-  border: 1px dashed var(--color-hairline);
-  border-radius: var(--radius-md);
-  background: var(--color-overlay);
-  font-size: 28px;
-}
-
 .generation-actions {
   display: inline-flex;
+  width: 100%;
   flex-wrap: wrap;
   justify-content: flex-start;
-  gap: 12px;
-  width: min(100%, 420px);
-  margin-top: 22px;
+  gap: 10px;
+  margin-top: 16px;
 }
 
 .generation-action {
-  min-height: 38px;
+  min-height: 34px;
   border-radius: var(--radius-pill);
-  font-size: var(--text-label-size);
+  font-size: 12px;
   font-weight: 800;
-  padding: 0 17px;
+  padding: 0 14px;
   box-shadow: var(--shadow-button-soft);
 }
 
@@ -1635,7 +1905,15 @@ function formatStageDate(iso: string | undefined): string {
   font-weight: 500;
 }
 
+.prompt-showcase__input-wrap {
+  position: relative;
+  min-width: 0;
+}
+
 .prompt-showcase__input {
+  position: relative;
+  z-index: 1;
+  width: 100%;
   height: 96px;
   min-width: 0;
   resize: none;
@@ -1651,6 +1929,46 @@ function formatStageDate(iso: string | undefined): string {
 .prompt-showcase__input::placeholder {
   color: var(--field-placeholder);
   opacity: 0.82;
+}
+
+.prompt-showcase__suggestion {
+  position: absolute;
+  top: 28px;
+  right: 24px;
+  left: 0;
+  z-index: 0;
+  display: block;
+  margin: 0;
+  overflow: hidden;
+  color: var(--field-placeholder);
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  white-space: pre-wrap;
+}
+
+.prompt-showcase__suggestion i {
+  display: inline-block;
+  width: 1px;
+  height: 1.1em;
+  margin-left: 2px;
+  background: currentColor;
+  opacity: 0.58;
+  transform: translateY(0.18em);
+  animation: suggestion-caret 1200ms steps(1, end) infinite;
+}
+
+@keyframes suggestion-caret {
+  0%,
+  45% {
+    opacity: 0.58;
+  }
+
+  46%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .prompt-showcase__attachment {
@@ -1935,6 +2253,10 @@ function formatStageDate(iso: string | undefined): string {
   padding-top: 24px;
 }
 
+.prompt-showcase--dock .prompt-showcase__input-wrap {
+  display: contents;
+}
+
 .prompt-showcase__attachment--rich {
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr) auto;
@@ -2065,7 +2387,8 @@ function formatStageDate(iso: string | undefined): string {
   .hero-rise,
   .generation-placeholder::before,
   .generation-placeholder::after,
-  .generated-figure__frame {
+  .generated-figure__frame,
+  .prompt-showcase__suggestion i {
     animation: none;
   }
 
@@ -2122,6 +2445,8 @@ function formatStageDate(iso: string | undefined): string {
 
   .studio--stage {
     --stage-rail-width: min(calc(100vw - 24px), 720px);
+    --generation-card-width: min(100%, 300px);
+    --generation-feed-align-offset: 0px;
   }
 
   .prompt-showcase--dock {
@@ -2137,16 +2462,23 @@ function formatStageDate(iso: string | undefined): string {
     padding: 42px 0 0;
   }
 
+  .generation-feed {
+    gap: 44px;
+  }
+
   .generation-item__date,
   .generation-item__prompt,
   .generation-item__model,
   .generation-visual,
   .generation-placeholder,
   .generation-error-card,
-  .generation-empty-card,
   .generated-figure__frame,
   .generation-result-grid {
-    width: min(100%, 300px);
+    width: 100%;
+  }
+
+  .generation-result-grid--multiple {
+    grid-template-columns: 1fr;
   }
 
   .prompt-showcase--dock .prompt-showcase__bar {

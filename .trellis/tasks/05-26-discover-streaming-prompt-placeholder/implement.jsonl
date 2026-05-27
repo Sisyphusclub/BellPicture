@@ -1,0 +1,6 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend stack and guideline index for Vue/Vite/custom UI conventions."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "SFC structure, Hybrid UI boundary, Simplified Chinese copy, modal a11y, Element Plus locale, and popup/modal conventions."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend lint/typecheck/test/a11y quality bar for implementation."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Strict TypeScript conventions for Vue component edits."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Avoid duplicating UI constants/patterns while adding prompt suggestion behavior."}

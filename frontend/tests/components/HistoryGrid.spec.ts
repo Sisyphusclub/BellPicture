@@ -39,7 +39,7 @@ function expectStyleDeclaration(rule: string, property: string, value: string): 
 }
 
 describe('HistoryGrid', () => {
-  it('emits selection, copy, quick enlarge, and quick remove from separate controls', async () => {
+  it('opens the gallery-style viewer from the asset thumbnail only', async () => {
     const entry = createEntry();
     const wrapper = mount(HistoryGrid, {
       props: {
@@ -47,61 +47,80 @@ describe('HistoryGrid', () => {
       },
     });
 
-    const expandButton = wrapper.get('.history-tile__action--expand');
-    const removeButton = wrapper.get('.history-tile__action--remove');
+    const thumbButton = wrapper.get('.history-tile__thumb');
 
-    expect(expandButton.text()).toBe('放大');
-    expect(removeButton.text()).toBe('删除');
-    expect(expandButton.attributes('aria-label')).toBe(`放大查看图片：${entry.record.prompt}`);
-    expect(removeButton.attributes('aria-label')).toBe(`删除历史图片：${entry.record.prompt}`);
+    expect(wrapper.get('.history-grid').attributes('aria-label')).toBe('资产列表');
+    expect(wrapper.get('.history-group__header').text()).toContain('2026年5月18日周一');
+    expect(wrapper.get('.history-tile__badge').text()).toBe('私有');
+    expect(wrapper.find('.history-tile__title').exists()).toBe(false);
+    expect(wrapper.find('.history-tile__prompt').exists()).toBe(false);
+    expect(wrapper.find('.history-tile__action').exists()).toBe(false);
+    expect(wrapper.find('.history-tile__copy').exists()).toBe(false);
+    expect(wrapper.find('.history-tile__quick-actions').exists()).toBe(false);
+    expect(wrapper.get('.history-tile__remove').attributes('aria-label')).toBe(`删除资产：${entry.record.prompt}`);
+    expect(wrapper.get('.history-tile__meta').text()).toContain('16:00');
+    expect(thumbButton.attributes('aria-label')).toBe(`查看资产详情：${entry.record.prompt}`);
 
-    await expandButton.trigger('click');
-    await removeButton.trigger('click');
+    await thumbButton.trigger('click');
 
     expect(wrapper.emitted('expand')).toEqual([[entry]]);
-    expect(wrapper.emitted('remove')).toEqual([[entry]]);
     expect(wrapper.emitted('select')).toBeUndefined();
+    expect(wrapper.emitted('remove')).toBeUndefined();
+    expect(wrapper.emitted('copy-id')).toBeUndefined();
 
-    await wrapper.get('.history-tile__thumb').trigger('click');
-    await wrapper.get('.history-tile__copy').trigger('click');
+    await wrapper.get('.history-tile__remove').trigger('click');
 
-    expect(wrapper.emitted('select')).toEqual([[entry]]);
-    expect(wrapper.emitted('copy-id')).toEqual([[entry]]);
+    expect(wrapper.emitted('remove')).toEqual([[entry]]);
   });
 
-  it('keeps quick actions as sibling hover and focus controls on a flat thumbnail frame', () => {
+  it('uses grouped square visual thumbnails for landscape, portrait, and square assets', () => {
     const wrapper = mount(HistoryGrid, {
       props: {
-        entries: [createEntry()],
+        entries: [
+          createEntry({ id: 'landscape', width: 1536, height: 1024, aspectRatio: '3:2' }),
+          createEntry({ id: 'portrait', width: 1024, height: 1536, aspectRatio: '2:3' }),
+          createEntry({ id: 'square', width: 1024, height: 1024, aspectRatio: '1:1' }),
+        ],
       },
     });
-    const mediaRule = extractStyleRules('.history-tile__media')[0] ?? '';
+    const assetsRule = extractStyleRules('.history-group__assets')[0] ?? '';
+    const tileRule = extractStyleRules('.history-tile')[0] ?? '';
+    const headingRule = extractStyleRules('.history-group__header h2')[0] ?? '';
     const thumbRule = extractStyleRules('.history-tile__thumb')[0] ?? '';
     const imageRule = extractStyleRules('.history-tile__thumb img')[0] ?? '';
-    const quickActionsRule = extractStyleRules('.history-tile__quick-actions')[0] ?? '';
-    const actionRule = extractStyleRules('.history-tile__action')[0] ?? '';
+    const badgeRule = extractStyleRules('.history-tile__badge')[0] ?? '';
+    const removeRule = extractStyleRules('.history-tile__remove')[0] ?? '';
+    const metaRule = extractStyleRules('.history-tile__meta')[0] ?? '';
 
-    expect(wrapper.find('.history-tile__media > .history-tile__thumb').exists()).toBe(true);
-    expect(wrapper.find('.history-tile__media > .history-tile__quick-actions').exists()).toBe(true);
-    expect(wrapper.find('.history-tile__thumb .history-tile__action').exists()).toBe(false);
-    expect(historyGridSource).toMatch(
-      /history-tile__media:hover \.history-tile__quick-actions,[\s\S]*history-tile__media:focus-within \.history-tile__quick-actions[\s\S]*opacity:\s*1/,
-    );
-    expect(wrapper.get('.history-tile__quick-actions').attributes('role')).toBe('group');
-    expect(historyGridSource).toContain('aria-label="图片快捷操作"');
+    expect(wrapper.find('.history-group__assets > .history-tile').exists()).toBe(true);
+    expect(wrapper.find('.history-tile__quick-actions').exists()).toBe(false);
+    expect(wrapper.find('.history-tile__action').exists()).toBe(false);
+    expect(wrapper.find('.history-tile__copy').exists()).toBe(false);
+    expect(wrapper.findAll('.history-tile')).toHaveLength(3);
+    expect(wrapper.findAll('.history-tile--landscape')).toHaveLength(0);
+    expect(wrapper.findAll('.history-tile--portrait')).toHaveLength(0);
+    expect(wrapper.findAll('.history-tile--square')).toHaveLength(0);
+    expect(historyGridSource).not.toContain('aria-label="资产快捷操作"');
 
-    expectStyleDeclaration(mediaRule, 'border-radius', 'var(--radius-sm)');
-    expectStyleDeclaration(mediaRule, 'background', 'var(--color-surface-card-solid)');
-    expectStyleDeclaration(thumbRule, 'padding', 'var(--space-xs)');
-    expectStyleDeclaration(thumbRule, 'border', '0');
-    expectStyleDeclaration(thumbRule, 'background', 'transparent');
+    expectStyleDeclaration(assetsRule, 'display', 'flex');
+    expectStyleDeclaration(assetsRule, 'flex-wrap', 'wrap');
+    expectStyleDeclaration(assetsRule, 'gap', '18px');
+    expectStyleDeclaration(headingRule, 'font-size', '14px');
+    expectStyleDeclaration(headingRule, 'font-weight', '750');
+    expectStyleDeclaration(tileRule, 'width', '196px');
+    expectStyleDeclaration(thumbRule, 'aspect-ratio', '1 / 1');
     expectStyleDeclaration(thumbRule, 'box-shadow', 'none');
-    expectStyleDeclaration(imageRule, 'padding', '0');
-    expectStyleDeclaration(imageRule, 'border-radius', 'calc(var(--radius-sm) - 2px)');
-    expectStyleDeclaration(quickActionsRule, 'opacity', '0');
-    expectStyleDeclaration(quickActionsRule, 'pointer-events', 'none');
-    expectStyleDeclaration(actionRule, 'box-shadow', 'none');
+    expectStyleDeclaration(imageRule, 'position', 'absolute');
+    expectStyleDeclaration(imageRule, 'inset', '0');
+    expectStyleDeclaration(imageRule, 'width', '100%');
+    expectStyleDeclaration(imageRule, 'height', '100%');
+    expectStyleDeclaration(imageRule, 'object-fit', 'contain');
+    expectStyleDeclaration(badgeRule, 'font-size', '11px');
+    expectStyleDeclaration(removeRule, 'right', '8px');
+    expectStyleDeclaration(removeRule, 'bottom', '8px');
+    expectStyleDeclaration(removeRule, 'width', '30px');
+    expectStyleDeclaration(removeRule, 'background', 'oklch(50% 0.006 88deg / 0.78)');
+    expectStyleDeclaration(metaRule, 'font-size', '11px');
     expect(thumbRule).not.toMatch(/(?:linear|radial)-gradient/);
-    expect(imageRule).not.toMatch(/padding:\s*12%/);
   });
 });
