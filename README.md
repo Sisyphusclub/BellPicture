@@ -215,7 +215,7 @@ npm --prefix frontend run test
 建议仓库描述：
 
 ```text
-A calm Vue + Express AI image generation studio for prompt/reference-image creation, local asset history, quotas, and admin user management.
+安静克制的 AI 图像生成工作台，支持提示词/参考图生图、本地资产历史、用户额度和管理员账号管理。
 ```
 
 建议 topics：
