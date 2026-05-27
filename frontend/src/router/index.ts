@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
-import DiscoverView from '@/views/DiscoverView.vue';
+import AdminUsersView from '@/views/AdminUsersView.vue';
 import GenerateView from '@/views/GenerateView.vue';
 import HistoryView from '@/views/HistoryView.vue';
 
@@ -10,7 +10,8 @@ export const router = createRouter({
     {
       path: '/',
       name: 'discover',
-      component: DiscoverView,
+      component: GenerateView,
+      props: { mode: 'discover' },
     },
     {
       path: '/generate',
@@ -22,6 +23,11 @@ export const router = createRouter({
       path: '/history',
       name: 'history',
       component: HistoryView,
+    },
+    {
+      path: '/admin/users',
+      name: 'admin-users',
+      component: AdminUsersView,
     },
   ],
 });

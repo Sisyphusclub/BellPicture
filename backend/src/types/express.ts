@@ -13,4 +13,5 @@ export interface AuthUser {
   username?: string | null;
   name?: string;
   image?: string | null;
+  isAdmin?: boolean;
 }

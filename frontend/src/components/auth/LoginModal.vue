@@ -9,7 +9,7 @@ import { useAuthModal } from '@/composables/useAuthModal';
 type Mode = 'sign-in' | 'sign-up';
 
 const { isOpen, close } = useAuthModal();
-const { isAuthenticated, signInWithUsername, signUpWithUsername } = useAuth();
+const { isAuthenticated, signInWithGoogle, signInWithUsername, signUpWithUsername } = useAuth();
 
 const LoginConfigProvider: Component = ElConfigProvider;
 
@@ -81,6 +81,18 @@ async function handleSignUp(): Promise<void> {
     isPending.value = false;
   }
 }
+
+async function handleGoogleSignIn(): Promise<void> {
+  if (isPending.value) return;
+  isPending.value = true;
+  try {
+    await signInWithGoogle();
+  } catch (err) {
+    ElMessage.error(err instanceof Error ? err.message : 'Google 登录暂不可用，请稍后再试。');
+  } finally {
+    isPending.value = false;
+  }
+}
 </script>
 
 <template>
@@ -122,6 +134,17 @@ async function handleSignUp(): Promise<void> {
             注册
           </button>
         </div>
+
+        <button
+          type="button"
+          class="login-modal__google"
+          :disabled="isPending"
+          aria-label="使用 Google 登录或注册"
+          @click="handleGoogleSignIn"
+        >
+          使用 Google 登录
+        </button>
+        <div class="login-modal__divider" aria-hidden="true"><span>或</span></div>
 
         <form v-if="mode === 'sign-in'" class="login-modal__form" @submit.prevent="handleSignIn">
           <label class="login-modal__field">
@@ -322,6 +345,54 @@ async function handleSignUp(): Promise<void> {
   background: var(--color-overlay);
   box-shadow: none;
   color: var(--color-ink);
+}
+
+.login-modal__google {
+  display: inline-flex;
+  width: 100%;
+  min-height: var(--control-height-lg);
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--control-radius);
+  background: var(--color-overlay);
+  box-shadow: none;
+  color: var(--color-ink);
+  cursor: pointer;
+  font-size: var(--text-body-sm-size);
+  font-weight: 800;
+}
+
+.login-modal__google:hover:not(:disabled) {
+  background: var(--color-chip);
+}
+
+.login-modal__google:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+.login-modal__google:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.login-modal__divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.login-modal__divider::before,
+.login-modal__divider::after {
+  display: block;
+  flex: 1;
+  height: 1px;
+  background: var(--color-hairline-soft);
+  content: '';
 }
 
 .login-modal__form {

@@ -9,18 +9,21 @@ import { useAuthModal } from '@/composables/useAuthModal';
 interface NavItem {
   label: string;
   to: string;
-  icon: 'discover' | 'generate' | 'images';
+  icon: 'discover' | 'generate' | 'assets' | 'users';
 }
 
 const navItems: NavItem[] = [
   { label: '发现', to: '/', icon: 'discover' },
   { label: '生图', to: '/generate', icon: 'generate' },
-  { label: '图片管理', to: '/history', icon: 'images' },
+  { label: '资产', to: '/history', icon: 'assets' },
 ];
 
-const { user, isAuthenticated, logout } = useAuth();
+const { user, isAuthenticated, isAdmin, logout } = useAuth();
 const { open: openLoginModal } = useAuthModal();
 
+const visibleNavItems = computed<NavItem[]>(() =>
+  isAdmin.value ? [...navItems, { label: '用户管理', to: '/admin/users', icon: 'users' }] : navItems,
+);
 const isMenuOpen = ref(false);
 const accountLabel = computed(() => (isAuthenticated.value ? displayName() : '登录'));
 
@@ -67,7 +70,7 @@ function initials(): string {
 
     <nav class="sidebar-nav" aria-label="主要导航">
       <RouterLink
-        v-for="item in navItems"
+        v-for="item in visibleNavItems"
         :key="item.to"
         class="sidebar-nav__link"
         :to="item.to"
@@ -102,6 +105,20 @@ function initials(): string {
             <path d="m6.2 6.2 2.8 2.8M15 15l2.8 2.8M17.8 6.2 15 9M9 15l-2.8 2.8" />
           </svg>
           <svg
+            v-else-if="item.icon === 'assets'"
+            width="23"
+            height="23"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H10l2 2.5h5.5A2.5 2.5 0 0 1 20 10v6.5A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5Z" />
+            <path d="M8 13h8" />
+          </svg>
+          <svg
             v-else
             width="23"
             height="23"
@@ -112,10 +129,10 @@ function initials(): string {
             stroke-linecap="round"
             stroke-linejoin="round"
           >
-            <rect x="3" y="3" width="7" height="7" rx="1.6" />
-            <rect x="14" y="3" width="7" height="7" rx="1.6" />
-            <rect x="3" y="14" width="7" height="7" rx="1.6" />
-            <rect x="14" y="14" width="7" height="7" rx="1.6" />
+            <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="10" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
         </span>
         <span>{{ item.label }}</span>

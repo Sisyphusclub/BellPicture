@@ -12,6 +12,7 @@ export const user = sqliteTable('user', {
   username: text('username').unique(),
   displayUsername: text('display_username'),
   image: text('image'),
+  isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp_ms' })
     .notNull()
     .default(sql`(unixepoch() * 1000)`),
@@ -93,6 +94,7 @@ export const userQuota = sqliteTable('user_quota', {
     .references(() => user.id, { onDelete: 'cascade' }),
   usedToday: integer('used_today').notNull().default(0),
   quotaDate: text('quota_date').notNull(), // ISO 'YYYY-MM-DD' (server local)
+  dailyTotal: integer('daily_total'),
 });
 
 export const imageRecords = sqliteTable(

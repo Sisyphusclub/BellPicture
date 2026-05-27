@@ -6,6 +6,7 @@ import { auth } from './config/auth.js';
 import { env } from './config/env.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { requestLogger } from './middlewares/requestLogger.js';
+import { buildAdminUsersRouter } from './routes/adminUsers.js';
 import { buildUsernameAuthRouter } from './routes/auth.js';
 import { healthRouter } from './routes/health.js';
 import { buildHistoryRouter } from './routes/history.js';
@@ -20,6 +21,8 @@ export interface AppDeps {
   userQuota?: UserQuotaService;
   /** Override the auth middleware. Tests can inject a stub that attaches `req.user` synchronously. */
   authMiddleware?: RequestHandler;
+  /** Override the admin middleware. Tests can inject allow/deny behavior after auth. */
+  adminMiddleware?: RequestHandler;
 }
 
 export function createApp(deps: AppDeps): Express {
@@ -49,6 +52,13 @@ export function createApp(deps: AppDeps): Express {
   app.use('/v1', buildOpenAICompatRouter({ provider: deps.provider }));
 
   app.use('/api', healthRouter);
+  app.use(
+    '/api/admin',
+    buildAdminUsersRouter({
+      ...(deps.authMiddleware !== undefined ? { authMiddleware: deps.authMiddleware } : {}),
+      ...(deps.adminMiddleware !== undefined ? { adminMiddleware: deps.adminMiddleware } : {}),
+    }),
+  );
   app.use(
     '/api/images',
     buildImagesRouter({

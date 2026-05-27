@@ -116,8 +116,9 @@ describe('LoginModal', () => {
 
     const bodyText = document.body.textContent ?? '';
     expect(bodyText).toContain('用户名');
+    expect(bodyText).toContain('使用 Google 登录');
     expect(bodyText).not.toContain('邮箱');
-    expect(bodyText).not.toContain('Continue with Google');
+    expect(bodyText).not.toContain('忘记密码');
 
     wrapper.unmount();
   });
@@ -208,6 +209,25 @@ describe('LoginModal', () => {
       username: 'admin',
       password: 'admin123',
     });
+
+    wrapper.unmount();
+  });
+
+  it('calls signInWithGoogle from the Google login button and does not render forgot-password UI', async () => {
+    signInWithGoogle.mockResolvedValueOnce(undefined);
+    const wrapper = mount(LoginModal, { attachTo: document.body });
+    await nextTick();
+
+    const googleButton = document.body.querySelector<HTMLButtonElement>('.login-modal__google');
+    expect(googleButton).not.toBeNull();
+    expect(googleButton?.textContent?.trim()).toBe('使用 Google 登录');
+    expect(document.body.textContent ?? '').not.toContain('忘记密码');
+
+    googleButton!.click();
+    await nextTick();
+    await nextTick();
+
+    expect(signInWithGoogle).toHaveBeenCalledTimes(1);
 
     wrapper.unmount();
   });

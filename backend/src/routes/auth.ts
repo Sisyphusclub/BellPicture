@@ -7,7 +7,10 @@ import { env } from '../config/env.js';
 import { db } from '../db/drizzle.js';
 import { user } from '../db/schema.js';
 import { AppError } from '../errors/AppError.js';
+import { requireAuth } from '../middlewares/requireAuth.js';
 import { internalEmailForUsername, isValidUsername, normalizeUsername } from '../utils/username.js';
+
+import '../types/express.js';
 
 const USERNAME_REQUIREMENTS_MESSAGE = '用户名需为 3-32 位小写字母、数字或下划线。';
 const PASSWORD_REQUIREMENTS_MESSAGE = '密码至少需要 8 个字符。';
@@ -116,6 +119,22 @@ export function buildUsernameAuthRouter(): Router {
 
   router.post('/sign-up/email', rejectEmailPasswordAuth);
   router.post('/sign-in/email', rejectEmailPasswordAuth);
+  router.get(
+    '/me',
+    (req, res, next: NextFunction) => {
+      void requireAuth(req, res, next);
+    },
+    (req, res, next) => {
+      try {
+        if (!req.user) {
+          throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
+        }
+        res.status(200).json({ user: req.user });
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
   router.post(
     '/sign-up/username',
     express.json({ limit: '1mb' }),

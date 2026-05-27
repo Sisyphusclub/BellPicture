@@ -1,0 +1,10 @@
+{"file":".trellis/spec/backend/index.md","reason":"Quality check entry point for backend auth/admin/quota/API changes."}
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"Verify schema/migration and quota persistence changes are safe and tested."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"Verify admin authorization, validation, and failure responses match backend error conventions."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Verify backend tests, lint, typecheck, and quality requirements."}
+{"file":".trellis/spec/frontend/index.md","reason":"Quality check entry point for frontend admin route/nav/login UI changes."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Verify admin UI, LoginModal, Simplified Chinese copy, and accessibility behavior."}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"Verify auth/admin hooks and session-derived admin state contracts."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Verify frontend API/session types do not use unsafe casts or suppressed errors."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Verify frontend tests, lint, typecheck, and browser validation expectations."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Review consistency across DB, API, and UI contracts."}

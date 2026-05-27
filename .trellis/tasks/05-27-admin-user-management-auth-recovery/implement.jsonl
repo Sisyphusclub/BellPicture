@@ -1,0 +1,12 @@
+{"file":".trellis/spec/backend/index.md","reason":"Backend pre-development entry point for admin APIs, auth middleware, DB/schema, services, and tests."}
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"DB schema/migration changes are required for admin state and per-user quota totals."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"Admin API validation, forbidden responses, duplicate users, quota errors, and deletion guards need consistent error contracts."}
+{"file":".trellis/spec/backend/directory-structure.md","reason":"New admin route/controller/service files must follow backend placement conventions."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Backend implementation and tests must satisfy project quality requirements."}
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend pre-development entry point for admin navigation, route/view, auth modal, and tests."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"New user management UI and LoginModal updates must follow component/copy/accessibility conventions."}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"Auth/session composables and admin/user-management composables must follow hook contracts."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Admin user list/quota update state should use existing frontend state patterns."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Admin API payloads and session user extensions need strict TypeScript handling."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Task spans DB, backend auth/API, and frontend route/UI contracts."}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"Reuse existing auth/quota patterns instead of duplicating boundary logic."}

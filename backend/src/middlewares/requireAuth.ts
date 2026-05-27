@@ -4,6 +4,7 @@ import { fromNodeHeaders } from 'better-auth/node';
 import { auth } from '../config/auth.js';
 import { AppError } from '../errors/AppError.js';
 import { logger } from '../logger.js';
+import { isUserAdmin } from '../services/adminUser.service.js';
 
 import '../types/express.js';
 
@@ -18,6 +19,7 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
     req.user = {
       id: session.user.id,
       email: session.user.email,
+      isAdmin: isUserAdmin(session.user.id),
       ...(session.user.username !== undefined ? { username: session.user.username } : {}),
       ...(session.user.name !== undefined ? { name: session.user.name } : {}),
       ...(session.user.image !== undefined ? { image: session.user.image } : {}),

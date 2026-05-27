@@ -1,11 +1,15 @@
-import { computed } from 'vue';
+import { computed, readonly, ref, watch } from 'vue';
 
 import { authClient, signIn, signOut, useSession } from '@/lib/authClient';
+import { fetchAuthProfile, type AuthUserProfile } from '@/services/api/authApi';
 
 const NETWORK_ERROR_MESSAGE = '无法连接到服务器，请检查网络或稍后重试。';
 const USERNAME_REQUIREMENTS_MESSAGE = '用户名需为 3-32 位小写字母、数字或下划线。';
 const PASSWORD_REQUIREMENTS_MESSAGE = '密码至少需要 8 个字符。';
 const USERNAME_PATTERN = /^[a-z0-9_]{3,32}$/;
+
+const profile = ref<AuthUserProfile | null>(null);
+let profileRequestId = 0;
 
 interface SignInUsernameInput {
   username: string;
@@ -129,17 +133,60 @@ function isNetworkError(err: unknown): boolean {
 export function useAuth() {
   const session = useSession();
 
-  const user = computed(() => session.value.data?.user ?? null);
-  const isAuthenticated = computed(() => user.value !== null);
+  const sessionUser = computed(() => session.value.data?.user ?? null);
+  const user = computed(() => profile.value ?? sessionUser.value ?? null);
+  const isAuthenticated = computed(() => sessionUser.value !== null);
   const isLoading = computed(() => session.value.isPending);
+  const isAdmin = computed(() => profile.value?.isAdmin === true);
+
+  async function refreshProfile(): Promise<void> {
+    if (!isAuthenticated.value) {
+      profile.value = null;
+      profileRequestId += 1;
+      return;
+    }
+    const requestId = profileRequestId + 1;
+    profileRequestId = requestId;
+    try {
+      const nextProfile = await fetchAuthProfile();
+      if (requestId === profileRequestId) {
+        profile.value = nextProfile;
+      }
+    } catch {
+      if (requestId === profileRequestId) {
+        profile.value = null;
+      }
+    }
+  }
+
+  watch(
+    [isLoading, isAuthenticated],
+    ([loading, authenticated]) => {
+      if (loading) return;
+      if (authenticated) {
+        void refreshProfile();
+        return;
+      }
+      profile.value = null;
+      profileRequestId += 1;
+    },
+    { immediate: true },
+  );
 
   async function signInWithGoogle(): Promise<void> {
+    let result: unknown;
     try {
-      await signIn.social({ provider: 'google' });
+      result = await signIn.social({ provider: 'google' });
     } catch (err) {
       if (isNetworkError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
-      throw new Error('登录失败，请稍后再试。');
+      throw new Error('Google 登录暂不可用，请稍后再试。');
     }
+    const error = extractError(result);
+    if (error) {
+      throw new Error(safeChineseMessage(error, 'Google 登录暂不可用，请稍后再试。'));
+    }
+    await session.value.refetch();
+    await refreshProfile();
   }
 
   async function signInWithUsername({ username, password }: SignInUsernameInput): Promise<void> {
@@ -158,6 +205,7 @@ export function useAuth() {
       throw new Error(codeToSignInMessage(error));
     }
     await session.value.refetch();
+    await refreshProfile();
   }
 
   async function signUpWithUsername({ username, password }: SignUpUsernameInput): Promise<void> {
@@ -180,18 +228,24 @@ export function useAuth() {
       throw new Error(codeToSignUpMessage(error));
     }
     await session.value.refetch();
+    await refreshProfile();
   }
 
   async function logout(): Promise<void> {
     await signOut();
+    profile.value = null;
+    profileRequestId += 1;
   }
 
   return {
     authClient,
     session,
+    profile: readonly(profile),
     user,
     isAuthenticated,
     isLoading,
+    isAdmin,
+    refreshProfile,
     signInWithGoogle,
     signInWithUsername,
     signUpWithUsername,

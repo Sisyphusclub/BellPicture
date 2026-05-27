@@ -31,6 +31,16 @@ export const auth = betterAuth({
     },
   }),
   trustedOrigins: [env.FRONTEND_ORIGIN],
+  user: {
+    additionalFields: {
+      isAdmin: {
+        type: 'boolean',
+        defaultValue: false,
+        required: false,
+        input: false,
+      },
+    },
+  },
   emailAndPassword: {
     enabled: true,
   },
