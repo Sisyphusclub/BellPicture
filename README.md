@@ -5,6 +5,7 @@
 
 <p align="center">
   <a href="#功能亮点">功能亮点</a> ·
+  <a href="#页面截图">页面截图</a> ·
   <a href="#docker-compose-快速启动">Docker Compose</a> ·
   <a href="#本地开发">本地开发</a> ·
   <a href="#api-入口">API</a>
@@ -13,6 +14,12 @@
 ---
 
 Ref2Image Studio 面向需要稳定创作、回看、复用和管理 AI 图像结果的个人创作者与小团队。它把发现灵感、生成图片、查看资产、公开作品和管理员额度控制放在同一个产品界面里，尽量减少噪音，保留清晰的创作节奏。
+
+## 页面截图
+
+| 发现页 | 生图工作区 | 资产页 |
+| --- | --- | --- |
+| ![发现页截图](docs/screenshots/home.png) | ![生图工作区截图](docs/screenshots/generate.png) | ![资产页截图](docs/screenshots/history.png) |
 
 ## 功能亮点
 
