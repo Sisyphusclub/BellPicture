@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 import RecentCreationDetailModal from '@/components/gallery/RecentCreationDetailModal.vue';
 import RecentCreationsMasonry from '@/components/gallery/RecentCreationsMasonry.vue';
+import { useAuth } from '@/composables/useAuth';
 import { useFileUpload } from '@/composables/useFileUpload';
 import { useImageGeneration, type GenerateImageOptions } from '@/composables/useImageGeneration';
 import { useImageQuota } from '@/composables/useImageQuota';
@@ -43,8 +44,13 @@ const DEFAULT_HERO_PROMPT_SUGGESTION = HERO_PROMPT_SUGGESTIONS[0];
 
 const route = useRoute();
 const router = useRouter();
+const { isAdmin } = useAuth();
 const { batches, removeBatch } = useImageHistory();
-const { entries: galleryEntries, add: addPublicGalleryRecord } = usePublicGallery();
+const {
+  entries: galleryEntries,
+  add: addPublicGalleryRecord,
+  removeAsAdmin: removePublicGalleryRecordAsAdmin,
+} = usePublicGallery();
 const { selectedFile, previewUrl, validationMessage, selectFile, clear } = useFileUpload();
 const { generate, isLoading, error, lastBatch, statusMessage, clearLastBatch } =
   useImageGeneration();
@@ -105,6 +111,7 @@ const modelMenuOpen = ref(false);
 const aspectButtonRef = ref<HTMLButtonElement | null>(null);
 const modelButtonRef = ref<HTMLButtonElement | null>(null);
 const selectedRecentEntry = ref<HistoryEntry | null>(null);
+const deletingGalleryEntryId = ref<string | null>(null);
 const isHeroPromptFocused = ref(false);
 const activeHeroSuggestion = ref<string>(DEFAULT_HERO_PROMPT_SUGGESTION);
 const streamedHeroSuggestion = ref<string>('');
@@ -385,6 +392,22 @@ function handlePreviewGeneratedEntry(entry: HistoryEntry): void {
 
 function handleCloseRecentDetail(): void {
   selectedRecentEntry.value = null;
+}
+
+async function handleDeleteGalleryEntry(entry: HistoryEntry): Promise<void> {
+  if (!isAdmin.value || deletingGalleryEntryId.value) return;
+  deletingGalleryEntryId.value = entry.record.id;
+  try {
+    await removePublicGalleryRecordAsAdmin(entry.record.id);
+    if (selectedRecentEntry.value?.record.id === entry.record.id) {
+      selectedRecentEntry.value = null;
+    }
+    ElMessage.success('已从画廊删除。');
+  } catch (err) {
+    ElMessage.error(err instanceof Error ? err.message : '删除失败，请稍后重试。');
+  } finally {
+    deletingGalleryEntryId.value = null;
+  }
 }
 
 async function handleCopyPrompt(entry: HistoryEntry): Promise<void> {
@@ -1175,7 +1198,13 @@ function formatStageDate(iso: string | undefined): string {
             </div>
           </section>
 
-          <RecentCreationsMasonry :entries="galleryEntries" @select="handleSelectRecentEntry" />
+          <RecentCreationsMasonry
+            :entries="galleryEntries"
+            :can-delete="isAdmin"
+            :deleting-id="deletingGalleryEntryId"
+            @select="handleSelectRecentEntry"
+            @delete="handleDeleteGalleryEntry"
+          />
         </template>
       </div>
     </main>
@@ -1356,8 +1385,11 @@ function formatStageDate(iso: string | undefined): string {
 
     <RecentCreationDetailModal
       :entry="selectedRecentEntry"
+      :can-delete="isAdmin"
+      :is-deleting="selectedRecentEntry?.record.id === deletingGalleryEntryId"
       @close="handleCloseRecentDetail"
       @copy-prompt="handleCopyPrompt"
+      @delete="handleDeleteGalleryEntry"
     />
   </section>
 </template>

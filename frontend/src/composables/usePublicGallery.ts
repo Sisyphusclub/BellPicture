@@ -1,6 +1,6 @@
 import { computed, readonly, ref } from 'vue';
 
-import { fetchPublicHistory } from '@/services/api/historyApi';
+import { deletePublicGalleryRecordAsAdmin, fetchPublicHistory } from '@/services/api/historyApi';
 import { buildApiUrl } from '@/services/api/imagesApi';
 import type { HistoryEntry, ImageRecord } from '@/types/image';
 
@@ -25,6 +25,11 @@ export function usePublicGallery() {
     return { record, imageUrl: buildApiUrl(`/api/outputs/${record.id}`) };
   }
 
+  async function removeAsAdmin(id: string): Promise<void> {
+    await deletePublicGalleryRecordAsAdmin(id);
+    records.value = records.value.filter((record) => record.id !== id);
+  }
+
   async function refresh(): Promise<void> {
     hydrated = false;
     await hydrate();
@@ -36,6 +41,7 @@ export function usePublicGallery() {
     hydrateError: readonly(hydrateError),
     refresh,
     add,
+    removeAsAdmin,
   };
 }
 

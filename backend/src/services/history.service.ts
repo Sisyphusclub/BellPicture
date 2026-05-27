@@ -109,6 +109,16 @@ export function deleteImageRecordForUser(userId: string, id: string): number {
   return result.changes;
 }
 
+/** Removes one public gallery record regardless of owner. Intended for admin moderation. */
+export function removePublicImageRecordFromGalleryAsAdmin(id: string): number {
+  const result = db
+    .update(imageRecords)
+    .set({ isPublic: false })
+    .where(and(eq(imageRecords.id, id), eq(imageRecords.isPublic, true)))
+    .run();
+  return result.changes;
+}
+
 /** Deletes every record in `batchId` owned by `userId`. */
 export function deleteImageRecordBatchForUser(userId: string, batchId: string): number {
   const result = db

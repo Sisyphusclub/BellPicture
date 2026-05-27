@@ -6,13 +6,19 @@ import { formatFullDateTime } from '@/utils/format';
 
 interface Props {
   entry: HistoryEntry | null;
+  canDelete?: boolean;
+  isDeleting?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  canDelete: false,
+  isDeleting: false,
+});
 
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'copy-prompt', entry: HistoryEntry): void;
+  (e: 'delete', entry: HistoryEntry): void;
 }>();
 
 const closeButtonRef = ref<HTMLButtonElement | null>(null);
@@ -31,6 +37,11 @@ function handleKeydown(event: KeyboardEvent): void {
 function handleCopyPrompt(): void {
   if (!props.entry) return;
   emit('copy-prompt', props.entry);
+}
+
+function handleDelete(): void {
+  if (!props.entry || props.isDeleting) return;
+  emit('delete', props.entry);
 }
 
 watch(
@@ -124,6 +135,22 @@ onBeforeUnmount(() => {
               <path d="m15.4 12.2.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7.7-2.1Z" />
             </svg>
             <span>做同款</span>
+          </button>
+          <button
+            v-if="canDelete"
+            type="button"
+            class="recent-detail__delete"
+            :disabled="isDeleting"
+            aria-label="从公开画廊删除图片"
+            @click="handleDelete"
+          >
+            <svg aria-hidden="true" viewBox="0 0 20 20">
+              <path d="M3.5 5.2h13" />
+              <path d="M7.2 5.2V3.7c0-.7.5-1.2 1.2-1.2h3.2c.7 0 1.2.5 1.2 1.2v1.5" />
+              <path d="M15.1 5.2 14.4 16c-.1.8-.7 1.4-1.5 1.4H7.1c-.8 0-1.5-.6-1.5-1.4L4.9 5.2" />
+              <path d="M8.3 8.4v5.6M11.7 8.4v5.6" />
+            </svg>
+            <span>{{ isDeleting ? '删除中' : '删除' }}</span>
           </button>
         </div>
       </aside>
@@ -305,7 +332,8 @@ onBeforeUnmount(() => {
 }
 
 .recent-detail__save,
-.recent-detail__remix {
+.recent-detail__remix,
+.recent-detail__delete {
   display: inline-flex;
   height: var(--control-height-lg);
   align-items: center;
@@ -319,7 +347,8 @@ onBeforeUnmount(() => {
 }
 
 .recent-detail__save svg,
-.recent-detail__remix svg {
+.recent-detail__remix svg,
+.recent-detail__delete svg {
   width: 16px;
   height: 16px;
   fill: none;
@@ -346,18 +375,32 @@ onBeforeUnmount(() => {
   color: var(--color-on-accent);
 }
 
+.recent-detail__delete {
+  grid-column: 1 / -1;
+  border: 1px solid rgba(255, 142, 118, 0.46);
+  background: rgba(84, 28, 22, 0.42);
+  color: #ffd8cf;
+}
+
+.recent-detail__delete:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
 .recent-detail__close:focus-visible,
 .recent-detail__copy:focus-visible,
 .recent-detail__prompt-scroll:focus-visible,
 .recent-detail__save:focus-visible,
-.recent-detail__remix:focus-visible {
+.recent-detail__remix:focus-visible,
+.recent-detail__delete:focus-visible {
   outline: 3px solid var(--color-inspection-focus);
   outline-offset: 3px;
 }
 
 .recent-detail__close:hover,
 .recent-detail__copy:hover,
-.recent-detail__save:hover {
+.recent-detail__save:hover,
+.recent-detail__delete:not(:disabled):hover {
   filter: brightness(1.08);
 }
 

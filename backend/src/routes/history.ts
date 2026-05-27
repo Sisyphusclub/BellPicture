@@ -1,11 +1,14 @@
 import { Router, type RequestHandler } from 'express';
 
 import { buildHistoryController } from '../controllers/history.controller.js';
+import { requireAdmin } from '../middlewares/requireAdmin.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
 
 export interface HistoryRouterDeps {
   /** Optional override for the auth middleware; defaults to `requireAuth`. */
   authMiddleware?: RequestHandler;
+  /** Optional override for tests; defaults to persistent admin authorization. */
+  adminMiddleware?: RequestHandler;
 }
 
 export function buildHistoryRouter(deps: HistoryRouterDeps = {}): Router {
@@ -16,6 +19,16 @@ export function buildHistoryRouter(deps: HistoryRouterDeps = {}): Router {
   router.get('/public', (_req, res, next) => {
     controller.listPublic(_req, res, next);
   });
+
+  // DELETE /api/history/public/:id → admin removes one public record from the public gallery.
+  router.delete(
+    '/public/:id',
+    deps.authMiddleware ?? requireAuth,
+    deps.adminMiddleware ?? requireAdmin,
+    (req, res, next) => {
+      controller.removePublicAsAdmin(req, res, next);
+    },
+  );
 
   router.use(deps.authMiddleware ?? requireAuth);
 

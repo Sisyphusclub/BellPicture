@@ -21,6 +21,7 @@ interface GenerateViewHarness {
   addPublicGalleryRecord: ReturnType<
     typeof vi.fn<(record: HistoryEntry['record']) => HistoryEntry | null>
   >;
+  removePublicGalleryRecordAsAdmin: ReturnType<typeof vi.fn<(id: string) => Promise<void>>>;
   downloadUrl: ReturnType<typeof vi.fn<(url: string, filename: string) => Promise<void>>>;
   routerPush: ReturnType<typeof vi.fn<(path: string) => void>>;
   resolveGeneration: () => void;
@@ -351,6 +352,23 @@ describe('GenerateView', () => {
 
     const gallery = wrapper.getComponent({ name: 'RecentCreationsMasonryStub' });
     expect(gallery.props('entries')).toEqual([publicEntry]);
+    expect(gallery.props('canDelete')).toBe(false);
+  });
+
+  it('passes admin gallery delete controls and removes public entries as admin', async () => {
+    const publicEntry = createHistoryEntry('public-admin.png', '需要下架的公开作品', true);
+    const { wrapper, removePublicGalleryRecordAsAdmin } = await mountGenerateView({
+      galleryEntries: [publicEntry],
+      isAdmin: true,
+    });
+
+    const gallery = wrapper.getComponent({ name: 'RecentCreationsMasonryStub' });
+    expect(gallery.props('canDelete')).toBe(true);
+
+    await gallery.vm.$emit('delete', publicEntry);
+    await flushPromises();
+
+    expect(removePublicGalleryRecordAsAdmin).toHaveBeenCalledWith('public-admin.png');
   });
 
   it('starts a second generation from the dock composer generate button after a completed result', async () => {
@@ -607,6 +625,7 @@ async function mountGenerateView(
     galleryEntries?: HistoryEntry[];
     batches?: GroupedBatch[];
     mode?: GenerateViewMode;
+    isAdmin?: boolean;
   } = {},
 ): Promise<GenerateViewHarness> {
   vi.resetModules();
@@ -614,6 +633,7 @@ async function mountGenerateView(
   const entries = ref<HistoryEntry[]>(options.entries ?? []);
   const publicGalleryEntries = ref<HistoryEntry[]>(options.galleryEntries ?? []);
   const batchList = ref<GroupedBatch[]>(options.batches ?? []);
+  const isAdmin = ref(options.isAdmin ?? false);
   const batches: ComputedRef<GroupedBatch[]> = computed(() => batchList.value);
   const isLoading = ref(false);
   const error = ref<Error | null>(null);
@@ -705,6 +725,12 @@ async function mountGenerateView(
       return entry;
     },
   );
+  const removePublicGalleryRecordAsAdmin = vi.fn<(id: string) => Promise<void>>((id) => {
+    publicGalleryEntries.value = publicGalleryEntries.value.filter(
+      (entry) => entry.record.id !== id,
+    );
+    return Promise.resolve();
+  });
   const downloadUrl = vi.fn<(url: string, filename: string) => Promise<void>>(() =>
     Promise.resolve(),
   );
@@ -733,6 +759,14 @@ async function mountGenerateView(
           type: Array,
           required: true,
         },
+        canDelete: {
+          type: Boolean,
+          default: false,
+        },
+        deletingId: {
+          type: String,
+          default: null,
+        },
       },
       template: '<div data-testid="recent-creations" />',
     },
@@ -745,6 +779,14 @@ async function mountGenerateView(
         entry: {
           type: Object,
           default: null,
+        },
+        canDelete: {
+          type: Boolean,
+          default: false,
+        },
+        isDeleting: {
+          type: Boolean,
+          default: false,
         },
       },
       template: '<div />',
@@ -763,6 +805,13 @@ async function mountGenerateView(
     usePublicGallery: () => ({
       entries: publicGalleryEntries,
       add: addPublicGalleryRecord,
+      removeAsAdmin: removePublicGalleryRecordAsAdmin,
+    }),
+  }));
+
+  vi.doMock('@/composables/useAuth', () => ({
+    useAuth: () => ({
+      isAdmin,
     }),
   }));
 
@@ -810,6 +859,7 @@ async function mountGenerateView(
     wrapper,
     generate,
     addPublicGalleryRecord,
+    removePublicGalleryRecordAsAdmin,
     downloadUrl,
     routerPush,
     resolveGeneration,

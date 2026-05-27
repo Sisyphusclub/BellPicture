@@ -53,6 +53,13 @@ function stubAuth(userId: string): RequestHandler {
   };
 }
 
+function allowAdmin(): RequestHandler {
+  return (req, _res, next) => {
+    req.user = { ...req.user!, isAdmin: true };
+    next();
+  };
+}
+
 describe('GET /api/history', () => {
   it('returns 401 when unauthenticated', async () => {
     const denyAuth: RequestHandler = (_req, _res, next) => {
@@ -156,6 +163,65 @@ describe('GET /api/history/public', () => {
     );
     expect(res.body.records.some((r: { prompt: string }) => r.prompt === 'A private')).toBe(false);
     expect(res.body.records.every((r: { isPublic: boolean }) => r.isPublic)).toBe(true);
+  });
+});
+
+describe('DELETE /api/history/public/:id', () => {
+  it('lets an admin remove another user public image from the gallery without deleting owner history', async () => {
+    const ownerId = `hist-public-owner-${randomUUID()}`;
+    const adminId = `hist-public-admin-${randomUUID()}`;
+    const provider = fakeProvider();
+    const ownerApp = createApp({ provider, authMiddleware: stubAuth(ownerId) });
+    const adminApp = createApp({
+      provider,
+      authMiddleware: stubAuth(adminId),
+      adminMiddleware: allowAdmin(),
+    });
+
+    const generated = await request(ownerApp)
+      .post('/api/images/generate')
+      .send({ prompt: 'public moderation target', count: 1, isPublic: true });
+    expect(generated.status).toBe(200);
+    const id = generated.body.images[0].id as string;
+
+    const deleted = await request(adminApp).delete(`/api/history/public/${id}`);
+    expect(deleted.status).toBe(204);
+
+    const publicGallery = await request(adminApp).get('/api/history/public');
+    expect(publicGallery.body.records.some((r: { id: string }) => r.id === id)).toBe(false);
+
+    const ownerHistory = await request(ownerApp).get('/api/history');
+    const ownerRecord = ownerHistory.body.records.find((r: { id: string }) => r.id === id);
+    expect(ownerRecord).toMatchObject({ id, isPublic: false });
+  });
+
+  it('returns 403 for ordinary users removing public gallery images directly', async () => {
+    const ownerId = `hist-public-owner-${randomUUID()}`;
+    const ordinaryId = `hist-public-ordinary-${randomUUID()}`;
+    const provider = fakeProvider();
+    const ownerApp = createApp({ provider, authMiddleware: stubAuth(ownerId) });
+    const ordinaryApp = createApp({ provider, authMiddleware: stubAuth(ordinaryId) });
+
+    const generated = await request(ownerApp)
+      .post('/api/images/generate')
+      .send({ prompt: 'protected public image', count: 1, isPublic: true });
+    const id = generated.body.images[0].id as string;
+
+    const res = await request(ordinaryApp).delete(`/api/history/public/${id}`);
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('FORBIDDEN');
+  });
+
+  it('returns 401 for anonymous public gallery delete attempts', async () => {
+    const denyAuth: RequestHandler = (_req, _res, next) => {
+      next(new AppError('UNAUTHORIZED', 'Authentication required', 401));
+    };
+    const app = createApp({ provider: fakeProvider(), authMiddleware: denyAuth });
+
+    const res = await request(app).delete('/api/history/public/nope.png');
+
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe('UNAUTHORIZED');
   });
 });
 

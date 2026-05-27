@@ -123,6 +123,35 @@ describe('RecentCreationsMasonry', () => {
 
     expect(wrapper.emitted('select')?.[0]).toEqual([entry]);
   });
+
+  it('shows admin delete controls only when allowed and requires a second click', async () => {
+    const entry = createEntry();
+    const regular = mount(RecentCreationsMasonry, {
+      props: {
+        entries: [entry],
+      },
+    });
+    expect(regular.find('.recent-card__delete').exists()).toBe(false);
+
+    const admin = mount(RecentCreationsMasonry, {
+      props: {
+        entries: [entry],
+        canDelete: true,
+      },
+    });
+
+    const deleteButton = admin.get('.recent-card__delete');
+    expect(deleteButton.text()).toBe('删除');
+
+    await deleteButton.trigger('click');
+
+    expect(admin.emitted('delete')).toBeUndefined();
+    expect(deleteButton.text()).toBe('确认删除');
+
+    await deleteButton.trigger('click');
+
+    expect(admin.emitted('delete')?.[0]).toEqual([entry]);
+  });
 });
 
 describe('RecentCreationDetailModal', () => {
@@ -142,6 +171,20 @@ describe('RecentCreationDetailModal', () => {
     await wrapper.get('.recent-detail__copy').trigger('click');
 
     expect(wrapper.emitted('copy-prompt')?.[0]).toEqual([entry]);
+  });
+
+  it('shows admin delete controls and emits delete from the detail modal', async () => {
+    const entry = createEntry();
+    const wrapper = mount(RecentCreationDetailModal, {
+      props: {
+        entry,
+        canDelete: true,
+      },
+    });
+
+    await wrapper.get('.recent-detail__delete').trigger('click');
+
+    expect(wrapper.emitted('delete')?.[0]).toEqual([entry]);
   });
 
   it('keeps dialog semantics on the detail panel and focuses the close control', async () => {

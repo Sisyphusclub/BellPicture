@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 import { useResponsiveMasonryColumnCount } from '@/composables/useResponsiveMasonryColumnCount';
 import type { HistoryEntry } from '@/types/image';
 
 interface Props {
   entries: HistoryEntry[];
+  canDelete?: boolean;
+  deletingId?: string | null;
 }
 
 interface MasonryColumn {
@@ -13,13 +15,18 @@ interface MasonryColumn {
   entries: HistoryEntry[];
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  canDelete: false,
+  deletingId: null,
+});
 
 const emit = defineEmits<{
   (e: 'select', entry: HistoryEntry): void;
+  (e: 'delete', entry: HistoryEntry): void;
 }>();
 
 const { columnCount } = useResponsiveMasonryColumnCount();
+const confirmingDeleteId = ref<string | null>(null);
 
 const visibleEntries = computed(() => props.entries.slice(0, 40));
 const masonryColumns = computed(() =>
@@ -69,6 +76,30 @@ function estimateEntryHeight(entry: HistoryEntry): number {
   if (width <= 0 || height <= 0) return 1;
   return height / width;
 }
+
+function handleDeleteClick(entry: HistoryEntry): void {
+  const id = entry.record.id;
+  if (props.deletingId === id) return;
+  if (confirmingDeleteId.value !== id) {
+    confirmingDeleteId.value = id;
+    return;
+  }
+  confirmingDeleteId.value = null;
+  emit('delete', entry);
+}
+
+watch(
+  () => [props.entries, props.deletingId] as const,
+  () => {
+    if (props.deletingId !== null) {
+      confirmingDeleteId.value = null;
+      return;
+    }
+    if (!props.entries.some((entry) => entry.record.id === confirmingDeleteId.value)) {
+      confirmingDeleteId.value = null;
+    }
+  },
+);
 </script>
 
 <template>
@@ -84,7 +115,12 @@ function estimateEntryHeight(entry: HistoryEntry): number {
       aria-label="最近生成图片"
     >
       <div v-for="column in masonryColumns" :key="column.id" class="recent-creations__column">
-        <article v-for="entry in column.entries" :key="entry.record.id" class="recent-card">
+        <article
+          v-for="entry in column.entries"
+          :key="entry.record.id"
+          class="recent-card"
+          :class="{ 'recent-card--confirm-delete': confirmingDeleteId === entry.record.id }"
+        >
           <button
             type="button"
             class="recent-card__button image-surface"
@@ -97,6 +133,32 @@ function estimateEntryHeight(entry: HistoryEntry): number {
               <strong>{{ entry.record.prompt }}</strong>
               <span>{{ entry.record.width }} × {{ entry.record.height }}</span>
             </span>
+          </button>
+          <button
+            v-if="canDelete"
+            type="button"
+            class="recent-card__delete"
+            :disabled="deletingId === entry.record.id"
+            :aria-label="
+              confirmingDeleteId === entry.record.id
+                ? `确认从画廊删除：${entry.record.prompt}`
+                : `从画廊删除：${entry.record.prompt}`
+            "
+            @click.stop="handleDeleteClick(entry)"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M3 6h18" />
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+              <path d="M10 11v6M14 11v6" />
+            </svg>
+            <span>{{
+              deletingId === entry.record.id
+                ? '删除中'
+                : confirmingDeleteId === entry.record.id
+                  ? '确认删除'
+                  : '删除'
+            }}</span>
           </button>
         </article>
       </div>
@@ -157,6 +219,7 @@ function estimateEntryHeight(entry: HistoryEntry): number {
 }
 
 .recent-card {
+  position: relative;
   width: 100%;
 }
 
@@ -236,6 +299,66 @@ function estimateEntryHeight(entry: HistoryEntry): number {
   transform: translateY(0);
 }
 
+.recent-card__delete {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: inline-flex;
+  height: 30px;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: var(--radius-pill);
+  background: rgba(32, 28, 26, 0.78);
+  color: var(--color-on-dark);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  opacity: 0;
+  padding: 0 9px;
+  transform: translateY(-4px);
+  transition:
+    background-color 160ms ease,
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.recent-card__delete svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.recent-card:hover .recent-card__delete,
+.recent-card--confirm-delete .recent-card__delete,
+.recent-card__delete:focus-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.recent-card__delete:not(:disabled):hover {
+  background: rgba(136, 45, 39, 0.9);
+}
+
+.recent-card--confirm-delete .recent-card__delete {
+  background: rgba(136, 45, 39, 0.92);
+}
+
+.recent-card__delete:disabled {
+  cursor: wait;
+  opacity: 0.8;
+}
+
+.recent-card__delete:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
 .recent-creations__empty {
   display: grid;
   min-height: 220px;
@@ -281,6 +404,11 @@ function estimateEntryHeight(entry: HistoryEntry): number {
 @media (max-width: 560px) {
   .recent-creations__masonry {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .recent-card__delete {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

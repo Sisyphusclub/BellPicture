@@ -150,6 +150,9 @@ function isImageRecord(value: unknown): value is ImageRecord {
 - `POST /api/images/generate` with JSON `GenerateRequest`.
 - `GET /api/history/public` returns all public image records, newest first, and
   does not require auth.
+- `DELETE /api/history/public/:id` is authenticated and admin-only. It removes
+  one image from the public gallery by setting `image_records.is_public = false`;
+  it does not delete the owner's `/api/history` record or the output file.
 - `GET /api/outputs/:filename` returns image bytes.
 - `services/api/imagesApi.ts` exports `uploadReferenceImage(file)`,
   `generateImage(request)`, `fetchOutputBlob(outputUrl)`, and
@@ -167,6 +170,9 @@ function isImageRecord(value: unknown): value is ImageRecord {
   image management keeps the owner-scoped `/api/history` list, while the
   homepage gallery hydrates `/api/history/public` for all accounts' public
   records.
+- Admin gallery moderation calls `deletePublicGalleryRecordAsAdmin(id)` from
+  `usePublicGallery.removeAsAdmin(id)`. On success, remove the record from the
+  module-level public gallery cache; do not mutate private history state.
 - Error response: `{ error: { code, message, requestId, details? } }`.
 - Env: `VITE_API_BASE_URL` is required for real backend calls; default local
   development value is `http://localhost:3000`.
@@ -182,6 +188,9 @@ function isImageRecord(value: unknown): value is ImageRecord {
 | Non-JSON or malformed error body | Throw `ImageApiError(status, 'HTTP_ERROR', ...)`                                     |
 | localStorage schema mismatch     | Ignore stored payload and return an empty history                                    |
 | Existing history `referenceId`   | Send it directly in `GenerateRequest.referenceId`; do not call upload first          |
+| Anonymous gallery delete         | Backend returns `UNAUTHORIZED`; frontend opens login through `authedFetch`           |
+| Non-admin gallery delete         | Backend returns `FORBIDDEN`; frontend shows the localized API message                |
+| Missing/non-public gallery id     | Backend returns `NOT_FOUND`; frontend keeps the public gallery cache unchanged       |
 
 ### 5. Good/Base/Bad Cases
 
@@ -192,6 +201,9 @@ function isImageRecord(value: unknown): value is ImageRecord {
 - Regenerate: a history batch whose first/any record has `referenceId` sends
   that id back to `/api/images/generate` and records `generationMode` as
   `image-to-image`.
+- Admin moderation: an admin can remove another user's public image from the
+  homepage gallery; that owner's private history still contains the record with
+  `isPublic: false`.
 - Bad: invalid backend JSON is never cast; it becomes a typed `ImageApiError`.
 
 ### 6. Tests Required
@@ -206,6 +218,10 @@ function isImageRecord(value: unknown): value is ImageRecord {
 - Regression: regenerating a saved image-to-image batch asserts `referenceId`
   is present and `referenceFile` is absent; regenerating a saved text-to-image
   batch asserts no `referenceId` is sent.
+- Admin gallery delete: backend route test asserts `DELETE /api/history/public/:id`
+  hides the record from public listing but preserves owner history, and frontend
+  tests assert only admins see gallery delete controls and `usePublicGallery`
+  calls the authenticated delete endpoint.
 
 ### 7. Wrong vs Correct
 
@@ -228,6 +244,20 @@ if (!isGenerateResponse(payload)) {
   );
 }
 return payload.outputUrl;
+```
+
+#### Wrong
+
+```ts
+// Deletes the owner's private history when the admin only meant to moderate the gallery.
+await deleteHistoryRecord(id);
+```
+
+#### Correct
+
+```ts
+await deletePublicGalleryRecordAsAdmin(id);
+records.value = records.value.filter((record) => record.id !== id);
 ```
 
 #### Wrong

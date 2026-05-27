@@ -56,4 +56,31 @@ describe('usePublicGallery', () => {
     expect(entries.value).toHaveLength(1);
     expect(entries.value[0]?.record.id).toBe('visible.png');
   });
+
+  it('removes a public gallery record through the admin endpoint', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ records: [sampleRecord()] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { entries, removeAsAdmin } = usePublicGallery();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    await removeAsAdmin('public.png');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'http://localhost:3000/api/history/public/public.png',
+      {
+        credentials: 'include',
+        method: 'DELETE',
+      },
+    );
+    expect(entries.value).toEqual([]);
+  });
 });

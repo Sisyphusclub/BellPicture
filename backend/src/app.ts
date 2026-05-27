@@ -69,9 +69,10 @@ export function createApp(deps: AppDeps): Express {
   );
   app.use(
     '/api/history',
-    buildHistoryRouter(
-      deps.authMiddleware !== undefined ? { authMiddleware: deps.authMiddleware } : {},
-    ),
+    buildHistoryRouter({
+      ...(deps.authMiddleware !== undefined ? { authMiddleware: deps.authMiddleware } : {}),
+      ...(deps.adminMiddleware !== undefined ? { adminMiddleware: deps.adminMiddleware } : {}),
+    }),
   );
   app.use('/api/outputs', outputsRouter);
 

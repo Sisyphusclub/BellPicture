@@ -44,6 +44,17 @@ export async function deleteHistoryRecord(id: string): Promise<void> {
   }
 }
 
+export async function deletePublicGalleryRecordAsAdmin(id: string): Promise<void> {
+  const response = await authedFetch(
+    buildApiUrl(`/api/history/public/${encodeURIComponent(id)}`),
+    { method: 'DELETE' },
+  );
+  if (!response.ok && response.status !== 204) {
+    const payload = await parseJsonResponse(response);
+    throw buildApiError(response.status, payload);
+  }
+}
+
 export async function deleteHistoryBatch(batchId: string): Promise<void> {
   const response = await authedFetch(
     buildApiUrl(`/api/history/batch/${encodeURIComponent(batchId)}`),
