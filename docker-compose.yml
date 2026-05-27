@@ -1,0 +1,58 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      IMAGE_API_BASE_URL: ${IMAGE_API_BASE_URL:?Set IMAGE_API_BASE_URL in the root .env file}
+      IMAGE_API_KEY: ${IMAGE_API_KEY:?Set IMAGE_API_KEY in the root .env file}
+      OPENAI_COMPAT_API_KEY: ${OPENAI_COMPAT_API_KEY:?Set OPENAI_COMPAT_API_KEY in the root .env file}
+      IMAGE_MODEL: ${IMAGE_MODEL:-gpt-image-2}
+      IMAGE_API_TIMEOUT_MS: ${IMAGE_API_TIMEOUT_MS:-120000}
+      GPT_POOL_QUOTA: ${GPT_POOL_QUOTA:-100}
+      UPLOAD_DIR: /app/tmp/uploads
+      UPLOAD_MAX_BYTES: ${UPLOAD_MAX_BYTES:-10485760}
+      OUTPUT_DIR: /app/tmp/outputs
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:5173}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in the root .env file}
+      SEED_DEFAULT_ADMIN: ${SEED_DEFAULT_ADMIN:-false}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:5173}
+      SQLITE_PATH: /app/data/app.sqlite
+      DAILY_USER_QUOTA: ${DAILY_USER_QUOTA:-20}
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    volumes:
+      - backend-data:/app/data
+      - backend-uploads:/app/tmp/uploads
+      - backend-outputs:/app/tmp/outputs
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/api/health').then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5173}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+
+volumes:
+  backend-data:
+  backend-uploads:
+  backend-outputs:

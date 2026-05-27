@@ -1,0 +1,40 @@
+# Git and editor metadata
+.git
+.gitignore
+.gitattributes
+.github
+.claude
+.codex
+.trellis/.runtime
+.trellis/.developer
+.idea
+.vscode
+.DS_Store
+
+# Dependency and build output
+node_modules
+**/node_modules
+backend/dist
+frontend/dist
+coverage
+**/coverage
+*.log
+npm-debug.log*
+
+# Local env files and secrets
+.env
+.env.*
+backend/.env
+frontend/.env
+frontend/.env.*.local
+backend/.env.*.local
+
+# Runtime data
+backend/data
+backend/tmp
+frontend/tmp
+tmp
+tmpclaude-*-cwd
+
+# Misc local artifacts
+ppt
