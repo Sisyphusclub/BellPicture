@@ -360,6 +360,10 @@ function handleSelectRecentEntry(entry: HistoryEntry): void {
   selectedRecentEntry.value = entry;
 }
 
+function handlePreviewGeneratedEntry(entry: HistoryEntry): void {
+  selectedRecentEntry.value = entry;
+}
+
 function handleCloseRecentDetail(): void {
   selectedRecentEntry.value = null;
 }
@@ -920,9 +924,14 @@ function formatStageDate(iso: string | undefined): string {
                     :key="entry.record.id"
                     class="generated-figure"
                   >
-                    <div class="generated-figure__frame">
+                    <button
+                      type="button"
+                      class="generated-figure__frame"
+                      :aria-label="`预览生成结果图片 ${index + 1}`"
+                      @click="handlePreviewGeneratedEntry(entry)"
+                    >
                       <img :src="entry.imageUrl" :alt="`生成结果图片 ${index + 1}`" />
-                    </div>
+                    </button>
                   </figure>
                 </div>
 
@@ -1735,8 +1744,26 @@ function formatStageDate(iso: string | undefined): string {
   display: grid;
   place-items: center;
   overflow: hidden;
+  border-color: var(--color-hairline-soft);
   background: var(--color-surface-glass);
   animation: result-reveal 240ms ease-out both;
+  cursor: zoom-in;
+  padding: 0;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.generated-figure__frame:hover {
+  border-color: var(--color-hairline);
+  box-shadow: var(--shadow-panel);
+  transform: translateY(-1px);
+}
+
+.generated-figure__frame:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 3px;
 }
 
 .generated-figure__frame img {
