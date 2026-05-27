@@ -1,0 +1,12 @@
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Frontend generation options and API request types must preserve strict optional field semantics."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Generate/history state is composable-owned and backend-sourced; regeneration should respect existing state patterns."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"GenerateView changes should follow Vue SFC and user-facing Chinese copy conventions."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Tests and typecheck expectations for frontend changes."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"The fix depends on preserving referenceId across backend history and frontend regenerate flow."}
+{"file":".trellis/tasks/05-27-fix-image-regenerate-errors/research/regenerate-flow.md","reason":"Local findings on how regenerate currently loses image-to-image reference context."}
+{"file":"backend/src/controllers/history.controller.ts","reason":"Add public gallery list handler returning all public records."}
+{"file":"backend/src/routes/history.ts","reason":"Expose unauthenticated read-only /api/history/public before owner-scoped auth middleware."}
+{"file":"backend/src/services/history.service.ts","reason":"Query image_records by isPublic for global public gallery."}
+{"file":"frontend/src/composables/usePublicGallery.ts","reason":"Separate public gallery state from private owner-scoped history state."}
+{"file":"frontend/src/services/api/historyApi.ts","reason":"Add fetchPublicHistory wrapper for /api/history/public."}
+{"file":"frontend/src/App.vue","reason":"Show the global video backdrop on generate, assets, and user management routes."}

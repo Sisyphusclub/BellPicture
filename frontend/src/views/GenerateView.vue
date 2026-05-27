@@ -9,6 +9,7 @@ import { useFileUpload } from '@/composables/useFileUpload';
 import { useImageGeneration, type GenerateImageOptions } from '@/composables/useImageGeneration';
 import { useImageQuota } from '@/composables/useImageQuota';
 import { useImageHistory, type GroupedBatch } from '@/composables/useImageHistory';
+import { usePublicGallery } from '@/composables/usePublicGallery';
 import { downloadUrl } from '@/utils/download';
 import { DATE_BUCKET_LABELS, dateBucket, formatClockTime, type DateBucket } from '@/utils/format';
 import {
@@ -42,7 +43,8 @@ const DEFAULT_HERO_PROMPT_SUGGESTION = HERO_PROMPT_SUGGESTIONS[0];
 
 const route = useRoute();
 const router = useRouter();
-const { entries, batches, removeBatch } = useImageHistory();
+const { batches, removeBatch } = useImageHistory();
+const { entries: galleryEntries, add: addPublicGalleryRecord } = usePublicGallery();
 const { selectedFile, previewUrl, validationMessage, selectFile, clear } = useFileUpload();
 const { generate, isLoading, error, lastBatch, statusMessage, clearLastBatch } =
   useImageGeneration();
@@ -56,6 +58,7 @@ interface PendingGeneration {
   aspectRatio: AspectChoice;
   submittedAt: string;
   referenceFile?: File;
+  referenceId?: string;
   isPublic: boolean;
   errorMessage?: string;
 }
@@ -95,6 +98,7 @@ const activeBatchId = ref<string | null>(null);
 const pendingGeneration = ref<PendingGeneration | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 const composerTextareaRef = ref<HTMLTextAreaElement | null>(null);
+const reusedReferenceId = ref<string | null>(null);
 const isComposerDragging = ref(false);
 const aspectMenuOpen = ref(false);
 const modelMenuOpen = ref(false);
@@ -207,7 +211,6 @@ const hasActiveSurface = computed(
 const shouldShowWorkspaceEmpty = computed(
   () => isGenerateWorkspace.value && !hasGeneratedSurface.value,
 );
-const galleryEntries = computed(() => entries.value.filter((entry) => entry.record.isPublic));
 const shouldShowHeroSuggestion = computed(
   () => !hasActiveSurface.value && prompt.value.length === 0 && !isHeroPromptFocused.value,
 );
@@ -215,8 +218,14 @@ const heroSuggestionText = computed(() =>
   hasReducedMotion.value ? activeHeroSuggestion.value : streamedHeroSuggestion.value,
 );
 const canGenerate = computed(() => prompt.value.trim().length > 0 && !isLoading.value);
-const modeLabel = computed(() => (selectedFile.value ? '参考图生成' : '提示词生成'));
-const selectedFileSummary = computed(() => (selectedFile.value ? '1' : '0'));
+const hasReferenceContext = computed(
+  () => selectedFile.value !== null || reusedReferenceId.value !== null,
+);
+const modeLabel = computed(() => (hasReferenceContext.value ? '参考图生成' : '提示词生成'));
+const selectedFileSummary = computed(() => (hasReferenceContext.value ? '1' : '0'));
+const referenceAttachmentTitle = computed(() =>
+  selectedFile.value ? '参考图已添加' : '已沿用历史参考图',
+);
 const quotaLabel = computed(() => {
   if (isQuotaLoading.value) return '额度读取中';
   if (!quota.value) return '额度暂不可用';
@@ -291,13 +300,15 @@ function createSnapshotFromCurrentComposer(): PendingGeneration {
     submittedAt: new Date().toISOString(),
   };
   if (selectedFile.value) snapshot.referenceFile = selectedFile.value;
+  else if (reusedReferenceId.value) snapshot.referenceId = reusedReferenceId.value;
   return snapshot;
 }
 
 function createSnapshotFromDisplayedBatch(batch: GroupedBatch): PendingGeneration {
   pendingGenerationId += 1;
   const firstRecord = batch.entries[0]?.record;
-  return {
+  const referenceId = referenceIdFromBatch(batch);
+  const snapshot: PendingGeneration = {
     id: pendingGenerationId,
     prompt: batch.prompt,
     model: batch.model,
@@ -306,6 +317,8 @@ function createSnapshotFromDisplayedBatch(batch: GroupedBatch): PendingGeneratio
     isPublic: batch.entries.some((entry) => entry.record.isPublic),
     submittedAt: new Date().toISOString(),
   };
+  if (referenceId) snapshot.referenceId = referenceId;
+  return snapshot;
 }
 
 function optionsFromSnapshot(snapshot: PendingGeneration): GenerateImageOptions {
@@ -316,6 +329,7 @@ function optionsFromSnapshot(snapshot: PendingGeneration): GenerateImageOptions 
   };
   if (snapshot.aspectRatio !== 'auto') options.aspectRatio = snapshot.aspectRatio;
   if (snapshot.referenceFile) options.referenceFile = snapshot.referenceFile;
+  else if (snapshot.referenceId) options.referenceId = snapshot.referenceId;
   options.isPublic = snapshot.isPublic;
   return options;
 }
@@ -330,12 +344,16 @@ async function runGeneration(snapshot: PendingGeneration): Promise<void> {
   count.value = snapshot.count;
   aspectRatio.value = snapshot.aspectRatio;
   isPublicGeneration.value = snapshot.isPublic;
+  syncReferenceInputFromSnapshot(snapshot);
 
   try {
     const result = await generate(optionsFromSnapshot(snapshot));
     activeBatchId.value = result.batchId;
     if (pendingGeneration.value?.id === snapshot.id) pendingGeneration.value = null;
     await refreshQuota();
+    result.entries.forEach((entry) => {
+      addPublicGalleryRecord(entry.record);
+    });
     ElMessage.success(`已生成 ${result.entries.length} 张图片，并保存到历史记录。`);
   } catch (unknownError) {
     const message = messageForError(unknownError);
@@ -354,6 +372,7 @@ function handleSelectBatch(batch: GroupedBatch): void {
   const first = batch.entries[0];
   if (first?.record.aspectRatio) aspectRatio.value = first.record.aspectRatio;
   count.value = Math.min(MAX_COUNT, Math.max(MIN_COUNT, batch.entries.length));
+  syncReferenceInputFromBatch(batch);
 }
 
 function handleSelectRecentEntry(entry: HistoryEntry): void {
@@ -387,7 +406,7 @@ function handleNewConversation(): void {
   pendingGeneration.value = null;
   prompt.value = '';
   isPublicGeneration.value = false;
-  clear();
+  clearReferenceInput();
   clearLastBatch();
 }
 
@@ -459,6 +478,7 @@ function handleDragLeave(): void {
 }
 
 function addReferenceFile(file: File): void {
+  reusedReferenceId.value = null;
   selectFile(file);
   ElMessage.success('参考图已添加到输入框。');
 }
@@ -501,6 +521,7 @@ async function handleEditPrompt(
   count.value = snapshot.count;
   aspectRatio.value = snapshot.aspectRatio;
   isPublicGeneration.value = snapshot.isPublic;
+  syncReferenceInputFromSnapshot(snapshot);
   await nextTick();
   composerTextareaRef.value?.focus();
 }
@@ -568,7 +589,41 @@ function createSnapshotFromPending(snapshot: PendingGeneration): PendingGenerati
     submittedAt: new Date().toISOString(),
   };
   if (snapshot.referenceFile) next.referenceFile = snapshot.referenceFile;
+  if (snapshot.referenceId) next.referenceId = snapshot.referenceId;
   return next;
+}
+
+function syncReferenceInputFromSnapshot(snapshot: PendingGeneration): void {
+  if (snapshot.referenceFile) {
+    reusedReferenceId.value = null;
+    selectFile(snapshot.referenceFile);
+    return;
+  }
+  if (snapshot.referenceId) {
+    clear();
+    reusedReferenceId.value = snapshot.referenceId;
+    return;
+  }
+  clearReferenceInput();
+}
+
+function syncReferenceInputFromBatch(batch: GroupedBatch): void {
+  const referenceId = referenceIdFromBatch(batch);
+  if (referenceId) {
+    clear();
+    reusedReferenceId.value = referenceId;
+    return;
+  }
+  clearReferenceInput();
+}
+
+function referenceIdFromBatch(batch: GroupedBatch): string | undefined {
+  return batch.entries.find((entry) => entry.record.referenceId)?.record.referenceId;
+}
+
+function clearReferenceInput(): void {
+  clear();
+  reusedReferenceId.value = null;
 }
 
 function decreaseCount(): void {
@@ -1028,9 +1083,9 @@ function formatStageDate(iso: string | undefined): string {
                   @paste="handlePaste"
                 />
               </div>
-              <div v-if="selectedFile" class="prompt-showcase__attachment">
-                <span>参考图已添加</span>
-                <button type="button" :disabled="isLoading" @click="clear">移除</button>
+              <div v-if="hasReferenceContext" class="prompt-showcase__attachment">
+                <span>{{ referenceAttachmentTitle }}</span>
+                <button type="button" :disabled="isLoading" @click="clearReferenceInput">移除</button>
               </div>
               <div class="prompt-showcase__bar">
                 <span class="prompt-showcase__model">✦ GPT-IMAGE-2</span>
@@ -1158,7 +1213,7 @@ function formatStageDate(iso: string | undefined): string {
       />
 
       <div
-        v-if="selectedFile"
+        v-if="hasReferenceContext"
         class="prompt-showcase__attachment prompt-showcase__attachment--rich"
       >
         <img
@@ -1169,12 +1224,12 @@ function formatStageDate(iso: string | undefined): string {
         />
         <span v-else class="prompt-showcase__attachment-fallback" aria-hidden="true">图</span>
         <span class="prompt-showcase__attachment-meta">
-          <strong>参考图已添加</strong>
+          <strong>{{ referenceAttachmentTitle }}</strong>
           <span v-if="validationMessage" class="prompt-showcase__attachment-warning">{{
             validationMessage
           }}</span>
         </span>
-        <button type="button" :disabled="isLoading" @click="clear">移除</button>
+        <button type="button" :disabled="isLoading" @click="clearReferenceInput">移除</button>
       </div>
 
       <div class="prompt-showcase__bar">

@@ -12,6 +12,11 @@ export function buildHistoryRouter(deps: HistoryRouterDeps = {}): Router {
   const router = Router();
   const controller = buildHistoryController();
 
+  // GET /api/history/public → list public image records from every account, newest first.
+  router.get('/public', (_req, res, next) => {
+    controller.listPublic(_req, res, next);
+  });
+
   router.use(deps.authMiddleware ?? requireAuth);
 
   // GET /api/history → list current user's image records, newest first.

@@ -37,6 +37,16 @@ export function buildApiUrl(path: string): string {
   return `${API_BASE_URL}${path}`;
 }
 
+export async function publicFetch(input: string, init: RequestInit = {}): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch (err) {
+    throw new ImageApiError(0, 'NETWORK_ERROR', NETWORK_ERROR_MESSAGE, undefined, {
+      cause: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
 export async function authedFetch(input: string, init: RequestInit = {}): Promise<Response> {
   let response: Response;
   try {

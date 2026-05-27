@@ -148,6 +148,8 @@ function isImageRecord(value: unknown): value is ImageRecord {
 
 - `POST /api/images/upload` with multipart field `image: File`.
 - `POST /api/images/generate` with JSON `GenerateRequest`.
+- `GET /api/history/public` returns all public image records, newest first, and
+  does not require auth.
 - `GET /api/outputs/:filename` returns image bytes.
 - `services/api/imagesApi.ts` exports `uploadReferenceImage(file)`,
   `generateImage(request)`, `fetchOutputBlob(outputUrl)`, and
@@ -157,8 +159,14 @@ function isImageRecord(value: unknown): value is ImageRecord {
 
 - Upload response: `{ id, filename, mime, size }`.
 - Generate request: `{ prompt, referenceId?, model?, count?, aspectRatio?, isPublic? }`.
+- Regeneration from history may reuse an existing `referenceId`; this is still
+  a normal `GenerateRequest` and must NOT re-upload the original file when the
+  frontend already has a persisted backend reference id.
 - Generate response: `{ batchId, aspectRatio, generationMode, images }` where each image has `{ id, outputUrl, filename, mime, width, height }` and `generationMode` is `'text-to-image' | 'image-to-image'`.
-- History record response: `ImageRecord` includes required `isPublic: boolean`; the homepage gallery filters on this field, while image management keeps the full list.
+- History record response: `ImageRecord` includes required `isPublic: boolean`;
+  image management keeps the owner-scoped `/api/history` list, while the
+  homepage gallery hydrates `/api/history/public` for all accounts' public
+  records.
 - Error response: `{ error: { code, message, requestId, details? } }`.
 - Env: `VITE_API_BASE_URL` is required for real backend calls; default local
   development value is `http://localhost:3000`.
@@ -173,6 +181,7 @@ function isImageRecord(value: unknown): value is ImageRecord {
 | Backend error envelope present   | Throw `ImageApiError(status, code, message, requestId, details)`                     |
 | Non-JSON or malformed error body | Throw `ImageApiError(status, 'HTTP_ERROR', ...)`                                     |
 | localStorage schema mismatch     | Ignore stored payload and return an empty history                                    |
+| Existing history `referenceId`   | Send it directly in `GenerateRequest.referenceId`; do not call upload first          |
 
 ### 5. Good/Base/Bad Cases
 
@@ -180,6 +189,9 @@ function isImageRecord(value: unknown): value is ImageRecord {
   output blob is fetched, and metadata/blob are persisted together.
 - Base: prompt-only generation skips upload and records `generationMode` as
   `text-to-image`.
+- Regenerate: a history batch whose first/any record has `referenceId` sends
+  that id back to `/api/images/generate` and records `generationMode` as
+  `image-to-image`.
 - Bad: invalid backend JSON is never cast; it becomes a typed `ImageApiError`.
 
 ### 6. Tests Required
@@ -191,6 +203,9 @@ function isImageRecord(value: unknown): value is ImageRecord {
   schema-gated reads.
 - Mount critical components/composables and assert user-facing error/status
   behavior, not implementation internals.
+- Regression: regenerating a saved image-to-image batch asserts `referenceId`
+  is present and `referenceFile` is absent; regenerating a saved text-to-image
+  batch asserts no `referenceId` is sent.
 
 ### 7. Wrong vs Correct
 
@@ -213,6 +228,27 @@ if (!isGenerateResponse(payload)) {
   );
 }
 return payload.outputUrl;
+```
+
+#### Wrong
+
+```ts
+// Drops the image-to-image input; the retry silently becomes text-to-image.
+return {
+  prompt: batch.prompt,
+  model: batch.model,
+};
+```
+
+#### Correct
+
+```ts
+const referenceId = batch.entries.find((entry) => entry.record.referenceId)?.record.referenceId;
+return {
+  prompt: batch.prompt,
+  model: batch.model,
+  ...(referenceId ? { referenceId } : {}),
+};
 ```
 
 ---

@@ -18,6 +18,9 @@ interface GenerateViewHarness {
   generate: ReturnType<
     typeof vi.fn<(options: GenerateImageOptions) => Promise<GeneratedBatchResult>>
   >;
+  addPublicGalleryRecord: ReturnType<
+    typeof vi.fn<(record: HistoryEntry['record']) => HistoryEntry | null>
+  >;
   downloadUrl: ReturnType<typeof vi.fn<(url: string, filename: string) => Promise<void>>>;
   routerPush: ReturnType<typeof vi.fn<(path: string) => void>>;
   resolveGeneration: () => void;
@@ -342,10 +345,9 @@ describe('GenerateView', () => {
     );
   });
 
-  it('passes only public entries to the homepage gallery', async () => {
-    const publicEntry = createHistoryEntry('public.png', '公开作品', true);
-    const privateEntry = createHistoryEntry('private.png', '私密作品', false);
-    const { wrapper } = await mountGenerateView({ entries: [publicEntry, privateEntry] });
+  it('passes public gallery entries from the public gallery store', async () => {
+    const publicEntry = createHistoryEntry('public.png', '其他账号公开作品', true);
+    const { wrapper } = await mountGenerateView({ galleryEntries: [publicEntry] });
 
     const gallery = wrapper.getComponent({ name: 'RecentCreationsMasonryStub' });
     expect(gallery.props('entries')).toEqual([publicEntry]);
@@ -386,21 +388,30 @@ describe('GenerateView', () => {
   });
 
   it('sends public visibility when the dock public toggle is enabled', async () => {
-    const { wrapper, generate, resolveGeneration } = await mountGenerateView();
+    const { wrapper, generate, addPublicGalleryRecord, resolveGenerationWithOptions } =
+      await mountGenerateView();
 
     await wrapper.get('textarea[name="heroPrompt"]').setValue('生成一张猫猫照片');
     await wrapper.get('form.prompt-showcase').trigger('submit');
     await wrapper.setProps({ mode: 'generate' });
-    resolveGeneration();
+    resolveGenerationWithOptions({ id: 'private-generated.png' });
     await flushPromises();
 
     const dockComposer = wrapper.get('form.prompt-showcase--dock');
     await dockComposer.get('textarea[name="prompt"]').setValue('公开的工作区作品');
     await dockComposer.get('button.prompt-showcase__public').trigger('click');
     await dockComposer.get('button.prompt-showcase__generate').trigger('click');
+    resolveGenerationWithOptions({ id: 'public-generated.png' });
+    await flushPromises();
 
     expect(generate).toHaveBeenCalledTimes(2);
     expect(generate).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        prompt: '公开的工作区作品',
+        isPublic: true,
+      }),
+    );
+    expect(addPublicGalleryRecord).toHaveBeenCalledWith(
       expect.objectContaining({
         prompt: '公开的工作区作品',
         isPublic: true,
@@ -539,15 +550,69 @@ describe('GenerateView', () => {
         count: 1,
       }),
     );
+    expect(generate).toHaveBeenLastCalledWith(
+      expect.not.objectContaining({
+        referenceId: expect.any(String),
+      }),
+    );
+  });
+
+  it('preserves the saved reference id when regenerating an image-to-image batch', async () => {
+    const referenceEntry = createHistoryEntry('reference-result.png', '照着参考图做一张海报', false, {
+      batchId: 'batch-reference',
+      referenceId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png',
+    });
+    const { wrapper, generate } = await mountGenerateView({
+      mode: 'generate',
+      entries: [referenceEntry],
+      batches: [
+        {
+          batchId: 'batch-reference',
+          createdAt: referenceEntry.record.createdAt,
+          prompt: referenceEntry.record.prompt,
+          model: referenceEntry.record.model,
+          entries: [referenceEntry],
+        },
+      ],
+    });
+
+    expect(wrapper.text()).toContain('再次生成');
+
+    const regenerateButton = wrapper
+      .findAll('button.generation-action')
+      .find((button) => button.text().includes('再次生成'));
+    expect(regenerateButton).toBeDefined();
+    await regenerateButton?.trigger('click');
+
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(generate).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        prompt: '照着参考图做一张海报',
+        model: 'gpt-image-2',
+        count: 1,
+        referenceId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png',
+      }),
+    );
+    expect(generate).toHaveBeenLastCalledWith(
+      expect.not.objectContaining({
+        referenceFile: expect.any(File),
+      }),
+    );
   });
 });
 
 async function mountGenerateView(
-  options: { entries?: HistoryEntry[]; batches?: GroupedBatch[]; mode?: GenerateViewMode } = {},
+  options: {
+    entries?: HistoryEntry[];
+    galleryEntries?: HistoryEntry[];
+    batches?: GroupedBatch[];
+    mode?: GenerateViewMode;
+  } = {},
 ): Promise<GenerateViewHarness> {
   vi.resetModules();
 
   const entries = ref<HistoryEntry[]>(options.entries ?? []);
+  const publicGalleryEntries = ref<HistoryEntry[]>(options.galleryEntries ?? []);
   const batchList = ref<GroupedBatch[]>(options.batches ?? []);
   const batches: ComputedRef<GroupedBatch[]> = computed(() => batchList.value);
   const isLoading = ref(false);
@@ -589,6 +654,8 @@ async function mountGenerateView(
         width: 1024,
         height: 1024,
         isPublic: options.isPublic ?? false,
+        ...(options.referenceId !== undefined ? { referenceId: options.referenceId } : {}),
+        ...(options.referenceFile !== undefined ? { referenceId: 'uploaded-reference.png' } : {}),
       },
       imageUrl: `http://localhost:3000/api/outputs/${overrides.id}`,
     };
@@ -606,7 +673,8 @@ async function mountGenerateView(
     return {
       batchId: entry.record.batchId ?? entry.record.id,
       aspectRatio: options.aspectRatio ?? '1:1',
-      generationMode: options.referenceFile ? 'image-to-image' : 'text-to-image',
+      generationMode:
+        options.referenceFile || options.referenceId ? 'image-to-image' : 'text-to-image',
       entries: [entry],
     };
   }
@@ -623,6 +691,20 @@ async function mountGenerateView(
 
   const refreshQuota = vi.fn<() => Promise<void>>(() => Promise.resolve());
   const removeBatch = vi.fn<(batchId: string) => Promise<void>>(() => Promise.resolve());
+  const addPublicGalleryRecord = vi.fn<(record: HistoryEntry['record']) => HistoryEntry | null>(
+    (record) => {
+      if (!record.isPublic) return null;
+      const entry = {
+        record,
+        imageUrl: `http://localhost:3000/api/outputs/${record.id}`,
+      };
+      publicGalleryEntries.value = [
+        entry,
+        ...publicGalleryEntries.value.filter((item) => item.record.id !== record.id),
+      ];
+      return entry;
+    },
+  );
   const downloadUrl = vi.fn<(url: string, filename: string) => Promise<void>>(() =>
     Promise.resolve(),
   );
@@ -677,6 +759,13 @@ async function mountGenerateView(
     }),
   }));
 
+  vi.doMock('@/composables/usePublicGallery', () => ({
+    usePublicGallery: () => ({
+      entries: publicGalleryEntries,
+      add: addPublicGalleryRecord,
+    }),
+  }));
+
   vi.doMock('@/composables/useFileUpload', () => ({
     useFileUpload: () => ({
       selectedFile: ref<File | null>(null),
@@ -720,6 +809,7 @@ async function mountGenerateView(
   return {
     wrapper,
     generate,
+    addPublicGalleryRecord,
     downloadUrl,
     routerPush,
     resolveGeneration,

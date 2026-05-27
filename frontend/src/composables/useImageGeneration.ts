@@ -23,6 +23,7 @@ export interface GenerateImageOptions {
   prompt: string;
   model?: string;
   referenceFile?: File;
+  referenceId?: string;
   count?: number;
   aspectRatio?: AspectRatio;
   isPublic?: boolean;
@@ -51,7 +52,7 @@ export function useImageGeneration() {
     const aspectRatio = options.aspectRatio ?? DEFAULT_ASPECT_RATIO;
 
     try {
-      let referenceId: string | undefined;
+      let referenceId = options.referenceId?.trim() || undefined;
       if (options.referenceFile) {
         statusMessage.value = '正在上传参考图。';
         const upload = await uploadReferenceImage(options.referenceFile);

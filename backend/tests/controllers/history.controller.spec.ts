@@ -128,6 +128,37 @@ describe('GET /api/history', () => {
   });
 });
 
+describe('GET /api/history/public', () => {
+  it('returns public records from every user without requiring authentication', async () => {
+    const denyAuth: RequestHandler = (_req, _res, next) => {
+      next(new AppError('UNAUTHORIZED', 'Authentication required', 401));
+    };
+    const userA = `hist-public-a-${randomUUID()}`;
+    const userB = `hist-public-b-${randomUUID()}`;
+    const provider = fakeProvider();
+    const appA = createApp({ provider, authMiddleware: stubAuth(userA) });
+    const appB = createApp({ provider, authMiddleware: stubAuth(userB) });
+    const publicApp = createApp({ provider, authMiddleware: denyAuth });
+
+    await request(appA).post('/api/images/generate').send({ prompt: 'A private', count: 1 });
+    await request(appA)
+      .post('/api/images/generate')
+      .send({ prompt: 'A public', count: 1, isPublic: true });
+    await request(appB)
+      .post('/api/images/generate')
+      .send({ prompt: 'B public', count: 1, isPublic: true });
+
+    const res = await request(publicApp).get('/api/history/public');
+
+    expect(res.status).toBe(200);
+    expect(res.body.records.map((r: { prompt: string }) => r.prompt)).toEqual(
+      expect.arrayContaining(['A public', 'B public']),
+    );
+    expect(res.body.records.some((r: { prompt: string }) => r.prompt === 'A private')).toBe(false);
+    expect(res.body.records.every((r: { isPublic: boolean }) => r.isPublic)).toBe(true);
+  });
+});
+
 describe('DELETE /api/history/batch/:batchId', () => {
   it('deletes the batch only for the owning user', async () => {
     const userA = `hist-del-a-${randomUUID()}`;

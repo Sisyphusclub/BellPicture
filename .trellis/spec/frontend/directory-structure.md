@@ -46,9 +46,9 @@ frontend/
 │   │   └── authClient.ts       # Better Auth Vue client (createAuthClient)
 │   ├── services/               # Pure API/IO. No Vue refs here.
 │   │   └── api/
-│   │       ├── httpClient.ts   # Shared API base URL + authedFetch + 401 handler registration
+│   │       ├── httpClient.ts   # Shared API base URL + publicFetch/authedFetch + 401 handler registration
 │   │       ├── imagesApi.ts    # fetch wrappers around /api/images/* (uploads + generation)
-│   │       └── historyApi.ts   # fetch wrappers around /api/history/* (list + delete)
+│   │       └── historyApi.ts   # fetch wrappers around /api/history/* (private history, public gallery, delete)
 │   ├── types/                  # Shared TS types/interfaces
 │   │   └── image.ts            # ImageRecord, GenerateRequest, etc.
 │   ├── utils/                  # Pure helpers (no IO, no Vue)
@@ -100,10 +100,42 @@ frontend env vars** — they are bundled into the public JS.
 
 ---
 
+## Production nginx proxy contract
+
+The production `frontend/nginx.conf` proxies `/api/` and `/v1/` to the backend.
+Image generation is a synchronous request in the MVP, and the backend provider
+timeout defaults to `IMAGE_API_TIMEOUT_MS=120000` (2 minutes). The nginx proxy
+read/send timeouts for generated-image endpoints must therefore be greater than
+the backend timeout, currently `180s`.
+
+Required shape:
+
+```nginx
+location /api/ {
+  proxy_pass http://backend:3000/api/;
+  proxy_read_timeout 180s;
+  proxy_send_timeout 180s;
+}
+
+location /v1/ {
+  proxy_pass http://backend:3000/v1/;
+  proxy_read_timeout 180s;
+  proxy_send_timeout 180s;
+}
+```
+
+Do not rely on nginx defaults here. A default proxy read timeout shorter than
+`IMAGE_API_TIMEOUT_MS` can return a gateway 504 while the backend/provider call
+is still legitimately running.
+
+---
+
 ## Forbidden patterns
 
 - ❌ Calling 2API directly from the frontend. All AI requests go through
   the backend (`VITE_API_BASE_URL`).
+- ❌ Leaving production `/api/` or `/v1/` proxy timeouts below
+  `IMAGE_API_TIMEOUT_MS`; slow valid image generations will surface as 504s.
 - ❌ Importing from `services/` inside `components/`. Go through a composable.
 - ❌ `fetch('/api/...')` scattered across components. All HTTP lives in
   `services/api/`.

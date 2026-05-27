@@ -1,13 +1,28 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router';
+import { computed } from 'vue';
+import { RouterView, useRoute } from 'vue-router';
 
 import LoginModal from '@/components/auth/LoginModal.vue';
 import AppHeader from '@/components/common/AppHeader.vue';
+
+const route = useRoute();
+const videoBackdropRoutes = new Set(['discover', 'generate', 'history', 'admin-users']);
+const shouldShowBackdropVideo = computed(
+  () => typeof route.name === 'string' && videoBackdropRoutes.has(route.name),
+);
 </script>
 
 <template>
   <div class="app-backdrop" aria-hidden="true">
-    <video autoplay muted loop playsinline preload="metadata" class="app-backdrop__video">
+    <video
+      v-if="shouldShowBackdropVideo"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="metadata"
+      class="app-backdrop__video"
+    >
       <source
         src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260302_085640_276ea93b-d7da-4418-a09b-2aa5b490e838.mp4"
         type="video/mp4"

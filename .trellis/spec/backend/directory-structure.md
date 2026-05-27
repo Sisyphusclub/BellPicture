@@ -125,7 +125,7 @@ backend/
 │   ├── routes/
 │   │   ├── auth.ts           # Username auth wrapper: sign-up/username and email-auth rejection
 │   │   ├── images.ts         # POST /api/images/generate, /upload — gated by requireAuth
-│   │   ├── history.ts        # GET/DELETE /api/history/* — gated by requireAuth
+│   │   ├── history.ts        # GET /api/history/public is public; owner history/delete routes are gated by requireAuth
 │   │   ├── openaiCompat.ts   # OpenAI-compatible /v1 image API — gated by openaiCompatAuth
 │   │   └── health.ts         # GET /api/health
 │   ├── controllers/          # Thin: parse req → call service → format res
@@ -397,8 +397,9 @@ headers: { Authorization: `Bearer ${apiKey}` };
 
 - Trigger: the authenticated generation API gained a cross-layer visibility flag
   that is persisted in SQLite and consumed by the homepage gallery.
-- Scope: `POST /api/images/generate`, `GET /api/history`, `image_records`, and
-  frontend filtering of history records into the homepage gallery.
+- Scope: `POST /api/images/generate`, `GET /api/history`,
+  `GET /api/history/public`, `image_records`, and frontend hydration of public
+  gallery records.
 
 ### 2. Signatures
 
@@ -407,6 +408,8 @@ headers: { Authorization: `Bearer ${apiKey}` };
   `aspectRatio`.
 - DB row: `image_records.is_public INTEGER NOT NULL DEFAULT false`.
 - History DTO: `ImageRecordDTO` includes required `isPublic: boolean`.
+- Public gallery: `GET /api/history/public` returns `{ records: ImageRecordDTO[] }`
+  for every record where `isPublic === true`.
 - Migration: add an explicit drizzle SQL migration for `is_public`; do not rely on
   runtime schema drift.
 
@@ -416,9 +419,9 @@ headers: { Authorization: `Bearer ${apiKey}` };
 - `isPublic` is record-level, and every image in the same generation batch is
   persisted with the same value from the request.
 - `/api/history` remains the owner-scoped source of truth and returns both public
-  and private records. Filtering for the homepage gallery is a frontend concern.
-- Public gallery in the current MVP is not a global multi-user feed; it is the
-  current user's public subset.
+  and private records for asset management and deletion.
+- `/api/history/public` is read-only, does not require auth, and must only return
+  records with `isPublic === true` from all accounts.
 
 ### 4. Validation & Error Matrix
 
@@ -427,14 +430,16 @@ headers: { Authorization: `Bearer ${apiKey}` };
 | `isPublic` omitted             | Persist `false` and return `isPublic: false` in history      |
 | `isPublic: true`               | Persist `true` for every generated image record in the batch |
 | `isPublic` is not boolean      | Zod rejects request with `BAD_REQUEST` 400                   |
+| Anonymous public gallery fetch | `GET /api/history/public` returns public records only        |
 | History row predates migration | Migration default makes returned DTO `isPublic: false`       |
 
 ### 5. Good/Base/Bad Cases
 
-- Good: user enables `公开`, generation succeeds, `/api/history` returns records
-  with `isPublic: true`, and the homepage gallery displays them.
+- Good: user enables `公开`, generation succeeds, `/api/history` returns owned
+  records with `isPublic: true`, and `/api/history/public` exposes them in the
+  homepage gallery for every account.
 - Base: user leaves `公开` off, generated records still appear in image management
-  but not in the homepage gallery.
+  but not in the public gallery.
 - Bad: deriving public/private state from prompt text, frontend-only state, or a
   separate unpersisted list.
 
@@ -443,10 +448,12 @@ headers: { Authorization: `Bearer ${apiKey}` };
 - Integration: `POST /api/images/generate { isPublic: true }` persists history
   rows with `isPublic: true`.
 - Integration: omitted `isPublic` returns private history records.
+- Integration: `GET /api/history/public` returns all accounts' public records
+  without private records.
 - Frontend: generation request includes `isPublic` when the composer toggle is
   enabled.
-- Frontend: homepage gallery receives only public entries while image management
-  keeps the full history list.
+- Frontend: homepage gallery receives public entries from `usePublicGallery`
+  while image management keeps the owner-scoped history list.
 
 ### 7. Wrong vs Correct
 

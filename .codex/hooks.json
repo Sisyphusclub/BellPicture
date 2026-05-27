@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/inject-workflow-state.py",
+            "command": "python3 .codex/hooks/inject-workflow-state.py",
             "timeout": 5
           }
         ]

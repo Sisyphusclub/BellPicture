@@ -105,8 +105,9 @@ Indexes: `(user_id, created_at)` and `(batch_id)`.
 
 `GET /api/history` returns the current user's records sorted newest-first,
 including the required `isPublic` boolean. Image management/history consumes the
-full list. The homepage gallery filters the same shared `entries` to
-`entry.record.isPublic === true`; do not create a second gallery-only store.
+full owner-scoped list. The homepage gallery uses `usePublicGallery`, hydrated
+from public `GET /api/history/public`, so it can show public records from every
+account without exposing private history or delete permissions.
 `DELETE /api/history/batch/:batchId` and `/api/history/:id` remove rows but
 leave `OUTPUT_DIR` files in place (file cleanup is PR3's responsibility once
 files are per-user).

@@ -90,6 +90,16 @@ export function listImageRecordsForUser(userId: string): ImageRecordDTO[] {
   return rows.map(toDTO);
 }
 
+export function listPublicImageRecords(): ImageRecordDTO[] {
+  const rows = db
+    .select()
+    .from(imageRecords)
+    .where(eq(imageRecords.isPublic, true))
+    .orderBy(desc(imageRecords.createdAt))
+    .all();
+  return rows.map(toDTO);
+}
+
 /** Deletes one record. Returns number of rows deleted (0 if not owned by user). */
 export function deleteImageRecordForUser(userId: string, id: string): number {
   const result = db

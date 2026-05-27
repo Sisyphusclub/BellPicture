@@ -5,6 +5,7 @@ import {
   deleteImageRecordBatchForUser,
   deleteImageRecordForUser,
   listImageRecordsForUser,
+  listPublicImageRecords,
   type ImageRecordDTO,
 } from '../services/history.service.js';
 
@@ -27,6 +28,7 @@ function isUuidLike(value: string): boolean {
 
 export function buildHistoryController(): {
   list: (req: Request, res: Response, next: NextFunction) => void;
+  listPublic: (_req: Request, res: Response, next: NextFunction) => void;
   removeOne: (req: Request, res: Response, next: NextFunction) => void;
   removeBatch: (req: Request, res: Response, next: NextFunction) => void;
 } {
@@ -35,6 +37,16 @@ export function buildHistoryController(): {
       try {
         const user = requireUser(req);
         const records = listImageRecordsForUser(user.id);
+        const body: HistoryListResponse = { records };
+        res.status(200).json(body);
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    listPublic(_req, res, next) {
+      try {
+        const records = listPublicImageRecords();
         const body: HistoryListResponse = { records };
         res.status(200).json(body);
       } catch (err) {

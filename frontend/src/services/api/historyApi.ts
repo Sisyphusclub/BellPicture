@@ -7,6 +7,7 @@ import {
   buildApiError,
   buildApiUrl,
   parseJsonResponse,
+  publicFetch,
 } from './httpClient';
 
 export interface HistoryListResponse {
@@ -19,6 +20,16 @@ export async function fetchHistory(): Promise<ImageRecord[]> {
   if (!response.ok) throw buildApiError(response.status, payload);
   if (!isHistoryListResponse(payload)) {
     throw new ImageApiError(response.status, 'INVALID_RESPONSE', '历史接口返回了无法识别的响应。');
+  }
+  return payload.records;
+}
+
+export async function fetchPublicHistory(): Promise<ImageRecord[]> {
+  const response = await publicFetch(buildApiUrl('/api/history/public'));
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw buildApiError(response.status, payload);
+  if (!isHistoryListResponse(payload)) {
+    throw new ImageApiError(response.status, 'INVALID_RESPONSE', '公开画廊返回了无法识别的响应。');
   }
   return payload.records;
 }

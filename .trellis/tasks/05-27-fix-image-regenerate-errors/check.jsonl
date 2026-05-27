@@ -1,0 +1,11 @@
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Verify optional reference fields and API-boundary typing remain strict."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Verify shared generation/history state remains composable-owned and backend-sourced."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Verify tests/typecheck and frontend quality bar."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Verify referenceId survives the cross-layer round trip used by regenerate."}
+{"command":"npm --prefix frontend run lint","result":"passed"}
+{"command":"npm --prefix frontend run typecheck","result":"passed"}
+{"command":"npm --prefix frontend test","result":"passed: 18 files, 81 tests"}
+{"command":"npm --prefix backend run lint","result":"passed"}
+{"command":"npm --prefix backend run typecheck","result":"passed"}
+{"command":"npm --prefix backend test","result":"passed: 13 files, 132 tests"}
+{"command":"git diff --check","result":"passed"}
