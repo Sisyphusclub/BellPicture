@@ -1,4 +1,4 @@
-import { enableAutoUnmount, mount } from '@vue/test-utils';
+import { enableAutoUnmount, mount, type VueWrapper } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -59,6 +59,38 @@ function expectStyleDeclaration(rule: string, property: string, value: string): 
   const escapedProperty = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const escapedValue = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   expect(rule).toMatch(new RegExp(`(?:^|[;\\s])${escapedProperty}\\s*:\\s*${escapedValue}\\s*;`));
+}
+
+function bodyGet(selector: string): Element {
+  const element = document.body.querySelector(selector);
+  if (!element) throw new Error(`Unable to get ${selector} within document.body`);
+  return element;
+}
+
+function bodyText(): string {
+  return document.body.textContent ?? '';
+}
+
+async function triggerBody(selector: string, event: Event): Promise<void> {
+  bodyGet(selector).dispatchEvent(event);
+  await nextTick();
+}
+
+function detailExists(selector = '.recent-detail'): boolean {
+  return document.body.querySelector(selector) !== null;
+}
+
+async function mountDetail(entry = createEntry(), props: Record<string, unknown> = {}): Promise<VueWrapper> {
+  const wrapper = mount(RecentCreationDetailModal, {
+    attachTo: document.body,
+    props: {
+      entry,
+      ...props,
+    },
+  });
+  await nextTick();
+  await nextTick();
+  return wrapper;
 }
 
 afterEach(() => {
@@ -157,73 +189,48 @@ describe('RecentCreationsMasonry', () => {
 describe('RecentCreationDetailModal', () => {
   it('renders selected image metadata and prompt copy action', async () => {
     const entry = createEntry();
-    const wrapper = mount(RecentCreationDetailModal, {
-      props: {
-        entry,
-      },
-    });
+    const wrapper = await mountDetail(entry);
 
-    expect(wrapper.text()).toContain('一只橙色猫坐在复古相机旁边');
-    expect(wrapper.text()).toContain('gpt-image-2');
-    expect(wrapper.find('.recent-detail__prompt-card').exists()).toBe(true);
-    expect(wrapper.find('.recent-detail__prompt-card .recent-detail__prompt').exists()).toBe(true);
+    expect(bodyText()).toContain('一只橙色猫坐在复古相机旁边');
+    expect(bodyText()).toContain('gpt-image-2');
+    expect(detailExists('.recent-detail__prompt-card')).toBe(true);
+    expect(detailExists('.recent-detail__prompt-card .recent-detail__prompt')).toBe(true);
 
-    await wrapper.get('.recent-detail__copy').trigger('click');
+    await triggerBody('.recent-detail__copy', new MouseEvent('click', { bubbles: true }));
 
     expect(wrapper.emitted('copy-prompt')?.[0]).toEqual([entry]);
   });
 
   it('shows admin delete controls and emits delete from the detail modal', async () => {
     const entry = createEntry();
-    const wrapper = mount(RecentCreationDetailModal, {
-      props: {
-        entry,
-        canDelete: true,
-      },
-    });
+    const wrapper = await mountDetail(entry, { canDelete: true });
 
-    await wrapper.get('.recent-detail__delete').trigger('click');
+    await triggerBody('.recent-detail__delete', new MouseEvent('click', { bubbles: true }));
 
     expect(wrapper.emitted('delete')?.[0]).toEqual([entry]);
   });
 
   it('keeps dialog semantics on the detail panel and focuses the close control', async () => {
-    const wrapper = mount(RecentCreationDetailModal, {
-      attachTo: document.body,
-      props: {
-        entry: createEntry(),
-      },
-    });
+    await mountDetail(createEntry());
 
-    await nextTick();
-    await nextTick();
-
-    const dialog = wrapper.get('.recent-detail__shell');
-    expect(dialog.attributes('role')).toBe('dialog');
-    expect(dialog.attributes('aria-modal')).toBe('true');
-    expect(dialog.attributes('aria-labelledby')).toBe('recent-detail-title');
-    expect(wrapper.get('#recent-detail-title').text()).toBe('提示词');
-    expect(document.activeElement).toBe(wrapper.get('.recent-detail__close').element);
+    const dialog = bodyGet('.recent-detail__shell');
+    expect(dialog.getAttribute('role')).toBe('dialog');
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    expect(dialog.getAttribute('aria-labelledby')).toBe('recent-detail-title');
+    expect(bodyGet('#recent-detail-title').textContent).toBe('提示词');
+    expect(document.activeElement).toBe(bodyGet('.recent-detail__close'));
   });
 
   it('emits close when the backdrop is clicked', async () => {
-    const wrapper = mount(RecentCreationDetailModal, {
-      props: {
-        entry: createEntry(),
-      },
-    });
+    const wrapper = await mountDetail(createEntry());
 
-    await wrapper.get('.recent-detail').trigger('click');
+    await triggerBody('.recent-detail', new MouseEvent('click', { bubbles: true }));
 
     expect(wrapper.emitted('close')).toHaveLength(1);
   });
 
   it('emits close when Escape is pressed', async () => {
-    const wrapper = mount(RecentCreationDetailModal, {
-      props: {
-        entry: createEntry(),
-      },
-    });
+    const wrapper = await mountDetail(createEntry());
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     await nextTick();
@@ -231,13 +238,9 @@ describe('RecentCreationDetailModal', () => {
     expect(wrapper.emitted('close')).toHaveLength(1);
   });
 
-  it('keeps portrait images and inspector bounded inside the desktop viewport', () => {
+  it('keeps portrait images and inspector bounded inside the desktop viewport', async () => {
     const longPrompt = '一张纵向电影海报，包含雨夜、霓虹、人物、建筑、反光地面、细密雨丝、远处灯牌与安静氛围。'.repeat(6);
-    const wrapper = mount(RecentCreationDetailModal, {
-      props: {
-        entry: createEntry({ prompt: longPrompt, width: 1024, height: 1792 }),
-      },
-    });
+    await mountDetail(createEntry({ prompt: longPrompt, width: 1024, height: 1792 }));
 
     const shellRule = extractStyleRules('.recent-detail__shell')[0] ?? '';
     const stageRule = extractStyleRules('.recent-detail__stage')[0] ?? '';
@@ -245,8 +248,8 @@ describe('RecentCreationDetailModal', () => {
     const inspectorRule = extractStyleRules('.recent-detail__inspector')[0] ?? '';
     const promptScrollRule = extractStyleRules('.recent-detail__prompt-scroll')[0] ?? '';
 
-    expect(wrapper.get('.recent-detail__stage img').attributes('src')).toBe('blob:recent-1');
-    expect(wrapper.text()).toContain(longPrompt);
+    expect(bodyGet('.recent-detail__stage img').getAttribute('src')).toBe('blob:recent-1');
+    expect(bodyText()).toContain(longPrompt);
     expect(shellRule).not.toBe('');
     expect(stageRule).not.toBe('');
     expect(imageRule).not.toBe('');
@@ -266,13 +269,9 @@ describe('RecentCreationDetailModal', () => {
   });
 
   it('emits close when the close button is clicked', async () => {
-    const wrapper = mount(RecentCreationDetailModal, {
-      props: {
-        entry: createEntry(),
-      },
-    });
+    const wrapper = await mountDetail(createEntry());
 
-    await wrapper.get('.recent-detail__close').trigger('click');
+    await triggerBody('.recent-detail__close', new MouseEvent('click', { bubbles: true }));
 
     expect(wrapper.emitted('close')).toHaveLength(1);
   });

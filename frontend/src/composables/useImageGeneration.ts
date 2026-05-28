@@ -4,7 +4,7 @@ import {
   createGenerateRequest,
   generateImage,
   ImageApiError,
-  uploadReferenceImage,
+  uploadReferenceImages,
 } from '@/services/api/imagesApi';
 import {
   DEFAULT_ASPECT_RATIO,
@@ -23,7 +23,9 @@ export interface GenerateImageOptions {
   prompt: string;
   model?: string;
   referenceFile?: File;
+  referenceFiles?: File[];
   referenceId?: string;
+  referenceIds?: string[];
   count?: number;
   aspectRatio?: AspectRatio;
   isPublic?: boolean;
@@ -52,14 +54,15 @@ export function useImageGeneration() {
     const aspectRatio = options.aspectRatio ?? DEFAULT_ASPECT_RATIO;
 
     try {
-      let referenceId = options.referenceId?.trim() || undefined;
-      if (options.referenceFile) {
-        statusMessage.value = '正在上传参考图。';
-        const upload = await uploadReferenceImage(options.referenceFile);
-        referenceId = upload.id;
+      let referenceIds = normalizeReferenceIds(options.referenceIds, options.referenceId);
+      const referenceFiles = options.referenceFiles ?? (options.referenceFile ? [options.referenceFile] : []);
+      if (referenceFiles.length > 0) {
+        statusMessage.value = referenceFiles.length > 1 ? `正在上传 ${referenceFiles.length} 张参考图。` : '正在上传参考图。';
+        const uploads = await uploadReferenceImages(referenceFiles);
+        referenceIds = uploads.map((upload) => upload.id);
       }
 
-      statusMessage.value = referenceId ? '正在结合参考图生成图片。' : '正在根据提示词生成图片。';
+      statusMessage.value = referenceIds.length > 0 ? '正在结合参考图生成图片。' : '正在根据提示词生成图片。';
       const model = options.model?.trim() || DEFAULT_MODEL;
       const requestStart = Date.now();
       const request = createGenerateRequest({
@@ -67,7 +70,7 @@ export function useImageGeneration() {
         model,
         count,
         aspectRatio,
-        ...(referenceId !== undefined ? { referenceId } : {}),
+        ...(referenceIds.length > 0 ? { referenceIds } : {}),
         isPublic: options.isPublic ?? false,
       });
       const generated = await generateImage(request);
@@ -89,7 +92,7 @@ export function useImageGeneration() {
           height: image.height,
           elapsedMs,
           isPublic: options.isPublic ?? false,
-          ...(referenceId !== undefined ? { referenceId } : {}),
+          ...(referenceIds.length > 0 ? { referenceIds } : {}),
         });
         const entry = add(record);
         entries.push(entry);
@@ -128,6 +131,12 @@ export function useImageGeneration() {
   };
 }
 
+
+function normalizeReferenceIds(referenceIds: string[] | undefined, referenceId: string | undefined): string[] {
+  const raw = referenceIds ?? (referenceId !== undefined ? [referenceId] : []);
+  return Array.from(new Set(raw.map((id) => id.trim()).filter((id) => id.length > 0)));
+}
+
 function createImageRecord(input: {
   id: string;
   batchId: string;
@@ -135,6 +144,7 @@ function createImageRecord(input: {
   prompt: string;
   model: string;
   referenceId?: string;
+  referenceIds?: string[];
   aspectRatio: AspectRatio;
   width: number;
   height: number;
@@ -152,7 +162,9 @@ function createImageRecord(input: {
     height: input.height,
     isPublic: input.isPublic,
   };
-  if (input.referenceId !== undefined) record.referenceId = input.referenceId;
+  const referenceIds = normalizeReferenceIds(input.referenceIds, input.referenceId);
+  if (referenceIds[0] !== undefined) record.referenceId = referenceIds[0];
+  if (referenceIds.length > 0) record.referenceIds = referenceIds;
   if (input.elapsedMs !== undefined) record.elapsedMs = input.elapsedMs;
   return record;
 }

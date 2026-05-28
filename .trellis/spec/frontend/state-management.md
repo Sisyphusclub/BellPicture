@@ -95,7 +95,7 @@ History records live in the `image_records` table:
 | `id`                                                | text PK                      | UUID with extension (e.g. `<uuid>.png`); also the filename under `OUTPUT_DIR` |
 | `batch_id`                                          | text                         | Shared across every record in the same generate batch                         |
 | `user_id`                                           | text FK → `user.id`, cascade | The owner                                                                     |
-| `prompt`, `model`, `reference_id?`, `aspect_ratio?` | text                         | Provided by the request                                                       |
+| `prompt`, `model`, `reference_id?`, `reference_ids?`, `aspect_ratio?` | text                         | Provided by the request; `reference_ids` is JSON text for up to 4 ids         |
 | `filename`, `mime`, `width`, `height`               | text/int                     | Image metadata                                                                |
 | `elapsed_ms?`                                       | int                          | Generation wall clock                                                         |
 | `is_public`                                         | int boolean                  | Whether the generated record is shown in the homepage gallery                 |
@@ -108,6 +108,12 @@ including the required `isPublic` boolean. Image management/history consumes the
 full owner-scoped list. The homepage gallery uses `usePublicGallery`, hydrated
 from public `GET /api/history/public`, so it can show public records from every
 account without exposing private history or delete permissions.
+For image-to-image records, `ImageRecord.referenceIds` is the canonical
+multi-reference snapshot. `ImageRecord.referenceId` remains as the first id for
+legacy batches and older UI code. Regenerate flows must read `referenceIds`
+first, fall back to `referenceId`, and pass the resulting ids through
+`GenerateImageOptions.referenceIds` without re-uploading existing history
+references.
 `DELETE /api/history/batch/:batchId` and `/api/history/:id` remove rows but
 leave `OUTPUT_DIR` files in place (file cleanup is PR3's responsibility once
 files are per-user).

@@ -249,10 +249,10 @@ describe('POST /api/images/generate', () => {
     expect(res.status).toBe(200);
     expect(res.body.generationMode).toBe('image-to-image');
     const call = (harness.provider.generate as ReturnType<typeof vi.fn>).mock.calls[0]![0] as {
-      referencePath?: string;
+      referencePaths?: string[];
     };
-    expect(call.referencePath).toBeDefined();
-    expect(call.referencePath as string).toContain(referenceId);
+    expect(call.referencePaths).toHaveLength(1);
+    expect(call.referencePaths?.[0]).toContain(referenceId);
   });
 
   it('returns 400 when prompt is empty', async () => {

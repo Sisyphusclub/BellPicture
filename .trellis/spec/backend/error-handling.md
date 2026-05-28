@@ -138,6 +138,8 @@ boundary:
 | Magic-bytes sniff doesn't recognize the upload | `UNSUPPORTED_MEDIA_TYPE` | 415 (`details.firstBytes` = first 12 bytes) |
 | `referenceId` not `<uuid>.<ext>` | `BAD_REQUEST` | 400 |
 | `referenceId` does not match a file on disk | `BAD_REQUEST` | 400 (`details.referenceId` = the id) |
+| `referenceIds` contains more than `MAX_REFERENCE_IMAGES` ids | `BAD_REQUEST` | 400 |
+| Any id in `referenceIds` does not match a file on disk | `BAD_REQUEST` | 400 (`details.referenceId` = the failing id) |
 | `GET /api/outputs/:filename` filename malformed | `BAD_REQUEST` | 400 |
 | `GET /api/outputs/:filename` file missing | `NOT_FOUND` | 404 |
 

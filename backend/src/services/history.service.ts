@@ -10,6 +10,7 @@ export interface ImageRecordDTO {
   prompt: string;
   model: string;
   referenceId?: string;
+  referenceIds?: string[];
   aspectRatio?: AspectRatio;
   filename: string;
   mime: string;
@@ -27,6 +28,7 @@ export interface NewImageRecord {
   prompt: string;
   model: string;
   referenceId?: string;
+  referenceIds?: string[];
   aspectRatio?: AspectRatio;
   filename: string;
   mime: string;
@@ -35,6 +37,20 @@ export interface NewImageRecord {
   elapsedMs?: number;
   isPublic: boolean;
   createdAt: Date;
+}
+
+function parseReferenceIds(raw: string | null, fallback: string | null): string[] {
+  if (raw !== null) {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed)) {
+        return Array.from(new Set(parsed.filter((item): item is string => typeof item === 'string')));
+      }
+    } catch {
+      // Fall back to the legacy single reference id below.
+    }
+  }
+  return fallback !== null ? [fallback] : [];
 }
 
 function toDTO(row: typeof imageRecords.$inferSelect): ImageRecordDTO {
@@ -50,7 +66,9 @@ function toDTO(row: typeof imageRecords.$inferSelect): ImageRecordDTO {
     isPublic: row.isPublic,
     createdAt: row.createdAt.toISOString(),
   };
+  const referenceIds = parseReferenceIds(row.referenceIds, row.referenceId);
   if (row.referenceId !== null) dto.referenceId = row.referenceId;
+  if (referenceIds.length > 0) dto.referenceIds = referenceIds;
   if (row.aspectRatio !== null) dto.aspectRatio = row.aspectRatio as AspectRatio;
   if (row.elapsedMs !== null) dto.elapsedMs = row.elapsedMs;
   return dto;
@@ -66,7 +84,8 @@ export function insertImageRecords(records: NewImageRecord[]): void {
         userId: r.userId,
         prompt: r.prompt,
         model: r.model,
-        referenceId: r.referenceId ?? null,
+        referenceId: r.referenceId ?? r.referenceIds?.[0] ?? null,
+        referenceIds: r.referenceIds && r.referenceIds.length > 0 ? JSON.stringify(r.referenceIds) : null,
         aspectRatio: r.aspectRatio ?? null,
         filename: r.filename,
         mime: r.mime,

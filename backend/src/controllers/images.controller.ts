@@ -9,13 +9,20 @@ import type { ImageGenerationProvider } from '../services/providers/ImageGenerat
 import type { QuotaSnapshot } from '../services/quota.service.js';
 import type { UserQuotaService } from '../services/userQuota.service.js';
 import { saveUpload } from '../storage/localStorage.js';
-import { ASPECT_RATIOS, DEFAULT_COUNT, MAX_COUNT, MIN_COUNT } from '../types/image.js';
+import {
+  ASPECT_RATIOS,
+  DEFAULT_COUNT,
+  MAX_COUNT,
+  MAX_REFERENCE_IMAGES,
+  MIN_COUNT,
+} from '../types/image.js';
 
 import '../types/express.js';
 
 const generateBodySchema = z.object({
   prompt: z.string().min(1).max(2000),
   referenceId: z.string().min(1).optional(),
+  referenceIds: z.array(z.string().min(1)).min(1).max(MAX_REFERENCE_IMAGES).optional(),
   model: z.string().min(1).max(100).optional(),
   count: z.number().int().min(MIN_COUNT).max(MAX_COUNT).optional(),
   aspectRatio: z.enum(ASPECT_RATIOS).optional(),
@@ -57,6 +64,12 @@ function requireUser(req: Request): { id: string } {
     throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
   }
   return req.user;
+}
+
+
+function normalizeReferenceIds(referenceIds: string[] | undefined, referenceId: string | undefined): string[] {
+  const raw = referenceIds ?? (referenceId !== undefined ? [referenceId] : []);
+  return Array.from(new Set(raw.map((id) => id.trim()).filter((id) => id.length > 0)));
 }
 
 export function buildImagesController(deps: ImagesControllerDeps): {
@@ -110,12 +123,13 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           throw err;
         }
 
+        const referenceIds = normalizeReferenceIds(parsed.referenceIds, parsed.referenceId);
         const quotaPool = deps.userQuota.forUser(user.id);
         const result = await generateImage(
           {
             prompt: parsed.prompt,
             count: parsed.count ?? DEFAULT_COUNT,
-            ...(parsed.referenceId !== undefined ? { referenceId: parsed.referenceId } : {}),
+            ...(referenceIds.length > 0 ? { referenceIds } : {}),
             ...(parsed.model !== undefined ? { model: parsed.model } : {}),
             ...(parsed.aspectRatio !== undefined ? { aspectRatio: parsed.aspectRatio } : {}),
           },
@@ -129,7 +143,8 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           userId: user.id,
           prompt: parsed.prompt,
           model: parsed.model ?? 'gpt-image-2',
-          ...(parsed.referenceId !== undefined ? { referenceId: parsed.referenceId } : {}),
+          ...(referenceIds[0] !== undefined ? { referenceId: referenceIds[0] } : {}),
+          ...(referenceIds.length > 0 ? { referenceIds } : {}),
           ...(result.aspectRatio !== undefined ? { aspectRatio: result.aspectRatio } : {}),
           filename: image.filename,
           mime: image.mime,

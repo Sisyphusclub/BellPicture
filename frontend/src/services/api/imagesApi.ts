@@ -47,6 +47,15 @@ export async function uploadReferenceImage(file: File): Promise<UploadResponse> 
   return payload;
 }
 
+
+export async function uploadReferenceImages(files: readonly File[]): Promise<UploadResponse[]> {
+  const uploads: UploadResponse[] = [];
+  for (const file of files) {
+    uploads.push(await uploadReferenceImage(file));
+  }
+  return uploads;
+}
+
 export async function generateImage(request: GenerateRequest): Promise<GenerateResponse> {
   const response = await authedFetch(buildApiUrl('/api/images/generate'), {
     method: 'POST',
@@ -61,6 +70,12 @@ export async function generateImage(request: GenerateRequest): Promise<GenerateR
     throw new ImageApiError(response.status, 'INVALID_RESPONSE', '生成接口返回了无法识别的响应。');
   }
   return payload;
+}
+
+
+function normalizeReferenceIds(referenceIds: string[] | undefined, referenceId: string | undefined): string[] {
+  const raw = referenceIds ?? (isOptionalString(referenceId) && referenceId !== undefined ? [referenceId] : []);
+  return Array.from(new Set(raw.map((id) => id.trim()).filter((id) => id.length > 0)));
 }
 
 export function toDisplayImageUrl(outputUrl: string): string {
@@ -119,6 +134,7 @@ function isStringValue(value: string | null): value is string {
 export function createGenerateRequest(input: {
   prompt: string;
   referenceId?: string;
+  referenceIds?: string[];
   model?: string;
   count?: number;
   aspectRatio?: AspectRatio;
@@ -127,8 +143,11 @@ export function createGenerateRequest(input: {
   const request: GenerateRequest = {
     prompt: input.prompt,
   };
-  if (isOptionalString(input.referenceId) && input.referenceId !== undefined) {
-    request.referenceId = input.referenceId;
+  const referenceIds = normalizeReferenceIds(input.referenceIds, input.referenceId);
+  if (referenceIds.length > 0) {
+    request.referenceIds = referenceIds;
+    const firstReferenceId = referenceIds[0];
+    if (firstReferenceId !== undefined) request.referenceId = firstReferenceId;
   }
   if (isOptionalString(input.model) && input.model !== undefined) {
     request.model = input.model;

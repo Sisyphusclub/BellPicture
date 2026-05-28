@@ -124,8 +124,90 @@ password hashing and session semantics stay library-owned.
   `display_username` (normalized display value). See
   https://www.better-auth.com/docs/concepts/database for base field semantics.
 - **`user_quota`** — `(user_id PK FK → user.id cascade, used_today int, quota_date text)`.
-- **`image_records`** — full schema documented in `src/db/schema.ts`. Indexes:
-  `(user_id, created_at)` (history list query) and `(batch_id)` (per-batch delete).
+- **`image_records`** — full schema documented in `src/db/schema.ts`. It stores
+  `reference_id` for legacy/single-reference callers and `reference_ids` as JSON
+  text for the canonical multi-reference snapshot. Indexes: `(user_id, created_at)`
+  (history list query) and `(batch_id)` (per-batch delete).
+
+## Scenario: multi-reference image generation records
+
+### 1. Scope / Trigger
+- Trigger: image generation now accepts up to 4 reference images and persists
+  the full reference set for history/regenerate. This changes API payloads,
+  provider input, and the `image_records` schema.
+
+### 2. Signatures
+```ts
+// POST /api/images/generate
+type GenerateBody = {
+  prompt: string;
+  referenceId?: string;      // legacy single id
+  referenceIds?: string[];   // canonical, max 4
+  model?: string;
+  count?: number;
+  aspectRatio?: AspectRatio;
+  isPublic?: boolean;
+};
+
+// backend/src/types/image.ts
+interface GenerateInput {
+  prompt: string;
+  referencePath?: string;    // deprecated
+  referencePaths?: string[]; // canonical provider input
+}
+
+// image_records table
+reference_id text;           // first id / legacy fallback
+reference_ids text;          // JSON string array, nullable
+```
+
+### 3. Contracts
+- Controller accepts either `referenceId` or `referenceIds`. If both are
+  present, `referenceIds` wins. Normalize by trimming empty ids and de-duping.
+- `referenceIds.length` must be `1..MAX_REFERENCE_IMAGES` when present.
+- `imageGeneration.service` resolves every id through `resolveUploadPath()` and
+  verifies the file exists before calling the provider.
+- Provider calls receive `referencePaths` and append each file as an `image`
+  multipart field when calling `/v1/images/edits`.
+- `history.service` writes `reference_id = referenceIds[0]` and
+  `reference_ids = JSON.stringify(referenceIds)`. DTOs expose `referenceIds`
+  parsed from JSON, falling back to `[referenceId]` for old rows.
+
+### 4. Validation & Error Matrix
+| Condition | Expected behavior |
+|---|---|
+| `referenceIds` has more than 4 items | 400 `BAD_REQUEST` |
+| Any reference id resolves outside upload storage or is malformed | 400 `BAD_REQUEST` from storage path validation |
+| Any reference file is missing or not a file | 400 `BAD_REQUEST`, `details.referenceId` set |
+| `reference_ids` contains invalid JSON in an old/corrupt row | DTO falls back to legacy `reference_id` |
+
+### 5. Good/Base/Bad Cases
+- Good: 2 reference ids resolve to 2 absolute paths, provider appends 2
+  multipart `image` fields, and history returns both ids for regenerate.
+- Base: legacy row with only `reference_id` returns `referenceIds: [referenceId]`.
+- Bad: regenerating by re-uploading generated output files instead of reusing
+  persisted upload ids.
+
+### 6. Tests Required
+- Controller tests assert `POST /api/images/generate` passes `referencePaths`
+  to the provider for legacy `referenceId` and array `referenceIds`.
+- Service tests assert every reference id is preflighted and stale ids produce
+  `BAD_REQUEST`.
+- Provider tests assert multiple `referencePaths` append multiple multipart
+  `image` fields.
+- History tests assert `reference_ids` round-trips and legacy `reference_id`
+  fallback still works.
+
+### 7. Wrong vs Correct
+#### Wrong
+```ts
+await provider.generate({ prompt, referencePath: resolved[0] });
+```
+
+#### Correct
+```ts
+await provider.generate({ prompt, referencePaths: resolved });
+```
 
 ---
 

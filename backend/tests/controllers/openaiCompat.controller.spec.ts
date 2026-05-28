@@ -295,7 +295,7 @@ describe('POST /v1/images/edits', () => {
       count: 2,
       aspectRatio: '2:3',
     });
-    expect(call?.referencePath).toMatch(/[0-9a-f-]{36}\.png$/u);
+    expect(call?.referencePaths?.[0]).toMatch(/[0-9a-f-]{36}\.png$/u);
   });
 
   it('rejects missing image with a typed 400 error', async () => {
@@ -453,7 +453,7 @@ describe('POST /v1/chat/completions', () => {
 
     expect(res.status).toBe(200);
     const call = harness.generate.mock.calls[0]?.[0] as GenerateInput | undefined;
-    expect(call?.referencePath).toMatch(/[0-9a-f-]{36}\.png$/u);
+    expect(call?.referencePaths?.[0]).toMatch(/[0-9a-f-]{36}\.png$/u);
   });
 
   it('rejects remote image URLs even after a data reference', async () => {
@@ -578,7 +578,7 @@ describe('POST /v1/responses', () => {
 
     expect(res.status).toBe(200);
     const call = harness.generate.mock.calls[0]?.[0] as GenerateInput | undefined;
-    expect(call?.referencePath).toMatch(/[0-9a-f-]{36}\.png$/u);
+    expect(call?.referencePaths?.[0]).toMatch(/[0-9a-f-]{36}\.png$/u);
   });
 
   it('rejects remote input_image URLs even after a data reference', async () => {

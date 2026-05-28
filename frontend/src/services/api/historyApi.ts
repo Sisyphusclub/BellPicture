@@ -85,16 +85,23 @@ function isImageRecord(value: unknown): value is ImageRecord {
   if (!isNumber(width) || !isNumber(height)) return false;
   const batchId = value.batchId;
   const referenceId = value.referenceId;
+  const referenceIds = value.referenceIds;
   const aspectRatio = value.aspectRatio;
   const elapsedMs = value.elapsedMs;
   const isPublic = value.isPublic;
   return (
     (batchId === undefined || typeof batchId === 'string') &&
     (referenceId === undefined || typeof referenceId === 'string') &&
+    (referenceIds === undefined || isStringArray(referenceIds)) &&
     (aspectRatio === undefined || isAspectRatio(aspectRatio)) &&
     (elapsedMs === undefined || typeof elapsedMs === 'number') &&
     typeof isPublic === 'boolean'
   );
+}
+
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
 }
 
 function isHistoryListResponse(value: unknown): value is HistoryListResponse {

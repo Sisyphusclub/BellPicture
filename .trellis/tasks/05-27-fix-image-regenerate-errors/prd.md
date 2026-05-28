@@ -29,6 +29,8 @@ Fix regressions in the Generate workspace "再次生成" flow so retrying a comp
 - Do not re-upload an existing history `referenceId` just to regenerate; use the existing backend reference id.
 - Keep `/api/history` owner-scoped for personal assets and deletion.
 - Add a read-only public gallery source for all accounts' public records.
+- Let administrators remove public gallery images from any account while
+  preserving owner-scoped deletion for personal history.
 - Keep the generate/discover, personal assets, and user management routes on the
   same global video backdrop layer.
 
@@ -44,12 +46,17 @@ Fix regressions in the Generate workspace "再次生成" flow so retrying a comp
 - [x] Homepage gallery uses the public gallery source, while personal assets
   remain owner-scoped.
 - [x] Personal assets and user management routes render the same video backdrop.
+- [x] Admins can delete public gallery images owned by any user from the
+  homepage/gallery UI.
+- [x] Ordinary users and anonymous visitors cannot delete public gallery images
+  owned by other users.
 
 ## Out of Scope
 
 - Changing provider timeout behavior or backend retry policy.
 - Restoring deleted upload files if a historical `referenceId` points to a file that no longer exists.
 - Adding new UI for previewing historical reference images.
+- Letting admins delete private history records from other accounts.
 
 ## Technical Notes
 

@@ -28,6 +28,7 @@ export const DEFAULT_ASPECT_RATIO: AspectRatio = '1:1';
 export const DEFAULT_COUNT = 1;
 export const MIN_COUNT = 1;
 export const MAX_COUNT = 2;
+export const MAX_REFERENCE_IMAGES = 4;
 
 export interface ImageRecord {
   id: string;
@@ -38,6 +39,7 @@ export interface ImageRecord {
   prompt: string;
   model: string;
   referenceId?: string;
+  referenceIds?: readonly string[];
   aspectRatio?: AspectRatio;
   width: number;
   height: number;
@@ -56,6 +58,7 @@ export interface UploadResponse {
 export interface GenerateRequest {
   prompt: string;
   referenceId?: string;
+  referenceIds?: readonly string[];
   model?: string;
   count?: number;
   aspectRatio?: AspectRatio;

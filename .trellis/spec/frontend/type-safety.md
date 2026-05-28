@@ -52,6 +52,7 @@ export interface ImageRecord {
   prompt: string;
   model: string;
   referenceId?: string;
+  referenceIds?: readonly string[];
   width: number;
   height: number;
   isPublic: boolean;
@@ -67,6 +68,7 @@ export interface UploadResponse {
 export interface GenerateRequest {
   prompt: string;
   referenceId?: string;
+  referenceIds?: readonly string[];
   model?: string;
   isPublic?: boolean;
 }
@@ -155,18 +157,24 @@ function isImageRecord(value: unknown): value is ImageRecord {
   it does not delete the owner's `/api/history` record or the output file.
 - `GET /api/outputs/:filename` returns image bytes.
 - `services/api/imagesApi.ts` exports `uploadReferenceImage(file)`,
-  `generateImage(request)`, `fetchOutputBlob(outputUrl)`, and
+  `uploadReferenceImages(files)`, `generateImage(request)`,
+  `fetchOutputBlob(outputUrl)`, and
   `toDisplayImageUrl(outputUrl)`.
 
 ### 3. Contracts
 
 - Upload response: `{ id, filename, mime, size }`.
-- Generate request: `{ prompt, referenceId?, model?, count?, aspectRatio?, isPublic? }`.
-- Regeneration from history may reuse an existing `referenceId`; this is still
-  a normal `GenerateRequest` and must NOT re-upload the original file when the
-  frontend already has a persisted backend reference id.
+- Generate request: `{ prompt, referenceId?, referenceIds?, model?, count?, aspectRatio?, isPublic? }`.
+  New call sites send `referenceIds` for image-to-image; `referenceId` remains
+  a legacy/back-compat field populated with the first id when useful.
+- Regeneration from history may reuse existing `referenceIds`; this is still
+  a normal `GenerateRequest` and must NOT re-upload original files when the
+  frontend already has persisted backend reference ids.
 - Generate response: `{ batchId, aspectRatio, generationMode, images }` where each image has `{ id, outputUrl, filename, mime, width, height }` and `generationMode` is `'text-to-image' | 'image-to-image'`.
-- History record response: `ImageRecord` includes required `isPublic: boolean`;
+- History record response: `ImageRecord` includes required `isPublic: boolean`
+  and optional `referenceIds: readonly string[]`; `referenceId` mirrors the
+  first id for legacy callers. Treat both fields as immutable API data in UI
+  computed values and tests.
   image management keeps the owner-scoped `/api/history` list, while the
   homepage gallery hydrates `/api/history/public` for all accounts' public
   records.
@@ -187,7 +195,8 @@ function isImageRecord(value: unknown): value is ImageRecord {
 | Backend error envelope present   | Throw `ImageApiError(status, code, message, requestId, details)`                     |
 | Non-JSON or malformed error body | Throw `ImageApiError(status, 'HTTP_ERROR', ...)`                                     |
 | localStorage schema mismatch     | Ignore stored payload and return an empty history                                    |
-| Existing history `referenceId`   | Send it directly in `GenerateRequest.referenceId`; do not call upload first          |
+| Existing history `referenceIds`  | Send them directly in `GenerateRequest.referenceIds`; do not call upload first       |
+| More than 4 reference images     | UI must not send more than `MAX_REFERENCE_IMAGES`; backend rejects extra ids         |
 | Anonymous gallery delete         | Backend returns `UNAUTHORIZED`; frontend opens login through `authedFetch`           |
 | Non-admin gallery delete         | Backend returns `FORBIDDEN`; frontend shows the localized API message                |
 | Missing/non-public gallery id     | Backend returns `NOT_FOUND`; frontend keeps the public gallery cache unchanged       |
@@ -198,9 +207,11 @@ function isImageRecord(value: unknown): value is ImageRecord {
   output blob is fetched, and metadata/blob are persisted together.
 - Base: prompt-only generation skips upload and records `generationMode` as
   `text-to-image`.
-- Regenerate: a history batch whose first/any record has `referenceId` sends
-  that id back to `/api/images/generate` and records `generationMode` as
+- Regenerate: a history batch whose first/any record has `referenceIds` sends
+  those ids back to `/api/images/generate` and records `generationMode` as
   `image-to-image`.
+- Multi-reference: selecting, dropping, or pasting several images uploads them
+  via `uploadReferenceImages()` and sends the returned ids as `referenceIds`.
 - Admin moderation: an admin can remove another user's public image from the
   homepage gallery; that owner's private history still contains the record with
   `isPublic: false`.
@@ -215,9 +226,9 @@ function isImageRecord(value: unknown): value is ImageRecord {
   schema-gated reads.
 - Mount critical components/composables and assert user-facing error/status
   behavior, not implementation internals.
-- Regression: regenerating a saved image-to-image batch asserts `referenceId`
-  is present and `referenceFile` is absent; regenerating a saved text-to-image
-  batch asserts no `referenceId` is sent.
+- Regression: regenerating a saved image-to-image batch asserts `referenceIds`
+  is present and `referenceFiles` is absent; regenerating a saved text-to-image
+  batch asserts no reference id field is sent.
 - Admin gallery delete: backend route test asserts `DELETE /api/history/public/:id`
   hides the record from public listing but preserves owner history, and frontend
   tests assert only admins see gallery delete controls and `usePublicGallery`
@@ -273,11 +284,13 @@ return {
 #### Correct
 
 ```ts
-const referenceId = batch.entries.find((entry) => entry.record.referenceId)?.record.referenceId;
+const referenceIds = batch.entries.flatMap((entry) =>
+  entry.record.referenceIds ?? (entry.record.referenceId ? [entry.record.referenceId] : []),
+);
 return {
   prompt: batch.prompt,
   model: batch.model,
-  ...(referenceId ? { referenceId } : {}),
+  ...(referenceIds.length > 0 ? { referenceIds } : {}),
 };
 ```
 

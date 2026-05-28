@@ -10,6 +10,7 @@ import {
   DEFAULT_ASPECT_RATIO,
   DEFAULT_COUNT,
   MAX_COUNT,
+  MAX_REFERENCE_IMAGES,
   MIN_COUNT,
   type AspectRatio,
 } from '../types/image.js';
@@ -22,6 +23,7 @@ export type GenerationMode = 'text-to-image' | 'image-to-image';
 export interface GenerateImageInput {
   prompt: string;
   referenceId?: string;
+  referenceIds?: string[];
   model?: string;
   count?: number;
   aspectRatio?: AspectRatio;
@@ -61,26 +63,23 @@ export async function generateImage(
   input: GenerateImageInput,
   deps: ImageGenerationDeps,
 ): Promise<GenerateImageOutput> {
-  const hasReference = typeof input.referenceId === 'string' && input.referenceId.length > 0;
-  let referencePath: string | undefined;
+  const referenceIds = normalizeReferenceIds(input);
+  const hasReference = referenceIds.length > 0;
+  const referencePaths: string[] = [];
 
-  if (hasReference) {
-    const resolved = resolveUploadPath(input.referenceId as string);
+  for (const referenceId of referenceIds) {
+    const resolved = resolveUploadPath(referenceId);
     try {
       const info = await stat(resolved.absolutePath);
       if (!info.isFile()) {
         throw new Error('not a regular file');
       }
     } catch (err) {
-      throw new AppError(
-        'BAD_REQUEST',
-        `Reference id not found: ${input.referenceId as string}`,
-        400,
-        err,
-        { referenceId: input.referenceId },
-      );
+      throw new AppError('BAD_REQUEST', `Reference id not found: ${referenceId}`, 400, err, {
+        referenceId,
+      });
     }
-    referencePath = resolved.absolutePath;
+    referencePaths.push(resolved.absolutePath);
   }
 
   const count = clampCount(input.count);
@@ -94,6 +93,7 @@ export async function generateImage(
     {
       promptLen: input.prompt.length,
       hasReference,
+      referenceCount: referenceIds.length,
       model: input.model ?? '<default>',
       count,
       aspectRatio,
@@ -105,7 +105,7 @@ export async function generateImage(
     prompt: input.prompt,
     count,
     aspectRatio,
-    ...(referencePath !== undefined ? { referencePath } : {}),
+    ...(referencePaths.length > 0 ? { referencePaths } : {}),
     ...(input.model !== undefined ? { model: input.model } : {}),
   });
 
@@ -127,6 +127,22 @@ export async function generateImage(
       height: image.height,
     })),
   };
+}
+
+
+function normalizeReferenceIds(input: GenerateImageInput): string[] {
+  const raw = input.referenceIds ?? (input.referenceId !== undefined ? [input.referenceId] : []);
+  const ids = Array.from(new Set(raw.map((id) => id.trim()).filter((id) => id.length > 0)));
+  if (ids.length > MAX_REFERENCE_IMAGES) {
+    throw new AppError(
+      'BAD_REQUEST',
+      `referenceIds cannot contain more than ${MAX_REFERENCE_IMAGES} images`,
+      400,
+      undefined,
+      { max: MAX_REFERENCE_IMAGES },
+    );
+  }
+  return ids;
 }
 
 function clampCount(value: number | undefined): number {

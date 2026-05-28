@@ -67,6 +67,12 @@ function getSearchInput(wrapper: VueWrapper): HTMLInputElement {
   return wrapper.get('input[name="assetSearch"]').element as HTMLInputElement;
 }
 
+function bodyGet(selector: string): Element {
+  const element = document.body.querySelector(selector);
+  if (!element) throw new Error(`Unable to get ${selector} within document.body`);
+  return element;
+}
+
 function extractStyleRules(selector: string): string[] {
   const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const rulePattern = new RegExp(`${escapedSelector}\\s*\\{([\\s\\S]*?)\\}`, 'g');
@@ -248,15 +254,15 @@ describe('HistoryView layout and quick actions', () => {
     await nextTick();
 
     expect(wrapper.find('.history-modal').exists()).toBe(false);
-    expect(wrapper.get('.recent-detail__stage img').attributes('src')).toContain('quick-expand');
-    expect(wrapper.get('.recent-detail__prompt').text()).toBe(entry.record.prompt);
-    expect(wrapper.get('.recent-detail__close').attributes('aria-label')).toBe('关闭图片详情');
+    expect(bodyGet('.recent-detail__stage img').getAttribute('src')).toContain('quick-expand');
+    expect(bodyGet('.recent-detail__prompt').textContent).toBe(entry.record.prompt);
+    expect(bodyGet('.recent-detail__close').getAttribute('aria-label')).toBe('关闭图片详情');
 
     await wrapper.get('.history-tile__remove').trigger('click');
     await nextTick();
 
     expect(remove).toHaveBeenCalledWith(entry.record.id);
-    expect(wrapper.find('.recent-detail').exists()).toBe(false);
+    expect(document.body.querySelector('.recent-detail')).toBeNull();
   });
 });
 

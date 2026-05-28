@@ -51,7 +51,7 @@ const {
   add: addPublicGalleryRecord,
   removeAsAdmin: removePublicGalleryRecordAsAdmin,
 } = usePublicGallery();
-const { selectedFile, previewUrl, validationMessage, selectFile, clear } = useFileUpload();
+const { selectedFiles, replaceFiles, clear } = useFileUpload();
 const { generate, isLoading, error, lastBatch, statusMessage, clearLastBatch } =
   useImageGeneration();
 const { quota, isLoading: isQuotaLoading, refresh: refreshQuota } = useImageQuota();
@@ -63,7 +63,9 @@ interface PendingGeneration {
   count: number;
   aspectRatio: AspectChoice;
   submittedAt: string;
+  referenceFiles?: File[];
   referenceFile?: File;
+  referenceIds?: string[];
   referenceId?: string;
   isPublic: boolean;
   errorMessage?: string;
@@ -226,12 +228,23 @@ const heroSuggestionText = computed(() =>
 );
 const canGenerate = computed(() => prompt.value.trim().length > 0 && !isLoading.value);
 const hasReferenceContext = computed(
-  () => selectedFile.value !== null || reusedReferenceId.value !== null,
+  () => selectedFiles.value.length > 0 || reusedReferenceId.value !== null,
 );
 const modeLabel = computed(() => (hasReferenceContext.value ? '参考图生成' : '提示词生成'));
-const selectedFileSummary = computed(() => (hasReferenceContext.value ? '1' : '0'));
+const selectedFileSummary = computed(() =>
+  reusedReferenceId.value !== null ? '历史参考图' : `${selectedFiles.value.length}`,
+);
 const referenceAttachmentTitle = computed(() =>
-  selectedFile.value ? '参考图已添加' : '已沿用历史参考图',
+  selectedFiles.value.length > 0
+    ? selectedFiles.value.length > 1
+      ? `已添加 ${selectedFiles.value.length} 张参考图`
+      : '参考图已添加'
+    : '已沿用历史参考图',
+);
+const primarySelectedFile = computed(() => selectedFiles.value[0] ?? null);
+const attachmentWarning = computed(
+  () =>
+    selectedFiles.value.find((item) => item.validationMessage !== null)?.validationMessage ?? null,
 );
 const quotaLabel = computed(() => {
   if (isQuotaLoading.value) return '额度读取中';
@@ -306,7 +319,9 @@ function createSnapshotFromCurrentComposer(): PendingGeneration {
     isPublic: isPublicGeneration.value,
     submittedAt: new Date().toISOString(),
   };
-  if (selectedFile.value) snapshot.referenceFile = selectedFile.value;
+  if (selectedFiles.value.length > 0) {
+    snapshot.referenceFiles = selectedFiles.value.map((item) => item.file);
+  }
   else if (reusedReferenceId.value) snapshot.referenceId = reusedReferenceId.value;
   return snapshot;
 }
@@ -314,7 +329,7 @@ function createSnapshotFromCurrentComposer(): PendingGeneration {
 function createSnapshotFromDisplayedBatch(batch: GroupedBatch): PendingGeneration {
   pendingGenerationId += 1;
   const firstRecord = batch.entries[0]?.record;
-  const referenceId = referenceIdFromBatch(batch);
+  const referenceIds = referenceIdsFromBatch(batch);
   const snapshot: PendingGeneration = {
     id: pendingGenerationId,
     prompt: batch.prompt,
@@ -324,7 +339,7 @@ function createSnapshotFromDisplayedBatch(batch: GroupedBatch): PendingGeneratio
     isPublic: batch.entries.some((entry) => entry.record.isPublic),
     submittedAt: new Date().toISOString(),
   };
-  if (referenceId) snapshot.referenceId = referenceId;
+  if (referenceIds.length > 0) snapshot.referenceIds = referenceIds;
   return snapshot;
 }
 
@@ -335,8 +350,10 @@ function optionsFromSnapshot(snapshot: PendingGeneration): GenerateImageOptions 
     count: snapshot.count,
   };
   if (snapshot.aspectRatio !== 'auto') options.aspectRatio = snapshot.aspectRatio;
-  if (snapshot.referenceFile) options.referenceFile = snapshot.referenceFile;
-  else if (snapshot.referenceId) options.referenceId = snapshot.referenceId;
+  const referenceFiles = normalizeReferenceFiles(snapshot.referenceFiles, snapshot.referenceFile);
+  const referenceIds = normalizeReferenceIds(snapshot.referenceIds, snapshot.referenceId);
+  if (referenceFiles.length > 0) options.referenceFiles = referenceFiles;
+  else if (referenceIds.length > 0) options.referenceIds = referenceIds;
   options.isPublic = snapshot.isPublic;
   return options;
 }
@@ -458,24 +475,24 @@ function openUploadPicker(): void {
 function handleInput(event: Event): void {
   const target = event.target;
   if (!(target instanceof HTMLInputElement)) return;
-  const file = target.files?.item(0);
-  if (file) addReferenceFile(file);
+  const files = Array.from(target.files ?? []);
+  if (files.length > 0) addReferenceFiles(files);
   target.value = '';
 }
 
 function handleComposerDrop(event: DragEvent): void {
   isComposerDragging.value = false;
   if (isLoading.value) return;
-  const file = firstImageFile(event.dataTransfer?.files ?? null);
-  if (file) addReferenceFile(file);
+  const files = imageFiles(event.dataTransfer?.files ?? null);
+  if (files.length > 0) addReferenceFiles(files);
 }
 
 function handlePaste(event: ClipboardEvent): void {
   if (isLoading.value) return;
-  const file = firstClipboardImageFile(event.clipboardData);
-  if (!file) return;
+  const files = clipboardImageFiles(event.clipboardData);
+  if (files.length === 0) return;
   event.preventDefault();
-  addReferenceFile(file);
+  addReferenceFiles(files);
 }
 
 function handleHeroPromptKeydown(event: KeyboardEvent): void {
@@ -500,34 +517,37 @@ function handleDragLeave(): void {
   isComposerDragging.value = false;
 }
 
-function addReferenceFile(file: File): void {
+function addReferenceFiles(files: readonly File[]): void {
   reusedReferenceId.value = null;
-  selectFile(file);
-  ElMessage.success('参考图已添加到输入框。');
+  const result = replaceFiles(files);
+  if (result.added === 0) return;
+  ElMessage.success(result.added > 1 ? `已添加 ${result.added} 张参考图。` : '参考图已添加到输入框。');
 }
 
-function firstImageFile(files: FileList | null): File | null {
-  if (!files) return null;
+function imageFiles(files: FileList | null): File[] {
+  if (!files) return [];
+  const result: File[] = [];
   for (let index = 0; index < files.length; index += 1) {
     const file = files.item(index);
-    if (file && file.type.startsWith('image/')) return file;
+    if (file && file.type.startsWith('image/')) result.push(file);
   }
-  return files.item(0);
+  return result.length > 0 ? result : Array.from(files).filter(Boolean);
 }
 
-function firstClipboardImageFile(data: DataTransfer | null): File | null {
-  if (!data) return null;
-  const directFile = firstImageFile(data.files);
-  if (directFile?.type.startsWith('image/')) return directFile;
+function clipboardImageFiles(data: DataTransfer | null): File[] {
+  if (!data) return [];
+  const directFiles = imageFiles(data.files);
+  if (directFiles.length > 0) return directFiles.filter((file) => file.type.startsWith('image/'));
 
+  const result: File[] = [];
   for (let index = 0; index < data.items.length; index += 1) {
     const item = data.items[index];
     if (item?.kind !== 'file' || !item.type.startsWith('image/')) continue;
     const file = item.getAsFile();
-    if (file) return file;
+    if (file) result.push(file);
   }
 
-  return directFile;
+  return result;
 }
 
 async function handleDownload(entry: HistoryEntry): Promise<void> {
@@ -611,42 +631,64 @@ function createSnapshotFromPending(snapshot: PendingGeneration): PendingGenerati
     isPublic: snapshot.isPublic,
     submittedAt: new Date().toISOString(),
   };
-  if (snapshot.referenceFile) next.referenceFile = snapshot.referenceFile;
-  if (snapshot.referenceId) next.referenceId = snapshot.referenceId;
+  const referenceFiles = normalizeReferenceFiles(snapshot.referenceFiles, snapshot.referenceFile);
+  const referenceIds = normalizeReferenceIds(snapshot.referenceIds, snapshot.referenceId);
+  if (referenceFiles.length > 0) next.referenceFiles = referenceFiles;
+  if (referenceIds.length > 0) next.referenceIds = referenceIds;
   return next;
 }
 
 function syncReferenceInputFromSnapshot(snapshot: PendingGeneration): void {
-  if (snapshot.referenceFile) {
+  const referenceFiles = normalizeReferenceFiles(snapshot.referenceFiles, snapshot.referenceFile);
+  if (referenceFiles.length > 0) {
     reusedReferenceId.value = null;
-    selectFile(snapshot.referenceFile);
+    replaceFiles(referenceFiles);
     return;
   }
-  if (snapshot.referenceId) {
+  const referenceIds = normalizeReferenceIds(snapshot.referenceIds, snapshot.referenceId);
+  if (referenceIds.length > 0) {
     clear();
-    reusedReferenceId.value = snapshot.referenceId;
+    reusedReferenceId.value = referenceIds.join(',');
     return;
   }
   clearReferenceInput();
 }
 
 function syncReferenceInputFromBatch(batch: GroupedBatch): void {
-  const referenceId = referenceIdFromBatch(batch);
-  if (referenceId) {
+  const referenceIds = referenceIdsFromBatch(batch);
+  if (referenceIds.length > 0) {
     clear();
-    reusedReferenceId.value = referenceId;
+    reusedReferenceId.value = referenceIds.join(',');
     return;
   }
   clearReferenceInput();
 }
 
-function referenceIdFromBatch(batch: GroupedBatch): string | undefined {
-  return batch.entries.find((entry) => entry.record.referenceId)?.record.referenceId;
+function referenceIdsFromBatch(batch: GroupedBatch): string[] {
+  const ids = batch.entries.flatMap((entry) =>
+    normalizeReferenceIds(entry.record.referenceIds, entry.record.referenceId),
+  );
+  return Array.from(new Set(ids));
 }
 
 function clearReferenceInput(): void {
   clear();
   reusedReferenceId.value = null;
+}
+
+function normalizeReferenceFiles(
+  referenceFiles: File[] | undefined,
+  referenceFile: File | undefined,
+): File[] {
+  return referenceFiles ?? (referenceFile !== undefined ? [referenceFile] : []);
+}
+
+function normalizeReferenceIds(
+  referenceIds: readonly string[] | undefined,
+  referenceId: string | undefined,
+): string[] {
+  const raw = referenceIds ?? (referenceId !== undefined ? [referenceId] : []);
+  return Array.from(new Set(raw.map((id) => id.trim()).filter((id) => id.length > 0)));
 }
 
 function decreaseCount(): void {
@@ -863,6 +905,7 @@ function formatStageDate(iso: string | undefined): string {
       name="referenceImage"
       type="file"
       accept="image/png,image/jpeg,image/webp"
+      multiple
       :disabled="isLoading"
       @change="handleInput"
     />
@@ -1259,17 +1302,17 @@ function formatStageDate(iso: string | undefined): string {
         class="prompt-showcase__attachment prompt-showcase__attachment--rich"
       >
         <img
-          v-if="previewUrl"
+          v-if="primarySelectedFile?.previewUrl"
           class="prompt-showcase__attachment-preview"
-          :src="previewUrl"
+          :src="primarySelectedFile.previewUrl"
           alt="已添加参考图预览"
           decoding="async"
         />
         <span v-else class="prompt-showcase__attachment-fallback" aria-hidden="true">图</span>
         <span class="prompt-showcase__attachment-meta">
           <strong>{{ referenceAttachmentTitle }}</strong>
-          <span v-if="validationMessage" class="prompt-showcase__attachment-warning">{{
-            validationMessage
+          <span v-if="attachmentWarning" class="prompt-showcase__attachment-warning">{{
+            attachmentWarning
           }}</span>
         </span>
         <button type="button" :disabled="isLoading" @click="clearReferenceInput">移除</button>

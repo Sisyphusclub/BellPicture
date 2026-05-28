@@ -30,6 +30,13 @@ interface GenerateViewHarness {
 
 type GenerateViewMode = 'discover' | 'generate';
 
+interface MockSelectedReferenceFile {
+  id: string;
+  file: File;
+  previewUrl: string | null;
+  validationMessage: string | null;
+}
+
 function createMatchMedia(matches: boolean): typeof window.matchMedia {
   return vi.fn((query: string): MediaQueryList => {
     const listeners = new Set<EventListenerOrEventListenerObject>();
@@ -116,6 +123,36 @@ function expectStyleDeclaration(rule: string, property: string, value: string): 
   const escapedProperty = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const escapedValue = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   expect(rule).toMatch(new RegExp(`(?:^|[;\\s])${escapedProperty}\\s*:\\s*${escapedValue}\\s*;`));
+}
+
+function referenceFieldsFromOptions(
+  options: GenerateImageOptions,
+): Partial<HistoryEntry['record']> {
+  const referenceIds = options.referenceIds ?? (options.referenceId ? [options.referenceId] : []);
+  if (referenceIds.length > 0) {
+    const firstReferenceId = referenceIds[0];
+    return {
+      ...(firstReferenceId !== undefined ? { referenceId: firstReferenceId } : {}),
+      referenceIds,
+    };
+  }
+  const referenceFiles = options.referenceFiles ?? (options.referenceFile ? [options.referenceFile] : []);
+  if (referenceFiles.length > 0) {
+    return {
+      referenceId: 'uploaded-reference.png',
+      referenceIds: referenceFiles.map((_file, index) => `uploaded-reference-${index + 1}.png`),
+    };
+  }
+  return {};
+}
+
+function hasReferenceOptions(options: GenerateImageOptions): boolean {
+  return Boolean(
+    options.referenceFile ||
+      options.referenceId ||
+      (options.referenceFiles?.length ?? 0) > 0 ||
+      (options.referenceIds?.length ?? 0) > 0,
+  );
 }
 
 describe('GenerateView', () => {
@@ -571,6 +608,7 @@ describe('GenerateView', () => {
     expect(generate).toHaveBeenLastCalledWith(
       expect.not.objectContaining({
         referenceId: expect.any(String),
+        referenceIds: expect.any(Array),
       }),
     );
   });
@@ -608,12 +646,13 @@ describe('GenerateView', () => {
         prompt: '照着参考图做一张海报',
         model: 'gpt-image-2',
         count: 1,
-        referenceId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png',
+        referenceIds: ['aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png'],
       }),
     );
     expect(generate).toHaveBeenLastCalledWith(
       expect.not.objectContaining({
         referenceFile: expect.any(File),
+        referenceFiles: expect.any(Array),
       }),
     );
   });
@@ -674,8 +713,7 @@ async function mountGenerateView(
         width: 1024,
         height: 1024,
         isPublic: options.isPublic ?? false,
-        ...(options.referenceId !== undefined ? { referenceId: options.referenceId } : {}),
-        ...(options.referenceFile !== undefined ? { referenceId: 'uploaded-reference.png' } : {}),
+        ...referenceFieldsFromOptions(options),
       },
       imageUrl: `http://localhost:3000/api/outputs/${overrides.id}`,
     };
@@ -693,8 +731,7 @@ async function mountGenerateView(
     return {
       batchId: entry.record.batchId ?? entry.record.id,
       aspectRatio: options.aspectRatio ?? '1:1',
-      generationMode:
-        options.referenceFile || options.referenceId ? 'image-to-image' : 'text-to-image',
+      generationMode: hasReferenceOptions(options) ? 'image-to-image' : 'text-to-image',
       entries: [entry],
     };
   }
@@ -815,15 +852,30 @@ async function mountGenerateView(
     }),
   }));
 
-  vi.doMock('@/composables/useFileUpload', () => ({
-    useFileUpload: () => ({
-      selectedFile: ref<File | null>(null),
-      previewUrl: ref<string | null>(null),
-      validationMessage: ref<string | null>(null),
-      selectFile: vi.fn<(file: File) => void>(),
-      clear: vi.fn<() => void>(),
-    }),
-  }));
+  vi.doMock('@/composables/useFileUpload', () => {
+    const selectedFiles = ref<MockSelectedReferenceFile[]>([]);
+    return {
+      useFileUpload: () => ({
+        selectedFiles: readonly(selectedFiles),
+        replaceFiles: vi.fn((files: readonly File[]) => {
+          selectedFiles.value = files.map((file, index) => ({
+            id: `reference-${index + 1}`,
+            file,
+            previewUrl: file.type.startsWith('image/') ? `blob:reference-${index + 1}` : null,
+            validationMessage: null,
+          }));
+          return {
+            added: selectedFiles.value.length,
+            skipped: 0,
+            selected: selectedFiles.value,
+          };
+        }),
+        clear: vi.fn(() => {
+          selectedFiles.value = [];
+        }),
+      }),
+    };
+  });
 
   vi.doMock('@/composables/useImageQuota', () => ({
     useImageQuota: () => ({

@@ -108,6 +108,7 @@ export const imageRecords = sqliteTable(
     prompt: text('prompt').notNull(),
     model: text('model').notNull(),
     referenceId: text('reference_id'),
+    referenceIds: text('reference_ids'),
     aspectRatio: text('aspect_ratio'),
     filename: text('filename').notNull(),
     mime: text('mime').notNull(),

@@ -45,13 +45,14 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     const aspectRatio: AspectRatio = input.aspectRatio ?? DEFAULT_ASPECT_RATIO;
     const count = input.count ?? DEFAULT_COUNT;
     const sizing = ASPECT_SIZE_MAP[aspectRatio];
-    const hasReference = typeof input.referencePath === 'string' && input.referencePath.length > 0;
+    const referencePaths = normalizeReferencePaths(input);
+    const hasReference = referencePaths.length > 0;
 
     const start = Date.now();
     let response: Response;
     try {
       response = hasReference
-        ? await this.callEdits(model, input.prompt, input.referencePath as string, count, sizing.size)
+        ? await this.callEdits(model, input.prompt, referencePaths, count, sizing.size)
         : await this.callGenerations(model, input.prompt, count, sizing.size);
     } catch (err) {
       if (isTimeoutLike(err)) {
@@ -161,23 +162,17 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
   private async callEdits(
     model: string,
     prompt: string,
-    referencePath: string,
+    referencePaths: string[],
     count: number,
     size: string,
   ): Promise<Response> {
     const url = buildUrl(this.config.baseUrl, 'v1/images/edits');
-    const buffer = await readFile(referencePath);
-    const basename = path.basename(referencePath);
-    const ext = basename.split('.').pop()?.toLowerCase() ?? 'png';
-    const mime =
-      ext === 'jpeg' || ext === 'jpg' ? 'image/jpeg' : ext === 'webp' ? 'image/webp' : 'image/png';
-
-    // Sanity-check the MIME using the same helper so unsupported extensions
-    // never silently leak upstream.
-    mimeFromExt(ext === 'jpg' ? 'jpeg' : ext);
+    const referenceFiles = await Promise.all(referencePaths.map((referencePath) => readReferenceFile(referencePath)));
 
     const form = new FormData();
-    form.append('image', new Blob([new Uint8Array(buffer)], { type: mime }), basename);
+    for (const file of referenceFiles) {
+      form.append('image', new Blob([new Uint8Array(file.buffer)], { type: file.mime }), file.basename);
+    }
     form.append('prompt', prompt);
     form.append('model', model);
     form.append('n', String(count));
@@ -189,8 +184,9 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
         model,
         promptPreview: prompt.slice(0, 80),
         url,
-        referenceFile: basename,
-        referenceBytes: buffer.byteLength,
+        referenceFiles: referenceFiles.map((file) => file.basename),
+        referenceBytes: referenceFiles.reduce((sum, file) => sum + file.buffer.byteLength, 0),
+        referenceCount: referenceFiles.length,
         count,
         size,
       },
@@ -204,6 +200,23 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
       signal: AbortSignal.timeout(this.config.timeoutMs),
     });
   }
+}
+
+
+function normalizeReferencePaths(input: GenerateInput): string[] {
+  const raw = input.referencePaths ?? (input.referencePath ? [input.referencePath] : []);
+  return Array.from(new Set(raw.filter((item) => item.length > 0)));
+}
+
+async function readReferenceFile(
+  referencePath: string,
+): Promise<{ buffer: Buffer; basename: string; mime: string }> {
+  const buffer = await readFile(referencePath);
+  const basename = path.basename(referencePath);
+  const ext = basename.split('.').pop()?.toLowerCase() ?? 'png';
+  const cleanExt = ext === 'jpg' ? 'jpeg' : ext;
+  const mime = mimeFromExt(cleanExt);
+  return { buffer, basename, mime };
 }
 
 function buildUrl(baseUrl: string, suffix: string): string {

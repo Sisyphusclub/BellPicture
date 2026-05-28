@@ -5,6 +5,7 @@ export const DEFAULT_ASPECT_RATIO: AspectRatio = '1:1';
 export const DEFAULT_COUNT = 1;
 export const MIN_COUNT = 1;
 export const MAX_COUNT = 2;
+export const MAX_REFERENCE_IMAGES = 4;
 
 export interface AspectSize {
   size: string;
@@ -25,8 +26,16 @@ export interface GenerateInput {
   /**
    * Optional reference image path under UPLOAD_DIR.
    * Routes the request to /v1/images/edits.
+   *
+   * @deprecated Use referencePaths for new call sites.
    */
   referencePath?: string;
+  /**
+   * Optional reference image paths under UPLOAD_DIR.
+   * Routes the request to /v1/images/edits and appends each item as an
+   * `image` multipart field.
+   */
+  referencePaths?: string[];
   model?: string;
   count?: number;
   aspectRatio?: AspectRatio;

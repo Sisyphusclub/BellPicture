@@ -65,110 +65,116 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div v-if="entry" class="recent-detail" @click.self="requestClose">
-    <article
-      class="recent-detail__shell"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="recent-detail-title"
-      tabindex="-1"
-    >
-      <div class="recent-detail__stage" aria-label="图片预览">
-        <img
-          :src="entry.imageUrl"
-          alt="选中的最近创作图片"
-          decoding="async"
-          :width="entry.record.width"
-          :height="entry.record.height"
-        />
-      </div>
+  <Teleport to="body">
+    <div v-if="entry" class="recent-detail" @click.self="requestClose">
+      <article
+        class="recent-detail__shell"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="recent-detail-title"
+        tabindex="-1"
+      >
+        <div class="recent-detail__stage" aria-label="图片预览">
+          <img
+            :src="entry.imageUrl"
+            alt="选中的最近创作图片"
+            decoding="async"
+            :width="entry.record.width"
+            :height="entry.record.height"
+          />
+        </div>
 
-      <aside class="recent-detail__inspector" aria-label="提示词与操作">
-        <button
-          ref="closeButtonRef"
-          type="button"
-          class="recent-detail__close"
-          aria-label="关闭图片详情"
-          @click="requestClose"
-        >
-          ×
-        </button>
+        <aside class="recent-detail__inspector" aria-label="提示词与操作">
+          <button
+            ref="closeButtonRef"
+            type="button"
+            class="recent-detail__close"
+            aria-label="关闭图片详情"
+            @click="requestClose"
+          >
+            ×
+          </button>
 
-        <section class="recent-detail__prompt-card" aria-labelledby="recent-detail-title">
-          <header class="recent-detail__prompt-header">
-            <h2 id="recent-detail-title">提示词</h2>
+          <section class="recent-detail__prompt-card" aria-labelledby="recent-detail-title">
+            <header class="recent-detail__prompt-header">
+              <h2 id="recent-detail-title">提示词</h2>
+              <button
+                type="button"
+                class="recent-detail__copy"
+                aria-label="复制提示词"
+                @click="handleCopyPrompt"
+              >
+                <svg aria-hidden="true" viewBox="0 0 16 16">
+                  <path
+                    d="M5.2 4.4V3.1c0-.7.5-1.2 1.2-1.2h6.1c.7 0 1.2.5 1.2 1.2v6.1c0 .7-.5 1.2-1.2 1.2h-1.3"
+                  />
+                  <rect width="8.5" height="8.5" x="2.3" y="5.6" rx="1.2" />
+                </svg>
+                <span>复制</span>
+              </button>
+            </header>
+            <div class="recent-detail__prompt-scroll" tabindex="0" aria-label="提示词内容">
+              <p class="recent-detail__prompt">{{ entry.record.prompt }}</p>
+            </div>
+          </section>
+
+          <p class="recent-detail__meta" aria-label="图片元数据">
+            <span>{{ entry.record.model }}</span>
+            <span aria-hidden="true">·</span>
+            <time :datetime="entry.record.createdAt">{{
+              formatFullDateTime(entry.record.createdAt)
+            }}</time>
+          </p>
+
+          <div class="recent-detail__actions" aria-label="图片操作">
+            <a class="recent-detail__save" :href="entry.imageUrl" download aria-label="保存图片">
+              <svg aria-hidden="true" viewBox="0 0 20 20">
+                <path d="M10 3.2v8.3" />
+                <path d="m6.8 8.4 3.2 3.2 3.2-3.2" />
+                <path d="M4.2 14.8h11.6" />
+              </svg>
+              <span>保存</span>
+            </a>
             <button
               type="button"
-              class="recent-detail__copy"
-              aria-label="复制提示词"
+              class="recent-detail__remix"
+              aria-label="复制提示词做同款"
               @click="handleCopyPrompt"
             >
-              <svg aria-hidden="true" viewBox="0 0 16 16">
-                <path d="M5.2 4.4V3.1c0-.7.5-1.2 1.2-1.2h6.1c.7 0 1.2.5 1.2 1.2v6.1c0 .7-.5 1.2-1.2 1.2h-1.3" />
-                <rect width="8.5" height="8.5" x="2.3" y="5.6" rx="1.2" />
+              <svg aria-hidden="true" viewBox="0 0 20 20">
+                <path d="M10 2.7 11.4 7l4.3 1.4-4.3 1.4L10 14.1 8.6 9.8 4.3 8.4 8.6 7 10 2.7Z" />
+                <path d="m15.4 12.2.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7.7-2.1Z" />
               </svg>
-              <span>复制</span>
+              <span>做同款</span>
             </button>
-          </header>
-          <div class="recent-detail__prompt-scroll" tabindex="0" aria-label="提示词内容">
-            <p class="recent-detail__prompt">{{ entry.record.prompt }}</p>
+            <button
+              v-if="canDelete"
+              type="button"
+              class="recent-detail__delete"
+              :disabled="isDeleting"
+              aria-label="从公开画廊删除图片"
+              @click="handleDelete"
+            >
+              <svg aria-hidden="true" viewBox="0 0 20 20">
+                <path d="M3.5 5.2h13" />
+                <path d="M7.2 5.2V3.7c0-.7.5-1.2 1.2-1.2h3.2c.7 0 1.2.5 1.2 1.2v1.5" />
+                <path d="M15.1 5.2 14.4 16c-.1.8-.7 1.4-1.5 1.4H7.1c-.8 0-1.5-.6-1.5-1.4L4.9 5.2" />
+                <path d="M8.3 8.4v5.6M11.7 8.4v5.6" />
+              </svg>
+              <span>{{ isDeleting ? '删除中' : '删除' }}</span>
+            </button>
           </div>
-        </section>
-
-        <p class="recent-detail__meta" aria-label="图片元数据">
-          <span>{{ entry.record.model }}</span>
-          <span aria-hidden="true">·</span>
-          <time :datetime="entry.record.createdAt">{{ formatFullDateTime(entry.record.createdAt) }}</time>
-        </p>
-
-        <div class="recent-detail__actions" aria-label="图片操作">
-          <a class="recent-detail__save" :href="entry.imageUrl" download aria-label="保存图片">
-            <svg aria-hidden="true" viewBox="0 0 20 20">
-              <path d="M10 3.2v8.3" />
-              <path d="m6.8 8.4 3.2 3.2 3.2-3.2" />
-              <path d="M4.2 14.8h11.6" />
-            </svg>
-            <span>保存</span>
-          </a>
-          <button
-            type="button"
-            class="recent-detail__remix"
-            aria-label="复制提示词做同款"
-            @click="handleCopyPrompt"
-          >
-            <svg aria-hidden="true" viewBox="0 0 20 20">
-              <path d="M10 2.7 11.4 7l4.3 1.4-4.3 1.4L10 14.1 8.6 9.8 4.3 8.4 8.6 7 10 2.7Z" />
-              <path d="m15.4 12.2.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7.7-2.1Z" />
-            </svg>
-            <span>做同款</span>
-          </button>
-          <button
-            v-if="canDelete"
-            type="button"
-            class="recent-detail__delete"
-            :disabled="isDeleting"
-            aria-label="从公开画廊删除图片"
-            @click="handleDelete"
-          >
-            <svg aria-hidden="true" viewBox="0 0 20 20">
-              <path d="M3.5 5.2h13" />
-              <path d="M7.2 5.2V3.7c0-.7.5-1.2 1.2-1.2h3.2c.7 0 1.2.5 1.2 1.2v1.5" />
-              <path d="M15.1 5.2 14.4 16c-.1.8-.7 1.4-1.5 1.4H7.1c-.8 0-1.5-.6-1.5-1.4L4.9 5.2" />
-              <path d="M8.3 8.4v5.6M11.7 8.4v5.6" />
-            </svg>
-            <span>{{ isDeleting ? '删除中' : '删除' }}</span>
-          </button>
-        </div>
-      </aside>
-    </article>
-  </div>
+        </aside>
+      </article>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
 .recent-detail {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 1000;
   display: grid;
   align-items: center;
   justify-items: center;

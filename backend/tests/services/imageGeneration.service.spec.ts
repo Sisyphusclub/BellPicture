@@ -103,10 +103,10 @@ describe('imageGeneration.service', () => {
     expect(result.mode).toBe('image-to-image');
     const call = (provider.generate as ReturnType<typeof vi.fn>).mock.calls[0]![0] as {
       prompt: string;
-      referencePath?: string;
+      referencePaths?: string[];
     };
     expect(call.prompt).toBe('rework');
-    expect(call.referencePath).toBe(saved.absolutePath);
+    expect(call.referencePaths).toEqual([saved.absolutePath]);
   });
 
   it('rejects a stale referenceId with BAD_REQUEST 400', async () => {

@@ -4,7 +4,7 @@ import type * as ImagesApi from '@/services/api/imagesApi';
 import type { GenerateRequest, GenerateResponse } from '@/types/image';
 
 const add = vi.fn();
-const uploadReferenceImage = vi.fn();
+const uploadReferenceImages = vi.fn();
 const generateImage = vi.fn();
 
 vi.mock('@/composables/useImageHistory', () => ({
@@ -15,7 +15,7 @@ vi.mock('@/services/api/imagesApi', async () => {
   const actual = await vi.importActual<typeof ImagesApi>('@/services/api/imagesApi');
   return {
     ...actual,
-    uploadReferenceImage,
+    uploadReferenceImages,
     generateImage,
   };
 });
@@ -57,11 +57,11 @@ describe('useImageGeneration', () => {
       referenceId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png',
     });
 
-    expect(uploadReferenceImage).not.toHaveBeenCalled();
+    expect(uploadReferenceImages).not.toHaveBeenCalled();
     expect(generateImage).toHaveBeenCalledWith(
       expect.objectContaining({
         prompt: '沿用历史参考图',
-        referenceId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png',
+        referenceIds: ['aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png'],
       }) satisfies Partial<GenerateRequest>,
     );
     expect(result.generationMode).toBe('image-to-image');
