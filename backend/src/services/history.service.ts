@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 
 import { db } from '../db/drizzle.js';
 import { imageRecords } from '../db/schema.js';
@@ -111,12 +111,18 @@ export function deleteImageRecordForUser(userId: string, id: string): number {
 
 /** Removes one public gallery record regardless of owner. Intended for admin moderation. */
 export function removePublicImageRecordFromGalleryAsAdmin(id: string): number {
+  const candidateIds = imageRecordIdCandidates(id);
   const result = db
     .update(imageRecords)
     .set({ isPublic: false })
-    .where(and(eq(imageRecords.id, id), eq(imageRecords.isPublic, true)))
+    .where(and(inArray(imageRecords.id, candidateIds), eq(imageRecords.isPublic, true)))
     .run();
   return result.changes;
+}
+
+function imageRecordIdCandidates(id: string): string[] {
+  if (/\.(png|jpeg|webp)$/i.test(id)) return [id];
+  return [id, `${id}.png`, `${id}.jpeg`, `${id}.webp`];
 }
 
 /** Deletes every record in `batchId` owned by `userId`. */

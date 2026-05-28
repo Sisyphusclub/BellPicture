@@ -195,6 +195,30 @@ describe('DELETE /api/history/public/:id', () => {
     expect(ownerRecord).toMatchObject({ id, isPublic: false });
   });
 
+  it('also accepts the output UUID without its image extension', async () => {
+    const ownerId = `hist-public-owner-short-${randomUUID()}`;
+    const adminId = `hist-public-admin-short-${randomUUID()}`;
+    const provider = fakeProvider();
+    const ownerApp = createApp({ provider, authMiddleware: stubAuth(ownerId) });
+    const adminApp = createApp({
+      provider,
+      authMiddleware: stubAuth(adminId),
+      adminMiddleware: allowAdmin(),
+    });
+
+    const generated = await request(ownerApp)
+      .post('/api/images/generate')
+      .send({ prompt: 'public moderation short id target', count: 1, isPublic: true });
+    const id = generated.body.images[0].id as string;
+    const uuidWithoutExt = id.replace(/\.[^.]+$/u, '');
+
+    const deleted = await request(adminApp).delete(`/api/history/public/${uuidWithoutExt}`);
+    expect(deleted.status).toBe(204);
+
+    const publicGallery = await request(adminApp).get('/api/history/public');
+    expect(publicGallery.body.records.some((r: { id: string }) => r.id === id)).toBe(false);
+  });
+
   it('returns 403 for ordinary users removing public gallery images directly', async () => {
     const ownerId = `hist-public-owner-${randomUUID()}`;
     const ordinaryId = `hist-public-ordinary-${randomUUID()}`;
