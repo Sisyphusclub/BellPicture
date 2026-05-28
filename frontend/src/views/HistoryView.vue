@@ -529,7 +529,7 @@ async function copyText(text: string, successMessage: string): Promise<void> {
 
 @media (max-width: 860px) {
   .history-page {
-    padding: var(--space-lg) var(--space-md) var(--space-xl);
+    padding: var(--space-lg) var(--space-md) calc(112px + env(safe-area-inset-bottom));
   }
 
   .history-page__header {
@@ -557,4 +557,32 @@ async function copyText(text: string, successMessage: string): Promise<void> {
     width: 100%;
   }
 }
+
+@media (max-width: 560px) {
+  .history-page {
+    gap: var(--space-lg);
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .history-page__title {
+    font-size: 32px;
+  }
+
+  .history-page__filters {
+    gap: 8px;
+  }
+
+  .history-filter :deep(.history-date-range) {
+    width: 100%;
+  }
+
+  .asset-filter-chips span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 </style>

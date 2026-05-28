@@ -735,7 +735,7 @@ async function handleDelete(target: AdminUser): Promise<void> {
 @media (max-width: 860px) {
   .admin-users {
     width: min(100%, 760px);
-    padding: var(--space-lg) var(--space-md) var(--space-xl);
+    padding: var(--space-lg) var(--space-md) calc(112px + env(safe-area-inset-bottom));
   }
 
   .admin-users__hero {
@@ -792,4 +792,57 @@ async function handleDelete(target: AdminUser): Promise<void> {
     justify-content: flex-start;
   }
 }
+
+@media (max-width: 560px) {
+  .admin-users {
+    gap: var(--space-lg);
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .admin-users__hero h1 {
+    font-size: 32px;
+  }
+
+  .admin-users__hero-notes {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-users__hero-notes span {
+    width: fit-content;
+  }
+
+  .admin-users__create,
+  .admin-users__forbidden,
+  .admin-users__panel {
+    border-radius: 20px;
+  }
+
+  .admin-users__create-intro {
+    align-items: flex-start;
+  }
+
+  .admin-users__panel-header {
+    padding: 20px 16px 18px;
+  }
+
+  .admin-users__row {
+    padding: 16px;
+  }
+
+  .admin-users__identity {
+    align-items: flex-start;
+  }
+
+  .admin-users__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-users__actions button {
+    width: 100%;
+  }
+}
+
 </style>

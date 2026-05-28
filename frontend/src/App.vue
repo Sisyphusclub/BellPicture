@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
 
 import LoginModal from '@/components/auth/LoginModal.vue';
@@ -7,9 +7,30 @@ import AppHeader from '@/components/common/AppHeader.vue';
 
 const route = useRoute();
 const videoBackdropRoutes = new Set(['discover', 'generate', 'history', 'admin-users']);
+const isCompactViewport = ref(false);
+let compactViewportMediaQuery: MediaQueryList | null = null;
+
 const shouldShowBackdropVideo = computed(
-  () => typeof route.name === 'string' && videoBackdropRoutes.has(route.name),
+  () =>
+    !isCompactViewport.value &&
+    typeof route.name === 'string' &&
+    videoBackdropRoutes.has(route.name),
 );
+
+function handleCompactViewportChange(event: MediaQueryListEvent): void {
+  isCompactViewport.value = event.matches;
+}
+
+onMounted(() => {
+  if (typeof window.matchMedia !== 'function') return;
+  compactViewportMediaQuery = window.matchMedia('(max-width: 760px)');
+  isCompactViewport.value = compactViewportMediaQuery.matches;
+  compactViewportMediaQuery.addEventListener('change', handleCompactViewportChange);
+});
+
+onBeforeUnmount(() => {
+  compactViewportMediaQuery?.removeEventListener('change', handleCompactViewportChange);
+});
 </script>
 
 <template>
@@ -81,7 +102,7 @@ const shouldShowBackdropVideo = computed(
 @media (max-width: 760px) {
   .app-main {
     padding-right: 0;
-    padding-bottom: 92px;
+    padding-bottom: calc(104px + env(safe-area-inset-bottom));
     padding-left: 0;
   }
 }

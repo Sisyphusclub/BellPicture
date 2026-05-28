@@ -452,16 +452,29 @@ onBeforeUnmount(() => {
 
 @media (max-width: 520px) {
   .recent-detail {
-    padding: 50px 14px 18px;
+    align-items: stretch;
+    padding: max(14px, env(safe-area-inset-top)) 12px calc(92px + env(safe-area-inset-bottom));
+  }
+
+  .recent-detail__shell {
+    min-height: 100%;
+    gap: 12px;
   }
 
   .recent-detail__stage {
-    min-height: 36vh;
+    min-height: 42vh;
+    padding-top: 42px;
   }
 
   .recent-detail__stage img {
-    max-height: 48vh;
+    max-height: 52vh;
     border-radius: 14px;
+  }
+
+  .recent-detail__close {
+    top: 0;
+    right: 0;
+    transform: none;
   }
 
   .recent-detail__prompt-card {
@@ -470,7 +483,7 @@ onBeforeUnmount(() => {
   }
 
   .recent-detail__prompt-scroll {
-    max-height: 210px;
+    max-height: 168px;
   }
 
   .recent-detail__actions {

@@ -322,40 +322,49 @@ function initials(): string {
 @media (max-width: 760px) {
   .app-sidebar {
     top: auto;
-    right: 12px;
-    bottom: 12px;
-    left: 12px;
+    right: max(10px, env(safe-area-inset-right));
+    bottom: max(10px, env(safe-area-inset-bottom));
+    left: max(10px, env(safe-area-inset-left));
     width: auto;
-    height: 70px;
+    height: 68px;
     flex-direction: row;
     justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
     border-radius: 22px;
-    padding: 8px 10px;
+    padding: 7px 8px;
   }
 
   .sidebar-brand {
-    width: 46px;
-    height: 46px;
+    width: 44px;
+    height: 44px;
     border-radius: 15px;
   }
 
   .sidebar-brand__mark {
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
   }
 
   .sidebar-nav {
     flex: 1;
+    min-width: 0;
     flex-direction: row;
     justify-content: center;
-    gap: 2px;
+    gap: 1px;
   }
 
   .sidebar-nav__link {
-    min-width: 54px;
-    padding: 7px 2px;
-    font-size: 11px;
+    min-width: 0;
+    flex: 1 1 0;
+    padding: 7px 1px;
+    font-size: 10px;
+  }
+
+  .sidebar-nav__link span:last-child {
+    overflow: hidden;
+    max-width: 100%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .sidebar-nav__icon svg {
@@ -364,7 +373,8 @@ function initials(): string {
   }
 
   .sidebar-footer {
-    flex: 0 0 auto;
+    flex: 0 0 44px;
+    min-width: 0;
     flex-direction: row;
     align-items: center;
     justify-content: flex-end;
@@ -372,9 +382,13 @@ function initials(): string {
   }
 
   .sidebar-account {
-    width: 48px;
-    padding: 5px 2px;
+    width: 44px;
+    padding: 5px 1px;
     font-size: 10px;
+  }
+
+  .sidebar-account > span:last-child {
+    display: none;
   }
 
   .sidebar-account__avatar {
@@ -388,4 +402,15 @@ function initials(): string {
     left: auto;
   }
 }
+
+@media (max-width: 390px) {
+  .sidebar-brand {
+    display: none;
+  }
+
+  .app-sidebar {
+    gap: 4px;
+  }
+}
+
 </style>

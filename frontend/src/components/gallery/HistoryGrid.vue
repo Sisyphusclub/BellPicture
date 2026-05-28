@@ -338,4 +338,37 @@ function publicationLabel(entry: HistoryEntry): string {
     width: 100%;
   }
 }
+
+@media (max-width: 560px) {
+  .history-grid {
+    gap: var(--space-lg);
+  }
+
+  .history-group__assets {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .history-tile {
+    width: 100%;
+    contain-intrinsic-size: 160px 198px;
+  }
+
+  .history-tile__remove {
+    width: 34px;
+    height: 34px;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .history-tile__meta {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+}
+
 </style>
