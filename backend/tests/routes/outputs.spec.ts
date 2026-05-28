@@ -27,6 +27,7 @@ describe('GET /api/outputs/:filename', () => {
 
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toBe('image/png');
+    expect(res.headers['cache-control']).toBe('private, max-age=31536000, immutable');
     expect((res.body as Buffer).equals(PNG)).toBe(true);
   });
 

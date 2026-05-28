@@ -102,7 +102,14 @@ function publicationLabel(entry: HistoryEntry): string {
               :aria-label="`查看资产详情：${entry.record.prompt}`"
               @click="emit('expand', entry)"
             >
-              <img :src="entry.imageUrl" alt="生成资产预览" />
+              <img
+                :src="entry.imageUrl"
+                alt="生成资产预览"
+                loading="lazy"
+                decoding="async"
+                :width="entry.record.width"
+                :height="entry.record.height"
+              />
               <span
                 class="history-tile__badge"
                 :class="{ 'history-tile__badge--published': entry.record.isPublic }"
@@ -194,6 +201,8 @@ function publicationLabel(entry: HistoryEntry): string {
 .history-tile {
   position: relative;
   width: 196px;
+  content-visibility: auto;
+  contain-intrinsic-size: 196px 236px;
 }
 
 .history-tile__preview {

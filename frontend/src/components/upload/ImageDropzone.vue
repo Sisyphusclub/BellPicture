@@ -88,7 +88,7 @@ function handleDragLeave(): void {
         <span class="dropzone__text">或浏览选择 PNG、JPEG、WebP；提示词生成可不添加。</span>
       </span>
       <span v-else class="dropzone__preview">
-        <img v-if="previewUrl" :src="previewUrl" alt="已选择的参考图预览" />
+        <img v-if="previewUrl" :src="previewUrl" alt="已选择的参考图预览" decoding="async" />
         <span v-else class="dropzone__fallback" aria-hidden="true">图</span>
         <span class="dropzone__file">
           <span class="dropzone__title">参考图已就绪</span>

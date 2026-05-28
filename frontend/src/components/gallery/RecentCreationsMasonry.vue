@@ -127,7 +127,14 @@ watch(
             :aria-label="`查看图片详情：${entry.record.prompt}`"
             @click="emit('select', entry)"
           >
-            <img :src="entry.imageUrl" alt="最近生成图片预览" />
+            <img
+              :src="entry.imageUrl"
+              alt="最近生成图片预览"
+              loading="lazy"
+              decoding="async"
+              :width="entry.record.width"
+              :height="entry.record.height"
+            />
             <span class="recent-card__shade" aria-hidden="true" />
             <span class="recent-card__meta">
               <strong>{{ entry.record.prompt }}</strong>
@@ -221,6 +228,8 @@ watch(
 .recent-card {
   position: relative;
   width: 100%;
+  content-visibility: auto;
+  contain-intrinsic-size: 260px 340px;
 }
 
 .recent-card__button {

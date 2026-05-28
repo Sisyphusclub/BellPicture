@@ -926,7 +926,13 @@ function formatStageDate(iso: string | undefined): string {
           >
             <button type="button" class="sidebar-item__select" @click="handleSelectBatch(batch)">
               <span class="sidebar-item__thumb">
-                <img v-if="batchThumb(batch)" :src="batchThumb(batch)" alt="批次缩略图" />
+                <img
+                  v-if="batchThumb(batch)"
+                  :src="batchThumb(batch)"
+                  alt="批次缩略图"
+                  loading="lazy"
+                  decoding="async"
+                />
                 <span v-else aria-hidden="true">✣</span>
               </span>
               <span class="sidebar-item__body">
@@ -1008,7 +1014,14 @@ function formatStageDate(iso: string | undefined): string {
                       :aria-label="`预览生成结果图片 ${index + 1}`"
                       @click="handlePreviewGeneratedEntry(entry)"
                     >
-                      <img :src="entry.imageUrl" :alt="`生成结果图片 ${index + 1}`" />
+                      <img
+                        :src="entry.imageUrl"
+                        :alt="`生成结果图片 ${index + 1}`"
+                        loading="lazy"
+                        decoding="async"
+                        :width="entry.record.width"
+                        :height="entry.record.height"
+                      />
                     </button>
                   </figure>
                 </div>
@@ -1250,6 +1263,7 @@ function formatStageDate(iso: string | undefined): string {
           class="prompt-showcase__attachment-preview"
           :src="previewUrl"
           alt="已添加参考图预览"
+          decoding="async"
         />
         <span v-else class="prompt-showcase__attachment-fallback" aria-hidden="true">图</span>
         <span class="prompt-showcase__attachment-meta">
@@ -1492,6 +1506,8 @@ function formatStageDate(iso: string | undefined): string {
   background: transparent;
   color: var(--color-body);
   transition: background-color 140ms ease;
+  content-visibility: auto;
+  contain-intrinsic-size: 244px 70px;
 }
 
 .sidebar-item__select {
@@ -1687,6 +1703,8 @@ function formatStageDate(iso: string | undefined): string {
   color: var(--color-ink);
   scroll-margin: 96px;
   text-align: left;
+  content-visibility: auto;
+  contain-intrinsic-size: 304px 440px;
 }
 
 .generation-item__date {

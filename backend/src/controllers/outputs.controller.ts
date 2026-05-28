@@ -34,7 +34,7 @@ export async function getOutput(req: Request, res: Response, next: NextFunction)
     res.status(200);
     res.setHeader('Content-Type', mimeFromExt(ext === 'jpg' ? 'jpeg' : ext));
     res.setHeader('Content-Length', buffer.byteLength.toString());
-    res.setHeader('Cache-Control', 'private, max-age=0, must-revalidate');
+    res.setHeader('Cache-Control', 'private, max-age=31536000, immutable');
     res.end(buffer);
   } catch (err) {
     next(err);

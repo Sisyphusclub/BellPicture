@@ -134,7 +134,13 @@ function handleRemove(): void {
           </h2>
         </header>
         <div class="detail-panel__viewer-stage">
-          <img :src="entry.imageUrl" alt="放大查看的资产图片" />
+          <img
+            :src="entry.imageUrl"
+            alt="放大查看的资产图片"
+            decoding="async"
+            :width="entry.record.width"
+            :height="entry.record.height"
+          />
         </div>
       </section>
 
@@ -148,7 +154,13 @@ function handleRemove(): void {
             title="放大查看图片"
             @click="openExpandedImage"
           >
-            <img :src="entry.imageUrl" alt="选中的资产图片" />
+            <img
+              :src="entry.imageUrl"
+              alt="选中的资产图片"
+              decoding="async"
+              :width="entry.record.width"
+              :height="entry.record.height"
+            />
             <span class="detail-panel__image-hint" aria-hidden="true">点击放大</span>
           </button>
         </div>

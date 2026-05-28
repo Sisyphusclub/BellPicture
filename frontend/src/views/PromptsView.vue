@@ -293,7 +293,12 @@ function useTemplate(template: PromptTemplate): void {
       >
         <article v-for="template in filteredTemplates" :key="template.id" class="prompt-card">
           <figure class="prompt-card__media">
-            <img :src="template.imageUrl" :alt="`${template.title} 提示词示例图`" loading="lazy" />
+            <img
+              :src="template.imageUrl"
+              :alt="`${template.title} 提示词示例图`"
+              loading="lazy"
+              decoding="async"
+            />
             <figcaption>{{ template.source }}</figcaption>
           </figure>
 

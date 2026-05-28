@@ -1,8 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
-import AdminUsersView from '@/views/AdminUsersView.vue';
 import GenerateView from '@/views/GenerateView.vue';
-import HistoryView from '@/views/HistoryView.vue';
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -22,12 +20,12 @@ export const router = createRouter({
     {
       path: '/history',
       name: 'history',
-      component: HistoryView,
+      component: () => import('@/views/HistoryView.vue'),
     },
     {
       path: '/admin/users',
       name: 'admin-users',
-      component: AdminUsersView,
+      component: () => import('@/views/AdminUsersView.vue'),
     },
   ],
 });

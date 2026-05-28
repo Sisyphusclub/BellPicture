@@ -74,7 +74,13 @@ onBeforeUnmount(() => {
       tabindex="-1"
     >
       <div class="recent-detail__stage" aria-label="图片预览">
-        <img :src="entry.imageUrl" alt="选中的最近创作图片" />
+        <img
+          :src="entry.imageUrl"
+          alt="选中的最近创作图片"
+          decoding="async"
+          :width="entry.record.width"
+          :height="entry.record.height"
+        />
       </div>
 
       <aside class="recent-detail__inspector" aria-label="提示词与操作">
@@ -326,7 +332,7 @@ onBeforeUnmount(() => {
 
 .recent-detail__actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 4px;
 }
