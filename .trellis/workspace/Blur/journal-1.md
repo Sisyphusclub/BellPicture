@@ -886,3 +886,36 @@ Unified the frontend UI token and component vocabulary across active routes, ver
 ### Next Steps
 
 - None - task complete
+
+
+## Session 27: Fix image regenerate errors
+
+**Date**: 2026-05-28
+**Task**: Fix image regenerate errors
+**Branch**: `main`
+
+### Summary
+
+Fixed regenerate flow to preserve text/image request context, added multi-reference referenceIds persistence and provider support, updated gallery detail teleport tests, refreshed code specs, and verified frontend/backend checks.
+
+### Main Changes
+
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f62d7f9` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

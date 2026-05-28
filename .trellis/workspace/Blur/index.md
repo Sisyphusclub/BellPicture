@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 26
-- **Last Active**: 2026-05-26
+- **Total Sessions**: 27
+- **Last Active**: 2026-05-28
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~888 | Active |
+| `journal-1.md` | ~921 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 27 | 2026-05-28 | Fix image regenerate errors | `f62d7f9` | `main` |
 | 26 | 2026-05-26 | Unify frontend UI design system | `80460b9`, `12ee8f0` | `main` |
 | 25 | 2026-05-20 | Remove prompts page entry points | `8188e17` | `main` |
 | 24 | 2026-05-19 | Refine prompts page layout and cards | `48812cc` | `main` |
