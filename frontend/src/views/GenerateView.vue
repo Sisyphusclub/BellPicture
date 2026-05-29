@@ -51,7 +51,7 @@ const {
   add: addPublicGalleryRecord,
   removeAsAdmin: removePublicGalleryRecordAsAdmin,
 } = usePublicGallery();
-const { selectedFiles, replaceFiles, clear } = useFileUpload();
+const { selectedFiles, selectFiles, replaceFiles, clear } = useFileUpload();
 const { generate, isLoading, error, lastBatch, statusMessage, clearLastBatch } =
   useImageGeneration();
 const { quota, isLoading: isQuotaLoading, refresh: refreshQuota } = useImageQuota();
@@ -519,7 +519,7 @@ function handleDragLeave(): void {
 
 function addReferenceFiles(files: readonly File[]): void {
   reusedReferenceId.value = null;
-  const result = replaceFiles(files);
+  const result = selectFiles(files);
   if (result.added === 0) return;
   ElMessage.success(result.added > 1 ? `已添加 ${result.added} 张参考图。` : '参考图已添加到输入框。');
 }

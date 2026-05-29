@@ -114,6 +114,14 @@ legacy batches and older UI code. Regenerate flows must read `referenceIds`
 first, fall back to `referenceId`, and pass the resulting ids through
 `GenerateImageOptions.referenceIds` without re-uploading existing history
 references.
+
+Reference image composer state has two distinct operations:
+- User add flows (file picker, drag-and-drop, paste) call `useFileUpload().selectFiles(files)` so repeated adds append to the current selection up to `MAX_REFERENCE_IMAGES`.
+- Snapshot hydration flows (edit/regenerate pending generations or saved batches) call `replaceFiles(files)` or clear the local files before setting reused history ids, so stale references from the previous composer state are not mixed into the snapshot.
+
+Regression tests for the generation view should cover both sides when touched:
+repeated user adds submit every selected `referenceFiles`, while history
+regeneration sends persisted `referenceIds` without re-uploading files.
 `DELETE /api/history/batch/:batchId` and `/api/history/:id` remove rows but
 leave `OUTPUT_DIR` files in place (file cleanup is PR3's responsibility once
 files are per-user).

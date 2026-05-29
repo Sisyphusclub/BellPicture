@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GenerateImageOptions } from '@/composables/useImageGeneration';
 import generateViewSource from '@/views/GenerateView.vue?raw';
 import type { GroupedBatch } from '@/composables/useImageHistory';
-import type { GeneratedBatchResult, HistoryEntry } from '@/types/image';
+import { MAX_REFERENCE_IMAGES, type GeneratedBatchResult, type HistoryEntry } from '@/types/image';
 
 interface Deferred<T> {
   promise: Promise<T>;
@@ -111,6 +111,15 @@ function getButtonByText(buttons: DOMWrapper<Element>[], text: string): DOMWrapp
   const button = buttons.find((item) => item.text().includes(text));
   if (!button) throw new Error(`未找到 ${text} 按钮。`);
   return button;
+}
+
+async function chooseReferenceFiles(wrapper: VueWrapper, files: readonly File[]): Promise<void> {
+  const input = wrapper.get('input[type="file"]');
+  Object.defineProperty(input.element, 'files', {
+    value: files,
+    configurable: true,
+  });
+  await input.trigger('change');
 }
 
 function extractStyleRules(selector: string): string[] {
@@ -613,6 +622,32 @@ describe('GenerateView', () => {
     );
   });
 
+  it('appends reference files across repeated selections before submitting', async () => {
+    const firstReference = new File(['first'], 'first-reference.png', { type: 'image/png' });
+    const secondReference = new File(['second'], 'second-reference.png', { type: 'image/png' });
+    const { wrapper, generate } = await mountGenerateView({ mode: 'generate' });
+
+    await wrapper.get('textarea[name="prompt"]').setValue('融合两张参考图生成海报');
+    await chooseReferenceFiles(wrapper, [firstReference]);
+
+    expect(wrapper.text()).toContain('参考图 1');
+
+    await chooseReferenceFiles(wrapper, [secondReference]);
+
+    expect(wrapper.text()).toContain('参考图 2');
+    expect(wrapper.text()).toContain('已添加 2 张参考图');
+
+    await wrapper.get('button.prompt-showcase__generate').trigger('click');
+
+    expect(generate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: '融合两张参考图生成海报',
+        model: 'gpt-image-2',
+        referenceFiles: [firstReference, secondReference],
+      }),
+    );
+  });
+
   it('preserves the saved reference id when regenerating an image-to-image batch', async () => {
     const referenceEntry = createHistoryEntry('reference-result.png', '照着参考图做一张海报', false, {
       batchId: 'batch-reference',
@@ -854,19 +889,37 @@ async function mountGenerateView(
 
   vi.doMock('@/composables/useFileUpload', () => {
     const selectedFiles = ref<MockSelectedReferenceFile[]>([]);
+    let referenceFileCounter = 0;
+
+    function createReferenceFile(file: File): MockSelectedReferenceFile {
+      referenceFileCounter += 1;
+      return {
+        id: `reference-${referenceFileCounter}`,
+        file,
+        previewUrl: file.type.startsWith('image/') ? `blob:reference-${referenceFileCounter}` : null,
+        validationMessage: null,
+      };
+    }
+
+    function selectFiles(files: readonly File[], options: { replace?: boolean } = {}) {
+      if (options.replace) selectedFiles.value = [];
+      const remainingSlots = Math.max(0, MAX_REFERENCE_IMAGES - selectedFiles.value.length);
+      const nextItems = files.slice(0, remainingSlots).map(createReferenceFile);
+      selectedFiles.value = [...selectedFiles.value, ...nextItems];
+      return {
+        added: nextItems.length,
+        skipped: Math.max(0, files.length - nextItems.length),
+      };
+    }
+
     return {
       useFileUpload: () => ({
         selectedFiles: readonly(selectedFiles),
+        selectFiles: vi.fn((files: readonly File[]) => selectFiles(files)),
         replaceFiles: vi.fn((files: readonly File[]) => {
-          selectedFiles.value = files.map((file, index) => ({
-            id: `reference-${index + 1}`,
-            file,
-            previewUrl: file.type.startsWith('image/') ? `blob:reference-${index + 1}` : null,
-            validationMessage: null,
-          }));
+          const result = selectFiles(files, { replace: true });
           return {
-            added: selectedFiles.value.length,
-            skipped: 0,
+            ...result,
             selected: selectedFiles.value,
           };
         }),
