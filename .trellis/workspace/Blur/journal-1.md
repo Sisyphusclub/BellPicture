@@ -1018,3 +1018,36 @@ Fixed repeated reference image selection so new files append instead of replacin
 ### Next Steps
 
 - None - task complete
+
+
+## Session 31: Fix discover navigation during generation
+
+**Date**: 2026-05-29
+**Task**: Fix discover navigation during generation
+**Branch**: `main`
+
+### Summary
+
+Fixed the generate/discover route-state regression where an in-flight generation kept rendering the generation workspace after navigating back to Discover, added a GenerateView regression test, and verified focused frontend tests plus lint and typecheck.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0fd3b6b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
