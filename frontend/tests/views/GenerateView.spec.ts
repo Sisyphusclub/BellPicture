@@ -258,6 +258,27 @@ describe('GenerateView', () => {
     expect(wrapper.text()).toContain('生成中...');
   });
 
+  it('shows the discover surface when navigating back during an in-flight generation', async () => {
+    const { wrapper, generate } = await mountGenerateView({ mode: 'generate' });
+
+    await wrapper.get('textarea[name="prompt"]').setValue('生成过程中返回发现页');
+    await wrapper.get('button.prompt-showcase__generate').trigger('click');
+
+    expect(generate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: '生成过程中返回发现页',
+      }),
+    );
+    expect(wrapper.find('.generation-placeholder').exists()).toBe(true);
+
+    await wrapper.setProps({ mode: 'discover' });
+
+    expect(wrapper.find('.canvas-hero').exists()).toBe(true);
+    expect(wrapper.findComponent({ name: 'RecentCreationsMasonryStub' }).exists()).toBe(true);
+    expect(wrapper.find('form.prompt-showcase--dock').exists()).toBe(false);
+    expect(wrapper.find('.generation-placeholder').exists()).toBe(false);
+  });
+
   it('renders historical generated batches as a vertical feed in the generate workspace', async () => {
     const olderEntry = createHistoryEntry('older.png', '上一轮的复古书房', false, {
       batchId: 'batch-older',

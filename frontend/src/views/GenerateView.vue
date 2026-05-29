@@ -115,6 +115,7 @@ const modelButtonRef = ref<HTMLButtonElement | null>(null);
 const selectedRecentEntry = ref<HistoryEntry | null>(null);
 const deletingGalleryEntryId = ref<string | null>(null);
 const isHeroPromptFocused = ref(false);
+const isDiscoverSubmitTransitionActive = ref(false);
 const activeHeroSuggestion = ref<string>(DEFAULT_HERO_PROMPT_SUGGESTION);
 const streamedHeroSuggestion = ref<string>('');
 const hasReducedMotion = ref(false);
@@ -215,7 +216,10 @@ const hasGeneratedSurface = computed(
 const isGenerateWorkspace = computed(() => props.mode === 'generate');
 const hasActiveSurface = computed(
   () =>
-    isGenerateWorkspace.value || (props.mode === 'discover' && pendingGeneration.value !== null),
+    isGenerateWorkspace.value ||
+    (props.mode === 'discover' &&
+      isDiscoverSubmitTransitionActive.value &&
+      pendingGeneration.value !== null),
 );
 const shouldShowWorkspaceEmpty = computed(
   () => isGenerateWorkspace.value && !hasGeneratedSurface.value,
@@ -288,6 +292,13 @@ watch(batches, (nextBatches) => {
   if (!exists) activeBatchId.value = null;
 });
 
+watch(
+  () => props.mode,
+  (mode) => {
+    if (mode === 'generate') isDiscoverSubmitTransitionActive.value = false;
+  },
+);
+
 watch(shouldShowHeroSuggestion, (isVisible) => {
   if (!isHeroSuggestionReady) return;
   if (!isVisible || hasReducedMotion.value) {
@@ -304,7 +315,10 @@ watch(shouldShowHeroSuggestion, (isVisible) => {
 async function handleSubmit(): Promise<void> {
   if (!canGenerate.value) return;
   const snapshot = createSnapshotFromCurrentComposer();
-  if (props.mode === 'discover') void router.push('/generate');
+  if (props.mode === 'discover') {
+    isDiscoverSubmitTransitionActive.value = true;
+    void router.push('/generate');
+  }
   await runGeneration(snapshot);
 }
 
