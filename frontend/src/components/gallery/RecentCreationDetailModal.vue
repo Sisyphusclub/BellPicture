@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue';
 
+import { useImageDetailModalState } from '@/composables/useImageDetailModalState';
 import type { HistoryEntry } from '@/types/image';
 import { formatFullDateTime } from '@/utils/format';
 
@@ -21,7 +22,10 @@ const emit = defineEmits<{
   (e: 'delete', entry: HistoryEntry): void;
 }>();
 
+const { openImageDetailModal, closeImageDetailModal } = useImageDetailModalState();
+
 const closeButtonRef = ref<HTMLButtonElement | null>(null);
+const imageDetailModalId = Symbol('recent-creation-detail-modal');
 
 function requestClose(): void {
   emit('close');
@@ -48,11 +52,13 @@ watch(
   () => props.entry,
   (next, prev) => {
     if (next && !prev) {
+      openImageDetailModal(imageDetailModalId);
       document.addEventListener('keydown', handleKeydown);
       void nextTick(() => {
         closeButtonRef.value?.focus();
       });
     } else if (!next && prev) {
+      closeImageDetailModal(imageDetailModalId);
       document.removeEventListener('keydown', handleKeydown);
     }
   },
@@ -61,6 +67,7 @@ watch(
 
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleKeydown);
+  closeImageDetailModal(imageDetailModalId);
 });
 </script>
 

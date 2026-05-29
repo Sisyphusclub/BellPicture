@@ -4,8 +4,10 @@ import { RouterView, useRoute } from 'vue-router';
 
 import LoginModal from '@/components/auth/LoginModal.vue';
 import AppHeader from '@/components/common/AppHeader.vue';
+import { useImageDetailModalState } from '@/composables/useImageDetailModalState';
 
 const route = useRoute();
+const { isImageDetailModalOpen } = useImageDetailModalState();
 const videoBackdropRoutes = new Set(['discover', 'generate', 'history', 'admin-users']);
 const isCompactViewport = ref(false);
 let compactViewportMediaQuery: MediaQueryList | null = null;
@@ -52,7 +54,7 @@ onBeforeUnmount(() => {
     <div class="app-backdrop__gradient" />
   </div>
   <div class="app-shell">
-    <AppHeader />
+    <AppHeader v-if="!isImageDetailModalOpen" />
     <main class="app-main" aria-label="Ref2Image Studio 工作区">
       <RouterView />
     </main>

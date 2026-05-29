@@ -1,6 +1,9 @@
 import { mount } from '@vue/test-utils';
+import { nextTick } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as VueRouter from 'vue-router';
+
+import { useImageDetailModalState } from '@/composables/useImageDetailModalState';
 
 const openLoginModal = vi.hoisted(() => vi.fn());
 const routeName = vi.hoisted(() => ({ value: 'history' }));
@@ -73,5 +76,32 @@ describe('App', () => {
       expect(wrapper.find('.app-backdrop__video').exists()).toBe(true);
       wrapper.unmount();
     }
+  });
+
+  it('hides the app navigation while an image detail preview is open', async () => {
+    const App = (await import('@/App.vue')).default;
+    const modalId = Symbol('test-image-detail-modal');
+    const { openImageDetailModal, closeImageDetailModal } = useImageDetailModalState();
+    const wrapper = mount(App, {
+      global: {
+        stubs: {
+          RouterView: {
+            template: '<main data-testid="router-view" />',
+          },
+        },
+      },
+    });
+
+    expect(wrapper.find('[data-testid="app-header"]').exists()).toBe(true);
+
+    openImageDetailModal(modalId);
+    await nextTick();
+
+    expect(wrapper.find('[data-testid="app-header"]').exists()).toBe(false);
+
+    closeImageDetailModal(modalId);
+    await nextTick();
+
+    expect(wrapper.find('[data-testid="app-header"]').exists()).toBe(true);
   });
 });

@@ -3,6 +3,7 @@ import { nextTick } from 'vue';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import RecentCreationDetailModal from '@/components/gallery/RecentCreationDetailModal.vue';
+import { useImageDetailModalState } from '@/composables/useImageDetailModalState';
 import recentCreationDetailModalSource from '@/components/gallery/RecentCreationDetailModal.vue?raw';
 import RecentCreationsMasonry from '@/components/gallery/RecentCreationsMasonry.vue';
 import type { HistoryEntry } from '@/types/image';
@@ -211,8 +212,11 @@ describe('RecentCreationDetailModal', () => {
   });
 
   it('keeps dialog semantics on the detail panel and focuses the close control', async () => {
+    const { isImageDetailModalOpen } = useImageDetailModalState();
+
     await mountDetail(createEntry());
 
+    expect(isImageDetailModalOpen.value).toBe(true);
     const dialog = bodyGet('.recent-detail__shell');
     expect(dialog.getAttribute('role')).toBe('dialog');
     expect(dialog.getAttribute('aria-modal')).toBe('true');
@@ -269,10 +273,18 @@ describe('RecentCreationDetailModal', () => {
   });
 
   it('emits close when the close button is clicked', async () => {
+    const { isImageDetailModalOpen } = useImageDetailModalState();
     const wrapper = await mountDetail(createEntry());
+
+    expect(isImageDetailModalOpen.value).toBe(true);
 
     await triggerBody('.recent-detail__close', new MouseEvent('click', { bubbles: true }));
 
     expect(wrapper.emitted('close')).toHaveLength(1);
+
+    await wrapper.setProps({ entry: null });
+    await nextTick();
+
+    expect(isImageDetailModalOpen.value).toBe(false);
   });
 });
