@@ -919,3 +919,36 @@ Fixed regenerate flow to preserve text/image request context, added multi-refere
 ### Next Steps
 
 - None - task complete
+
+
+## Session 28: Fix generate preview navigation visibility
+
+**Date**: 2026-05-29
+**Task**: Fix generate preview navigation visibility
+**Branch**: `main`
+
+### Summary
+
+Fixed image detail previews so global navigation hides while a generated image preview is open, added shared modal state, and verified frontend tests, lint, and typecheck.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5325fe5` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
