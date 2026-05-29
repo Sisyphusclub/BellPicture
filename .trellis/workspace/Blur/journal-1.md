@@ -985,3 +985,36 @@ Diagnosed production image generation 504s as provider timeouts and Cloudflare 5
 ### Next Steps
 
 - None - task complete
+
+
+## Session 30: Fix multiple reference image adding
+
+**Date**: 2026-05-29
+**Task**: Fix multiple reference image adding
+**Branch**: `main`
+
+### Summary
+
+Fixed repeated reference image selection so new files append instead of replacing previous selections, added a GenerateView regression test, documented the add-vs-replace reference composer state contract, and verified frontend tests, lint, and typecheck.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `09a9aa9` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
