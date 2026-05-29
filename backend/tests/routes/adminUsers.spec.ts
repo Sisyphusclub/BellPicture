@@ -38,29 +38,6 @@ function createDbUser(input: { username: string; isAdmin?: boolean }): string {
   return id;
 }
 
-function ensureBlurUserForPromotion(): string {
-  const now = new Date();
-  const id = `blur-${randomUUID()}`;
-  db.insert(user)
-    .values({
-      id,
-      name: 'blur',
-      email: `blur-${randomUUID()}@test.local`,
-      emailVerified: false,
-      username: 'blur',
-      displayUsername: 'blur',
-      isAdmin: false,
-      createdAt: now,
-      updatedAt: now,
-    })
-    .onConflictDoUpdate({
-      target: user.username,
-      set: { isAdmin: false, updatedAt: now },
-    })
-    .run();
-  return db.select({ id: user.id }).from(user).where(eq(user.username, 'blur')).get()!.id;
-}
-
 function createAdminUser(): string {
   return createDbUser({ username: `admin_${randomUUID().slice(0, 8)}`, isAdmin: true });
 }
@@ -80,13 +57,20 @@ function allowAdmin(): RequestHandler {
 }
 
 describe('/api/admin/users', () => {
-  it('recognizes normalized blur as the persistent admin account', () => {
-    const blurId = ensureBlurUserForPromotion();
+  it('does not grant admin access based on the blur username', async () => {
+    db.delete(user).where(eq(user.username, 'blur')).run();
+    const blurId = createDbUser({ username: 'blur', isAdmin: false });
 
     try {
-      expect(isUserAdmin(blurId)).toBe(true);
+      const app = createApp({ provider: fakeProvider, authMiddleware: stubAuth(blurId) });
+
+      expect(isUserAdmin(blurId)).toBe(false);
+      const res = await request(app).get('/api/admin/users');
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('FORBIDDEN');
       const blur = db.select({ isAdmin: user.isAdmin }).from(user).where(eq(user.id, blurId)).get();
-      expect(blur?.isAdmin).toBe(true);
+      expect(blur?.isAdmin).toBe(false);
     } finally {
       db.delete(user).where(eq(user.id, blurId)).run();
     }

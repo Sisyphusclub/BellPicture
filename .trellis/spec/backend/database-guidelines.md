@@ -251,6 +251,9 @@ body: { username: string; password: string; rememberMe?: boolean }
 - `SEED_DEFAULT_ADMIN=true` is the only switch that creates `admin` / `admin123`
   on boot; the default is disabled. The seed must call Better Auth APIs, not
   insert rows directly.
+- Admin authorization must read the persisted `user.is_admin` flag only. A
+  username such as `admin` or `blur` must never be treated as an admin by
+  naming convention or promoted during `isUserAdmin()` checks.
 
 ### 4. Validation & Error Matrix
 | Condition | Expected behavior |
@@ -262,19 +265,23 @@ body: { username: string; password: string; rememberMe?: boolean }
 | Wrong username/password on sign-in | Chinese frontend message `用户名或密码错误。` |
 | `SEED_DEFAULT_ADMIN` absent/false | No default admin user is created |
 | `SEED_DEFAULT_ADMIN=true` and admin exists | No duplicate user; seed is idempotent |
+| User self-registers `blur` or `admin` while no seed/admin promotion ran | User remains `is_admin=false` and `/api/admin/*` returns 403 |
 
 ### 5. Good/Base/Bad Cases
 - Good: fresh local demo database + `SEED_DEFAULT_ADMIN=true` can sign in with
   `admin` / `admin123`; `account.password` is a hash, not `admin123`.
 - Base: registering `New_User` stores and signs in as `new_user`.
 - Bad: enabling a production deployment with an unconditional weak default admin
-  account or writing directly to `user`/`account` tables.
+  account, deriving admin status from a username, or writing directly to
+  `user`/`account` tables.
 
 ### 6. Tests Required
 - Backend route tests for username registration, login, duplicate username,
   invalid username, short password, and rejected email auth routes.
 - Backend seed tests for disabled, created, existing, and hash-not-plaintext
   behavior.
+- Backend authorization regression tests proving self-registered `blur` stays
+  non-admin and direct `/api/admin/*` access returns 403.
 - Frontend tests for username labels/placeholders, normalized submission,
   disabled invalid registration, and Chinese error mapping.
 - Existing image/history/quota tests must continue to pass because they depend

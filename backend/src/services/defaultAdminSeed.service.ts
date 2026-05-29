@@ -7,7 +7,7 @@ import { user } from '../db/schema.js';
 import { logger } from '../logger.js';
 import { internalEmailForUsername, normalizeUsername } from '../utils/username.js';
 
-const DEFAULT_ADMIN_USERNAME = normalizeUsername('Blur');
+const DEFAULT_ADMIN_USERNAME = normalizeUsername('admin');
 const DEFAULT_ADMIN_PASSWORD = 'admin123';
 
 export interface DefaultAdminSeedResult {

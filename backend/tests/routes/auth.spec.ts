@@ -54,6 +54,34 @@ describe('username/password auth', () => {
     expect(credentialAccount?.password).not.toBe(password);
   });
 
+  it('keeps a self-registered blur user as a non-admin account', async () => {
+    const app = createApp({ provider: fakeProvider });
+    db.delete(user).where(eq(user.username, 'blur')).run();
+
+    const signUp = await request(app)
+      .post('/api/auth/sign-up/username')
+      .set('Content-Type', 'application/json')
+      .send({ username: 'Blur', password: 'password123' });
+
+    expect(signUp.status).toBeLessThan(400);
+    const cookie = cookiesFrom(signUp);
+    expect(cookie.some((c) => /session/i.test(c))).toBe(true);
+
+    const me = await request(app).get('/api/auth/me').set('Cookie', cookie);
+    expect(me.status).toBe(200);
+    expect(me.body.user).toMatchObject({
+      username: 'blur',
+      isAdmin: false,
+    });
+
+    const admin = await request(app).get('/api/admin/users').set('Cookie', cookie);
+    expect(admin.status).toBe(403);
+    expect(admin.body.error.code).toBe('FORBIDDEN');
+
+    const blur = db.select({ isAdmin: user.isAdmin }).from(user).where(eq(user.username, 'blur')).get();
+    expect(blur?.isAdmin).toBe(false);
+  });
+
   it('POST /api/auth/sign-in/username with valid credentials returns a session cookie', async () => {
     const app = createApp({ provider: fakeProvider });
     const username = uniqueUsername('login');
@@ -151,34 +179,35 @@ describe('username/password auth', () => {
     });
   });
 
-  it('seeds blur/admin123 only when the explicit gate is enabled', async () => {
+  it('seeds admin/admin123 only when the explicit gate is enabled', async () => {
     const app = createApp({ provider: fakeProvider });
-    db.delete(user).where(eq(user.username, 'blur')).run();
+    db.delete(user).where(eq(user.username, 'admin')).run();
 
     const disabled = await seedDefaultAdminIfEnabled(false);
-    expect(disabled).toMatchObject({ created: false, reason: 'disabled', username: 'blur' });
-    expect(db.select().from(user).where(eq(user.username, 'blur')).all()).toHaveLength(0);
+    expect(disabled).toMatchObject({ created: false, reason: 'disabled', username: 'admin' });
+    expect(db.select().from(user).where(eq(user.username, 'admin')).all()).toHaveLength(0);
 
     const enabled = await seedDefaultAdminIfEnabled(true);
-    expect(enabled).toMatchObject({ created: true, reason: 'created', username: 'blur' });
+    expect(enabled).toMatchObject({ created: true, reason: 'created', username: 'admin' });
 
-    const blurUsers = db.select().from(user).where(eq(user.username, 'blur')).all();
-    expect(blurUsers).toHaveLength(1);
-    const blurUser = blurUsers[0]!;
-    const blurAccounts = db.select().from(account).where(eq(account.userId, blurUser.id)).all();
-    const credentialAccount = blurAccounts.find((a) => a.providerId === 'credential');
+    const adminUsers = db.select().from(user).where(eq(user.username, 'admin')).all();
+    expect(adminUsers).toHaveLength(1);
+    const adminUser = adminUsers[0]!;
+    expect(adminUser.isAdmin).toBe(true);
+    const adminAccounts = db.select().from(account).where(eq(account.userId, adminUser.id)).all();
+    const credentialAccount = adminAccounts.find((a) => a.providerId === 'credential');
     expect(credentialAccount?.password).toBeTruthy();
     expect(credentialAccount?.password).not.toBe('admin123');
 
     const signIn = await request(app)
       .post('/api/auth/sign-in/username')
       .set('Content-Type', 'application/json')
-      .send({ username: 'blur', password: 'admin123' });
+      .send({ username: 'admin', password: 'admin123' });
 
     expect(signIn.status).toBeLessThan(400);
     expect(cookiesFrom(signIn).some((c) => /session/i.test(c))).toBe(true);
 
     const secondSeed = await seedDefaultAdminIfEnabled(true);
-    expect(secondSeed).toMatchObject({ created: false, reason: 'exists', username: 'blur' });
+    expect(secondSeed).toMatchObject({ created: false, reason: 'exists', username: 'admin' });
   });
 });

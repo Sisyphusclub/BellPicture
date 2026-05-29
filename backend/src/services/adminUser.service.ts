@@ -1,14 +1,12 @@
-import { and, asc, eq, ne, sql } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 
 import { auth } from '../config/auth.js';
 import { env } from '../config/env.js';
 import { db } from '../db/drizzle.js';
 import { user, userQuota } from '../db/schema.js';
 import { AppError } from '../errors/AppError.js';
-import { logger } from '../logger.js';
 import { internalEmailForUsername, isValidUsername, normalizeUsername } from '../utils/username.js';
 
-const ADMIN_USERNAME = normalizeUsername('Blur');
 const USERNAME_REQUIREMENTS_MESSAGE = '用户名需为 3-32 位小写字母、数字或下划线。';
 const PASSWORD_REQUIREMENTS_MESSAGE = '密码至少需要 8 个字符。';
 
@@ -100,23 +98,7 @@ function toAdminUserDTO(row: {
   };
 }
 
-export function isAdminUsername(username: string | null | undefined): boolean {
-  return username === ADMIN_USERNAME;
-}
-
-export function promoteBlurAdminIfPresent(): void {
-  const result = db
-    .update(user)
-    .set({ isAdmin: true, updatedAt: new Date() })
-    .where(and(eq(user.username, ADMIN_USERNAME), ne(user.isAdmin, true)))
-    .run();
-  if (result.changes > 0) {
-    logger.info({ username: ADMIN_USERNAME }, 'admin-user: promoted Blur account');
-  }
-}
-
 export function isUserAdmin(userId: string): boolean {
-  promoteBlurAdminIfPresent();
   const row = db
     .select({ isAdmin: user.isAdmin })
     .from(user)
@@ -126,7 +108,6 @@ export function isUserAdmin(userId: string): boolean {
 }
 
 export function listAdminUsers(): AdminUserDTO[] {
-  promoteBlurAdminIfPresent();
   const rows = db
     .select({
       id: user.id,
@@ -196,7 +177,6 @@ export async function createAdminManagedUser(input: CreateAdminUserInput): Promi
 }
 
 export function getAdminUser(userId: string): AdminUserDTO {
-  promoteBlurAdminIfPresent();
   const row = db
     .select({
       id: user.id,
@@ -264,7 +244,7 @@ export async function deleteAdminManagedUser(targetUserId: string, currentAdminI
       userId: targetUserId,
     });
   }
-  if (target.isAdmin || isAdminUsername(target.username)) {
+  if (target.isAdmin) {
     throw new AppError('BAD_REQUEST', '不能删除受保护的管理员账号。', 400, undefined, {
       userId: targetUserId,
     });
