@@ -1084,3 +1084,36 @@ Removed username-based blur auto-promotion, made admin authorization depend only
 ### Next Steps
 
 - None - task complete
+
+
+## Session 33: Add admin demo generation mode
+
+**Date**: 2026-05-29
+**Task**: Add admin demo generation mode
+**Branch**: `main`
+
+### Summary
+
+Added an admin-only demo generation mode that uses demoPresetId on the existing generate endpoint, waits two seconds in production, generates a local demo PNG, persists normal image history, bypasses provider calls and quota consumption, and exposes an admin-only demo button in the generator UI with backend/frontend coverage.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b048331` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
