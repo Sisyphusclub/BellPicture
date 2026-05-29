@@ -1051,3 +1051,36 @@ Fixed the generate/discover route-state regression where an in-flight generation
 ### Next Steps
 
 - None - task complete
+
+
+## Session 32: Fix ordinary user admin access
+
+**Date**: 2026-05-29
+**Task**: Fix ordinary user admin access
+**Branch**: `main`
+
+### Summary
+
+Removed username-based blur auto-promotion, made admin authorization depend only on persisted user.is_admin, aligned the optional default admin seed to admin/admin123, added regression tests for blur registration and admin API denial, and verified backend/frontend permission checks.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6bf5a02` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

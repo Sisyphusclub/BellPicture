@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 31
+- **Total Sessions**: 32
 - **Last Active**: 2026-05-29
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1053 | Active |
+| `journal-1.md` | ~1086 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 32 | 2026-05-29 | Fix ordinary user admin access | `6bf5a02` | `main` |
 | 31 | 2026-05-29 | Fix discover navigation during generation | `0fd3b6b` | `main` |
 | 30 | 2026-05-29 | Fix multiple reference image adding | `09a9aa9` | `main` |
 | 29 | 2026-05-29 | Fix image generation 504 | `670a020` | `main` |
