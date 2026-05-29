@@ -952,3 +952,36 @@ Fixed image detail previews so global navigation hides while a generated image p
 ### Next Steps
 
 - None - task complete
+
+
+## Session 29: Fix image generation 504
+
+**Date**: 2026-05-29
+**Task**: Fix image generation 504
+**Branch**: `main`
+
+### Summary
+
+Diagnosed production image generation 504s as provider timeouts and Cloudflare 524s, routed backend provider traffic through the internal chatgpt2api Docker network, raised production timeout below the outer proxy ceiling, and verified a successful generation request.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `670a020` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
