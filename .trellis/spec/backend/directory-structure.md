@@ -215,6 +215,107 @@ outside `config/env.ts`.**
 `.env.example` must list every variable with a placeholder value and a
 one-line comment.
 
+## Scenario: Docker-internal image provider routing
+
+### 1. Scope / Trigger
+
+- Trigger: production image generation calls to the provider can run longer than
+  public proxy idle limits. Routing backend → provider through a public
+  Cloudflare/Caddy hostname can turn a healthy long-running provider request
+  into a `524` / `PROVIDER_ERROR` or a backend `PROVIDER_TIMEOUT`.
+- Scope: Docker Compose production deployments where the provider runs in a
+  sibling Docker Compose project, such as `chatgpt2api`.
+
+### 2. Signatures
+
+`docker-compose.yml` attaches the backend to an external provider network:
+
+```yaml
+services:
+  backend:
+    networks:
+      default:
+      provider:
+        aliases:
+          - ref2image-backend
+
+networks:
+  provider:
+    name: ${PROVIDER_NETWORK:-chatgpt2api_default}
+    external: true
+```
+
+Production `.env` should use the provider service DNS name:
+
+```env
+IMAGE_API_BASE_URL=http://chatgpt2api
+PROVIDER_NETWORK=chatgpt2api_default
+IMAGE_API_TIMEOUT_MS=240000
+```
+
+### 3. Contracts
+
+- `IMAGE_API_BASE_URL` still has **no `/v1` suffix**; the provider code appends
+  `/v1/images/generations` or `/v1/images/edits`.
+- `PROVIDER_NETWORK` names an existing Docker network. Compose fails fast if
+  the external network is missing.
+- The provider service must have a Docker DNS alias matching the base URL host
+  (`chatgpt2api` in production). This avoids public DNS, Cloudflare, and Caddy
+  for backend-to-provider calls.
+- `IMAGE_API_TIMEOUT_MS` must stay below the outer client-facing proxy timeout
+  for `/api/*`. For the current `pic.chen08.de` Caddy route, the proxy timeout
+  is 300 seconds, so 240000ms is the production ceiling unless Caddy changes.
+
+### 4. Validation & Error Matrix
+
+| Condition                                                                             | Expected behavior                                                      |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Backend is attached to `PROVIDER_NETWORK` and `IMAGE_API_BASE_URL=http://chatgpt2api` | Provider calls stay on Docker bridge networking                        |
+| Backend uses `https://gpt.chen08.de` for long image edits                             | Cloudflare may return `524`; backend maps this to `PROVIDER_ERROR` 502 |
+| `IMAGE_API_TIMEOUT_MS` is too low                                                     | Backend returns `PROVIDER_TIMEOUT` 504 before the provider finishes    |
+| `PROVIDER_NETWORK` does not exist                                                     | `docker compose up` fails before starting backend                      |
+| Provider DNS alias is wrong                                                           | Backend fetch fails and maps to `PROVIDER_ERROR` 502                   |
+
+### 5. Good/Base/Bad Cases
+
+- Good: backend joins `chatgpt2api_default`, uses
+  `IMAGE_API_BASE_URL=http://chatgpt2api`, and direct container smoke
+  `fetch("$IMAGE_API_BASE_URL/v1/models")` reaches the provider.
+- Base: local demos may still use a public HTTPS provider URL when the provider
+  is truly external and not a sibling container.
+- Bad: a production backend calls a local provider through a public Cloudflare
+  hostname, then increases backend timeout above the public proxy limit. The
+  request still dies at the proxy boundary.
+
+### 6. Tests Required
+
+- `docker compose config` must show backend on both `default` and `provider`
+  networks.
+- Container smoke after deployment:
+  `docker compose exec backend node -e "fetch(process.env.IMAGE_API_BASE_URL + '/v1/models', { headers: { Authorization: 'Bearer test' }, signal: AbortSignal.timeout(5000) }).then(r => console.log(r.status))"`.
+  A provider auth response such as `401` is acceptable; DNS/network failure is
+  not.
+- `docker compose ps` must show backend healthy after recreation.
+- Backend logs for provider requests should show `url` beginning with
+  `http://chatgpt2api/v1/images/...`, not the public hostname.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```env
+IMAGE_API_BASE_URL=https://gpt.chen08.de
+IMAGE_API_TIMEOUT_MS=240000
+```
+
+#### Correct
+
+```env
+IMAGE_API_BASE_URL=http://chatgpt2api
+PROVIDER_NETWORK=chatgpt2api_default
+IMAGE_API_TIMEOUT_MS=240000
+```
+
 ## Scenario: OpenAI-compatible inbound `/v1` image API
 
 ### 1. Scope / Trigger

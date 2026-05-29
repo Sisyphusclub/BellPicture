@@ -32,8 +32,17 @@ services:
       - backend-data:/app/data
       - backend-uploads:/app/tmp/uploads
       - backend-outputs:/app/tmp/outputs
+    networks:
+      default:
+      provider:
+        aliases:
+          - ref2image-backend
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/api/health').then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      test:
+        [
+          "CMD-SHELL",
+          'node -e "fetch(''http://127.0.0.1:3000/api/health'').then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))"',
+        ]
       interval: 30s
       timeout: 5s
       retries: 5
@@ -56,3 +65,8 @@ volumes:
   backend-data:
   backend-uploads:
   backend-outputs:
+
+networks:
+  provider:
+    name: ${PROVIDER_NETWORK:-chatgpt2api_default}
+    external: true
