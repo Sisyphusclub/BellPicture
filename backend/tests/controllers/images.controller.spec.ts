@@ -31,7 +31,8 @@ function fakeProvider(): { provider: ImageGenerationProvider } {
   return { provider };
 }
 
-function ensureTestUser(userId: string): void {
+function createDbUser(input: { userId?: string; isAdmin?: boolean } = {}): string {
+  const userId = input.userId ?? `test-${randomUUID()}`;
   const now = new Date();
   db.insert(user)
     .values({
@@ -39,23 +40,28 @@ function ensureTestUser(userId: string): void {
       name: `Test ${userId}`,
       email: `${userId}@test.local`,
       emailVerified: false,
+      isAdmin: input.isAdmin ?? false,
       createdAt: now,
       updatedAt: now,
     })
-    .onConflictDoNothing()
+    .onConflictDoUpdate({
+      target: user.id,
+      set: { isAdmin: input.isAdmin ?? false, updatedAt: now },
+    })
     .run();
+  return userId;
 }
 
-function stubAuth(userId = `test-${randomUUID()}`): RequestHandler {
-  ensureTestUser(userId);
+function stubAuth(userId = `test-${randomUUID()}`, isAdmin = false): RequestHandler {
+  createDbUser({ userId, isAdmin });
   return (req, _res, next) => {
-    req.user = { id: userId, email: `${userId}@test.local` };
+    req.user = { id: userId, email: `${userId}@test.local`, isAdmin };
     next();
   };
 }
 
 function buildApp(provider: ImageGenerationProvider, authMiddleware: RequestHandler = stubAuth()) {
-  return createApp({ provider, authMiddleware });
+  return createApp({ provider, authMiddleware, demoGenerationDelayMs: 0 });
 }
 
 describe('POST /api/images/upload', () => {
@@ -186,6 +192,66 @@ describe('POST /api/images/generate', () => {
     expect(after.status).toBe(200);
     expect(after.body.total).toBe(20);
     expect(after.body.remaining).toBe(18);
+  });
+
+  it('lets admins run demo generation without calling provider or consuming quota', async () => {
+    const { provider } = fakeProvider();
+    const userId = `demo-admin-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId, true));
+
+    const before = await request(app).get('/api/images/quota');
+    expect(before.status).toBe(200);
+    expect(before.body.remaining).toBe(20);
+
+    const res = await request(app).post('/api/images/generate').send({
+      prompt: '管理员演示提示词',
+      demoPresetId: 'studio-showcase',
+      isPublic: true,
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.generationMode).toBe('text-to-image');
+    expect(res.body.aspectRatio).toBe('1:1');
+    expect(res.body.images).toHaveLength(1);
+    expect(res.body.images[0]).toMatchObject({
+      mime: 'image/png',
+      width: 1024,
+      height: 1024,
+    });
+    expect(provider.generate).not.toHaveBeenCalled();
+
+    const after = await request(app).get('/api/images/quota');
+    expect(after.status).toBe(200);
+    expect(after.body.remaining).toBe(20);
+
+    const history = await request(app).get('/api/history');
+    expect(history.status).toBe(200);
+    expect(history.body.records[0]).toMatchObject({
+      prompt: '管理员演示提示词',
+      isPublic: true,
+    });
+
+    const output = await request(app).get(res.body.images[0].outputUrl as string);
+    expect(output.status).toBe(200);
+    expect(output.headers['content-type']).toContain('image/png');
+  });
+
+  it('rejects demo generation for non-admin users before provider or quota work', async () => {
+    const { provider } = fakeProvider();
+    const userId = `demo-user-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId, false));
+
+    const res = await request(app).post('/api/images/generate').send({
+      prompt: '普通用户尝试演示',
+      demoPresetId: 'studio-showcase',
+    });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('FORBIDDEN');
+    expect(provider.generate).not.toHaveBeenCalled();
+
+    const quota = await request(app).get('/api/images/quota');
+    expect(quota.body.remaining).toBe(20);
   });
 
   it('isolates quota across users (A consuming does not affect B)', async () => {

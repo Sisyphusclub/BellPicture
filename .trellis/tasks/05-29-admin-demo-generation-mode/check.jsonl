@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/error-handling.md","reason":"Verify non-admin demo requests use the existing typed forbidden response."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Verify backend tests, lint, typecheck, and no provider/network calls in tests."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Verify demoPresetId is narrowed and propagated through frontend request helpers."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Verify admin-only UI copy and controls stay consistent with the product interface."}

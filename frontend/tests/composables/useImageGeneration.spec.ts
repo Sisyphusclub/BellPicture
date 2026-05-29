@@ -71,4 +71,30 @@ describe('useImageGeneration', () => {
       }),
     );
   });
+
+  it('passes demo preset id through to the generation API', async () => {
+    const { useImageGeneration } = await import('@/composables/useImageGeneration');
+    add.mockImplementation((record) => ({
+      record,
+      imageUrl: `http://localhost:3000/api/outputs/${record.id}`,
+    }));
+    generateImage.mockResolvedValue({
+      ...createGenerateResponse(),
+      generationMode: 'text-to-image',
+    });
+
+    const { generate } = useImageGeneration();
+    await generate({
+      prompt: '管理员演示提示词',
+      demoPresetId: 'studio-showcase',
+    });
+
+    expect(uploadReferenceImages).not.toHaveBeenCalled();
+    expect(generateImage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: '管理员演示提示词',
+        demoPresetId: 'studio-showcase',
+      }) satisfies Partial<GenerateRequest>,
+    );
+  });
 });

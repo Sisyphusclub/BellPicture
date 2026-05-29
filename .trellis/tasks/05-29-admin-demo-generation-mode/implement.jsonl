@@ -1,0 +1,6 @@
+{"file":".trellis/spec/backend/directory-structure.md","reason":"Backend route/controller/service boundaries, env rules, storage constraints, and image endpoint contracts."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"Expected AppError codes and error envelope behavior for admin authorization and validation failures."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Backend strict TypeScript, test, lint, and service/controller testing expectations."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Vue SFC, Simplified Chinese copy, component/composable boundaries, and product UI conventions."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Cross-layer image generation request/response typing and frontend boundary narrowing rules."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Feature spans frontend request types, backend validation, persistence, and UI display surfaces."}

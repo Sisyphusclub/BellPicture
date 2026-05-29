@@ -29,6 +29,7 @@ export interface GenerateImageOptions {
   count?: number;
   aspectRatio?: AspectRatio;
   isPublic?: boolean;
+  demoPresetId?: string;
 }
 
 export function useImageGeneration() {
@@ -72,7 +73,11 @@ export function useImageGeneration() {
         aspectRatio,
         ...(referenceIds.length > 0 ? { referenceIds } : {}),
         isPublic: options.isPublic ?? false,
+        ...(options.demoPresetId !== undefined ? { demoPresetId: options.demoPresetId } : {}),
       });
+      if (request.demoPresetId !== undefined) {
+        statusMessage.value = '正在运行演示生成流程。';
+      }
       const generated = await generateImage(request);
 
       statusMessage.value = '正在收尾。';

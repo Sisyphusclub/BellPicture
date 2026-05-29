@@ -139,6 +139,7 @@ export function createGenerateRequest(input: {
   count?: number;
   aspectRatio?: AspectRatio;
   isPublic?: boolean;
+  demoPresetId?: string;
 }): GenerateRequest {
   const request: GenerateRequest = {
     prompt: input.prompt,
@@ -160,6 +161,9 @@ export function createGenerateRequest(input: {
   }
   if (input.isPublic !== undefined) {
     request.isPublic = input.isPublic;
+  }
+  if (input.demoPresetId !== undefined) {
+    request.demoPresetId = input.demoPresetId;
   }
   return request;
 }

@@ -23,6 +23,8 @@ export interface AppDeps {
   authMiddleware?: RequestHandler;
   /** Override the admin middleware. Tests can inject allow/deny behavior after auth. */
   adminMiddleware?: RequestHandler;
+  /** Override demo generation delay. Tests set this to 0 to avoid waiting. */
+  demoGenerationDelayMs?: number;
 }
 
 export function createApp(deps: AppDeps): Express {
@@ -65,6 +67,9 @@ export function createApp(deps: AppDeps): Express {
       provider: deps.provider,
       userQuota,
       ...(deps.authMiddleware !== undefined ? { authMiddleware: deps.authMiddleware } : {}),
+      ...(deps.demoGenerationDelayMs !== undefined
+        ? { demoGenerationDelayMs: deps.demoGenerationDelayMs }
+        : {}),
     }),
   );
   app.use(

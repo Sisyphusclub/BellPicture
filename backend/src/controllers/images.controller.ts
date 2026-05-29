@@ -3,6 +3,8 @@ import { z, ZodError } from 'zod';
 
 import { AppError } from '../errors/AppError.js';
 import { logger } from '../logger.js';
+import { generateDemoImage } from '../services/demoGeneration.service.js';
+import { isUserAdmin } from '../services/adminUser.service.js';
 import { insertImageRecords, type NewImageRecord } from '../services/history.service.js';
 import { generateImage, type GenerateImageOutput } from '../services/imageGeneration.service.js';
 import type { ImageGenerationProvider } from '../services/providers/ImageGenerationProvider.js';
@@ -27,11 +29,13 @@ const generateBodySchema = z.object({
   count: z.number().int().min(MIN_COUNT).max(MAX_COUNT).optional(),
   aspectRatio: z.enum(ASPECT_RATIOS).optional(),
   isPublic: z.boolean().optional(),
+  demoPresetId: z.string().min(1).max(100).optional(),
 });
 
 export interface ImagesControllerDeps {
   provider: ImageGenerationProvider;
   userQuota: UserQuotaService;
+  demoGenerationDelayMs?: number;
 }
 
 export interface UploadResponse {
@@ -124,6 +128,33 @@ export function buildImagesController(deps: ImagesControllerDeps): {
         }
 
         const referenceIds = normalizeReferenceIds(parsed.referenceIds, parsed.referenceId);
+        if (parsed.demoPresetId !== undefined) {
+          if (!isUserAdmin(user.id)) {
+            throw new AppError('FORBIDDEN', '需要管理员权限。', 403);
+          }
+          if (referenceIds.length > 0) {
+            throw new AppError('BAD_REQUEST', '演示模式不支持参考图。', 400);
+          }
+
+          const result = await generateDemoImage({
+            presetId: parsed.demoPresetId,
+            ...(deps.demoGenerationDelayMs !== undefined
+              ? { delayMs: deps.demoGenerationDelayMs }
+              : {}),
+          });
+          persistGeneratedImages({
+            result,
+            userId: user.id,
+            prompt: parsed.prompt,
+            model: parsed.model ?? 'gpt-image-2',
+            referenceIds,
+            isPublic: parsed.isPublic ?? false,
+            requestId: req.requestId,
+          });
+          res.status(200).json(responseFromGeneratedResult(result));
+          return;
+        }
+
         const quotaPool = deps.userQuota.forUser(user.id);
         const result = await generateImage(
           {
@@ -136,52 +167,78 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           { provider: deps.provider, quotaPool },
         );
 
-        const createdAt = new Date();
-        const records: NewImageRecord[] = result.images.map((image) => ({
-          id: image.filename,
-          batchId: result.batchId,
+        persistGeneratedImages({
+          result,
           userId: user.id,
           prompt: parsed.prompt,
           model: parsed.model ?? 'gpt-image-2',
-          ...(referenceIds[0] !== undefined ? { referenceId: referenceIds[0] } : {}),
-          ...(referenceIds.length > 0 ? { referenceIds } : {}),
-          ...(result.aspectRatio !== undefined ? { aspectRatio: result.aspectRatio } : {}),
-          filename: image.filename,
-          mime: image.mime,
-          width: image.width,
-          height: image.height,
+          referenceIds,
           isPublic: parsed.isPublic ?? false,
-          createdAt,
-        }));
-        try {
-          insertImageRecords(records);
-        } catch (insertErr) {
-          // Quota has already been consumed by the service. We log so the
-          // operator can reconcile, but we don't fail the user-visible call —
-          // the images are on disk and the response is already shaped.
-          logger.error(
-            { requestId: req.requestId, userId: user.id, batchId: result.batchId, err: insertErr },
-            'images.generate: failed to persist image_records',
-          );
-        }
-
-        const body: GenerateResponse = {
-          batchId: result.batchId,
-          aspectRatio: result.aspectRatio,
-          generationMode: result.mode,
-          images: result.images.map((image) => ({
-            id: image.filename,
-            outputUrl: `/api/outputs/${image.filename}`,
-            filename: image.filename,
-            mime: image.mime,
-            width: image.width,
-            height: image.height,
-          })),
-        };
-        res.status(200).json(body);
+          requestId: req.requestId,
+        });
+        res.status(200).json(responseFromGeneratedResult(result));
       } catch (err) {
         next(err);
       }
     },
+  };
+}
+
+function persistGeneratedImages(input: {
+  result: GenerateImageOutput;
+  userId: string;
+  prompt: string;
+  model: string;
+  referenceIds: string[];
+  isPublic: boolean;
+  requestId: string;
+}): void {
+  const createdAt = new Date();
+  const records: NewImageRecord[] = input.result.images.map((image) => ({
+    id: image.filename,
+    batchId: input.result.batchId,
+    userId: input.userId,
+    prompt: input.prompt,
+    model: input.model,
+    ...(input.referenceIds[0] !== undefined ? { referenceId: input.referenceIds[0] } : {}),
+    ...(input.referenceIds.length > 0 ? { referenceIds: input.referenceIds } : {}),
+    ...(input.result.aspectRatio !== undefined ? { aspectRatio: input.result.aspectRatio } : {}),
+    filename: image.filename,
+    mime: image.mime,
+    width: image.width,
+    height: image.height,
+    isPublic: input.isPublic,
+    createdAt,
+  }));
+  try {
+    insertImageRecords(records);
+  } catch (insertErr) {
+    // Quota may already be consumed by real generation. Demo mode also returns
+    // saved files, so keep the user-visible result consistent and log for ops.
+    logger.error(
+      {
+        requestId: input.requestId,
+        userId: input.userId,
+        batchId: input.result.batchId,
+        err: insertErr,
+      },
+      'images.generate: failed to persist image_records',
+    );
+  }
+}
+
+function responseFromGeneratedResult(result: GenerateImageOutput): GenerateResponse {
+  return {
+    batchId: result.batchId,
+    aspectRatio: result.aspectRatio,
+    generationMode: result.mode,
+    images: result.images.map((image) => ({
+      id: image.filename,
+      outputUrl: `/api/outputs/${image.filename}`,
+      filename: image.filename,
+      mime: image.mime,
+      width: image.width,
+      height: image.height,
+    })),
   };
 }

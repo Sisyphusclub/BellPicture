@@ -115,6 +115,37 @@ describe('imagesApi', () => {
     });
   });
 
+  it('sends demo preset id in generate requests', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          batchId: 'b-demo',
+          aspectRatio: '1:1',
+          generationMode: 'text-to-image',
+          images: [
+            {
+              id: 'demo.png',
+              outputUrl: '/api/outputs/demo.png',
+              filename: 'demo.png',
+              mime: 'image/png',
+              width: 1024,
+              height: 1024,
+            },
+          ],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await generateImage({ prompt: '演示提示词', demoPresetId: 'studio-showcase' });
+
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toMatchObject({
+      prompt: '演示提示词',
+      demoPresetId: 'studio-showcase',
+    });
+  });
+
   it('throws the backend error envelope with request context', async () => {
     vi.stubGlobal(
       'fetch',

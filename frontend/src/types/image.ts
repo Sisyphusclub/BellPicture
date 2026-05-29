@@ -63,6 +63,7 @@ export interface GenerateRequest {
   count?: number;
   aspectRatio?: AspectRatio;
   isPublic?: boolean;
+  demoPresetId?: string;
 }
 
 export interface GenerateResponseItem {
