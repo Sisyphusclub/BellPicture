@@ -1117,3 +1117,43 @@ Added an admin-only demo generation mode that uses demoPresetId on the existing 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 34: Emphasize Discover Product Name
+
+**Date**: 2026-06-01
+**Task**: Emphasize Discover Product Name
+**Branch**: `main`
+
+### Summary
+
+Enlarged and restyled the Discover hero product name 贝尔灵画 with a restrained AI-like wordmark treatment, added focused style assertions, verified tests/lint/typecheck/build, and rebuilt the frontend container.
+
+### Main Changes
+
+- Restyled the Discover hero product name `贝尔灵画` as a larger display wordmark with solid OKLCH color, subtle hairline frame accents, and responsive mobile sizing.
+- Added focused `GenerateView` assertions for the product-name text and its desktop/mobile style contract.
+- Rebuilt and restarted the frontend Docker service after the production build passed.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `114829d` | style: emphasize discover product name |
+
+### Testing
+
+- [OK] `npm test -- GenerateView.spec.ts`
+- [OK] `npm run lint`
+- [OK] `npm run typecheck`
+- [OK] `npm run build`
+- [OK] `docker compose up -d --build frontend`
+- [OK] `curl -sS -I https://pic.chen08.de`
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
