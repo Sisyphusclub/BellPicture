@@ -59,6 +59,9 @@ describe('AppHeader', () => {
 
     const links = wrapper.findAllComponents(RouterLinkStub);
     expect(links.map((link) => link.props('to'))).toEqual(['/', '/', '/generate', '/history']);
+    expect(wrapper.get('.sidebar-brand__mark').attributes('src')).toMatch(
+      /^\/brand\/logo\.png\?v=.+/,
+    );
     expect(wrapper.findAll('.sidebar-nav__link').map((link) => link.text())).toEqual(['发现', '生图', '资产']);
     expect(wrapper.text()).not.toContain('用户管理');
     expect(wrapper.html()).toContain('M4 7.5A2.5 2.5 0 0 1 6.5 5H10l2 2.5h5.5A2.5 2.5 0 0 1 20 10v6.5A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5Z');

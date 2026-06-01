@@ -17,6 +17,8 @@ const navItems: NavItem[] = [
   { label: '生图', to: '/generate', icon: 'generate' },
   { label: '资产', to: '/history', icon: 'assets' },
 ];
+const brandLogoVersion = encodeURIComponent(import.meta.env.VITE_BRAND_ASSET_VERSION);
+const brandLogoSrc = `/brand/logo.png?v=${brandLogoVersion}`;
 
 const { user, isAuthenticated, isAdmin, logout } = useAuth();
 const { open: openLoginModal } = useAuthModal();
@@ -65,7 +67,7 @@ function initials(): string {
 <template>
   <header class="app-sidebar" aria-label="贝尔灵画主导航">
     <RouterLink class="sidebar-brand" to="/" aria-label="返回发现首页">
-      <img class="sidebar-brand__mark" src="/brand/logo.png" alt="贝尔灵画标志" />
+      <img class="sidebar-brand__mark" :src="brandLogoSrc" alt="贝尔灵画标志" />
     </RouterLink>
 
     <nav class="sidebar-nav" aria-label="主要导航">
