@@ -214,8 +214,8 @@ function initials(): string {
 
 .sidebar-brand__mark {
   display: block;
-  width: 50px;
-  height: 50px;
+  width: 42px;
+  height: 42px;
 }
 
 .sidebar-nav {
@@ -343,8 +343,8 @@ function initials(): string {
   }
 
   .sidebar-brand__mark {
-    width: 38px;
-    height: 38px;
+    width: 32px;
+    height: 32px;
   }
 
   .sidebar-nav {

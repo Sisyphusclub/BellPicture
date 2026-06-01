@@ -39,6 +39,18 @@ vi.mock('element-plus', () => ({
   },
 }));
 
+function extractStyleRules(source: string, selector: string): string[] {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const rulePattern = new RegExp(`${escapedSelector}\\s*\\{([\\s\\S]*?)\\}`, 'g');
+  return Array.from(source.matchAll(rulePattern), (match) => match[1] ?? '');
+}
+
+function expectStyleDeclaration(rule: string, property: string, value: string): void {
+  const escapedProperty = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escapedValue = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  expect(rule).toMatch(new RegExp(`(?:^|[;\\s])${escapedProperty}\\s*:\\s*${escapedValue}\\s*;`));
+}
+
 describe('AppHeader', () => {
   beforeEach(() => {
     user.value = null;
@@ -66,6 +78,18 @@ describe('AppHeader', () => {
     expect(wrapper.text()).not.toContain('用户管理');
     expect(wrapper.html()).toContain('M4 7.5A2.5 2.5 0 0 1 6.5 5H10l2 2.5h5.5A2.5 2.5 0 0 1 20 10v6.5A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5Z');
     expect(wrapper.find('.sidebar-account').text()).toContain('登录');
+  });
+
+  it('keeps the brand logo visually compact inside the sidebar button', async () => {
+    const appHeaderSource = await import('@/components/common/AppHeader.vue?raw');
+    const logoRules = extractStyleRules(appHeaderSource.default, '.sidebar-brand__mark');
+    const desktopLogoRule = logoRules[0] ?? '';
+    const mobileLogoRule = logoRules[1] ?? '';
+
+    expectStyleDeclaration(desktopLogoRule, 'width', '42px');
+    expectStyleDeclaration(desktopLogoRule, 'height', '42px');
+    expectStyleDeclaration(mobileLogoRule, 'width', '32px');
+    expectStyleDeclaration(mobileLogoRule, 'height', '32px');
   });
 
   it('opens login modal for anonymous users and shows logout for signed-in users', async () => {
