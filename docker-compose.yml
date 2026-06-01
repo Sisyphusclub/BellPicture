@@ -26,6 +26,8 @@ services:
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:5173}
       SQLITE_PATH: /app/data/app.sqlite
       DAILY_USER_QUOTA: ${DAILY_USER_QUOTA:-20}
+      DEMO_PROMPTS: ${DEMO_PROMPTS:-}
+      DEMO_PROMPT_CACHE_DELAY_MS: ${DEMO_PROMPT_CACHE_DELAY_MS:-4000}
     ports:
       - "${BACKEND_PORT:-3000}:3000"
     volumes:
