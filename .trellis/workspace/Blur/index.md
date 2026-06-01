@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 35
+- **Total Sessions**: 36
 - **Last Active**: 2026-06-01
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1192 | Active |
+| `journal-1.md` | ~1234 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 36 | 2026-06-01 | Reduce Sidebar Logo Size | `9c1d15f` | `main` |
 | 35 | 2026-06-01 | Fix Logo Cache Refresh | `c02b27d` | `main` |
 | 34 | 2026-06-01 | Emphasize Discover Product Name | `114829d` | `main` |
 | 33 | 2026-05-29 | Add admin demo generation mode | `b048331` | `main` |

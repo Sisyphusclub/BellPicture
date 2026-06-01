@@ -1199,3 +1199,44 @@ Fixed stale frontend logo updates by versioning the /brand/logo.png reference wi
 ### Next Steps
 
 - None - task complete
+
+
+## Session 36: Reduce Sidebar Logo Size
+
+**Date**: 2026-06-01
+**Task**: Reduce Sidebar Logo Size
+**Branch**: `main`
+
+### Summary
+
+Reduced the sidebar brand logo image from 50px to 42px on desktop and from 38px to 32px on mobile while keeping the existing click target, added AppHeader style coverage, verified tests/lint/typecheck/build, and rebuilt the frontend container.
+
+### Main Changes
+
+- Reduced `.sidebar-brand__mark` from `50px` to `42px` on desktop.
+- Reduced the compact/mobile `.sidebar-brand__mark` override from `38px` to `32px`.
+- Kept the existing sidebar brand button dimensions and versioned logo URL.
+- Added AppHeader style assertions for the desktop and mobile logo dimensions.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9c1d15f` | style: reduce sidebar logo size |
+
+### Testing
+
+- [OK] `npm test -- AppHeader.spec.ts`
+- [OK] `npm run lint`
+- [OK] `npm run typecheck`
+- [OK] `npm run build`
+- [OK] `docker compose up -d --build frontend`
+- [OK] `curl -sS -I https://pic.chen08.de`
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
