@@ -21,6 +21,8 @@ export interface Env {
   SQLITE_PATH: string;
   DAILY_USER_QUOTA: number;
   SEED_DEFAULT_ADMIN: boolean;
+  DEMO_PROMPTS: string[];
+  DEMO_PROMPT_CACHE_DELAY_MS: number;
 }
 
 function readString(name: string, fallback?: string): string {
@@ -55,6 +57,18 @@ function readInt(name: string, fallback: number): number {
   return n;
 }
 
+function readNonNegativeInt(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return fallback;
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 0) {
+    throw new Error(
+      `Environment variable ${name} must be a non-negative integer, got: ${JSON.stringify(raw)}`,
+    );
+  }
+  return n;
+}
+
 function readBool(name: string, fallback: boolean): boolean {
   const raw = process.env[name];
   if (raw === undefined || raw === '') return fallback;
@@ -62,6 +76,19 @@ function readBool(name: string, fallback: boolean): boolean {
   if (raw === 'false') return false;
   throw new Error(
     `Environment variable ${name} must be either "true" or "false", got: ${JSON.stringify(raw)}`,
+  );
+}
+
+function readDelimitedStrings(name: string, delimiter: string): string[] {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return [];
+  return Array.from(
+    new Set(
+      raw
+        .split(delimiter)
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0),
+    ),
   );
 }
 
@@ -87,6 +114,8 @@ function loadEnv(): Env {
     SQLITE_PATH: readString('SQLITE_PATH', './data/app.sqlite'),
     DAILY_USER_QUOTA: readInt('DAILY_USER_QUOTA', 20),
     SEED_DEFAULT_ADMIN: readBool('SEED_DEFAULT_ADMIN', false),
+    DEMO_PROMPTS: readDelimitedStrings('DEMO_PROMPTS', '|||'),
+    DEMO_PROMPT_CACHE_DELAY_MS: readNonNegativeInt('DEMO_PROMPT_CACHE_DELAY_MS', 4_000),
   };
 }
 

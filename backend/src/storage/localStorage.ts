@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { env } from '../config/env.js';
@@ -7,6 +7,7 @@ import { AppError } from '../errors/AppError.js';
 
 const ALLOWED_EXTS = new Set(['png', 'jpg', 'jpeg', 'webp']);
 const ALLOWED_UPLOAD_EXTS = new Set(['png', 'jpeg', 'webp']);
+const INTERNAL_OUTPUT_FILENAME_RE = /^demo-prompt(?:-meta)?-[0-9a-f]{32}\.(?:png|json)$/i;
 
 const MIME_BY_EXT: Record<string, string> = {
   png: 'image/png',
@@ -114,8 +115,7 @@ export function sniffImageExt(buf: Buffer): UploadExt {
 
 export async function saveOutput(buffer: Buffer, ext: string): Promise<SavedFile> {
   const cleanExt = normalizeExt(ext);
-  const root = path.resolve(env.OUTPUT_DIR);
-  await mkdir(root, { recursive: true });
+  const root = await ensureOutputRoot();
   const id = randomUUID();
   const filename = `${id}.${cleanExt}`;
   const absolutePath = path.join(root, filename);
@@ -129,6 +129,12 @@ export async function saveOutput(buffer: Buffer, ext: string): Promise<SavedFile
     absolutePath,
     size: buffer.byteLength,
   };
+}
+
+export async function ensureOutputRoot(): Promise<string> {
+  const root = path.resolve(env.OUTPUT_DIR);
+  await mkdir(root, { recursive: true });
+  return root;
 }
 
 export async function readOutput(filename: string): Promise<Buffer> {
@@ -148,6 +154,83 @@ export async function readOutput(filename: string): Promise<Buffer> {
   } catch (err) {
     throw new AppError('STORAGE_ERROR', `Failed to read output: ${filename}`, 500, err);
   }
+}
+
+export async function writeInternalOutputFile(
+  filename: string,
+  content: Buffer | string,
+): Promise<void> {
+  assertInternalOutputFilename(filename);
+  const root = await ensureOutputRoot();
+  const absolutePath = path.resolve(root, filename);
+  assertWithinRoot(absolutePath, root);
+  await writeFile(absolutePath, content);
+}
+
+export async function readInternalOutputTextFile(filename: string): Promise<string> {
+  assertInternalOutputFilename(filename);
+  const root = path.resolve(env.OUTPUT_DIR);
+  const absolutePath = path.resolve(root, filename);
+  assertWithinRoot(absolutePath, root);
+  try {
+    return await readFile(absolutePath, 'utf8');
+  } catch (err) {
+    throw new AppError('STORAGE_ERROR', `Failed to read internal output: ${filename}`, 500, err);
+  }
+}
+
+export async function internalOutputFileExists(filename: string): Promise<boolean> {
+  assertInternalOutputFilename(filename);
+  const root = path.resolve(env.OUTPUT_DIR);
+  const absolutePath = path.resolve(root, filename);
+  assertWithinRoot(absolutePath, root);
+  try {
+    const info = await stat(absolutePath);
+    return info.isFile();
+  } catch {
+    return false;
+  }
+}
+
+export async function copyOutputToInternalOutput(
+  sourceAbsolutePath: string,
+  filename: string,
+): Promise<void> {
+  assertInternalOutputFilename(filename);
+  const root = await ensureOutputRoot();
+  const sourcePath = path.resolve(sourceAbsolutePath);
+  const targetPath = path.resolve(root, filename);
+  assertWithinRoot(sourcePath, root);
+  assertWithinRoot(targetPath, root);
+  await copyFile(sourcePath, targetPath);
+}
+
+export async function copyInternalOutputToSavedOutput(filename: string): Promise<SavedFile> {
+  assertInternalOutputFilename(filename);
+  const root = await ensureOutputRoot();
+  const sourcePath = path.resolve(root, filename);
+  assertWithinRoot(sourcePath, root);
+  const sourceInfo = await stat(sourcePath);
+  if (!sourceInfo.isFile()) {
+    throw new AppError('STORAGE_ERROR', `Internal output is not a file: ${filename}`, 500, undefined, {
+      filename,
+    });
+  }
+
+  const ext = normalizeExt(path.extname(filename));
+  const id = randomUUID();
+  const outputFilename = `${id}.${ext}`;
+  const absolutePath = path.resolve(root, outputFilename);
+  assertWithinRoot(absolutePath, root);
+  await copyFile(sourcePath, absolutePath);
+  return {
+    id,
+    ext: ext as UploadExt | 'png',
+    filename: outputFilename,
+    mime: mimeFromExt(ext),
+    absolutePath,
+    size: sourceInfo.size,
+  };
 }
 
 /**
@@ -237,4 +320,12 @@ function assertReferenceFilename(filename: string): UploadExt {
     );
   }
   return ext as UploadExt;
+}
+
+function assertInternalOutputFilename(filename: string): void {
+  if (!INTERNAL_OUTPUT_FILENAME_RE.test(filename)) {
+    throw new AppError('STORAGE_ERROR', 'Invalid internal output filename', 500, undefined, {
+      filename,
+    });
+  }
 }

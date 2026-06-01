@@ -4,6 +4,12 @@ import { z, ZodError } from 'zod';
 import { AppError } from '../errors/AppError.js';
 import { logger } from '../logger.js';
 import { generateDemoImage } from '../services/demoGeneration.service.js';
+import {
+  findDemoPromptCacheHit,
+  readCachedDemoPromptImage,
+  writeDemoPromptCache,
+  type DemoPromptCacheConfig,
+} from '../services/demoPromptCache.service.js';
 import { isUserAdmin } from '../services/adminUser.service.js';
 import { insertImageRecords, type NewImageRecord } from '../services/history.service.js';
 import { generateImage, type GenerateImageOutput } from '../services/imageGeneration.service.js';
@@ -36,6 +42,7 @@ export interface ImagesControllerDeps {
   provider: ImageGenerationProvider;
   userQuota: UserQuotaService;
   demoGenerationDelayMs?: number;
+  demoPromptCache?: DemoPromptCacheConfig;
 }
 
 export interface UploadResponse {
@@ -155,6 +162,27 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           return;
         }
 
+        const promptCacheHit =
+          deps.demoPromptCache !== undefined && referenceIds.length === 0
+            ? findDemoPromptCacheHit(parsed.prompt, deps.demoPromptCache)
+            : null;
+        if (promptCacheHit !== null && deps.demoPromptCache !== undefined) {
+          const cachedResult = await readCachedDemoPromptImage(promptCacheHit, deps.demoPromptCache);
+          if (cachedResult !== null) {
+            persistGeneratedImages({
+              result: cachedResult,
+              userId: user.id,
+              prompt: parsed.prompt,
+              model: parsed.model ?? 'gpt-image-2',
+              referenceIds,
+              isPublic: parsed.isPublic ?? false,
+              requestId: req.requestId,
+            });
+            res.status(200).json(responseFromGeneratedResult(cachedResult));
+            return;
+          }
+        }
+
         const quotaPool = deps.userQuota.forUser(user.id);
         const result = await generateImage(
           {
@@ -166,6 +194,9 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           },
           { provider: deps.provider, quotaPool },
         );
+        if (promptCacheHit !== null) {
+          await writeDemoPromptCache(promptCacheHit, result);
+        }
 
         persistGeneratedImages({
           result,

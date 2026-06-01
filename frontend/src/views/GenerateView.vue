@@ -41,9 +41,6 @@ const HERO_PROMPT_SUGGESTIONS = [
   '未来感植物实验室，透明玻璃温室里漂浮着发光叶片与细密水雾。',
 ] as const;
 const DEFAULT_HERO_PROMPT_SUGGESTION = HERO_PROMPT_SUGGESTIONS[0];
-const DEMO_PRESET_ID = 'studio-showcase';
-const DEMO_PRESET_PROMPT =
-  '演示生成：一张精致的 Ref2Image Studio 产品海报，暖色工作台、清晰构图、电影感光线，适合向客户展示生图流程。';
 
 const route = useRoute();
 const router = useRouter();
@@ -743,26 +740,6 @@ function togglePublicGeneration(): void {
   if (!isLoading.value) isPublicGeneration.value = !isPublicGeneration.value;
 }
 
-async function handleDemoGenerate(): Promise<void> {
-  if (!isAdmin.value || isLoading.value) return;
-  const nextSnapshot: PendingGeneration = {
-    id: ++pendingGenerationId,
-    prompt: DEMO_PRESET_PROMPT,
-    model: model.value,
-    count: 1,
-    aspectRatio: '1:1',
-    isPublic: isPublicGeneration.value,
-    submittedAt: new Date().toISOString(),
-    demoPresetId: DEMO_PRESET_ID,
-  };
-  clearReferenceInput();
-  if (props.mode === 'discover') {
-    isDiscoverSubmitTransitionActive.value = true;
-    void router.push('/generate');
-  }
-  await runGeneration(nextSnapshot);
-}
-
 function handleDocumentClick(event: MouseEvent): void {
   if (!aspectMenuOpen.value && !modelMenuOpen.value) return;
   const target = event.target;
@@ -1209,15 +1186,6 @@ function formatStageDate(iso: string | undefined): string {
               <div class="prompt-showcase__bar">
                 <span class="prompt-showcase__model">✦ GPT-IMAGE-2</span>
                 <span class="prompt-showcase__grid">{{ quotaLabel }}</span>
-                <button
-                  v-if="isAdmin"
-                  type="button"
-                  class="prompt-showcase__demo"
-                  :disabled="isLoading"
-                  @click="handleDemoGenerate"
-                >
-                  演示
-                </button>
                 <div class="prompt-showcase__stepper" role="group" aria-label="生成数量">
                   <button
                     type="button"
@@ -1409,15 +1377,6 @@ function formatStageDate(iso: string | undefined): string {
         </div>
         <span class="prompt-showcase__grid">{{ quotaLabel }}</span>
         <span class="prompt-showcase__grid">参考图 {{ selectedFileSummary }}</span>
-        <button
-          v-if="isAdmin"
-          type="button"
-          class="prompt-showcase__demo"
-          :disabled="isLoading"
-          @click="handleDemoGenerate"
-        >
-          演示
-        </button>
         <div class="prompt-showcase__stepper" role="group" aria-label="生成数量">
           <button
             type="button"
@@ -2260,29 +2219,6 @@ function formatStageDate(iso: string | undefined): string {
   padding: 0 var(--space-sm);
 }
 
-.prompt-showcase__demo {
-  display: inline-flex;
-  height: var(--control-height-sm);
-  align-items: center;
-  border: 1px solid oklch(62% 0.045 195deg / 0.34);
-  border-radius: var(--radius-pill);
-  background: oklch(93% 0.024 186deg / 0.72);
-  color: oklch(35% 0.032 207deg);
-  cursor: pointer;
-  font-size: var(--text-label-size);
-  font-weight: 800;
-  padding: 0 var(--space-sm);
-}
-
-.prompt-showcase__demo:not(:disabled):hover {
-  background: oklch(89% 0.03 186deg / 0.9);
-}
-
-.prompt-showcase__demo:disabled {
-  cursor: not-allowed;
-  opacity: 0.58;
-}
-
 .prompt-showcase__aspect {
   position: relative;
 }
@@ -2622,7 +2558,6 @@ function formatStageDate(iso: string | undefined): string {
 .prompt-showcase__attachment button:focus-visible,
 .prompt-showcase__smart:focus-visible,
 .prompt-showcase__menu button:focus-visible,
-.prompt-showcase__demo:focus-visible,
 .prompt-showcase__public:focus-visible,
 .prompt-showcase__stepper button:focus-visible,
 .prompt-showcase__generate:focus-visible {
@@ -2882,7 +2817,6 @@ function formatStageDate(iso: string | undefined): string {
   .prompt-showcase__model,
   .prompt-showcase__smart,
   .prompt-showcase__stepper,
-  .prompt-showcase__demo,
   .prompt-showcase__public {
     min-height: 34px;
   }

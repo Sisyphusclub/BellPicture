@@ -13,6 +13,7 @@ import { buildHistoryRouter } from './routes/history.js';
 import { buildImagesRouter } from './routes/images.js';
 import { buildOpenAICompatRouter } from './routes/openaiCompat.js';
 import { outputsRouter } from './routes/outputs.js';
+import type { DemoPromptCacheConfig } from './services/demoPromptCache.service.js';
 import type { ImageGenerationProvider } from './services/providers/ImageGenerationProvider.js';
 import { createUserQuotaService, type UserQuotaService } from './services/userQuota.service.js';
 
@@ -25,6 +26,8 @@ export interface AppDeps {
   adminMiddleware?: RequestHandler;
   /** Override demo generation delay. Tests set this to 0 to avoid waiting. */
   demoGenerationDelayMs?: number;
+  /** Override demo prompt cache config. Tests set this without mutating the env singleton. */
+  demoPromptCache?: DemoPromptCacheConfig;
 }
 
 export function createApp(deps: AppDeps): Express {
@@ -70,6 +73,10 @@ export function createApp(deps: AppDeps): Express {
       ...(deps.demoGenerationDelayMs !== undefined
         ? { demoGenerationDelayMs: deps.demoGenerationDelayMs }
         : {}),
+      demoPromptCache: deps.demoPromptCache ?? {
+        prompts: env.DEMO_PROMPTS,
+        delayMs: env.DEMO_PROMPT_CACHE_DELAY_MS,
+      },
     }),
   );
   app.use(

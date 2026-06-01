@@ -32,6 +32,8 @@ describe('config/env', () => {
     delete process.env.SQLITE_PATH;
     delete process.env.DAILY_USER_QUOTA;
     delete process.env.SEED_DEFAULT_ADMIN;
+    delete process.env.DEMO_PROMPTS;
+    delete process.env.DEMO_PROMPT_CACHE_DELAY_MS;
 
     const { env } = await import('../../src/config/env.js');
 
@@ -51,8 +53,24 @@ describe('config/env', () => {
     expect(env.SQLITE_PATH).toBe('./data/app.sqlite');
     expect(env.DAILY_USER_QUOTA).toBe(20);
     expect(env.SEED_DEFAULT_ADMIN).toBe(false);
+    expect(env.DEMO_PROMPTS).toEqual([]);
+    expect(env.DEMO_PROMPT_CACHE_DELAY_MS).toBe(4_000);
     expect(env.GOOGLE_CLIENT_ID).toBeUndefined();
     expect(env.GOOGLE_CLIENT_SECRET).toBeUndefined();
+  });
+
+  it('parses configured demo prompts and cache delay', async () => {
+    process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
+    process.env.IMAGE_API_KEY = 'sk-test';
+    process.env.OPENAI_COMPAT_API_KEY = 'compat-test';
+    process.env.BETTER_AUTH_SECRET = 'test-secret-padding';
+    process.env.DEMO_PROMPTS = '  提示词 A  |||提示词 B|||提示词 A|||';
+    process.env.DEMO_PROMPT_CACHE_DELAY_MS = '250';
+
+    const { env } = await import('../../src/config/env.js');
+
+    expect(env.DEMO_PROMPTS).toEqual(['提示词 A', '提示词 B']);
+    expect(env.DEMO_PROMPT_CACHE_DELAY_MS).toBe(250);
   });
 
   it('throws on import when IMAGE_API_KEY is missing', async () => {
@@ -90,6 +108,16 @@ describe('config/env', () => {
     process.env.SEED_DEFAULT_ADMIN = 'yes';
 
     await expect(import('../../src/config/env.js')).rejects.toThrow(/SEED_DEFAULT_ADMIN/);
+  });
+
+  it('rejects negative DEMO_PROMPT_CACHE_DELAY_MS values', async () => {
+    process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
+    process.env.IMAGE_API_KEY = 'sk-test';
+    process.env.OPENAI_COMPAT_API_KEY = 'compat-test';
+    process.env.BETTER_AUTH_SECRET = 'test-secret-padding';
+    process.env.DEMO_PROMPT_CACHE_DELAY_MS = '-1';
+
+    await expect(import('../../src/config/env.js')).rejects.toThrow(/DEMO_PROMPT_CACHE_DELAY_MS/);
   });
 
   it('rejects non-positive integer for IMAGE_API_TIMEOUT_MS', async () => {

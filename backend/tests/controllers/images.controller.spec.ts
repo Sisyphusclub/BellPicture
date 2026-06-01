@@ -60,8 +60,24 @@ function stubAuth(userId = `test-${randomUUID()}`, isAdmin = false): RequestHand
   };
 }
 
-function buildApp(provider: ImageGenerationProvider, authMiddleware: RequestHandler = stubAuth()) {
-  return createApp({ provider, authMiddleware, demoGenerationDelayMs: 0 });
+function buildApp(
+  provider: ImageGenerationProvider,
+  authMiddleware: RequestHandler = stubAuth(),
+  options: { demoPrompts?: string[]; demoPromptCacheDelayMs?: number } = {},
+) {
+  return createApp({
+    provider,
+    authMiddleware,
+    demoGenerationDelayMs: 0,
+    ...(options.demoPrompts !== undefined
+      ? {
+          demoPromptCache: {
+            prompts: options.demoPrompts,
+            delayMs: options.demoPromptCacheDelayMs ?? 0,
+          },
+        }
+      : {}),
+  });
 }
 
 describe('POST /api/images/upload', () => {
@@ -234,6 +250,74 @@ describe('POST /api/images/generate', () => {
     const output = await request(app).get(res.body.images[0].outputUrl as string);
     expect(output.status).toBe(200);
     expect(output.headers['content-type']).toContain('image/png');
+  });
+
+  it('prepares and reuses configured demo prompt images without a second provider call', async () => {
+    const { provider } = fakeProvider();
+    const userId = `demo-prompt-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId), {
+      demoPrompts: ['演示提示词 A', '演示提示词 B'],
+      demoPromptCacheDelayMs: 0,
+    });
+
+    const first = await request(app).post('/api/images/generate').send({
+      prompt: ' 演示提示词 A ',
+      count: 1,
+      isPublic: true,
+    });
+
+    expect(first.status).toBe(200);
+    expect(provider.generate).toHaveBeenCalledOnce();
+
+    const afterFirstQuota = await request(app).get('/api/images/quota');
+    expect(afterFirstQuota.body.remaining).toBe(19);
+
+    const second = await request(app).post('/api/images/generate').send({
+      prompt: '演示提示词 A',
+      count: 2,
+      aspectRatio: '16:9',
+      isPublic: false,
+    });
+
+    expect(second.status).toBe(200);
+    expect(second.body).toMatchObject({
+      generationMode: 'text-to-image',
+      aspectRatio: '1:1',
+    });
+    expect(second.body.images).toHaveLength(1);
+    expect(second.body.images[0].id).not.toBe(first.body.images[0].id);
+    expect(provider.generate).toHaveBeenCalledOnce();
+
+    const afterSecondQuota = await request(app).get('/api/images/quota');
+    expect(afterSecondQuota.body.remaining).toBe(19);
+
+    const history = await request(app).get('/api/history');
+    expect(history.status).toBe(200);
+    expect(history.body.records.slice(0, 2)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ prompt: '演示提示词 A', isPublic: false }),
+        expect.objectContaining({ prompt: ' 演示提示词 A ', isPublic: true }),
+      ]),
+    );
+
+    const output = await request(app).get(second.body.images[0].outputUrl as string);
+    expect(output.status).toBe(200);
+    expect(output.headers['content-type']).toContain('image/png');
+  });
+
+  it('keeps non-configured prompts on the normal provider and quota path', async () => {
+    const { provider } = fakeProvider();
+    const app = buildApp(provider, stubAuth(`normal-prompt-${randomUUID()}`), {
+      demoPrompts: ['演示提示词 A'],
+      demoPromptCacheDelayMs: 0,
+    });
+
+    await request(app).post('/api/images/generate').send({ prompt: '普通提示词' });
+    await request(app).post('/api/images/generate').send({ prompt: '普通提示词' });
+
+    expect(provider.generate).toHaveBeenCalledTimes(2);
+    const quota = await request(app).get('/api/images/quota');
+    expect(quota.body.remaining).toBe(18);
   });
 
   it('rejects demo generation for non-admin users before provider or quota work', async () => {

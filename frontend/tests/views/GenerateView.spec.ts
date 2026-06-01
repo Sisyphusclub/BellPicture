@@ -438,32 +438,13 @@ describe('GenerateView', () => {
     expect(removePublicGalleryRecordAsAdmin).toHaveBeenCalledWith('public-admin.png');
   });
 
-  it('shows the demo generation control only to admins', async () => {
+  it('hides the demo generation control for everyone', async () => {
     const ordinary = await mountGenerateView({ mode: 'generate', isAdmin: false });
     expect(ordinary.wrapper.find('button.prompt-showcase__demo').exists()).toBe(false);
     ordinary.wrapper.unmount();
 
     const admin = await mountGenerateView({ mode: 'generate', isAdmin: true });
-    const demoButton = admin.wrapper.get('button.prompt-showcase__demo');
-
-    expect(demoButton.text()).toBe('演示');
-  });
-
-  it('submits the admin demo preset through the normal generation flow', async () => {
-    const { wrapper, generate } = await mountGenerateView({ mode: 'generate', isAdmin: true });
-
-    await wrapper.get('button.prompt-showcase__demo').trigger('click');
-
-    expect(generate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        prompt: expect.stringContaining('演示生成'),
-        demoPresetId: 'studio-showcase',
-        count: 1,
-        aspectRatio: '1:1',
-      }),
-    );
-    expect(wrapper.find('.generation-placeholder').exists()).toBe(true);
-    expect(wrapper.text()).toContain('演示生成');
+    expect(admin.wrapper.find('button.prompt-showcase__demo').exists()).toBe(false);
   });
 
   it('starts a second generation from the dock composer generate button after a completed result', async () => {
