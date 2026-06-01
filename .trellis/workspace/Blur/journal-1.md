@@ -1157,3 +1157,45 @@ Enlarged and restyled the Discover hero product name 贝尔灵画 with a restrai
 ### Next Steps
 
 - None - task complete
+
+
+## Session 35: Fix Logo Cache Refresh
+
+**Date**: 2026-06-01
+**Task**: Fix Logo Cache Refresh
+**Branch**: `main`
+
+### Summary
+
+Fixed stale frontend logo updates by versioning the /brand/logo.png reference with a build-time asset version, changing /brand/ nginx caching to revalidate, updating AppHeader coverage, verifying tests/lint/typecheck/build, and rebuilding the frontend container.
+
+### Main Changes
+
+- Added `VITE_BRAND_ASSET_VERSION` and build-time fallback injection so the sidebar logo URL is versioned on each frontend build.
+- Changed `/brand/` nginx caching to `max-age=0, must-revalidate` while preserving immutable caching for hashed `/assets/` bundles.
+- Added AppHeader coverage for the versioned logo URL and documented the static brand asset cache contract in the frontend spec.
+- Rebuilt and restarted the frontend Docker service.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c02b27d` | fix: refresh logo cache |
+
+### Testing
+
+- [OK] `npm test -- AppHeader.spec.ts`
+- [OK] `npm run lint`
+- [OK] `npm run typecheck`
+- [OK] `npm run build`
+- [OK] `docker compose up -d --build frontend`
+- [OK] `curl -sS -I http://127.0.0.1:15173/brand/logo.png`
+- [OK] `curl -sS -I https://pic.chen08.de`
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
