@@ -319,6 +319,9 @@ describe('GenerateView', () => {
     const itemRule = extractStyleRules('.generation-item')[0] ?? '';
     const visualRule = extractStyleRules('.generation-visual')[0] ?? '';
     const frameRule = extractStyleRules('.generated-figure__frame')[0] ?? '';
+    const actionsRule = extractStyleRules('.generation-actions')[0] ?? '';
+    const actionRule = extractStyleRules('.generation-action')[0] ?? '';
+    const deleteActionRule = extractStyleRules('.generation-action--delete')[0] ?? '';
 
     expect(feedItems).toHaveLength(2);
     expectStyleDeclaration(stageRule, '--generation-card-width', '304px');
@@ -332,6 +335,10 @@ describe('GenerateView', () => {
     expectStyleDeclaration(itemRule, 'align-items', 'stretch');
     expectStyleDeclaration(visualRule, 'justify-items', 'stretch');
     expectStyleDeclaration(frameRule, 'width', '100%');
+    expectStyleDeclaration(actionsRule, 'display', 'grid');
+    expectStyleDeclaration(actionsRule, 'grid-template-columns', 'repeat(2, minmax(0, 1fr))');
+    expectStyleDeclaration(actionRule, 'width', '100%');
+    expect(deleteActionRule).not.toMatch(/margin-left\s*:/);
     expect(feedItems[0]?.text()).toContain('最新完成的电影海报');
     expect(feedItems[0]?.text()).toContain('GPT-IMAGE-2 · 已保存 · 1 张图');
     expect(feedItems[1]?.text()).toContain('上一轮的复古书房');

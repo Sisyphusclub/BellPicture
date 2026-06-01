@@ -2017,15 +2017,15 @@ function formatStageDate(iso: string | undefined): string {
 }
 
 .generation-actions {
-  display: inline-flex;
+  display: grid;
   width: 100%;
-  flex-wrap: wrap;
-  justify-content: flex-start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin-top: 16px;
 }
 
 .generation-action {
+  width: 100%;
   min-height: 34px;
   border-radius: var(--radius-pill);
   font-size: 12px;
@@ -2039,7 +2039,6 @@ function formatStageDate(iso: string | undefined): string {
 }
 
 .generation-action--delete {
-  margin-left: auto;
   color: var(--button-danger-fg);
 }
 
@@ -2799,13 +2798,8 @@ function formatStageDate(iso: string | undefined): string {
   }
 
   .generation-action {
-    flex: 1 1 calc(50% - 8px);
     min-width: 0;
     padding: 0 10px;
-  }
-
-  .generation-action--delete {
-    margin-left: 0;
   }
 
   .canvas-hero,
