@@ -115,6 +115,8 @@ const aspectButtonRef = ref<HTMLButtonElement | null>(null);
 const modelButtonRef = ref<HTMLButtonElement | null>(null);
 const selectedRecentEntry = ref<HistoryEntry | null>(null);
 const deletingGalleryEntryId = ref<string | null>(null);
+const deletingBatchId = ref<string | null>(null);
+const confirmingDeleteBatchId = ref<string | null>(null);
 const isHeroPromptFocused = ref(false);
 const isDiscoverSubmitTransitionActive = ref(false);
 const activeHeroSuggestion = ref<string>(DEFAULT_HERO_PROMPT_SUGGESTION);
@@ -288,9 +290,16 @@ watch(
 );
 
 watch(batches, (nextBatches) => {
-  if (!activeBatchId.value) return;
-  const exists = nextBatches.some((batch) => batch.batchId === activeBatchId.value);
-  if (!exists) activeBatchId.value = null;
+  if (activeBatchId.value) {
+    const exists = nextBatches.some((batch) => batch.batchId === activeBatchId.value);
+    if (!exists) activeBatchId.value = null;
+  }
+  if (
+    confirmingDeleteBatchId.value !== null &&
+    !nextBatches.some((batch) => batch.batchId === confirmingDeleteBatchId.value)
+  ) {
+    confirmingDeleteBatchId.value = null;
+  }
 });
 
 watch(
@@ -466,13 +475,21 @@ function handleNewConversation(): void {
   clearLastBatch();
 }
 
-async function handleDeleteBatch(batchId: string): Promise<void> {
+async function handleDeleteBatch(batchId: string): Promise<boolean> {
+  if (deletingBatchId.value !== null) return false;
+  deletingBatchId.value = batchId;
   try {
     await removeBatch(batchId);
     if (activeBatchId.value === batchId) activeBatchId.value = null;
+    if (lastBatch.value?.batchId === batchId) clearLastBatch();
+    if (confirmingDeleteBatchId.value === batchId) confirmingDeleteBatchId.value = null;
     ElMessage.success('已删除该批次。');
+    return true;
   } catch {
     ElMessage.error('删除失败，请稍后重试。');
+    return false;
+  } finally {
+    deletingBatchId.value = null;
   }
 }
 
@@ -480,7 +497,6 @@ async function handleDeleteCurrent(): Promise<void> {
   const batch = displayedBatch.value;
   if (!batch) return;
   await handleDeleteBatch(batch.batchId);
-  clearLastBatch();
 }
 
 function openUploadPicker(): void {
@@ -624,6 +640,14 @@ function itemStatusMeta(item: GenerationFeedItem): string {
   return [modelDisplayName(item.model), item.statusLabel, `${imageCount} 张图`].join(' · ');
 }
 
+function isFeedItemDeleting(item: GenerationFeedItem): boolean {
+  return item.type === 'batch' && deletingBatchId.value === item.batch.batchId;
+}
+
+function isFeedItemConfirmingDelete(item: GenerationFeedItem): boolean {
+  return item.type === 'batch' && confirmingDeleteBatchId.value === item.batch.batchId;
+}
+
 async function handleSaveFeedItem(item: GenerationFeedItem): Promise<void> {
   if (!itemHasSavedImages(item)) return;
   try {
@@ -634,6 +658,16 @@ async function handleSaveFeedItem(item: GenerationFeedItem): Promise<void> {
   } catch {
     ElMessage.error('下载失败，请稍后重试。');
   }
+}
+
+async function handleDeleteFeedItem(item: GenerationFeedItem): Promise<void> {
+  if (item.type !== 'batch' || !itemHasSavedImages(item)) return;
+  const batchId = item.batch.batchId;
+  if (confirmingDeleteBatchId.value !== batchId) {
+    confirmingDeleteBatchId.value = batchId;
+    return;
+  }
+  await handleDeleteBatch(batchId);
 }
 
 function createSnapshotFromPending(snapshot: PendingGeneration): PendingGeneration {
@@ -1101,7 +1135,7 @@ function formatStageDate(iso: string | undefined): string {
                 <button
                   type="button"
                   class="generation-action claude-button claude-button--secondary"
-                  :disabled="isLoading"
+                  :disabled="isLoading || isFeedItemDeleting(item)"
                   @click="handleEditPrompt(item)"
                 >
                   ✎ 重新编辑
@@ -1109,7 +1143,7 @@ function formatStageDate(iso: string | undefined): string {
                 <button
                   type="button"
                   class="generation-action claude-button claude-button--secondary"
-                  :disabled="isLoading"
+                  :disabled="isLoading || isFeedItemDeleting(item)"
                   @click="handleRegenerate(item)"
                 >
                   ↻ 再次生成
@@ -1118,10 +1152,25 @@ function formatStageDate(iso: string | undefined): string {
                   v-if="itemHasSavedImages(item)"
                   type="button"
                   class="generation-action claude-button claude-button--secondary"
-                  :disabled="isLoading"
+                  :disabled="isLoading || isFeedItemDeleting(item)"
                   @click="handleSaveFeedItem(item)"
                 >
                   ↓ 保存
+                </button>
+                <button
+                  v-if="itemHasSavedImages(item)"
+                  type="button"
+                  class="generation-action generation-action--delete claude-button claude-button--danger"
+                  :class="{ 'generation-action--confirm': isFeedItemConfirmingDelete(item) }"
+                  :disabled="isLoading || isFeedItemDeleting(item)"
+                  :aria-label="
+                    isFeedItemConfirmingDelete(item)
+                      ? `确认删除该批次：${item.prompt}`
+                      : `删除该批次：${item.prompt}`
+                  "
+                  @click="handleDeleteFeedItem(item)"
+                >
+                  {{ isFeedItemDeleting(item) ? '删除中' : isFeedItemConfirmingDelete(item) ? '确认删除' : '删除' }}
                 </button>
               </div>
             </article>
@@ -1989,6 +2038,20 @@ function formatStageDate(iso: string | undefined): string {
   transform: translateY(-1px);
 }
 
+.generation-action--delete {
+  margin-left: auto;
+  color: var(--button-danger-fg);
+}
+
+.generation-action--delete:not(:disabled):hover,
+.generation-action--confirm {
+  background: var(--button-danger-bg-hover);
+}
+
+.generation-action--confirm {
+  border-color: oklch(55% 0.17 28deg / 0.18);
+}
+
 @keyframes placeholder-shimmer {
   0% {
     transform: translateX(-58%);
@@ -2739,6 +2802,10 @@ function formatStageDate(iso: string | undefined): string {
     flex: 1 1 calc(50% - 8px);
     min-width: 0;
     padding: 0 10px;
+  }
+
+  .generation-action--delete {
+    margin-left: 0;
   }
 
   .canvas-hero,

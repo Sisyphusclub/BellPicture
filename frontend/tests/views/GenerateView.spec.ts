@@ -18,6 +18,7 @@ interface GenerateViewHarness {
   generate: ReturnType<
     typeof vi.fn<(options: GenerateImageOptions) => Promise<GeneratedBatchResult>>
   >;
+  removeBatch: ReturnType<typeof vi.fn<(batchId: string) => Promise<void>>>;
   addPublicGalleryRecord: ReturnType<
     typeof vi.fn<(record: HistoryEntry['record']) => HistoryEntry | null>
   >;
@@ -338,6 +339,7 @@ describe('GenerateView', () => {
     expect(wrapper.text()).toContain('重新编辑');
     expect(wrapper.text()).toContain('再次生成');
     expect(wrapper.text()).toContain('保存');
+    expect(wrapper.text()).toContain('删除');
   });
 
   it('omits the framed empty workspace card while preserving generate route context', async () => {
@@ -650,6 +652,42 @@ describe('GenerateView', () => {
         referenceIds: expect.any(Array),
       }),
     );
+  });
+
+  it('deletes a saved generation batch from the generate feed after confirmation', async () => {
+    const entry = createHistoryEntry('delete-feed.png', '要删除的生成历史', false, {
+      batchId: 'batch-delete-feed',
+      createdAt: '2026-05-15T09:00:00.000Z',
+    });
+    const { wrapper, removeBatch } = await mountGenerateView({
+      mode: 'generate',
+      entries: [entry],
+      batches: [
+        {
+          batchId: 'batch-delete-feed',
+          createdAt: entry.record.createdAt,
+          prompt: entry.record.prompt,
+          model: entry.record.model,
+          entries: [entry],
+        },
+      ],
+    });
+
+    const deleteButton = wrapper.get('button.generation-action--delete');
+
+    expect(deleteButton.text()).toBe('删除');
+    expect(deleteButton.attributes('aria-label')).toBe('删除该批次：要删除的生成历史');
+
+    await deleteButton.trigger('click');
+
+    expect(removeBatch).not.toHaveBeenCalled();
+    expect(deleteButton.text()).toBe('确认删除');
+    expect(deleteButton.attributes('aria-label')).toBe('确认删除该批次：要删除的生成历史');
+
+    await deleteButton.trigger('click');
+    await flushPromises();
+
+    expect(removeBatch).toHaveBeenCalledWith('batch-delete-feed');
   });
 
   it('appends reference files across repeated selections before submitting', async () => {
@@ -993,6 +1031,7 @@ async function mountGenerateView(
   return {
     wrapper,
     generate,
+    removeBatch,
     addPublicGalleryRecord,
     removePublicGalleryRecordAsAdmin,
     downloadUrl,
