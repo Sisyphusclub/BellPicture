@@ -227,9 +227,17 @@ describe('GenerateView', () => {
 
   it('uses 贝尔灵画 as the discover hero product name', async () => {
     const { wrapper } = await mountGenerateView();
+    const kickerRule = extractStyleRules('.canvas-hero__kicker')[0] ?? '';
+    const mobileKickerRule = extractStyleRules('.canvas-hero__kicker')[1] ?? '';
 
     expect(wrapper.get('.canvas-hero__kicker').text()).toBe('贝尔灵画');
     expect(wrapper.text()).not.toContain('REF2IMAGE STUDIO');
+    expectStyleDeclaration(kickerRule, 'font-family', 'var(--font-display)');
+    expectStyleDeclaration(kickerRule, 'font-size', '28px');
+    expectStyleDeclaration(kickerRule, 'letter-spacing', '0.08em');
+    expectStyleDeclaration(kickerRule, 'border-radius', '8px');
+    expectStyleDeclaration(mobileKickerRule, 'font-size', '20px');
+    expectStyleDeclaration(mobileKickerRule, 'letter-spacing', '0.06em');
   });
 
   it('does not apply the discover hero suggestion to the generate route dock composer', async () => {

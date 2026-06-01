@@ -2097,11 +2097,52 @@ function formatStageDate(iso: string | undefined): string {
 }
 
 .canvas-hero__kicker {
-  margin: 0 0 4px;
-  color: oklch(44% 0.012 78deg);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.22em;
+  position: relative;
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  max-width: calc(100vw - 48px);
+  margin: 0 0 2px;
+  padding: 9px 18px 10px;
+  border: 1px solid oklch(24% 0.012 78deg / 0.14);
+  border-radius: 8px;
+  background: oklch(99% 0.004 88deg / 0.58);
+  box-shadow:
+    inset 0 0 0 1px oklch(99% 0.004 88deg / 0.68),
+    0 14px 32px oklch(24% 0.012 78deg / 0.06);
+  color: oklch(24% 0.018 78deg);
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  overflow-wrap: anywhere;
+  text-shadow: 0 1px 0 oklch(99% 0.004 88deg / 0.9);
+  white-space: nowrap;
+}
+
+.canvas-hero__kicker::before,
+.canvas-hero__kicker::after {
+  content: '';
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-color: oklch(24% 0.012 78deg / 0.3);
+  pointer-events: none;
+}
+
+.canvas-hero__kicker::before {
+  top: 6px;
+  left: 6px;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+
+.canvas-hero__kicker::after {
+  right: 6px;
+  bottom: 6px;
+  border-right: 1px solid;
+  border-bottom: 1px solid;
 }
 
 .canvas-hero__title {
@@ -2809,8 +2850,11 @@ function formatStageDate(iso: string | undefined): string {
   }
 
   .canvas-hero__kicker {
-    font-size: 11px;
-    letter-spacing: 0.16em;
+    min-height: 40px;
+    max-width: calc(100vw - 28px);
+    padding: 7px 13px 8px;
+    font-size: 20px;
+    letter-spacing: 0.06em;
   }
 
   .canvas-hero__title {
