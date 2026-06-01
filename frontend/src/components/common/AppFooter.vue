@@ -6,7 +6,7 @@ import { RouterLink } from 'vue-router';
   <footer class="app-footer">
     <div class="container app-footer__inner">
       <div>
-        <p class="app-footer__brand"><span aria-hidden="true">✣</span> Ref2Image Studio</p>
+        <p class="app-footer__brand"><span aria-hidden="true">✣</span> 贝尔灵画</p>
         <p class="app-footer__copy">由你的后端驱动，串联发现、生图与资产管理的参考图生图工作台。</p>
       </div>
       <nav class="app-footer__links" aria-label="页脚导航">

@@ -63,9 +63,9 @@ function initials(): string {
 </script>
 
 <template>
-  <header class="app-sidebar" aria-label="Ref2Image 主导航">
+  <header class="app-sidebar" aria-label="贝尔灵画主导航">
     <RouterLink class="sidebar-brand" to="/" aria-label="返回发现首页">
-      <img class="sidebar-brand__mark" src="/brand/logo.png" alt="Ref2Image Studio 标志" />
+      <img class="sidebar-brand__mark" src="/brand/logo.png" alt="贝尔灵画标志" />
     </RouterLink>
 
     <nav class="sidebar-nav" aria-label="主要导航">

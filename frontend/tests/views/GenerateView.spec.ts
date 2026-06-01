@@ -225,6 +225,13 @@ describe('GenerateView', () => {
     expect(wrapper.find('.prompt-showcase__suggestion i').exists()).toBe(false);
   });
 
+  it('uses 贝尔灵画 as the discover hero product name', async () => {
+    const { wrapper } = await mountGenerateView();
+
+    expect(wrapper.get('.canvas-hero__kicker').text()).toBe('贝尔灵画');
+    expect(wrapper.text()).not.toContain('REF2IMAGE STUDIO');
+  });
+
   it('does not apply the discover hero suggestion to the generate route dock composer', async () => {
     const { wrapper } = await mountGenerateView({ mode: 'generate' });
 

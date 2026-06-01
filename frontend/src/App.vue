@@ -55,7 +55,7 @@ onBeforeUnmount(() => {
   </div>
   <div class="app-shell">
     <AppHeader v-if="!isImageDetailModalOpen" />
-    <main class="app-main" aria-label="Ref2Image Studio 工作区">
+    <main class="app-main" aria-label="贝尔灵画工作区">
       <RouterView />
     </main>
     <LoginModal />
