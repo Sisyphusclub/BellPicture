@@ -211,6 +211,95 @@ await provider.generate({ prompt, referencePaths: resolved });
 
 ---
 
+## Scenario: demo prompt cached outputs
+
+### 1. Scope / Trigger
+- Trigger: configured exact prompts can be prepared once through normal image
+  generation, then returned from local output storage on later matching
+  requests. This touches API behavior, quota, env config, and filesystem
+  storage.
+
+### 2. Signatures
+```ts
+// backend/src/config/env.ts
+DEMO_PROMPTS: string[];                 // split by "|||", empty disables
+DEMO_PROMPT_CACHE_DELAY_MS: number;     // non-negative, default 4000
+
+// POST /api/images/generate
+type GenerateBody = {
+  prompt: string;
+  referenceId?: string;
+  referenceIds?: string[];
+  model?: string;
+  count?: number;
+  aspectRatio?: AspectRatio;
+  isPublic?: boolean;
+  demoPresetId?: string; // legacy admin-only path, not frontend UI
+};
+```
+
+### 3. Contracts
+- Demo prompt matching trims surrounding whitespace and compares the full
+  prompt text exactly against `DEMO_PROMPTS`.
+- `DEMO_PROMPTS` uses `|||` as the delimiter. Empty entries are removed and
+  duplicate prompts collapse to one configured prompt.
+- Demo prompt cache applies only to prompt-only generation. Any request with
+  `referenceId` or `referenceIds` must stay on the normal image-to-image path.
+- Cache miss: call the normal provider-backed generation path, consume quota,
+  persist history, then copy the first PNG output to an internal cache file.
+- Cache hit: wait `DEMO_PROMPT_CACHE_DELAY_MS`, copy the cached PNG to a new
+  normal `<uuid>.png` output, persist a normal `image_records` row, and return
+  the normal generate response shape.
+- Cache hit must not call the provider and must not consume daily quota.
+- Internal cache files live under `OUTPUT_DIR` with names matching
+  `demo-prompt-<sha>.png` and `demo-prompt-meta-<sha>.json`. They are managed
+  only through `storage/localStorage.ts`; service/controller code must not
+  import `fs`.
+
+### 4. Validation & Error Matrix
+| Condition | Expected behavior |
+|---|---|
+| `DEMO_PROMPT_CACHE_DELAY_MS` is negative or non-numeric | Throw on `config/env.ts` import |
+| `DEMO_PROMPTS` is empty | No prompt-cache branch is active |
+| Configured prompt + cache meta missing/corrupt | Treat as cache miss and call the normal provider path |
+| Configured prompt + reference image ids | Do not use prompt cache; use normal image-to-image behavior |
+| Cached output is requested repeatedly | Each response gets a fresh `<uuid>.png` output filename and history id |
+
+### 5. Good/Base/Bad Cases
+- Good: operator configures two exact prompts, warms each once, then live demo
+  requests wait four seconds and show prepared images without provider calls.
+- Base: an unconfigured prompt continues to consume quota and call the provider.
+- Bad: reusing the same cached filename as the history id for every request,
+  which collides with `image_records.id`.
+- Bad: exposing a demo button in the frontend; prompt cache should look like
+  ordinary prompt submission.
+
+### 6. Tests Required
+- Env tests assert prompt delimiter parsing, de-duplication, default empty
+  config, and negative-delay rejection.
+- Controller tests assert cache miss calls provider and consumes quota.
+- Controller tests assert cache hit skips provider, skips quota, returns one
+  generated image, and writes a normal history row.
+- Frontend view tests assert no `.prompt-showcase__demo` button renders for
+  admins or ordinary users.
+
+### 7. Wrong vs Correct
+#### Wrong
+```ts
+if (prompt === demoPrompt) return { filename: cachedFilename };
+```
+
+#### Correct
+```ts
+const cached = await readCachedDemoPromptImage(hit, config);
+if (cached) {
+  persistGeneratedImages({ result: cached, userId, prompt, model, referenceIds: [] });
+  return responseFromGeneratedResult(cached);
+}
+```
+
+---
+
 ## Scenario: username auth and local/demo default admin
 
 ### 1. Scope / Trigger
@@ -318,6 +407,8 @@ output directories):
 
 1. **Uploaded reference images** → `tmp/uploads/<uuid>.<ext>`
 2. **Generated output images** → `tmp/outputs/<uuid>.<ext>`
+3. **Internal demo prompt cache files** → `tmp/outputs/demo-prompt-*.png`
+   and `tmp/outputs/demo-prompt-meta-*.json`
 
 Naming and lifecycle are unchanged from previous task; see the prior version
 of this file in git history. Key points still in force:

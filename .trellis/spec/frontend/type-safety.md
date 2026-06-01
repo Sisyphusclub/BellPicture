@@ -164,9 +164,12 @@ function isImageRecord(value: unknown): value is ImageRecord {
 ### 3. Contracts
 
 - Upload response: `{ id, filename, mime, size }`.
-- Generate request: `{ prompt, referenceId?, referenceIds?, model?, count?, aspectRatio?, isPublic? }`.
+- Generate request: `{ prompt, referenceId?, referenceIds?, model?, count?, aspectRatio?, isPublic?, demoPresetId? }`.
   New call sites send `referenceIds` for image-to-image; `referenceId` remains
   a legacy/back-compat field populated with the first id when useful.
+- `demoPresetId` remains a legacy admin-only backend path for tests and
+  compatibility. The generator UI must not expose a demo button; configured demo
+  prompts are submitted as ordinary `prompt` values and matched on the backend.
 - Regeneration from history may reuse existing `referenceIds`; this is still
   a normal `GenerateRequest` and must NOT re-upload original files when the
   frontend already has persisted backend reference ids.
@@ -207,6 +210,9 @@ function isImageRecord(value: unknown): value is ImageRecord {
   output blob is fetched, and metadata/blob are persisted together.
 - Base: prompt-only generation skips upload and records `generationMode` as
   `text-to-image`.
+- Demo prompt: an exact configured prompt still travels through
+  `generateImage({ prompt, ... })`; the frontend does not add `demoPresetId` or
+  branch on demo state.
 - Regenerate: a history batch whose first/any record has `referenceIds` sends
   those ids back to `/api/images/generate` and records `generationMode` as
   `image-to-image`.
@@ -233,6 +239,9 @@ function isImageRecord(value: unknown): value is ImageRecord {
   hides the record from public listing but preserves owner history, and frontend
   tests assert only admins see gallery delete controls and `usePublicGallery`
   calls the authenticated delete endpoint.
+- Demo prompt regression: frontend view tests assert `.prompt-showcase__demo`
+  does not render for ordinary users or admins; backend tests own cache-hit and
+  cache-miss behavior.
 
 ### 7. Wrong vs Correct
 
