@@ -1240,3 +1240,36 @@ Reduced the sidebar brand logo image from 50px to 42px on desktop and from 38px 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 37: Clear generation prompt after success
+
+**Date**: 2026-06-02
+**Task**: Clear generation prompt after success
+**Branch**: `main`
+
+### Summary
+
+Cleared the generation composer prompt after successful image generation, preserved prompts on failures, added GenerateView regression coverage, and rebuilt the frontend deployment.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5c1f6e6` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
