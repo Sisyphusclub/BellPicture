@@ -403,6 +403,7 @@ async function runGeneration(snapshot: PendingGeneration): Promise<void> {
     result.entries.forEach((entry) => {
       addPublicGalleryRecord(entry.record);
     });
+    prompt.value = '';
     ElMessage.success(`已生成 ${result.entries.length} 张图片，并保存到历史记录。`);
   } catch (unknownError) {
     const message = messageForError(unknownError);

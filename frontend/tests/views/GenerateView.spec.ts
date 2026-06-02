@@ -27,6 +27,7 @@ interface GenerateViewHarness {
   routerPush: ReturnType<typeof vi.fn<(path: string) => void>>;
   resolveGeneration: () => void;
   resolveGenerationWithOptions: (overrides: { id: string; prompt?: string }) => void;
+  rejectGeneration: (error?: Error) => void;
 }
 
 type GenerateViewMode = 'discover' | 'generate';
@@ -481,6 +482,7 @@ describe('GenerateView', () => {
     await flushPromises();
 
     expect(wrapper.find('.generated-figure__frame img').exists()).toBe(true);
+    expect((wrapper.get('textarea[name="prompt"]').element as HTMLTextAreaElement).value).toBe('');
 
     const dockComposer = wrapper.get('form.prompt-showcase--dock');
     await dockComposer.get('textarea[name="prompt"]').setValue('生成一张赛博城市海报');
@@ -503,6 +505,24 @@ describe('GenerateView', () => {
     );
     expect(wrapper.find('.generation-placeholder').exists()).toBe(true);
     expect(wrapper.text()).toContain('生成中...');
+  });
+
+  it('keeps the prompt in the dock composer when generation fails', async () => {
+    const { wrapper, generate, rejectGeneration } = await mountGenerateView({ mode: 'generate' });
+    const textarea = wrapper.get('textarea[name="prompt"]');
+
+    await textarea.setValue('失败后保留的提示词');
+    await wrapper.get('button.prompt-showcase__generate').trigger('click');
+    rejectGeneration(new Error('生成失败，请稍后重试。'));
+    await flushPromises();
+
+    expect(generate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: '失败后保留的提示词',
+      }),
+    );
+    expect((textarea.element as HTMLTextAreaElement).value).toBe('失败后保留的提示词');
+    expect(wrapper.text()).toContain('生成失败');
   });
 
   it('sends public visibility when the dock public toggle is enabled', async () => {
@@ -871,6 +891,11 @@ async function mountGenerateView(
     generation.value = createDeferred<GeneratedBatchResult>();
   }
 
+  function rejectGeneration(error: Error = new Error('生成失败，请稍后重试。')): void {
+    generation.value.reject(error);
+    generation.value = createDeferred<GeneratedBatchResult>();
+  }
+
   const refreshQuota = vi.fn<() => Promise<void>>(() => Promise.resolve());
   const removeBatch = vi.fn<(batchId: string) => Promise<void>>(() => Promise.resolve());
   const addPublicGalleryRecord = vi.fn<(record: HistoryEntry['record']) => HistoryEntry | null>(
@@ -1060,5 +1085,6 @@ async function mountGenerateView(
     routerPush,
     resolveGeneration,
     resolveGenerationWithOptions,
+    rejectGeneration,
   };
 }
