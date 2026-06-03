@@ -1273,3 +1273,36 @@ Cleared the generation composer prompt after successful image generation, preser
 ### Next Steps
 
 - None - task complete
+
+
+## Session 38: Rebuild frontend for updated logo
+
+**Date**: 2026-06-03
+**Task**: Rebuild frontend for updated logo
+**Branch**: `main`
+
+### Summary
+
+Rebuilt and restarted the frontend container after the user replaced frontend/public/brand/logo.png. Verified the container-served and public logo SHA-256 matched the updated source asset, and confirmed the public site returned HTTP 200 with the rebuilt JS asset.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `569e38e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
