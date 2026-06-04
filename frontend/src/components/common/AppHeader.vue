@@ -155,8 +155,28 @@ function initials(): string {
           :style="{ backgroundImage: `url(${user.image})` }"
           aria-hidden="true"
         />
-        <span v-else class="sidebar-account__avatar sidebar-account__avatar--initials" aria-hidden="true">
-          {{ isAuthenticated ? initials() : '入' }}
+        <span
+          v-else-if="isAuthenticated"
+          class="sidebar-account__avatar sidebar-account__avatar--initials"
+          aria-hidden="true"
+        >
+          {{ initials() }}
+        </span>
+        <span v-else class="sidebar-account__avatar sidebar-account__avatar--guest" aria-hidden="true">
+          <svg
+            class="sidebar-account__guest-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.1"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="8" r="3.6" />
+            <path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
+          </svg>
         </span>
         <span>{{ accountLabel }}</span>
       </button>
@@ -280,16 +300,37 @@ function initials(): string {
   background-position: center;
 }
 
-.sidebar-account__avatar--initials {
+.sidebar-account__avatar--initials,
+.sidebar-account__avatar--guest {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--color-hairline-soft);
-  background: linear-gradient(135deg, var(--color-accent-soft), var(--color-chip));
   color: var(--color-ink);
+}
+
+.sidebar-account__avatar--initials {
+  background: linear-gradient(135deg, var(--color-accent-soft), var(--color-chip));
   font-family: var(--font-brand);
   font-size: var(--text-label-size);
   font-weight: 900;
+}
+
+.sidebar-account__avatar--guest {
+  background: var(--color-surface-glass-strong);
+  color: var(--color-muted);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.sidebar-account:hover .sidebar-account__avatar--guest {
+  background: var(--color-chip);
+  color: var(--color-ink);
+}
+
+.sidebar-account__guest-icon {
+  display: block;
 }
 
 .sidebar-account-menu {

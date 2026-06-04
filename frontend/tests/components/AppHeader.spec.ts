@@ -78,6 +78,9 @@ describe('AppHeader', () => {
     expect(wrapper.text()).not.toContain('用户管理');
     expect(wrapper.html()).toContain('M4 7.5A2.5 2.5 0 0 1 6.5 5H10l2 2.5h5.5A2.5 2.5 0 0 1 20 10v6.5A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5Z');
     expect(wrapper.find('.sidebar-account').text()).toContain('登录');
+    expect(wrapper.find('.sidebar-account__avatar--guest svg').exists()).toBe(true);
+    expect(wrapper.find('.sidebar-account__avatar--guest').text()).toBe('');
+    expect(wrapper.text()).not.toContain('入');
   });
 
   it('keeps the brand logo visually compact inside the sidebar button', async () => {
