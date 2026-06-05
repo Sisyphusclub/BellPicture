@@ -244,8 +244,10 @@ type GenerateBody = {
   full prompt text against normalized `DEMO_PROMPTS`.
 - `DEMO_PROMPTS` uses `|||` as the delimiter. Empty entries are removed and
   duplicate prompts collapse to one configured prompt.
-- Demo prompt cache applies only to prompt-only generation. Any request with
-  `referenceId` or `referenceIds` must stay on the normal image-to-image path.
+- Demo prompt cache applies to configured prompts even when `referenceId` or
+  `referenceIds` are present. This is an operator demo shortcut: the reference
+  image is recorded in history, but it does not change which prepared cache file
+  is returned.
 - Cache miss: call the normal provider-backed generation path, consume quota,
   persist history, then copy the first PNG output to an internal cache file.
 - Cache hit: wait `DEMO_PROMPT_CACHE_DELAY_MS`, copy the cached PNG to a new
@@ -263,7 +265,8 @@ type GenerateBody = {
 | `DEMO_PROMPT_CACHE_DELAY_MS` is negative or non-numeric | Throw on `config/env.ts` import |
 | `DEMO_PROMPTS` is empty | No prompt-cache branch is active |
 | Configured prompt + cache meta missing/corrupt | Treat as cache miss and call the normal provider path |
-| Configured prompt + reference image ids | Do not use prompt cache; use normal image-to-image behavior |
+| Configured prompt + reference image ids + cache hit | Return cached image with `generationMode: image-to-image`, persist reference ids, skip provider and quota |
+| Configured prompt + reference image ids + cache miss | Use normal image-to-image behavior; do not write a prompt cache from the reference-image result |
 | Cached output is requested repeatedly | Each response gets a fresh `<uuid>.png` output filename and history id |
 
 ### 5. Good/Base/Bad Cases
@@ -271,6 +274,9 @@ type GenerateBody = {
   requests wait four seconds and show prepared images without provider calls.
 - Good: a configured prompt still hits the prepared cache when a browser paste
   introduces a newline or removes spaces inside a phrase such as `T 恤`.
+- Good: a configured prompt with a reference image returns the prepared cache
+  as `image-to-image`, keeps the reference id in history, and avoids provider
+  latency during live demos.
 - Base: an unconfigured prompt continues to consume quota and call the provider.
 - Bad: reusing the same cached filename as the history id for every request,
   which collides with `image_records.id`.

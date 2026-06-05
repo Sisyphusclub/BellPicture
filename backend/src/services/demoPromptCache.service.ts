@@ -53,6 +53,7 @@ export function findDemoPromptCacheHit(
 export async function readCachedDemoPromptImage(
   hit: DemoPromptCacheHit,
   config: DemoPromptCacheConfig,
+  modeOverride?: GenerateImageOutput['mode'],
 ): Promise<GenerateImageOutput | null> {
   const meta = await readCacheMeta(hit.key);
   if (meta === null) return null;
@@ -68,7 +69,7 @@ export async function readCachedDemoPromptImage(
   return {
     batchId: randomUUID(),
     aspectRatio: meta.aspectRatio,
-    mode: meta.mode,
+    mode: modeOverride ?? meta.mode,
     images: [
       {
         filename: saved.filename,

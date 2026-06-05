@@ -162,12 +162,17 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           return;
         }
 
+        const hasReferenceContext = referenceIds.length > 0;
         const promptCacheHit =
-          deps.demoPromptCache !== undefined && referenceIds.length === 0
+          deps.demoPromptCache !== undefined
             ? findDemoPromptCacheHit(parsed.prompt, deps.demoPromptCache)
             : null;
         if (promptCacheHit !== null && deps.demoPromptCache !== undefined) {
-          const cachedResult = await readCachedDemoPromptImage(promptCacheHit, deps.demoPromptCache);
+          const cachedResult = await readCachedDemoPromptImage(
+            promptCacheHit,
+            deps.demoPromptCache,
+            hasReferenceContext ? 'image-to-image' : undefined,
+          );
           if (cachedResult !== null) {
             persistGeneratedImages({
               result: cachedResult,
@@ -194,7 +199,7 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           },
           { provider: deps.provider, quotaPool },
         );
-        if (promptCacheHit !== null) {
+        if (promptCacheHit !== null && !hasReferenceContext) {
           await writeDemoPromptCache(promptCacheHit, result);
         }
 

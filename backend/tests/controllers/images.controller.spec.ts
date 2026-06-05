@@ -305,6 +305,48 @@ describe('POST /api/images/generate', () => {
     expect(output.headers['content-type']).toContain('image/png');
   });
 
+  it('reuses configured demo prompt images for reference-image requests', async () => {
+    const { provider } = fakeProvider();
+    const userId = `demo-reference-prompt-${randomUUID()}`;
+    const demoPrompt = `参考图演示提示词 ${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId), {
+      demoPrompts: [demoPrompt],
+      demoPromptCacheDelayMs: 0,
+    });
+
+    const first = await request(app).post('/api/images/generate').send({
+      prompt: demoPrompt,
+      count: 1,
+    });
+    expect(first.status).toBe(200);
+    expect(provider.generate).toHaveBeenCalledOnce();
+
+    const referenceId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.png';
+    const second = await request(app).post('/api/images/generate').send({
+      prompt: demoPrompt.replace(/\s+/gu, ''),
+      referenceId,
+      count: 2,
+    });
+
+    expect(second.status).toBe(200);
+    expect(second.body).toMatchObject({
+      generationMode: 'image-to-image',
+      aspectRatio: '1:1',
+    });
+    expect(second.body.images).toHaveLength(1);
+    expect(provider.generate).toHaveBeenCalledOnce();
+
+    const quota = await request(app).get('/api/images/quota');
+    expect(quota.body.remaining).toBe(19);
+
+    const history = await request(app).get('/api/history');
+    expect(history.body.records[0]).toMatchObject({
+      prompt: demoPrompt.replace(/\s+/gu, ''),
+      referenceId,
+      referenceIds: [referenceId],
+    });
+  });
+
   it('keeps non-configured prompts on the normal provider and quota path', async () => {
     const { provider } = fakeProvider();
     const app = buildApp(provider, stubAuth(`normal-prompt-${randomUUID()}`), {
