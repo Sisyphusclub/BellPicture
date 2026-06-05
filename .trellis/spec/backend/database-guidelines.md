@@ -239,8 +239,9 @@ type GenerateBody = {
 ```
 
 ### 3. Contracts
-- Demo prompt matching trims surrounding whitespace and compares the full
-  prompt text exactly against `DEMO_PROMPTS`.
+- Demo prompt matching trims surrounding whitespace, collapses internal
+  whitespace runs to a single space, and compares the normalized full prompt
+  text against normalized `DEMO_PROMPTS`.
 - `DEMO_PROMPTS` uses `|||` as the delimiter. Empty entries are removed and
   duplicate prompts collapse to one configured prompt.
 - Demo prompt cache applies only to prompt-only generation. Any request with
@@ -268,6 +269,8 @@ type GenerateBody = {
 ### 5. Good/Base/Bad Cases
 - Good: operator configures two exact prompts, warms each once, then live demo
   requests wait four seconds and show prepared images without provider calls.
+- Good: a configured prompt still hits the prepared cache when a browser paste
+  introduces a newline inside a phrase such as `T 恤`.
 - Base: an unconfigured prompt continues to consume quota and call the provider.
 - Bad: reusing the same cached filename as the history id for every request,
   which collides with `image_records.id`.

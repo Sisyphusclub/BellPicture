@@ -106,7 +106,7 @@ export async function writeDemoPromptCache(
 }
 
 function normalizePrompt(prompt: string): string {
-  return prompt.trim();
+  return prompt.trim().replace(/\s+/gu, ' ');
 }
 
 function cacheKey(prompt: string): string {

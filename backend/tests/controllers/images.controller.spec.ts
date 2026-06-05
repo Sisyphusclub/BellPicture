@@ -273,7 +273,7 @@ describe('POST /api/images/generate', () => {
     expect(afterFirstQuota.body.remaining).toBe(19);
 
     const second = await request(app).post('/api/images/generate').send({
-      prompt: '演示提示词 A',
+      prompt: '演示提示词\n  A',
       count: 2,
       aspectRatio: '16:9',
       isPublic: false,
@@ -295,7 +295,7 @@ describe('POST /api/images/generate', () => {
     expect(history.status).toBe(200);
     expect(history.body.records.slice(0, 2)).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ prompt: '演示提示词 A', isPublic: false }),
+        expect.objectContaining({ prompt: '演示提示词\n  A', isPublic: false }),
         expect.objectContaining({ prompt: ' 演示提示词 A ', isPublic: true }),
       ]),
     );
