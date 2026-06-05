@@ -6,6 +6,7 @@ import { useRoute, useRouter } from 'vue-router';
 import RecentCreationDetailModal from '@/components/gallery/RecentCreationDetailModal.vue';
 import RecentCreationsMasonry from '@/components/gallery/RecentCreationsMasonry.vue';
 import { useAuth } from '@/composables/useAuth';
+import { useAuthModal } from '@/composables/useAuthModal';
 import { useFileUpload } from '@/composables/useFileUpload';
 import { useImageGeneration, type GenerateImageOptions } from '@/composables/useImageGeneration';
 import { useImageQuota } from '@/composables/useImageQuota';
@@ -41,10 +42,13 @@ const HERO_PROMPT_SUGGESTIONS = [
   '未来感植物实验室，透明玻璃温室里漂浮着发光叶片与细密水雾。',
 ] as const;
 const DEFAULT_HERO_PROMPT_SUGGESTION = HERO_PROMPT_SUGGESTIONS[0];
+const LOGIN_REQUIRED_MESSAGE = '请先登录后再生成图片。';
+const AUTH_LOADING_MESSAGE = '正在确认登录状态，请稍候。';
 
 const route = useRoute();
 const router = useRouter();
-const { isAdmin } = useAuth();
+const { isAdmin, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+const { open: openLoginModal } = useAuthModal();
 const { batches, removeBatch } = useImageHistory();
 const {
   entries: galleryEntries,
@@ -324,6 +328,7 @@ watch(shouldShowHeroSuggestion, (isVisible) => {
 
 async function handleSubmit(): Promise<void> {
   if (!canGenerate.value) return;
+  if (!ensureAuthenticated()) return;
   const snapshot = createSnapshotFromCurrentComposer();
   if (props.mode === 'discover') {
     isDiscoverSubmitTransitionActive.value = true;
@@ -345,8 +350,7 @@ function createSnapshotFromCurrentComposer(): PendingGeneration {
   };
   if (selectedFiles.value.length > 0) {
     snapshot.referenceFiles = selectedFiles.value.map((item) => item.file);
-  }
-  else if (reusedReferenceId.value) snapshot.referenceId = reusedReferenceId.value;
+  } else if (reusedReferenceId.value) snapshot.referenceId = reusedReferenceId.value;
   return snapshot;
 }
 
@@ -502,6 +506,7 @@ async function handleDeleteCurrent(): Promise<void> {
 
 function openUploadPicker(): void {
   if (isLoading.value) return;
+  if (!ensureAuthenticated('请先登录后再添加参考图。')) return;
   fileInput.value?.click();
 }
 
@@ -509,6 +514,10 @@ function handleInput(event: Event): void {
   const target = event.target;
   if (!(target instanceof HTMLInputElement)) return;
   const files = Array.from(target.files ?? []);
+  if (files.length > 0 && !ensureAuthenticated('请先登录后再添加参考图。')) {
+    target.value = '';
+    return;
+  }
   if (files.length > 0) addReferenceFiles(files);
   target.value = '';
 }
@@ -517,6 +526,7 @@ function handleComposerDrop(event: DragEvent): void {
   isComposerDragging.value = false;
   if (isLoading.value) return;
   const files = imageFiles(event.dataTransfer?.files ?? null);
+  if (files.length > 0 && !ensureAuthenticated('请先登录后再添加参考图。')) return;
   if (files.length > 0) addReferenceFiles(files);
 }
 
@@ -525,6 +535,7 @@ function handlePaste(event: ClipboardEvent): void {
   const files = clipboardImageFiles(event.clipboardData);
   if (files.length === 0) return;
   event.preventDefault();
+  if (!ensureAuthenticated('请先登录后再添加参考图。')) return;
   addReferenceFiles(files);
 }
 
@@ -554,7 +565,9 @@ function addReferenceFiles(files: readonly File[]): void {
   reusedReferenceId.value = null;
   const result = selectFiles(files);
   if (result.added === 0) return;
-  ElMessage.success(result.added > 1 ? `已添加 ${result.added} 张参考图。` : '参考图已添加到输入框。');
+  ElMessage.success(
+    result.added > 1 ? `已添加 ${result.added} 张参考图。` : '参考图已添加到输入框。',
+  );
 }
 
 function imageFiles(files: FileList | null): File[] {
@@ -590,7 +603,9 @@ async function handleDownload(entry: HistoryEntry): Promise<void> {
 async function handleEditPrompt(
   item: GenerationFeedItem | PendingGeneration | GroupedBatch | null = null,
 ): Promise<void> {
-  const snapshot = snapshotFromEditableTarget(item ?? pendingGeneration.value ?? displayedBatch.value);
+  const snapshot = snapshotFromEditableTarget(
+    item ?? pendingGeneration.value ?? displayedBatch.value,
+  );
   if (!snapshot) return;
   prompt.value = snapshot.prompt;
   model.value = snapshot.model;
@@ -606,7 +621,10 @@ async function handleRegenerate(
   item: GenerationFeedItem | PendingGeneration | GroupedBatch | null = null,
 ): Promise<void> {
   if (isLoading.value) return;
-  const snapshot = snapshotFromEditableTarget(item ?? pendingGeneration.value ?? displayedBatch.value);
+  if (!ensureAuthenticated()) return;
+  const snapshot = snapshotFromEditableTarget(
+    item ?? pendingGeneration.value ?? displayedBatch.value,
+  );
   if (!snapshot) return;
   const nextSnapshot = createSnapshotFromPending(snapshot);
   await runGeneration(nextSnapshot);
@@ -775,6 +793,17 @@ function togglePublicGeneration(): void {
   if (!isLoading.value) isPublicGeneration.value = !isPublicGeneration.value;
 }
 
+function ensureAuthenticated(message = LOGIN_REQUIRED_MESSAGE): boolean {
+  if (isAuthenticated.value) return true;
+  if (isAuthLoading.value) {
+    ElMessage.error(AUTH_LOADING_MESSAGE);
+    return false;
+  }
+  openLoginModal();
+  ElMessage.error(message);
+  return false;
+}
+
 function handleDocumentClick(event: MouseEvent): void {
   if (!aspectMenuOpen.value && !modelMenuOpen.value) return;
   const target = event.target;
@@ -836,13 +865,16 @@ function runHeroSuggestionTick(): void {
 function scheduleNextHeroSuggestion(): void {
   if (!isHeroSuggestionReady || !shouldShowHeroSuggestion.value) return;
   stopHeroSuggestionTimer();
-  heroSuggestionTimer = window.setTimeout(() => {
-    heroSuggestionIndex = nextSuggestionIndex(heroSuggestionIndex);
-    setActiveHeroSuggestion(
-      HERO_PROMPT_SUGGESTIONS[heroSuggestionIndex] ?? DEFAULT_HERO_PROMPT_SUGGESTION,
-    );
-    scheduleHeroSuggestionTick(220);
-  }, 2400 + Math.round(Math.random() * 900));
+  heroSuggestionTimer = window.setTimeout(
+    () => {
+      heroSuggestionIndex = nextSuggestionIndex(heroSuggestionIndex);
+      setActiveHeroSuggestion(
+        HERO_PROMPT_SUGGESTIONS[heroSuggestionIndex] ?? DEFAULT_HERO_PROMPT_SUGGESTION,
+      );
+      scheduleHeroSuggestionTick(220);
+    },
+    2400 + Math.round(Math.random() * 900),
+  );
 }
 
 function nextSuggestionIndex(currentIndex: number): number {
@@ -1050,7 +1082,11 @@ function formatStageDate(iso: string | undefined): string {
         <p v-if="batches.length === 0" class="sidebar-empty">尚无历史记录。生成第一张图试试吧。</p>
       </div>
 
-      <button type="button" class="sidebar-all claude-button claude-button--secondary" @click="goToHistoryPage">
+      <button
+        type="button"
+        class="sidebar-all claude-button claude-button--secondary"
+        @click="goToHistoryPage"
+      >
         <svg
           width="17"
           height="17"
@@ -1121,7 +1157,11 @@ function formatStageDate(iso: string | undefined): string {
                   </figure>
                 </div>
 
-                <div v-else-if="itemIsGenerating(item)" class="generation-placeholder" role="status">
+                <div
+                  v-else-if="itemIsGenerating(item)"
+                  class="generation-placeholder"
+                  role="status"
+                >
                   <span class="generation-badge">生成中...</span>
                   <span class="generation-placeholder__status">{{ statusMessage }}</span>
                 </div>
@@ -1171,7 +1211,13 @@ function formatStageDate(iso: string | undefined): string {
                   "
                   @click="handleDeleteFeedItem(item)"
                 >
-                  {{ isFeedItemDeleting(item) ? '删除中' : isFeedItemConfirmingDelete(item) ? '确认删除' : '删除' }}
+                  {{
+                    isFeedItemDeleting(item)
+                      ? '删除中'
+                      : isFeedItemConfirmingDelete(item)
+                        ? '确认删除'
+                        : '删除'
+                  }}
                 </button>
               </div>
             </article>
@@ -1220,7 +1266,9 @@ function formatStageDate(iso: string | undefined): string {
                   name="heroPrompt"
                   aria-label="描述你想生成的画面"
                   :placeholder="
-                    shouldShowHeroSuggestion ? '' : '请输入你的创意（按 Enter 发送，Shift+Enter 换行）'
+                    shouldShowHeroSuggestion
+                      ? ''
+                      : '请输入你的创意（按 Enter 发送，Shift+Enter 换行）'
                   "
                   :disabled="isLoading"
                   @focus="handleHeroPromptFocus"
@@ -1231,7 +1279,9 @@ function formatStageDate(iso: string | undefined): string {
               </div>
               <div v-if="hasReferenceContext" class="prompt-showcase__attachment">
                 <span>{{ referenceAttachmentTitle }}</span>
-                <button type="button" :disabled="isLoading" @click="clearReferenceInput">移除</button>
+                <button type="button" :disabled="isLoading" @click="clearReferenceInput">
+                  移除
+                </button>
               </div>
               <div class="prompt-showcase__bar">
                 <span class="prompt-showcase__model">✦ GPT-IMAGE-2</span>
@@ -1303,7 +1353,11 @@ function formatStageDate(iso: string | undefined): string {
                 >
                   公开 <i aria-hidden="true" />
                 </button>
-                <button type="submit" class="prompt-showcase__generate claude-button claude-button--primary" :disabled="!canGenerate">
+                <button
+                  type="submit"
+                  class="prompt-showcase__generate claude-button claude-button--primary"
+                  :disabled="!canGenerate"
+                >
                   {{ isLoading ? '生成中' : '生成' }}
                 </button>
               </div>
@@ -2535,9 +2589,7 @@ function formatStageDate(iso: string | undefined): string {
 
 .prompt-showcase--dragging {
   border-color: var(--color-accent);
-  box-shadow:
-    var(--shadow-composer),
-    var(--field-focus-ring);
+  box-shadow: var(--shadow-composer), var(--field-focus-ring);
 }
 
 .composer-file {

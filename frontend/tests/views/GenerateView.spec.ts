@@ -18,6 +18,7 @@ interface GenerateViewHarness {
   generate: ReturnType<
     typeof vi.fn<(options: GenerateImageOptions) => Promise<GeneratedBatchResult>>
   >;
+  openLoginModal: ReturnType<typeof vi.fn<() => void>>;
   removeBatch: ReturnType<typeof vi.fn<(batchId: string) => Promise<void>>>;
   addPublicGalleryRecord: ReturnType<
     typeof vi.fn<(record: HistoryEntry['record']) => HistoryEntry | null>
@@ -68,7 +69,9 @@ function createMatchMedia(matches: boolean): typeof window.matchMedia {
           if (typeof listener === 'function') listener.call(mediaQueryList, event);
           else listener.handleEvent(event);
         });
-        legacyListeners.forEach((listener) => listener.call(mediaQueryList, event as MediaQueryListEvent));
+        legacyListeners.forEach((listener) =>
+          listener.call(mediaQueryList, event as MediaQueryListEvent),
+        );
         return true;
       }),
     };
@@ -147,7 +150,8 @@ function referenceFieldsFromOptions(
       referenceIds,
     };
   }
-  const referenceFiles = options.referenceFiles ?? (options.referenceFile ? [options.referenceFile] : []);
+  const referenceFiles =
+    options.referenceFiles ?? (options.referenceFile ? [options.referenceFile] : []);
   if (referenceFiles.length > 0) {
     return {
       referenceId: 'uploaded-reference.png',
@@ -160,9 +164,9 @@ function referenceFieldsFromOptions(
 function hasReferenceOptions(options: GenerateImageOptions): boolean {
   return Boolean(
     options.referenceFile ||
-      options.referenceId ||
-      (options.referenceFiles?.length ?? 0) > 0 ||
-      (options.referenceIds?.length ?? 0) > 0,
+    options.referenceId ||
+    (options.referenceFiles?.length ?? 0) > 0 ||
+    (options.referenceIds?.length ?? 0) > 0,
   );
 }
 
@@ -205,7 +209,9 @@ describe('GenerateView', () => {
     await textarea.trigger('focus');
 
     expect(wrapper.find('.prompt-showcase__suggestion').exists()).toBe(false);
-    expect(textarea.attributes('placeholder')).toBe('请输入你的创意（按 Enter 发送，Shift+Enter 换行）');
+    expect(textarea.attributes('placeholder')).toBe(
+      '请输入你的创意（按 Enter 发送，Shift+Enter 换行）',
+    );
     expect(textareaElement.value).toBe('');
 
     await textarea.setValue('我的真实提示词');
@@ -273,6 +279,22 @@ describe('GenerateView', () => {
     expect(wrapper.text()).toContain('生成一张猫猫照片');
     expect(wrapper.text()).toContain('GPT-IMAGE-2');
     expect(wrapper.text()).toContain('生成中...');
+  });
+
+  it('requires login before submitting a discover generation prompt', async () => {
+    const { wrapper, generate, openLoginModal, routerPush } = await mountGenerateView({
+      isAuthenticated: false,
+    });
+    const textarea = wrapper.get('textarea[name="heroPrompt"]');
+
+    await textarea.setValue('匿名用户的提示词');
+    await wrapper.get('form.prompt-showcase').trigger('submit');
+
+    expect(openLoginModal).toHaveBeenCalledTimes(1);
+    expect(generate).not.toHaveBeenCalled();
+    expect(routerPush).not.toHaveBeenCalled();
+    expect(wrapper.classes()).toContain('studio--home');
+    expect((textarea.element as HTMLTextAreaElement).value).toBe('匿名用户的提示词');
   });
 
   it('shows the discover surface when navigating back during an in-flight generation', async () => {
@@ -347,7 +369,11 @@ describe('GenerateView', () => {
     expectStyleDeclaration(feedRule, 'width', 'min(100%, var(--generation-card-width))');
     expect(feedRule).not.toMatch(/margin-left\s*:/);
     expectStyleDeclaration(feedRule, 'gap', '48px');
-    expectStyleDeclaration(feedRule, 'transform', 'translateX(var(--generation-feed-align-offset))');
+    expectStyleDeclaration(
+      feedRule,
+      'transform',
+      'translateX(var(--generation-feed-align-offset))',
+    );
     expectStyleDeclaration(itemRule, 'align-items', 'stretch');
     expectStyleDeclaration(visualRule, 'justify-items', 'stretch');
     expectStyleDeclaration(frameRule, 'width', '100%');
@@ -759,10 +785,15 @@ describe('GenerateView', () => {
   });
 
   it('preserves the saved reference id when regenerating an image-to-image batch', async () => {
-    const referenceEntry = createHistoryEntry('reference-result.png', '照着参考图做一张海报', false, {
-      batchId: 'batch-reference',
-      referenceId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png',
-    });
+    const referenceEntry = createHistoryEntry(
+      'reference-result.png',
+      '照着参考图做一张海报',
+      false,
+      {
+        batchId: 'batch-reference',
+        referenceId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png',
+      },
+    );
     const { wrapper, generate } = await mountGenerateView({
       mode: 'generate',
       entries: [referenceEntry],
@@ -801,6 +832,35 @@ describe('GenerateView', () => {
       }),
     );
   });
+
+  it('requires login before regenerating a saved batch', async () => {
+    const entry = createHistoryEntry('login-required.png', '需要登录后再次生成', false, {
+      batchId: 'batch-login-required',
+    });
+    const { wrapper, generate, openLoginModal } = await mountGenerateView({
+      mode: 'generate',
+      isAuthenticated: false,
+      entries: [entry],
+      batches: [
+        {
+          batchId: 'batch-login-required',
+          createdAt: entry.record.createdAt,
+          prompt: entry.record.prompt,
+          model: entry.record.model,
+          entries: [entry],
+        },
+      ],
+    });
+
+    const regenerateButton = wrapper
+      .findAll('button.generation-action')
+      .find((button) => button.text().includes('再次生成'));
+    expect(regenerateButton).toBeDefined();
+    await regenerateButton?.trigger('click');
+
+    expect(openLoginModal).toHaveBeenCalledTimes(1);
+    expect(generate).not.toHaveBeenCalled();
+  });
 });
 
 async function mountGenerateView(
@@ -810,6 +870,8 @@ async function mountGenerateView(
     batches?: GroupedBatch[];
     mode?: GenerateViewMode;
     isAdmin?: boolean;
+    isAuthenticated?: boolean;
+    isAuthLoading?: boolean;
   } = {},
 ): Promise<GenerateViewHarness> {
   vi.resetModules();
@@ -818,6 +880,8 @@ async function mountGenerateView(
   const publicGalleryEntries = ref<HistoryEntry[]>(options.galleryEntries ?? []);
   const batchList = ref<GroupedBatch[]>(options.batches ?? []);
   const isAdmin = ref(options.isAdmin ?? false);
+  const isAuthenticated = ref(options.isAuthenticated ?? true);
+  const isAuthLoading = ref(options.isAuthLoading ?? false);
   const batches: ComputedRef<GroupedBatch[]> = computed(() => batchList.value);
   const isLoading = ref(false);
   const error = ref<Error | null>(null);
@@ -843,7 +907,9 @@ async function mountGenerateView(
     },
   );
 
-  function createResult(overrides: { id: string; prompt?: string } = { id: 'generated.png' }): GeneratedBatchResult {
+  function createResult(
+    overrides: { id: string; prompt?: string } = { id: 'generated.png' },
+  ): GeneratedBatchResult {
     const options = lastOptions.value;
     if (!options) throw new Error('测试未提交生成请求。');
     const createdAt = new Date(Date.UTC(2026, 4, 14, 9, batchList.value.length)).toISOString();
@@ -871,7 +937,9 @@ async function mountGenerateView(
         model: entry.record.model,
         entries: [entry],
       },
-      ...batchList.value.filter((batch) => batch.batchId !== (entry.record.batchId ?? entry.record.id)),
+      ...batchList.value.filter(
+        (batch) => batch.batchId !== (entry.record.batchId ?? entry.record.id),
+      ),
     ];
     return {
       batchId: entry.record.batchId ?? entry.record.id,
@@ -922,6 +990,7 @@ async function mountGenerateView(
     Promise.resolve(),
   );
   const routerPush = vi.fn<(path: string) => void>();
+  const openLoginModal = vi.fn<() => void>();
   const clearLastBatch = vi.fn(() => {
     lastBatch.value = null;
   });
@@ -999,6 +1068,14 @@ async function mountGenerateView(
   vi.doMock('@/composables/useAuth', () => ({
     useAuth: () => ({
       isAdmin,
+      isAuthenticated: computed(() => isAuthenticated.value),
+      isLoading: computed(() => isAuthLoading.value),
+    }),
+  }));
+
+  vi.doMock('@/composables/useAuthModal', () => ({
+    useAuthModal: () => ({
+      open: openLoginModal,
     }),
   }));
 
@@ -1011,7 +1088,9 @@ async function mountGenerateView(
       return {
         id: `reference-${referenceFileCounter}`,
         file,
-        previewUrl: file.type.startsWith('image/') ? `blob:reference-${referenceFileCounter}` : null,
+        previewUrl: file.type.startsWith('image/')
+          ? `blob:reference-${referenceFileCounter}`
+          : null,
         validationMessage: null,
       };
     }
@@ -1078,6 +1157,7 @@ async function mountGenerateView(
   return {
     wrapper,
     generate,
+    openLoginModal,
     removeBatch,
     addPublicGalleryRecord,
     removePublicGalleryRecordAsAdmin,
