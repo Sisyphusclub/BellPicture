@@ -1,6 +1,6 @@
 <h1 align="center">贝尔灵画</h1>
 
-<p align="center">安静克制的 AI 图像生成工作台</p>
+<p align="center">免费闭环的 AI 图像生成工作台</p>
 <p align="center">提示词生图 · 参考图生图 · 资产历史 · 用户额度管理</p>
 
 <p align="center">
