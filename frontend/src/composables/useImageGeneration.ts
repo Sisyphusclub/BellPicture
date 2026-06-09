@@ -13,6 +13,7 @@ import {
   type GeneratedBatchResult,
   type HistoryEntry,
   type ImageRecord,
+  type ImageResolution,
 } from '@/types/image';
 
 import { useImageHistory } from './useImageHistory';
@@ -28,6 +29,7 @@ export interface GenerateImageOptions {
   referenceIds?: string[];
   count?: number;
   aspectRatio?: AspectRatio;
+  resolution?: ImageResolution;
   isPublic?: boolean;
   demoPresetId?: string;
 }
@@ -56,14 +58,19 @@ export function useImageGeneration() {
 
     try {
       let referenceIds = normalizeReferenceIds(options.referenceIds, options.referenceId);
-      const referenceFiles = options.referenceFiles ?? (options.referenceFile ? [options.referenceFile] : []);
+      const referenceFiles =
+        options.referenceFiles ?? (options.referenceFile ? [options.referenceFile] : []);
       if (referenceFiles.length > 0) {
-        statusMessage.value = referenceFiles.length > 1 ? `正在上传 ${referenceFiles.length} 张参考图。` : '正在上传参考图。';
+        statusMessage.value =
+          referenceFiles.length > 1
+            ? `正在上传 ${referenceFiles.length} 张参考图。`
+            : '正在上传参考图。';
         const uploads = await uploadReferenceImages(referenceFiles);
         referenceIds = uploads.map((upload) => upload.id);
       }
 
-      statusMessage.value = referenceIds.length > 0 ? '正在结合参考图生成图片。' : '正在根据提示词生成图片。';
+      statusMessage.value =
+        referenceIds.length > 0 ? '正在结合参考图生成图片。' : '正在根据提示词生成图片。';
       const model = options.model?.trim() || DEFAULT_MODEL;
       const requestStart = Date.now();
       const request = createGenerateRequest({
@@ -71,6 +78,7 @@ export function useImageGeneration() {
         model,
         count,
         aspectRatio,
+        ...(options.resolution !== undefined ? { resolution: options.resolution } : {}),
         ...(referenceIds.length > 0 ? { referenceIds } : {}),
         isPublic: options.isPublic ?? false,
         ...(options.demoPresetId !== undefined ? { demoPresetId: options.demoPresetId } : {}),
@@ -136,8 +144,10 @@ export function useImageGeneration() {
   };
 }
 
-
-function normalizeReferenceIds(referenceIds: string[] | undefined, referenceId: string | undefined): string[] {
+function normalizeReferenceIds(
+  referenceIds: string[] | undefined,
+  referenceId: string | undefined,
+): string[] {
   const raw = referenceIds ?? (referenceId !== undefined ? [referenceId] : []);
   return Array.from(new Set(raw.map((id) => id.trim()).filter((id) => id.length > 0)));
 }

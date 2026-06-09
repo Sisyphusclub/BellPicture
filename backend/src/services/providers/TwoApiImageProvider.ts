@@ -6,13 +6,15 @@ import { AppError } from '../../errors/AppError.js';
 import { logger } from '../../logger.js';
 import { mimeFromExt, saveOutput } from '../../storage/localStorage.js';
 import {
-  ASPECT_SIZE_MAP,
   DEFAULT_ASPECT_RATIO,
   DEFAULT_COUNT,
+  DEFAULT_IMAGE_RESOLUTION,
+  aspectSizeForResolution,
   type AspectRatio,
   type GenerateImageItem,
   type GenerateInput,
   type GenerateOutput,
+  type ImageResolution,
 } from '../../types/image.js';
 
 import type { ImageGenerationProvider } from './ImageGenerationProvider.js';
@@ -43,8 +45,18 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
   async generate(input: GenerateInput): Promise<GenerateOutput> {
     const model = input.model ?? this.config.defaultModel;
     const aspectRatio: AspectRatio = input.aspectRatio ?? DEFAULT_ASPECT_RATIO;
+    const resolution: ImageResolution = input.resolution ?? DEFAULT_IMAGE_RESOLUTION;
     const count = input.count ?? DEFAULT_COUNT;
-    const sizing = ASPECT_SIZE_MAP[aspectRatio];
+    const sizing = aspectSizeForResolution(aspectRatio, resolution);
+    if (sizing === undefined) {
+      throw new AppError(
+        'BAD_REQUEST',
+        `Unsupported aspect ratio ${aspectRatio} for image resolution ${resolution}`,
+        400,
+        undefined,
+        { aspectRatio, resolution },
+      );
+    }
     const referencePaths = normalizeReferencePaths(input);
     const hasReference = referencePaths.length > 0;
 
@@ -144,6 +156,7 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
         durationMs: Date.now() - start,
         outputCount: images.length,
         aspectRatio,
+        resolution,
         hasReference,
       },
       'image generation: provider success',
@@ -188,11 +201,17 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     size: string,
   ): Promise<Response> {
     const url = buildUrl(this.config.baseUrl, 'v1/images/edits');
-    const referenceFiles = await Promise.all(referencePaths.map((referencePath) => readReferenceFile(referencePath)));
+    const referenceFiles = await Promise.all(
+      referencePaths.map((referencePath) => readReferenceFile(referencePath)),
+    );
 
     const form = new FormData();
     for (const file of referenceFiles) {
-      form.append('image', new Blob([new Uint8Array(file.buffer)], { type: file.mime }), file.basename);
+      form.append(
+        'image',
+        new Blob([new Uint8Array(file.buffer)], { type: file.mime }),
+        file.basename,
+      );
     }
     form.append('prompt', prompt);
     form.append('model', model);
@@ -222,7 +241,6 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     });
   }
 }
-
 
 function normalizeReferencePaths(input: GenerateInput): string[] {
   const raw = input.referencePaths ?? (input.referencePath ? [input.referencePath] : []);

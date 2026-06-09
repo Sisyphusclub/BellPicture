@@ -1,10 +1,12 @@
 import {
   ASPECT_RATIOS,
+  DEFAULT_IMAGE_RESOLUTION,
   type AspectRatio,
   type GenerateRequest,
   type GenerateResponse,
   type GenerateResponseItem,
   type GenerationMode,
+  type ImageResolution,
   type QuotaResponse,
   type UploadResponse,
 } from '@/types/image';
@@ -47,7 +49,6 @@ export async function uploadReferenceImage(file: File): Promise<UploadResponse> 
   return payload;
 }
 
-
 export async function uploadReferenceImages(files: readonly File[]): Promise<UploadResponse[]> {
   const uploads: UploadResponse[] = [];
   for (const file of files) {
@@ -57,7 +58,7 @@ export async function uploadReferenceImages(files: readonly File[]): Promise<Upl
 }
 
 export async function generateImage(request: GenerateRequest): Promise<GenerateResponse> {
-  const response = await authedFetch(buildApiUrl('/api/images/generate'), {
+  const response = await authedFetch(buildApiUrl(generateEndpointForRequest(request)), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -72,9 +73,19 @@ export async function generateImage(request: GenerateRequest): Promise<GenerateR
   return payload;
 }
 
+function generateEndpointForRequest(request: GenerateRequest): string {
+  return request.resolution !== undefined && request.resolution !== DEFAULT_IMAGE_RESOLUTION
+    ? '/api/images/generate/high-res'
+    : '/api/images/generate';
+}
 
-function normalizeReferenceIds(referenceIds: string[] | undefined, referenceId: string | undefined): string[] {
-  const raw = referenceIds ?? (isOptionalString(referenceId) && referenceId !== undefined ? [referenceId] : []);
+function normalizeReferenceIds(
+  referenceIds: string[] | undefined,
+  referenceId: string | undefined,
+): string[] {
+  const raw =
+    referenceIds ??
+    (isOptionalString(referenceId) && referenceId !== undefined ? [referenceId] : []);
   return Array.from(new Set(raw.map((id) => id.trim()).filter((id) => id.length > 0)));
 }
 
@@ -138,6 +149,7 @@ export function createGenerateRequest(input: {
   model?: string;
   count?: number;
   aspectRatio?: AspectRatio;
+  resolution?: ImageResolution;
   isPublic?: boolean;
   demoPresetId?: string;
 }): GenerateRequest {
@@ -158,6 +170,9 @@ export function createGenerateRequest(input: {
   }
   if (input.aspectRatio !== undefined) {
     request.aspectRatio = input.aspectRatio;
+  }
+  if (input.resolution !== undefined) {
+    request.resolution = input.resolution;
   }
   if (input.isPublic !== undefined) {
     request.isPublic = input.isPublic;

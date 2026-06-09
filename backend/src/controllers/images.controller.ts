@@ -20,6 +20,8 @@ import { saveUpload } from '../storage/localStorage.js';
 import {
   ASPECT_RATIOS,
   DEFAULT_COUNT,
+  DEFAULT_IMAGE_RESOLUTION,
+  HIGH_RES_IMAGE_RESOLUTIONS,
   MAX_COUNT,
   MAX_REFERENCE_IMAGES,
   MIN_COUNT,
@@ -27,7 +29,7 @@ import {
 
 import '../types/express.js';
 
-const generateBodySchema = z.object({
+const generateBaseBodySchema = z.object({
   prompt: z.string().min(1).max(2000),
   referenceId: z.string().min(1).optional(),
   referenceIds: z.array(z.string().min(1)).min(1).max(MAX_REFERENCE_IMAGES).optional(),
@@ -35,7 +37,16 @@ const generateBodySchema = z.object({
   count: z.number().int().min(MIN_COUNT).max(MAX_COUNT).optional(),
   aspectRatio: z.enum(ASPECT_RATIOS).optional(),
   isPublic: z.boolean().optional(),
+});
+
+const generateBodySchema = generateBaseBodySchema.extend({
   demoPresetId: z.string().min(1).max(100).optional(),
+  resolution: z.literal(DEFAULT_IMAGE_RESOLUTION).optional(),
+});
+
+const highResGenerateBodySchema = generateBaseBodySchema.extend({
+  resolution: z.enum(HIGH_RES_IMAGE_RESOLUTIONS),
+  demoPresetId: z.never().optional(),
 });
 
 export interface ImagesControllerDeps {
@@ -77,8 +88,10 @@ function requireUser(req: Request): { id: string } {
   return req.user;
 }
 
-
-function normalizeReferenceIds(referenceIds: string[] | undefined, referenceId: string | undefined): string[] {
+function normalizeReferenceIds(
+  referenceIds: string[] | undefined,
+  referenceId: string | undefined,
+): string[] {
   const raw = referenceIds ?? (referenceId !== undefined ? [referenceId] : []);
   return Array.from(new Set(raw.map((id) => id.trim()).filter((id) => id.length > 0)));
 }
@@ -86,6 +99,7 @@ function normalizeReferenceIds(referenceIds: string[] | undefined, referenceId: 
 export function buildImagesController(deps: ImagesControllerDeps): {
   upload: (req: Request, res: Response, next: NextFunction) => Promise<void>;
   generate: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+  generateHighRes: (req: Request, res: Response, next: NextFunction) => Promise<void>;
   quota: (req: Request, res: Response, next: NextFunction) => Promise<void>;
 } {
   return {
@@ -122,17 +136,7 @@ export function buildImagesController(deps: ImagesControllerDeps): {
     async generate(req, res, next) {
       try {
         const user = requireUser(req);
-        let parsed: z.infer<typeof generateBodySchema>;
-        try {
-          parsed = generateBodySchema.parse(req.body);
-        } catch (err) {
-          if (err instanceof ZodError) {
-            throw new AppError('BAD_REQUEST', 'Invalid generate request body', 400, err, {
-              issues: err.issues,
-            });
-          }
-          throw err;
-        }
+        const parsed = parseGenerateBody(generateBodySchema, req.body);
 
         const referenceIds = normalizeReferenceIds(parsed.referenceIds, parsed.referenceId);
         if (parsed.demoPresetId !== undefined) {
@@ -217,7 +221,53 @@ export function buildImagesController(deps: ImagesControllerDeps): {
         next(err);
       }
     },
+
+    async generateHighRes(req, res, next) {
+      try {
+        const user = requireUser(req);
+        const parsed = parseGenerateBody(highResGenerateBodySchema, req.body);
+        const referenceIds = normalizeReferenceIds(parsed.referenceIds, parsed.referenceId);
+        const quotaPool = deps.userQuota.forUser(user.id);
+        const result = await generateImage(
+          {
+            prompt: parsed.prompt,
+            count: parsed.count ?? DEFAULT_COUNT,
+            ...(referenceIds.length > 0 ? { referenceIds } : {}),
+            ...(parsed.model !== undefined ? { model: parsed.model } : {}),
+            ...(parsed.aspectRatio !== undefined ? { aspectRatio: parsed.aspectRatio } : {}),
+            resolution: parsed.resolution,
+          },
+          { provider: deps.provider, quotaPool },
+        );
+
+        persistGeneratedImages({
+          result,
+          userId: user.id,
+          prompt: parsed.prompt,
+          model: parsed.model ?? 'gpt-image-2',
+          referenceIds,
+          isPublic: parsed.isPublic ?? false,
+          requestId: req.requestId,
+        });
+        res.status(200).json(responseFromGeneratedResult(result));
+      } catch (err) {
+        next(err);
+      }
+    },
   };
+}
+
+function parseGenerateBody<T>(schema: z.ZodType<T>, body: unknown): T {
+  try {
+    return schema.parse(body);
+  } catch (err) {
+    if (err instanceof ZodError) {
+      throw new AppError('BAD_REQUEST', 'Invalid generate request body', 400, err, {
+        issues: err.issues,
+      });
+    }
+    throw err;
+  }
 }
 
 function persistGeneratedImages(input: {

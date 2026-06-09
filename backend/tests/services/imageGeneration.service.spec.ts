@@ -74,10 +74,12 @@ describe('imageGeneration.service', () => {
 
   it('maps a zero-image provider result to PROVIDER_EMPTY_RESULT', async () => {
     const provider: ImageGenerationProvider = {
-      generate: vi.fn(async (): Promise<GenerateOutput> => ({
-        images: [],
-        aspectRatio: '1:1',
-      })),
+      generate: vi.fn(
+        async (): Promise<GenerateOutput> => ({
+          images: [],
+          aspectRatio: '1:1',
+        }),
+      ),
     };
 
     await expect(generateImage({ prompt: 'p' }, { provider })).rejects.toMatchObject({
@@ -101,6 +103,19 @@ describe('imageGeneration.service', () => {
     await expect(generateImage({ prompt: 'p', count: 5 }, { provider })).rejects.toMatchObject({
       code: 'BAD_REQUEST',
       status: 400,
+    });
+    expect(provider.generate).not.toHaveBeenCalled();
+  });
+
+  it('rejects unsupported resolution and aspect ratio combinations before provider work', async () => {
+    const provider = fakeProvider();
+
+    await expect(
+      generateImage({ prompt: 'p', aspectRatio: '1:1', resolution: '4k' }, { provider }),
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      status: 400,
+      details: { aspectRatio: '1:1', resolution: '4k' },
     });
     expect(provider.generate).not.toHaveBeenCalled();
   });

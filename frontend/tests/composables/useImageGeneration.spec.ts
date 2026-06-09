@@ -101,6 +101,51 @@ describe('useImageGeneration', () => {
     );
   });
 
+  it('passes high-resolution choices through to the generation API', async () => {
+    const { useImageGeneration } = await import('@/composables/useImageGeneration');
+    add.mockImplementation((record) => ({
+      record,
+      imageUrl: `http://localhost:3000/api/outputs/${record.id}`,
+    }));
+    generateImage.mockResolvedValue({
+      ...createGenerateResponse(),
+      aspectRatio: '16:9',
+      generationMode: 'text-to-image',
+      images: [
+        {
+          id: 'generated-4k.png',
+          outputUrl: '/api/outputs/generated-4k.png',
+          filename: 'generated-4k.png',
+          mime: 'image/png',
+          width: 3840,
+          height: 2160,
+        },
+      ],
+    });
+
+    const { generate } = useImageGeneration();
+    await generate({
+      prompt: '管理员 4K 海报',
+      aspectRatio: '16:9',
+      resolution: '4k',
+    });
+
+    expect(generateImage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: '管理员 4K 海报',
+        aspectRatio: '16:9',
+        resolution: '4k',
+      }) satisfies Partial<GenerateRequest>,
+    );
+    expect(add).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'generated-4k.png',
+        width: 3840,
+        height: 2160,
+      }),
+    );
+  });
+
   it('explains provider timeouts with an actionable message', async () => {
     const { useImageGeneration } = await import('@/composables/useImageGeneration');
     generateImage.mockRejectedValue(
@@ -117,12 +162,7 @@ describe('useImageGeneration', () => {
   it('explains prompt rejection errors from the backend', async () => {
     const { useImageGeneration } = await import('@/composables/useImageGeneration');
     generateImage.mockRejectedValue(
-      new ImageApiError(
-        422,
-        'PROVIDER_PROMPT_REJECTED',
-        'prompt rejected',
-        'req-rejected',
-      ),
+      new ImageApiError(422, 'PROVIDER_PROMPT_REJECTED', 'prompt rejected', 'req-rejected'),
     );
 
     const { error, generate } = useImageGeneration();

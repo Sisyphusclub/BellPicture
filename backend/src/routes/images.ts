@@ -1,6 +1,10 @@
 import { Router, type RequestHandler } from 'express';
 
-import { buildImagesController, type ImagesControllerDeps } from '../controllers/images.controller.js';
+import {
+  buildImagesController,
+  type ImagesControllerDeps,
+} from '../controllers/images.controller.js';
+import { requireAdmin } from '../middlewares/requireAdmin.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
 import { uploadImageMiddleware } from '../middlewares/upload.js';
 
@@ -26,6 +30,10 @@ export function buildImagesRouter(deps: ImagesRouterDeps): Router {
   });
   router.post('/generate', (req, res, next) => {
     void controller.generate(req, res, next);
+  });
+  // POST /api/images/generate/high-res (auth: admin, JSON body) -> 2K/4K image generation.
+  router.post('/generate/high-res', requireAdmin, (req, res, next) => {
+    void controller.generateHighRes(req, res, next);
   });
 
   return router;

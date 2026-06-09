@@ -191,28 +191,28 @@ Loaded once in `src/config/env.ts` via `zod` (or manual validation), then
 imported elsewhere as a typed object. **Never read `process.env.X` directly
 outside `config/env.ts`.**
 
-| Variable                | Required | Example                         | Notes                                                                                                                                                                                                                                                                                                                    |
-| ----------------------- | -------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `PORT`                  | no       | `3000`                          | Default 3000                                                                                                                                                                                                                                                                                                             |
-| `IMAGE_API_BASE_URL`    | yes      | `https://api.2api.example`      | 2API reverse-proxy origin. **No `/v1` suffix and no trailing slash** — `TwoApiImageProvider` always appends `/v1/images/generations`. Trailing slashes are stripped before concat, so `https://x.com/` and `https://x.com///` are tolerated, but a base URL that already includes `/v1` will produce a double-`/v1` URL. |
-| `IMAGE_API_KEY`         | yes      | `sk-...`                        | Server-side only provider key. Never log or expose to API clients.                                                                                                                                                                                                                                                       |
-| `OPENAI_COMPAT_API_KEY` | yes      | `ref2img_...`                   | Inbound bearer token for OpenAI-compatible `/v1/*` clients. Never log.                                                                                                                                                                                                                                                   |
-| `IMAGE_MODEL`           | no       | `gpt-image-2`                   | Default `gpt-image-2`                                                                                                                                                                                                                                                                                                    |
-| `IMAGE_API_TIMEOUT_MS`  | no       | `120000`                        | Default 120000 (2 min). Must be a positive integer; non-numeric or `<= 0` → throw on `config/env.ts` import.                                                                                                                                                                                                             |
-| `UPLOAD_DIR`            | no       | `./tmp/uploads`                 | Default `./tmp/uploads`                                                                                                                                                                                                                                                                                                  |
-| `UPLOAD_MAX_BYTES`      | no       | `10485760`                      | Default 10 MiB. Multer `limits.fileSize`. Positive integer; non-numeric or `<= 0` → throw on import. Oversize uploads → `AppError(PAYLOAD_TOO_LARGE, 413)`.                                                                                                                                                              |
-| `OUTPUT_DIR`            | no       | `./tmp/outputs`                 | Default `./tmp/outputs`                                                                                                                                                                                                                                                                                                  |
-| `LOG_LEVEL`             | no       | `info`                          | pino level                                                                                                                                                                                                                                                                                                               |
-| `CORS_ORIGIN`           | no       | `http://localhost:5173`         | Vite dev origin (legacy — superseded by `FRONTEND_ORIGIN` once auth shipped, kept for migration).                                                                                                                                                                                                                        |
-| `BETTER_AUTH_URL`       | no       | `http://localhost:3000`         | Backend origin used to build OAuth callback URLs.                                                                                                                                                                                                                                                                        |
-| `BETTER_AUTH_SECRET`    | yes      | `<32+ char random>`             | Cookie-signing secret. Generate with `openssl rand -base64 32`. Never log.                                                                                                                                                                                                                                               |
-| `GOOGLE_CLIENT_ID`      | no       | `...apps.googleusercontent.com` | Optional. If unset, `socialProviders.google` is NOT mounted on the Better Auth instance — the Google login surface is soft-hidden. Must be set together with `GOOGLE_CLIENT_SECRET` to re-enable. Redirect URI when set: `${BETTER_AUTH_URL}/api/auth/callback/google`.                                                  |
-| `GOOGLE_CLIENT_SECRET`  | no       | `<google secret>`               | Optional, paired with `GOOGLE_CLIENT_ID`. Server-side only. Never log.                                                                                                                                                                                                                                                   |
-| `FRONTEND_ORIGIN`       | no       | `http://localhost:5173`         | Allowed CORS origin for cookie-authenticated requests.                                                                                                                                                                                                                                                                   |
-| `SQLITE_PATH`           | no       | `./data/app.sqlite`             | Persistent location for the SQLite file. Directory is auto-created on boot.                                                                                                                                                                                                                                              |
-| `DAILY_USER_QUOTA`      | no       | `20`                            | Per-user generations allowed per server-local day.                                                                                                                                                                                                                                                                       |
-| `DEMO_PROMPTS`          | no       | `prompt A|||prompt B`           | Exact prompt texts that should be cached after their first normal generation. Empty disables the feature. Split on `|||`, trim entries, drop empties, and de-duplicate.                                                                                                                                                    |
-| `DEMO_PROMPT_CACHE_DELAY_MS` | no  | `4000`                          | Delay before returning an already-prepared demo prompt image. Default 4000. Must be a non-negative integer; negative or non-numeric values throw on `config/env.ts` import.                                                                                                                                               |
+| Variable                     | Required | Example                         | Notes                                                                                                                                                                                                                                                                                                                    |
+| ---------------------------- | -------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --- | --------- | -------------------------------------------------------------------------------------------------------------------- | --- | --- | ------------------------------------------------ |
+| `PORT`                       | no       | `3000`                          | Default 3000                                                                                                                                                                                                                                                                                                             |
+| `IMAGE_API_BASE_URL`         | yes      | `https://api.2api.example`      | 2API reverse-proxy origin. **No `/v1` suffix and no trailing slash** — `TwoApiImageProvider` always appends `/v1/images/generations`. Trailing slashes are stripped before concat, so `https://x.com/` and `https://x.com///` are tolerated, but a base URL that already includes `/v1` will produce a double-`/v1` URL. |
+| `IMAGE_API_KEY`              | yes      | `sk-...`                        | Server-side only provider key. Never log or expose to API clients.                                                                                                                                                                                                                                                       |
+| `OPENAI_COMPAT_API_KEY`      | yes      | `ref2img_...`                   | Inbound bearer token for OpenAI-compatible `/v1/*` clients. Never log.                                                                                                                                                                                                                                                   |
+| `IMAGE_MODEL`                | no       | `gpt-image-2`                   | Default `gpt-image-2`                                                                                                                                                                                                                                                                                                    |
+| `IMAGE_API_TIMEOUT_MS`       | no       | `120000`                        | Default 120000 (2 min). Must be a positive integer; non-numeric or `<= 0` → throw on `config/env.ts` import.                                                                                                                                                                                                             |
+| `UPLOAD_DIR`                 | no       | `./tmp/uploads`                 | Default `./tmp/uploads`                                                                                                                                                                                                                                                                                                  |
+| `UPLOAD_MAX_BYTES`           | no       | `10485760`                      | Default 10 MiB. Multer `limits.fileSize`. Positive integer; non-numeric or `<= 0` → throw on import. Oversize uploads → `AppError(PAYLOAD_TOO_LARGE, 413)`.                                                                                                                                                              |
+| `OUTPUT_DIR`                 | no       | `./tmp/outputs`                 | Default `./tmp/outputs`                                                                                                                                                                                                                                                                                                  |
+| `LOG_LEVEL`                  | no       | `info`                          | pino level                                                                                                                                                                                                                                                                                                               |
+| `CORS_ORIGIN`                | no       | `http://localhost:5173`         | Vite dev origin (legacy — superseded by `FRONTEND_ORIGIN` once auth shipped, kept for migration).                                                                                                                                                                                                                        |
+| `BETTER_AUTH_URL`            | no       | `http://localhost:3000`         | Backend origin used to build OAuth callback URLs.                                                                                                                                                                                                                                                                        |
+| `BETTER_AUTH_SECRET`         | yes      | `<32+ char random>`             | Cookie-signing secret. Generate with `openssl rand -base64 32`. Never log.                                                                                                                                                                                                                                               |
+| `GOOGLE_CLIENT_ID`           | no       | `...apps.googleusercontent.com` | Optional. If unset, `socialProviders.google` is NOT mounted on the Better Auth instance — the Google login surface is soft-hidden. Must be set together with `GOOGLE_CLIENT_SECRET` to re-enable. Redirect URI when set: `${BETTER_AUTH_URL}/api/auth/callback/google`.                                                  |
+| `GOOGLE_CLIENT_SECRET`       | no       | `<google secret>`               | Optional, paired with `GOOGLE_CLIENT_ID`. Server-side only. Never log.                                                                                                                                                                                                                                                   |
+| `FRONTEND_ORIGIN`            | no       | `http://localhost:5173`         | Allowed CORS origin for cookie-authenticated requests.                                                                                                                                                                                                                                                                   |
+| `SQLITE_PATH`                | no       | `./data/app.sqlite`             | Persistent location for the SQLite file. Directory is auto-created on boot.                                                                                                                                                                                                                                              |
+| `DAILY_USER_QUOTA`           | no       | `20`                            | Per-user generations allowed per server-local day.                                                                                                                                                                                                                                                                       |
+| `DEMO_PROMPTS`               | no       | `prompt A                       |                                                                                                                                                                                                                                                                                                                          |     | prompt B` | Exact prompt texts that should be cached after their first normal generation. Empty disables the feature. Split on ` |     |     | `, trim entries, drop empties, and de-duplicate. |
+| `DEMO_PROMPT_CACHE_DELAY_MS` | no       | `4000`                          | Delay before returning an already-prepared demo prompt image. Default 4000. Must be a non-negative integer; negative or non-numeric values throw on `config/env.ts` import.                                                                                                                                              |
 
 `.env.example` must list every variable with a placeholder value and a
 one-line comment.
@@ -316,6 +316,141 @@ IMAGE_API_TIMEOUT_MS=240000
 IMAGE_API_BASE_URL=http://chatgpt2api
 PROVIDER_NETWORK=chatgpt2api_default
 IMAGE_API_TIMEOUT_MS=240000
+```
+
+## Scenario: first-party admin high-resolution image generation
+
+### 1. Scope / Trigger
+
+- Trigger: the authenticated first-party image API gained an admin-only,
+  high-resolution request surface.
+- Scope: `POST /api/images/generate`,
+  `POST /api/images/generate/high-res`, `generateImage()`,
+  `TwoApiImageProvider.generate()`, and frontend `GenerateRequest.resolution`.
+- This scenario does not apply to the OpenAI-compatible `/v1/*` API.
+
+### 2. Signatures
+
+- Standard API:
+  `POST /api/images/generate` accepts the normal generation body and only
+  allows omitted `resolution` or `resolution: "standard"`.
+- High-resolution API:
+  `POST /api/images/generate/high-res` accepts the normal generation body plus
+  required `resolution: "2k" | "4k"`.
+- Route wiring: `buildImagesRouter()` mounts `requireAuth` for all `/api/images`
+  routes and then mounts `requireAdmin` only on `/generate/high-res`.
+- Service input:
+  `GenerateImageInput` and provider `GenerateInput` include
+  `resolution?: "standard" | "2k" | "4k"`.
+- Size helper:
+  `aspectSizeForResolution(aspectRatio, resolution)` returns an
+  `AspectSize | undefined`.
+
+### 3. Contracts
+
+- The dedicated high-resolution URL is the authorization boundary for 2K and
+  4K generation. Do not add `requireAdmin` branches inside unrelated
+  controllers or providers for normal generation.
+- Normal generation preserves the previous provider call shape by omitting
+  `resolution` when the client did not explicitly send it.
+- `demoPresetId` and configured demo prompt cache behavior stay standard-only.
+  The high-resolution controller must not return cached standard-size demo
+  outputs.
+- Supported output sizes are centralized in `backend/src/types/image.ts`:
+  `standard` maps to the existing app sizes, `2k` supports every current aspect
+  ratio, and `4k` supports only `16:9` and `9:16`.
+- Both text-to-image and image-to-image requests use the same
+  `resolution + aspectRatio -> size` mapping. Multipart edits must put the
+  mapped value in the `size` form field.
+- Quota is still per generated image count. High-resolution requests do not get
+  a separate quota multiplier until a dedicated quota task changes that
+  contract.
+
+### 4. Validation & Error Matrix
+
+| Condition                                       | Expected behavior                                                              |
+| ----------------------------------------------- | ------------------------------------------------------------------------------ |
+| Non-admin calls `/api/images/generate/high-res` | `FORBIDDEN` 403 from `requireAdmin`; provider and quota consumption do not run |
+| Anonymous calls `/api/images/generate/high-res` | `UNAUTHORIZED` 401 from auth middleware before admin validation                |
+| Standard endpoint receives `resolution: "2k"`   | `BAD_REQUEST` 400 at controller schema boundary; provider and quota do not run |
+| Standard endpoint receives `resolution: "4k"`   | `BAD_REQUEST` 400 at controller schema boundary; provider and quota do not run |
+| High-res endpoint omits `resolution`            | `BAD_REQUEST` 400 at controller schema boundary                                |
+| High-res endpoint receives `"standard"`         | `BAD_REQUEST` 400 at controller schema boundary                                |
+| `4k + 1:1`, `4k + 3:2`, or `4k + 2:3`           | `BAD_REQUEST` 400 with `{ aspectRatio, resolution }` before provider IO        |
+| `2k` with any current app aspect ratio          | Provider receives the mapped 2K `size` payload                                 |
+| `4k + 16:9` or `4k + 9:16`                      | Provider receives `3840x2160` or `2160x3840`                                   |
+
+### 5. Good/Base/Bad Cases
+
+- Good: an admin posts `{ prompt, aspectRatio: "16:9", resolution: "4k" }` to
+  `/api/images/generate/high-res`; the provider receives `size: "3840x2160"`,
+  and history persists the returned width and height.
+- Base: a normal generation call omits `resolution`; it still posts to
+  `/api/images/generate`, can use demo prompt cache when eligible, and sends the
+  existing standard `size` to the provider.
+- Bad: the frontend posts `resolution: "4k"` to `/api/images/generate` and
+  expects the backend to silently upgrade the route. The backend must reject
+  this because URL selection is part of the API contract.
+
+### 6. Tests Required
+
+- Controller integration: standard endpoint rejects `2k` and `4k` before
+  provider and quota work.
+- Controller integration: high-resolution endpoint returns `FORBIDDEN` for
+  non-admin users and `BAD_REQUEST` for missing, `standard`, or unsupported
+  resolution/aspect combinations.
+- Controller integration: admin high-resolution text-to-image and
+  image-to-image requests pass `resolution` plus reference ids to the service.
+- Service unit: unsupported resolution/aspect combinations are rejected before
+  provider work.
+- Provider unit: 2K and 4K text-to-image calls set the expected JSON `size`;
+  high-resolution image-to-image calls set the expected multipart `size`.
+- Frontend tests: admin UI sends `resolution` through the dedicated API route;
+  non-admin UI does not render or send the clarity selector.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+// Lets a normal endpoint request bypass the dedicated admin URL.
+router.post("/generate", async (req, res) => {
+  if (req.body.resolution === "4k") {
+    return generateHighRes(req, res);
+  }
+});
+```
+
+#### Correct
+
+```ts
+router.post("/generate", (req, res, next) => {
+  void controller.generate(req, res, next);
+});
+
+router.post("/generate/high-res", requireAdmin, (req, res, next) => {
+  void controller.generateHighRes(req, res, next);
+});
+```
+
+#### Wrong
+
+```ts
+// Scattered size logic drifts from provider tests and frontend labels.
+const size = resolution === "4k" ? "3840x2160" : "1024x1024";
+```
+
+#### Correct
+
+```ts
+const sizing = aspectSizeForResolution(aspectRatio, resolution);
+if (sizing === undefined) {
+  throw new AppError(
+    "BAD_REQUEST",
+    "Unsupported aspect ratio for resolution",
+    400,
+  );
+}
 ```
 
 ## Scenario: OpenAI-compatible inbound `/v1` image API

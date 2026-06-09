@@ -115,6 +115,47 @@ describe('imagesApi', () => {
     });
   });
 
+  it('routes high-resolution generate requests to the dedicated endpoint', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          batchId: 'b-high',
+          aspectRatio: '16:9',
+          generationMode: 'text-to-image',
+          images: [
+            {
+              id: 'out-4k.png',
+              outputUrl: '/api/outputs/out-4k.png',
+              filename: 'out-4k.png',
+              mime: 'image/png',
+              width: 3840,
+              height: 2160,
+            },
+          ],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await generateImage({
+      prompt: '管理员 4K 海报',
+      aspectRatio: '16:9',
+      resolution: '4k',
+    });
+
+    expect(result.images[0]?.width).toBe(3840);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3000/api/images/generate/high-res',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toMatchObject({
+      prompt: '管理员 4K 海报',
+      aspectRatio: '16:9',
+      resolution: '4k',
+    });
+  });
+
   it('sends demo preset id in generate requests', async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(

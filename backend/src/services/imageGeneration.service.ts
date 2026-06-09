@@ -9,10 +9,14 @@ import {
   ASPECT_RATIOS,
   DEFAULT_ASPECT_RATIO,
   DEFAULT_COUNT,
+  DEFAULT_IMAGE_RESOLUTION,
+  IMAGE_RESOLUTIONS,
   MAX_COUNT,
   MAX_REFERENCE_IMAGES,
   MIN_COUNT,
+  isAspectRatioSupportedForResolution,
   type AspectRatio,
+  type ImageResolution,
 } from '../types/image.js';
 
 import type { ImageGenerationProvider } from './providers/ImageGenerationProvider.js';
@@ -27,6 +31,7 @@ export interface GenerateImageInput {
   model?: string;
   count?: number;
   aspectRatio?: AspectRatio;
+  resolution?: ImageResolution;
 }
 
 export interface GenerateImageItemOutput {
@@ -88,6 +93,19 @@ export async function generateImage(
   if (!ASPECT_RATIOS.includes(aspectRatio)) {
     throw new AppError('BAD_REQUEST', `Unsupported aspect ratio: ${aspectRatio}`, 400);
   }
+  const resolution = input.resolution ?? DEFAULT_IMAGE_RESOLUTION;
+  if (!IMAGE_RESOLUTIONS.includes(resolution)) {
+    throw new AppError('BAD_REQUEST', `Unsupported image resolution: ${resolution}`, 400);
+  }
+  if (!isAspectRatioSupportedForResolution(aspectRatio, resolution)) {
+    throw new AppError(
+      'BAD_REQUEST',
+      `Unsupported aspect ratio ${aspectRatio} for image resolution ${resolution}`,
+      400,
+      undefined,
+      { aspectRatio, resolution },
+    );
+  }
 
   logger.info(
     {
@@ -97,6 +115,7 @@ export async function generateImage(
       model: input.model ?? '<default>',
       count,
       aspectRatio,
+      resolution,
     },
     'image generation: service invoke',
   );
@@ -105,6 +124,7 @@ export async function generateImage(
     prompt: input.prompt,
     count,
     aspectRatio,
+    ...(input.resolution !== undefined ? { resolution } : {}),
     ...(referencePaths.length > 0 ? { referencePaths } : {}),
     ...(input.model !== undefined ? { model: input.model } : {}),
   });
@@ -130,7 +150,6 @@ export async function generateImage(
     })),
   };
 }
-
 
 function normalizeReferenceIds(input: GenerateImageInput): string[] {
   const raw = input.referenceIds ?? (input.referenceId !== undefined ? [input.referenceId] : []);

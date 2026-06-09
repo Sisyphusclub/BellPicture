@@ -19,11 +19,16 @@ import {
   ASPECT_CHOICE_LABELS,
   ASPECT_RATIO_LABELS,
   DEFAULT_ASPECT_CHOICE,
+  DEFAULT_IMAGE_RESOLUTION,
   DEFAULT_COUNT,
+  FOUR_K_ASPECT_RATIOS,
+  IMAGE_RESOLUTION_LABELS,
+  IMAGE_RESOLUTIONS,
   MAX_COUNT,
   MIN_COUNT,
   type AspectChoice,
   type HistoryEntry,
+  type ImageResolution,
 } from '@/types/image';
 
 interface Props {
@@ -71,6 +76,7 @@ interface PendingGeneration {
   referenceFile?: File;
   referenceIds?: string[];
   referenceId?: string;
+  resolution: ImageResolution;
   demoPresetId?: string;
   isPublic: boolean;
   errorMessage?: string;
@@ -106,6 +112,7 @@ const prompt = ref('');
 const model = ref('gpt-image-2');
 const count = ref<number>(DEFAULT_COUNT);
 const aspectRatio = ref<AspectChoice>(DEFAULT_ASPECT_CHOICE);
+const resolution = ref<ImageResolution>(DEFAULT_IMAGE_RESOLUTION);
 const isPublicGeneration = ref(false);
 const activeBatchId = ref<string | null>(null);
 const pendingGeneration = ref<PendingGeneration | null>(null);
@@ -115,6 +122,7 @@ const reusedReferenceId = ref<string | null>(null);
 const isComposerDragging = ref(false);
 const aspectMenuOpen = ref(false);
 const modelMenuOpen = ref(false);
+const resolutionMenuOpen = ref(false);
 const aspectButtonRef = ref<HTMLButtonElement | null>(null);
 const modelButtonRef = ref<HTMLButtonElement | null>(null);
 const selectedRecentEntry = ref<HistoryEntry | null>(null);
@@ -262,6 +270,7 @@ const quotaLabel = computed(() => {
   if (!quota.value) return '额度暂不可用';
   return `剩余额度 ${quota.value.remaining}`;
 });
+const resolutionLabel = computed(() => IMAGE_RESOLUTION_LABELS[resolution.value]);
 
 const groupedSidebarBatches = computed(() => {
   const groups: { bucket: DateBucket; batches: GroupedBatch[] }[] = [];
@@ -326,6 +335,12 @@ watch(shouldShowHeroSuggestion, (isVisible) => {
   }
 });
 
+watch(isAdmin, (admin) => {
+  if (admin) return;
+  resolution.value = DEFAULT_IMAGE_RESOLUTION;
+  resolutionMenuOpen.value = false;
+});
+
 async function handleSubmit(): Promise<void> {
   if (!canGenerate.value) return;
   if (!ensureAuthenticated()) return;
@@ -345,6 +360,7 @@ function createSnapshotFromCurrentComposer(): PendingGeneration {
     model: model.value,
     count: count.value,
     aspectRatio: aspectRatio.value,
+    resolution: isAdmin.value ? resolution.value : DEFAULT_IMAGE_RESOLUTION,
     isPublic: isPublicGeneration.value,
     submittedAt: new Date().toISOString(),
   };
@@ -364,6 +380,7 @@ function createSnapshotFromDisplayedBatch(batch: GroupedBatch): PendingGeneratio
     model: batch.model,
     count: Math.min(MAX_COUNT, Math.max(MIN_COUNT, batch.entries.length)),
     aspectRatio: firstRecord?.aspectRatio ?? DEFAULT_ASPECT_CHOICE,
+    resolution: isAdmin.value ? resolution.value : DEFAULT_IMAGE_RESOLUTION,
     isPublic: batch.entries.some((entry) => entry.record.isPublic),
     submittedAt: new Date().toISOString(),
   };
@@ -378,6 +395,9 @@ function optionsFromSnapshot(snapshot: PendingGeneration): GenerateImageOptions 
     count: snapshot.count,
   };
   if (snapshot.aspectRatio !== 'auto') options.aspectRatio = snapshot.aspectRatio;
+  if (isAdmin.value && snapshot.resolution !== DEFAULT_IMAGE_RESOLUTION) {
+    options.resolution = snapshot.resolution;
+  }
   const referenceFiles = normalizeReferenceFiles(snapshot.referenceFiles, snapshot.referenceFile);
   const referenceIds = normalizeReferenceIds(snapshot.referenceIds, snapshot.referenceId);
   if (referenceFiles.length > 0) options.referenceFiles = referenceFiles;
@@ -396,6 +416,7 @@ async function runGeneration(snapshot: PendingGeneration): Promise<void> {
   model.value = snapshot.model;
   count.value = snapshot.count;
   aspectRatio.value = snapshot.aspectRatio;
+  resolution.value = isAdmin.value ? snapshot.resolution : DEFAULT_IMAGE_RESOLUTION;
   isPublicGeneration.value = snapshot.isPublic;
   syncReferenceInputFromSnapshot(snapshot);
 
@@ -475,6 +496,7 @@ function handleNewConversation(): void {
   activeBatchId.value = null;
   pendingGeneration.value = null;
   prompt.value = '';
+  resolution.value = DEFAULT_IMAGE_RESOLUTION;
   isPublicGeneration.value = false;
   clearReferenceInput();
   clearLastBatch();
@@ -611,6 +633,7 @@ async function handleEditPrompt(
   model.value = snapshot.model;
   count.value = snapshot.count;
   aspectRatio.value = snapshot.aspectRatio;
+  resolution.value = isAdmin.value ? snapshot.resolution : DEFAULT_IMAGE_RESOLUTION;
   isPublicGeneration.value = snapshot.isPublic;
   syncReferenceInputFromSnapshot(snapshot);
   await nextTick();
@@ -697,6 +720,7 @@ function createSnapshotFromPending(snapshot: PendingGeneration): PendingGenerati
     model: snapshot.model,
     count: snapshot.count,
     aspectRatio: snapshot.aspectRatio,
+    resolution: isAdmin.value ? snapshot.resolution : DEFAULT_IMAGE_RESOLUTION,
     isPublic: snapshot.isPublic,
     submittedAt: new Date().toISOString(),
   };
@@ -772,21 +796,46 @@ function increaseCount(): void {
 function toggleAspectMenu(): void {
   aspectMenuOpen.value = !aspectMenuOpen.value;
   modelMenuOpen.value = false;
+  resolutionMenuOpen.value = false;
 }
 
 function toggleModelMenu(): void {
   modelMenuOpen.value = !modelMenuOpen.value;
   aspectMenuOpen.value = false;
+  resolutionMenuOpen.value = false;
+}
+
+function toggleResolutionMenu(): void {
+  if (!isAdmin.value) return;
+  resolutionMenuOpen.value = !resolutionMenuOpen.value;
+  aspectMenuOpen.value = false;
+  modelMenuOpen.value = false;
 }
 
 function chooseAspect(value: AspectChoice): void {
   aspectRatio.value = value;
+  if (resolution.value === '4k' && !isFourKAspectChoice(value)) {
+    resolution.value = '2k';
+  }
   aspectMenuOpen.value = false;
 }
 
 function chooseModel(value: string): void {
   model.value = value;
   modelMenuOpen.value = false;
+}
+
+function chooseResolution(value: ImageResolution): void {
+  if (!isAdmin.value) return;
+  resolution.value = value;
+  if (value === '4k' && !isFourKAspectChoice(aspectRatio.value)) {
+    aspectRatio.value = '16:9';
+  }
+  resolutionMenuOpen.value = false;
+}
+
+function isFourKAspectChoice(value: AspectChoice): boolean {
+  return value !== 'auto' && (FOUR_K_ASPECT_RATIOS as readonly string[]).includes(value);
 }
 
 function togglePublicGeneration(): void {
@@ -805,7 +854,7 @@ function ensureAuthenticated(message = LOGIN_REQUIRED_MESSAGE): boolean {
 }
 
 function handleDocumentClick(event: MouseEvent): void {
-  if (!aspectMenuOpen.value && !modelMenuOpen.value) return;
+  if (!aspectMenuOpen.value && !modelMenuOpen.value && !resolutionMenuOpen.value) return;
   const target = event.target;
   if (
     target instanceof Element &&
@@ -815,6 +864,7 @@ function handleDocumentClick(event: MouseEvent): void {
   }
   aspectMenuOpen.value = false;
   modelMenuOpen.value = false;
+  resolutionMenuOpen.value = false;
 }
 
 function initializeHeroSuggestion(): void {
@@ -1343,6 +1393,44 @@ function formatStageDate(iso: string | undefined): string {
                     </li>
                   </ul>
                 </div>
+                <div v-if="isAdmin" class="prompt-showcase__resolution prompt-showcase__select">
+                  <button
+                    type="button"
+                    class="prompt-showcase__smart"
+                    :aria-expanded="resolutionMenuOpen"
+                    aria-label="选择图片清晰度"
+                    @click.stop="toggleResolutionMenu"
+                  >
+                    <span>清晰度</span>
+                    <strong>{{ resolutionLabel }}</strong>
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.4"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </button>
+                  <ul v-if="resolutionMenuOpen" class="prompt-showcase__menu" role="listbox">
+                    <li v-for="value in IMAGE_RESOLUTIONS" :key="value">
+                      <button
+                        type="button"
+                        role="option"
+                        :aria-selected="value === resolution"
+                        :class="{ 'prompt-showcase__menu-item--active': value === resolution }"
+                        @click.stop="chooseResolution(value)"
+                      >
+                        {{ IMAGE_RESOLUTION_LABELS[value] }}
+                      </button>
+                    </li>
+                  </ul>
+                </div>
                 <button
                   type="button"
                   class="prompt-showcase__public"
@@ -1535,6 +1623,44 @@ function formatStageDate(iso: string | undefined): string {
                 @click.stop="chooseAspect(value)"
               >
                 {{ aspectLabel(value) }}
+              </button>
+            </li>
+          </ul>
+        </div>
+        <div v-if="isAdmin" class="prompt-showcase__resolution prompt-showcase__select">
+          <button
+            type="button"
+            class="prompt-showcase__smart"
+            :aria-expanded="resolutionMenuOpen"
+            aria-label="选择图片清晰度"
+            @click.stop="toggleResolutionMenu"
+          >
+            <span>清晰度</span>
+            <strong>{{ resolutionLabel }}</strong>
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+          <ul v-if="resolutionMenuOpen" class="prompt-showcase__menu" role="listbox">
+            <li v-for="value in IMAGE_RESOLUTIONS" :key="value">
+              <button
+                type="button"
+                role="option"
+                :aria-selected="value === resolution"
+                :class="{ 'prompt-showcase__menu-item--active': value === resolution }"
+                @click.stop="chooseResolution(value)"
+              >
+                {{ IMAGE_RESOLUTION_LABELS[value] }}
               </button>
             </li>
           </ul>

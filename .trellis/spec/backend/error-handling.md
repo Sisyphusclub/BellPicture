@@ -21,18 +21,20 @@ Single tagged base class in `src/errors/AppError.ts`:
 
 ```ts
 export type ErrorCode =
-  | 'BAD_REQUEST'
-  | 'UNAUTHORIZED'           // missing or invalid Better Auth session
-  | 'NOT_FOUND'
-  | 'UNSUPPORTED_MEDIA_TYPE'
-  | 'PAYLOAD_TOO_LARGE'
-  | 'PROVIDER_ERROR'        // 2API returned non-2xx or invalid payload
-  | 'PROVIDER_PROMPT_REJECTED' // 2API rejected prompt/reference content
-  | 'PROVIDER_EMPTY_RESULT' // 2API returned no image payload
-  | 'PROVIDER_TIMEOUT'      // request exceeded IMAGE_API_TIMEOUT_MS
-  | 'PROVIDER_RATE_LIMITED' // 2API returned 429
-  | 'STORAGE_ERROR'         // local fs read/write failed
-  | 'INTERNAL';
+  | "BAD_REQUEST"
+  | "UNAUTHORIZED" // missing or invalid Better Auth session
+  | "FORBIDDEN" // authenticated user lacks required role
+  | "NOT_FOUND"
+  | "UNSUPPORTED_MEDIA_TYPE"
+  | "PAYLOAD_TOO_LARGE"
+  | "PROVIDER_ERROR" // 2API returned non-2xx or invalid payload
+  | "PROVIDER_PROMPT_REJECTED" // 2API rejected prompt/reference content
+  | "PROVIDER_EMPTY_RESULT" // 2API returned no image payload
+  | "PROVIDER_TIMEOUT" // request exceeded IMAGE_API_TIMEOUT_MS
+  | "PROVIDER_RATE_LIMITED" // 2API returned 429
+  | "QUOTA_EXHAUSTED" // per-user daily image quota would overflow
+  | "STORAGE_ERROR" // local fs read/write failed
+  | "INTERNAL";
 
 export class AppError extends Error {
   constructor(
@@ -43,7 +45,7 @@ export class AppError extends Error {
     public readonly details?: Record<string, unknown>,
   ) {
     super(message);
-    this.name = 'AppError';
+    this.name = "AppError";
   }
 }
 ```
@@ -91,16 +93,24 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   const requestId = (req as any).requestId as string;
 
   if (err instanceof AppError) {
-    logger.warn({ requestId, code: err.code, cause: err.cause, details: err.details }, err.message);
+    logger.warn(
+      { requestId, code: err.code, cause: err.cause, details: err.details },
+      err.message,
+    );
     res.status(err.status).json({
-      error: { code: err.code, message: err.message, requestId },
+      error: {
+        code: err.code,
+        message: err.message,
+        requestId,
+        ...(err.details !== undefined ? { details: err.details } : {}),
+      },
     });
     return;
   }
 
-  logger.error({ requestId, err }, 'Unhandled error');
+  logger.error({ requestId, err }, "Unhandled error");
   res.status(500).json({
-    error: { code: 'INTERNAL', message: 'Internal server error', requestId },
+    error: { code: "INTERNAL", message: "Internal server error", requestId },
   });
 };
 ```
@@ -114,16 +124,16 @@ Mounted **last** in `app.ts`, after all routes.
 `TwoApiImageProvider` must translate raw HTTP / network errors into
 `AppError` instances:
 
-| Trigger | AppError.code | HTTP |
-|---|---|---|
-| `AbortError` from `fetch` | `PROVIDER_TIMEOUT` | 504 |
-| 2API 429 | `PROVIDER_RATE_LIMITED` | 429 (the only upstream status we surface as-is) |
-| 2API 400 / 422 | `PROVIDER_PROMPT_REJECTED` | 422 (`details = { upstreamStatus, reason: "prompt_rejected" }`) |
-| 2API other 4xx | `PROVIDER_ERROR` | 502 (configuration/auth/provider failure, `details.reason = "provider_http_error"`) |
-| 2API 5xx | `PROVIDER_ERROR` | 502 |
-| Malformed JSON | `PROVIDER_ERROR` | 502 |
-| Missing / empty image data | `PROVIDER_EMPTY_RESULT` | 502 (`details.reason = "empty_result"`) |
-| Local file-read fails before fetch (image-to-image) | `PROVIDER_ERROR` | 502 (treated as "provider unreachable" — the file should have existed if the service did the preflight) |
+| Trigger                                             | AppError.code              | HTTP                                                                                                    |
+| --------------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `AbortError` from `fetch`                           | `PROVIDER_TIMEOUT`         | 504                                                                                                     |
+| 2API 429                                            | `PROVIDER_RATE_LIMITED`    | 429 (the only upstream status we surface as-is)                                                         |
+| 2API 400 / 422                                      | `PROVIDER_PROMPT_REJECTED` | 422 (`details = { upstreamStatus, reason: "prompt_rejected" }`)                                         |
+| 2API other 4xx                                      | `PROVIDER_ERROR`           | 502 (configuration/auth/provider failure, `details.reason = "provider_http_error"`)                     |
+| 2API 5xx                                            | `PROVIDER_ERROR`           | 502                                                                                                     |
+| Malformed JSON                                      | `PROVIDER_ERROR`           | 502                                                                                                     |
+| Missing / empty image data                          | `PROVIDER_EMPTY_RESULT`    | 502 (`details.reason = "empty_result"`)                                                                 |
+| Local file-read fails before fetch (image-to-image) | `PROVIDER_ERROR`           | 502 (treated as "provider unreachable" — the file should have existed if the service did the preflight) |
 
 Always log the upstream status + a redacted summary of the response body
 (no `Authorization` header echoes, no API key fragments).
@@ -135,19 +145,22 @@ on stable `code` values and safe `details.reason` values, not provider prose.
 The image endpoints add validation errors at the upload + controller
 boundary:
 
-| Trigger | AppError.code | HTTP |
-|---|---|---|
-| zod schema fails on JSON body | `BAD_REQUEST` | 400 (`details.issues` = `ZodError.issues`) |
-| Multer rejects oversize upload (`LIMIT_FILE_SIZE`) | `PAYLOAD_TOO_LARGE` | 413 (`details.field` = the multipart field) |
-| Multer sees an unexpected field name | `BAD_REQUEST` | 400 |
-| Multipart request with no file | `BAD_REQUEST` | 400 |
-| Magic-bytes sniff doesn't recognize the upload | `UNSUPPORTED_MEDIA_TYPE` | 415 (`details.firstBytes` = first 12 bytes) |
-| `referenceId` not `<uuid>.<ext>` | `BAD_REQUEST` | 400 |
-| `referenceId` does not match a file on disk | `BAD_REQUEST` | 400 (`details.referenceId` = the id) |
-| `referenceIds` contains more than `MAX_REFERENCE_IMAGES` ids | `BAD_REQUEST` | 400 |
-| Any id in `referenceIds` does not match a file on disk | `BAD_REQUEST` | 400 (`details.referenceId` = the failing id) |
-| `GET /api/outputs/:filename` filename malformed | `BAD_REQUEST` | 400 |
-| `GET /api/outputs/:filename` file missing | `NOT_FOUND` | 404 |
+| Trigger                                                                  | AppError.code            | HTTP                                          |
+| ------------------------------------------------------------------------ | ------------------------ | --------------------------------------------- |
+| zod schema fails on JSON body                                            | `BAD_REQUEST`            | 400 (`details.issues` = `ZodError.issues`)    |
+| Multer rejects oversize upload (`LIMIT_FILE_SIZE`)                       | `PAYLOAD_TOO_LARGE`      | 413 (`details.field` = the multipart field)   |
+| Multer sees an unexpected field name                                     | `BAD_REQUEST`            | 400                                           |
+| Multipart request with no file                                           | `BAD_REQUEST`            | 400                                           |
+| Magic-bytes sniff doesn't recognize the upload                           | `UNSUPPORTED_MEDIA_TYPE` | 415 (`details.firstBytes` = first 12 bytes)   |
+| `referenceId` not `<uuid>.<ext>`                                         | `BAD_REQUEST`            | 400                                           |
+| `referenceId` does not match a file on disk                              | `BAD_REQUEST`            | 400 (`details.referenceId` = the id)          |
+| `referenceIds` contains more than `MAX_REFERENCE_IMAGES` ids             | `BAD_REQUEST`            | 400                                           |
+| Any id in `referenceIds` does not match a file on disk                   | `BAD_REQUEST`            | 400 (`details.referenceId` = the failing id)  |
+| `/api/images/generate` receives `resolution: "2k"` or `"4k"`             | `BAD_REQUEST`            | 400 (`details.issues` from zod)               |
+| `/api/images/generate/high-res` omits `resolution` or sends `"standard"` | `BAD_REQUEST`            | 400 (`details.issues` from zod)               |
+| `4k` generation uses unsupported aspect ratio (`1:1`, `3:2`, `2:3`)      | `BAD_REQUEST`            | 400 (`details = { aspectRatio, resolution }`) |
+| `GET /api/outputs/:filename` filename malformed                          | `BAD_REQUEST`            | 400                                           |
+| `GET /api/outputs/:filename` file missing                                | `NOT_FOUND`              | 404                                           |
 
 ## Auth failure mapping
 
@@ -155,25 +168,26 @@ The username auth wrapper and `requireAuth` middleware translate expected auth
 failures into `AppError` or Better Auth-compatible client errors with Chinese
 messages:
 
-| Trigger | AppError.code | HTTP |
-|---|---|---|
-| `POST /api/auth/sign-up/username` body is missing username/password | `BAD_REQUEST` | 400 (`details.issues` from zod) |
-| Username fails `^[a-z0-9_]{3,32}$` after normalization | `BAD_REQUEST` | 400 (`details.field = "username"`) |
-| Username already exists | `BAD_REQUEST` | 400 (`details.field = "username"`) |
-| Registration password shorter than 8 chars | `BAD_REQUEST` | 400 (`details.field = "password"`) |
-| Product-unsupported email auth routes are called | `BAD_REQUEST` | 400 |
-| `auth.api.getSession` returns null (no cookie / expired) | `UNAUTHORIZED` | 401 |
-| `auth.api.getSession` throws unexpectedly | `UNAUTHORIZED` | 401 (cause attached; logged at `error`) |
-| Per-user daily quota would overflow on `consume` | `QUOTA_EXHAUSTED` | 429 (`details = { requested, remaining, total }`) |
+| Trigger                                                             | AppError.code     | HTTP                                              |
+| ------------------------------------------------------------------- | ----------------- | ------------------------------------------------- |
+| `POST /api/auth/sign-up/username` body is missing username/password | `BAD_REQUEST`     | 400 (`details.issues` from zod)                   |
+| Username fails `^[a-z0-9_]{3,32}$` after normalization              | `BAD_REQUEST`     | 400 (`details.field = "username"`)                |
+| Username already exists                                             | `BAD_REQUEST`     | 400 (`details.field = "username"`)                |
+| Registration password shorter than 8 chars                          | `BAD_REQUEST`     | 400 (`details.field = "password"`)                |
+| Product-unsupported email auth routes are called                    | `BAD_REQUEST`     | 400                                               |
+| `auth.api.getSession` returns null (no cookie / expired)            | `UNAUTHORIZED`    | 401                                               |
+| `auth.api.getSession` throws unexpectedly                           | `UNAUTHORIZED`    | 401 (cause attached; logged at `error`)           |
+| Authenticated non-admin calls admin-only endpoint                   | `FORBIDDEN`       | 403                                               |
+| Per-user daily quota would overflow on `consume`                    | `QUOTA_EXHAUSTED` | 429 (`details = { requested, remaining, total }`) |
 
 The `openaiCompatAuth` middleware (mounted on `/v1/*`) translates inbound API-key
 failures into the same error envelope:
 
-| Trigger | AppError.code | HTTP |
-|---|---|---|
-| Missing `Authorization` header | `UNAUTHORIZED` | 401 |
-| Header does not use `Bearer <token>` | `UNAUTHORIZED` | 401 |
-| Bearer token does not match `OPENAI_COMPAT_API_KEY` | `UNAUTHORIZED` | 401 |
+| Trigger                                             | AppError.code  | HTTP |
+| --------------------------------------------------- | -------------- | ---- |
+| Missing `Authorization` header                      | `UNAUTHORIZED` | 401  |
+| Header does not use `Bearer <token>`                | `UNAUTHORIZED` | 401  |
+| Bearer token does not match `OPENAI_COMPAT_API_KEY` | `UNAUTHORIZED` | 401  |
 
 Never include the presented token or configured key in `message`, `details`, or
 logs. Use a timing-safe comparison and keep `IMAGE_API_KEY` out of inbound auth.

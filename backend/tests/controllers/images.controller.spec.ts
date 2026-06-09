@@ -11,7 +11,11 @@ import { user, userQuota } from '../../src/db/schema.js';
 import { AppError } from '../../src/errors/AppError.js';
 import type { ImageGenerationProvider } from '../../src/services/providers/ImageGenerationProvider.js';
 import { saveOutput } from '../../src/storage/localStorage.js';
-import type { GenerateInput, GenerateOutput } from '../../src/types/image.js';
+import {
+  aspectSizeForResolution,
+  type GenerateInput,
+  type GenerateOutput,
+} from '../../src/types/image.js';
 
 const PNG_PREFIX = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -20,10 +24,14 @@ function fakeProvider(): { provider: ImageGenerationProvider } {
     generate: vi.fn(async (input: GenerateInput): Promise<GenerateOutput> => {
       const count = input.count ?? 1;
       const aspectRatio = input.aspectRatio ?? '1:1';
+      const sizing = aspectSizeForResolution(aspectRatio, input.resolution);
+      if (sizing === undefined) {
+        throw new AppError('BAD_REQUEST', 'Unsupported aspect ratio for resolution', 400);
+      }
       const images = [] as GenerateOutput['images'];
       for (let index = 0; index < count; index += 1) {
         const saved = await saveOutput(Buffer.concat([PNG_PREFIX, Buffer.alloc(32, index)]), 'png');
-        images.push({ outputPath: saved.absolutePath, width: 1024, height: 1024 });
+        images.push({ outputPath: saved.absolutePath, width: sizing.width, height: sizing.height });
       }
       return { images, aspectRatio };
     }),
@@ -193,6 +201,142 @@ describe('POST /api/images/generate', () => {
     expect(call.aspectRatio).toBe('16:9');
   });
 
+  it('rejects high-resolution values on the standard generate endpoint', async () => {
+    const { provider } = fakeProvider();
+    const userId = `standard-high-res-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId, true));
+
+    const res = await request(app).post('/api/images/generate').send({
+      prompt: '标准接口不允许高分辨率',
+      resolution: '2k',
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('BAD_REQUEST');
+    expect(provider.generate).not.toHaveBeenCalled();
+
+    const quota = await request(app).get('/api/images/quota');
+    expect(quota.body.remaining).toBe(20);
+  });
+
+  it('lets admins call the dedicated high-resolution endpoint', async () => {
+    const { provider } = fakeProvider();
+    const userId = `high-res-admin-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId, true));
+
+    const res = await request(app).post('/api/images/generate/high-res').send({
+      prompt: '管理员生成 4K 宽屏图',
+      count: 1,
+      aspectRatio: '16:9',
+      resolution: '4k',
+      isPublic: true,
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.aspectRatio).toBe('16:9');
+    expect(res.body.images[0]).toMatchObject({
+      width: 3840,
+      height: 2160,
+    });
+    const call = (provider.generate as ReturnType<typeof vi.fn>).mock.calls[0]![0] as GenerateInput;
+    expect(call.resolution).toBe('4k');
+    expect(call.aspectRatio).toBe('16:9');
+
+    const quota = await request(app).get('/api/images/quota');
+    expect(quota.body.remaining).toBe(19);
+
+    const history = await request(app).get('/api/history');
+    expect(history.body.records[0]).toMatchObject({
+      prompt: '管理员生成 4K 宽屏图',
+      width: 3840,
+      height: 2160,
+      isPublic: true,
+    });
+  });
+
+  it('rejects high-resolution endpoint calls from non-admin users', async () => {
+    const { provider } = fakeProvider();
+    const userId = `high-res-user-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId, false));
+
+    const res = await request(app).post('/api/images/generate/high-res').send({
+      prompt: '普通用户尝试 2K',
+      resolution: '2k',
+    });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('FORBIDDEN');
+    expect(provider.generate).not.toHaveBeenCalled();
+
+    const quota = await request(app).get('/api/images/quota');
+    expect(quota.body.remaining).toBe(20);
+  });
+
+  it('requires 2k or 4k on the high-resolution endpoint', async () => {
+    const { provider } = fakeProvider();
+    const userId = `high-res-invalid-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId, true));
+
+    const res = await request(app).post('/api/images/generate/high-res').send({
+      prompt: '管理员没有选择高分辨率',
+      resolution: 'standard',
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('BAD_REQUEST');
+    expect(provider.generate).not.toHaveBeenCalled();
+  });
+
+  it('rejects 4k requests when the selected aspect ratio is not supported upstream', async () => {
+    const { provider } = fakeProvider();
+    const userId = `high-res-aspect-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId, true));
+
+    const res = await request(app).post('/api/images/generate/high-res').send({
+      prompt: '管理员尝试 4K 正方形',
+      aspectRatio: '1:1',
+      resolution: '4k',
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('BAD_REQUEST');
+    expect(provider.generate).not.toHaveBeenCalled();
+  });
+
+  it('passes reference ids through dedicated high-resolution image-to-image calls', async () => {
+    const harness = fakeProvider();
+    const userId = `high-res-reference-${randomUUID()}`;
+    const app = buildApp(harness.provider, stubAuth(userId, true));
+    const refBytes = Buffer.concat([PNG_PREFIX, Buffer.alloc(64, 0xc3)]);
+    const uploadRes = await request(app)
+      .post('/api/images/upload')
+      .attach('image', refBytes, { filename: 'ref.png', contentType: 'image/png' });
+    expect(uploadRes.status).toBe(200);
+
+    const referenceId = uploadRes.body.id as string;
+    const res = await request(app).post('/api/images/generate/high-res').send({
+      prompt: '2K 参考图生成',
+      referenceId,
+      aspectRatio: '2:3',
+      resolution: '2k',
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.generationMode).toBe('image-to-image');
+    expect(res.body.images[0]).toMatchObject({
+      width: 1360,
+      height: 2048,
+    });
+    const call = (harness.provider.generate as ReturnType<typeof vi.fn>).mock
+      .calls[0]![0] as GenerateInput;
+    expect(call).toMatchObject({
+      resolution: '2k',
+      aspectRatio: '2:3',
+    });
+    expect(call.referencePaths).toHaveLength(1);
+    expect(call.referencePaths?.[0]).toContain(referenceId);
+  });
+
   it('returns per-user daily quota and decrements after successful generation', async () => {
     const { provider } = fakeProvider();
     const app = buildApp(provider, stubAuth(`quota-user-${randomUUID()}`));
@@ -322,11 +466,13 @@ describe('POST /api/images/generate', () => {
     expect(provider.generate).toHaveBeenCalledOnce();
 
     const referenceId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.png';
-    const second = await request(app).post('/api/images/generate').send({
-      prompt: demoPrompt.replace(/\s+/gu, ''),
-      referenceId,
-      count: 2,
-    });
+    const second = await request(app)
+      .post('/api/images/generate')
+      .send({
+        prompt: demoPrompt.replace(/\s+/gu, ''),
+        referenceId,
+        count: 2,
+      });
 
     expect(second.status).toBe(200);
     expect(second.body).toMatchObject({

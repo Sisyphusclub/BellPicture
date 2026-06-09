@@ -464,6 +464,48 @@ describe('GenerateView', () => {
     );
   });
 
+  it('hides the clarity selector for non-admin users', async () => {
+    const { wrapper, generate } = await mountGenerateView({
+      mode: 'generate',
+      isAdmin: false,
+    });
+
+    expect(wrapper.find('.prompt-showcase__resolution').exists()).toBe(false);
+
+    await wrapper.get('textarea[name="prompt"]').setValue('普通用户标准生成');
+    await wrapper.get('button.prompt-showcase__generate').trigger('click');
+
+    expect(generate).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        resolution: expect.any(String),
+      }),
+    );
+  });
+
+  it('submits the selected admin homepage clarity', async () => {
+    const { wrapper, generate } = await mountGenerateView({ isAdmin: true });
+    const homeComposer = wrapper.get('form.prompt-showcase');
+    const resolutionControl = homeComposer.get('.prompt-showcase__resolution');
+
+    await resolutionControl.get('button.prompt-showcase__smart').trigger('click');
+    await getButtonByText(resolutionControl.findAll('.prompt-showcase__menu button'), '4K').trigger(
+      'click',
+    );
+
+    expect(resolutionControl.get('button.prompt-showcase__smart').text()).toContain('4K');
+
+    await homeComposer.get('textarea[name="heroPrompt"]').setValue('管理员 4K 海报');
+    await homeComposer.trigger('submit');
+
+    expect(generate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: '管理员 4K 海报',
+        aspectRatio: '16:9',
+        resolution: '4k',
+      }),
+    );
+  });
+
   it('passes public gallery entries from the public gallery store', async () => {
     const publicEntry = createHistoryEntry('public.png', '其他账号公开作品', true);
     const { wrapper } = await mountGenerateView({ galleryEntries: [publicEntry] });
@@ -634,6 +676,38 @@ describe('GenerateView', () => {
         prompt: '生成宽屏海报',
         model: 'gpt-image-2',
         aspectRatio: '16:9',
+      }),
+    );
+  });
+
+  it('submits the selected admin dock clarity after a completed result', async () => {
+    const { wrapper, generate, resolveGeneration } = await mountGenerateView({ isAdmin: true });
+
+    await wrapper.get('textarea[name="heroPrompt"]').setValue('生成一张猫猫照片');
+    await wrapper.get('form.prompt-showcase').trigger('submit');
+    await wrapper.setProps({ mode: 'generate' });
+    resolveGeneration();
+    await flushPromises();
+
+    const dockComposer = wrapper.get('form.prompt-showcase--dock');
+    const resolutionControl = dockComposer.get('.prompt-showcase__resolution');
+
+    await resolutionControl.get('button.prompt-showcase__smart').trigger('click');
+    await getButtonByText(resolutionControl.findAll('.prompt-showcase__menu button'), '2K').trigger(
+      'click',
+    );
+
+    expect(resolutionControl.get('button.prompt-showcase__smart').text()).toContain('2K');
+
+    await dockComposer.get('textarea[name="prompt"]').setValue('管理员 2K 海报');
+    await dockComposer.get('button.prompt-showcase__generate').trigger('click');
+
+    expect(generate).toHaveBeenCalledTimes(2);
+    expect(generate).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        prompt: '管理员 2K 海报',
+        model: 'gpt-image-2',
+        resolution: '2k',
       }),
     );
   });

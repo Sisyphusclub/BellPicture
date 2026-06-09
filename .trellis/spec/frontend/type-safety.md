@@ -150,6 +150,8 @@ function isImageRecord(value: unknown): value is ImageRecord {
 
 - `POST /api/images/upload` with multipart field `image: File`.
 - `POST /api/images/generate` with JSON `GenerateRequest`.
+- `POST /api/images/generate/high-res` with JSON `GenerateRequest` plus
+  `resolution: '2k' | '4k'`; authenticated and admin-only.
 - `GET /api/history/public` returns all public image records, newest first, and
   does not require auth.
 - `DELETE /api/history/public/:id` is authenticated and admin-only. It removes
@@ -164,12 +166,27 @@ function isImageRecord(value: unknown): value is ImageRecord {
 ### 3. Contracts
 
 - Upload response: `{ id, filename, mime, size }`.
-- Generate request: `{ prompt, referenceId?, referenceIds?, model?, count?, aspectRatio?, isPublic?, demoPresetId? }`.
+- Generate request: `{ prompt, referenceId?, referenceIds?, model?, count?, aspectRatio?, resolution?, isPublic?, demoPresetId? }`.
   New call sites send `referenceIds` for image-to-image; `referenceId` remains
   a legacy/back-compat field populated with the first id when useful.
+- Standard generation uses `/api/images/generate`; omit `resolution` or send
+  only `resolution: 'standard'`. The backend rejects `resolution: '2k' | '4k'`
+  on this endpoint.
+- Admin high-resolution generation uses `/api/images/generate/high-res` and
+  requires `resolution: '2k' | '4k'`. `2k` supports every current aspect ratio;
+  `4k` supports only `16:9` and `9:16`, matching the upstream GPT Image 2
+  limits. Frontend admin controls auto-switch to `16:9` when selecting `4k`
+  from an unsupported aspect choice.
+- `imagesApi.generateImage(request)` is the only frontend routing point:
+  `resolution !== 'standard'` calls `/api/images/generate/high-res`; all other
+  requests call `/api/images/generate`.
+- The generator UI exposes the clarity selector only when `useAuth().isAdmin`
+  is true. Non-admin UI must not render the selector or send a high-resolution
+  field; backend authorization remains authoritative.
 - `demoPresetId` remains a legacy admin-only backend path for tests and
   compatibility. The generator UI must not expose a demo button; configured demo
   prompts are submitted as ordinary `prompt` values and matched on the backend.
+  Demo preset and configured demo prompt cache paths stay standard-only.
 - Regeneration from history may reuse existing `referenceIds`; this is still
   a normal `GenerateRequest` and must NOT re-upload original files when the
   frontend already has persisted backend reference ids.
@@ -203,22 +220,26 @@ function isImageRecord(value: unknown): value is ImageRecord {
 
 ### 4. Validation & Error Matrix
 
-| Condition                        | Frontend behavior                                                                    |
-| -------------------------------- | ------------------------------------------------------------------------------------ |
-| Empty prompt                     | Composable throws `Error('Describe the image before generating.')` before network IO |
-| Upload response shape invalid    | Throw `ImageApiError` with `INVALID_RESPONSE`                                        |
-| Generate response shape invalid  | Throw `ImageApiError` with `INVALID_RESPONSE`                                        |
-| Backend error envelope present   | Throw `ImageApiError(status, code, message, requestId, details)`                     |
-| `PROVIDER_TIMEOUT` during generate | Show an upstream-timeout message with retry/simplification guidance                |
-| `PROVIDER_PROMPT_REJECTED` during generate | Show a safety-policy message with prompt/reference wording guidance          |
-| `PROVIDER_EMPTY_RESULT` during generate | Show an empty-result message with prompt adjustment guidance                    |
-| Non-JSON or malformed error body | Throw `ImageApiError(status, 'HTTP_ERROR', ...)`                                     |
-| localStorage schema mismatch     | Ignore stored payload and return an empty history                                    |
-| Existing history `referenceIds`  | Send them directly in `GenerateRequest.referenceIds`; do not call upload first       |
-| More than 4 reference images     | UI must not send more than `MAX_REFERENCE_IMAGES`; backend rejects extra ids         |
-| Anonymous gallery delete         | Backend returns `UNAUTHORIZED`; frontend opens login through `authedFetch`           |
-| Non-admin gallery delete         | Backend returns `FORBIDDEN`; frontend shows the localized API message                |
-| Missing/non-public gallery id     | Backend returns `NOT_FOUND`; frontend keeps the public gallery cache unchanged       |
+| Condition                                                     | Frontend behavior                                                                                    |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Empty prompt                                                  | Composable throws `Error('Describe the image before generating.')` before network IO                 |
+| Upload response shape invalid                                 | Throw `ImageApiError` with `INVALID_RESPONSE`                                                        |
+| Generate response shape invalid                               | Throw `ImageApiError` with `INVALID_RESPONSE`                                                        |
+| Backend error envelope present                                | Throw `ImageApiError(status, code, message, requestId, details)`                                     |
+| Non-admin high-res request                                    | Backend returns `FORBIDDEN`; frontend should not expose the high-res selector                        |
+| Standard endpoint receives `2k`/`4k`                          | Backend returns `BAD_REQUEST`; frontend service must route high-res requests to `/high-res`          |
+| High-res endpoint receives `standard` or missing `resolution` | Backend returns `BAD_REQUEST`                                                                        |
+| `4k` with unsupported aspect ratio                            | Backend returns `BAD_REQUEST`; admin UI switches unsupported choices to `16:9` or downgrades to `2k` |
+| `PROVIDER_TIMEOUT` during generate                            | Show an upstream-timeout message with retry/simplification guidance                                  |
+| `PROVIDER_PROMPT_REJECTED` during generate                    | Show a safety-policy message with prompt/reference wording guidance                                  |
+| `PROVIDER_EMPTY_RESULT` during generate                       | Show an empty-result message with prompt adjustment guidance                                         |
+| Non-JSON or malformed error body                              | Throw `ImageApiError(status, 'HTTP_ERROR', ...)`                                                     |
+| localStorage schema mismatch                                  | Ignore stored payload and return an empty history                                                    |
+| Existing history `referenceIds`                               | Send them directly in `GenerateRequest.referenceIds`; do not call upload first                       |
+| More than 4 reference images                                  | UI must not send more than `MAX_REFERENCE_IMAGES`; backend rejects extra ids                         |
+| Anonymous gallery delete                                      | Backend returns `UNAUTHORIZED`; frontend opens login through `authedFetch`                           |
+| Non-admin gallery delete                                      | Backend returns `FORBIDDEN`; frontend shows the localized API message                                |
+| Missing/non-public gallery id                                 | Backend returns `NOT_FOUND`; frontend keeps the public gallery cache unchanged                       |
 
 ### 5. Good/Base/Bad Cases
 
@@ -226,6 +247,9 @@ function isImageRecord(value: unknown): value is ImageRecord {
   output blob is fetched, and metadata/blob are persisted together.
 - Base: prompt-only generation skips upload and records `generationMode` as
   `text-to-image`.
+- Admin high-res: admin selects 4K from the clarity selector, UI switches to
+  `16:9`, `imagesApi` posts to `/api/images/generate/high-res`, and returned
+  records preserve the backend `width`/`height`.
 - Demo prompt: an exact configured prompt still travels through
   `generateImage({ prompt, ... })`; the frontend does not add `demoPresetId` or
   branch on demo state.
@@ -238,11 +262,18 @@ function isImageRecord(value: unknown): value is ImageRecord {
   homepage gallery; that owner's private history still contains the record with
   `isPublic: false`.
 - Bad: invalid backend JSON is never cast; it becomes a typed `ImageApiError`.
+- Bad: a non-admin component path constructs `{ resolution: '4k' }`; backend
+  still rejects direct calls, but the frontend has drifted from the product
+  contract.
 
 ### 6. Tests Required
 
 - Stub `fetch` for upload/generate wrappers and assert method, URL, payload,
   narrowing, and error conversion.
+- API wrapper: assert `resolution: '4k'` routes to
+  `/api/images/generate/high-res` and keeps the high-resolution payload.
+- View/composable: assert admins can choose `2k`/`4k`, `4k` sends `16:9`, and
+  non-admins do not render or send the clarity selector.
 - Use `fake-indexeddb` for blob persistence and assert blob round-trip.
 - Seed localStorage with valid, invalid, and wrong-version payloads and assert
   schema-gated reads.
@@ -309,8 +340,10 @@ return {
 #### Correct
 
 ```ts
-const referenceIds = batch.entries.flatMap((entry) =>
-  entry.record.referenceIds ?? (entry.record.referenceId ? [entry.record.referenceId] : []),
+const referenceIds = batch.entries.flatMap(
+  (entry) =>
+    entry.record.referenceIds ??
+    (entry.record.referenceId ? [entry.record.referenceId] : []),
 );
 return {
   prompt: batch.prompt,

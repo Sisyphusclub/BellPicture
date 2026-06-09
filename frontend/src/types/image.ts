@@ -25,6 +25,15 @@ export const ASPECT_CHOICE_LABELS: Record<AspectChoice, string> = {
 
 export const DEFAULT_ASPECT_CHOICE: AspectChoice = 'auto';
 export const DEFAULT_ASPECT_RATIO: AspectRatio = '1:1';
+export const IMAGE_RESOLUTIONS = ['standard', '2k', '4k'] as const;
+export type ImageResolution = (typeof IMAGE_RESOLUTIONS)[number];
+export const FOUR_K_ASPECT_RATIOS = ['16:9', '9:16'] as const;
+export const IMAGE_RESOLUTION_LABELS: Record<ImageResolution, string> = {
+  standard: '标准',
+  '2k': '2K',
+  '4k': '4K',
+};
+export const DEFAULT_IMAGE_RESOLUTION: ImageResolution = 'standard';
 export const DEFAULT_COUNT = 1;
 export const MIN_COUNT = 1;
 export const MAX_COUNT = 2;
@@ -62,6 +71,7 @@ export interface GenerateRequest {
   model?: string;
   count?: number;
   aspectRatio?: AspectRatio;
+  resolution?: ImageResolution;
   isPublic?: boolean;
   demoPresetId?: string;
 }

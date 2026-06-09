@@ -82,6 +82,64 @@ describe('TwoApiImageProvider', () => {
     expect(body['size']).toBe('1792x1024');
   });
 
+  it('maps 2k resolution to provider size payload', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
+    );
+    const provider = new TwoApiImageProvider(baseConfig, fetchMock);
+
+    const out = await provider.generate({
+      prompt: '2k portrait',
+      count: 1,
+      aspectRatio: '2:3',
+      resolution: '2k',
+    });
+
+    expect(out.images[0]).toMatchObject({ width: 1360, height: 2048 });
+    const init = fetchMock.mock.calls[0]![1] as RequestInit;
+    const body = JSON.parse(init.body as string) as Record<string, unknown>;
+    expect(body['size']).toBe('1360x2048');
+  });
+
+  it('maps 4k resolution to provider size payload', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
+    );
+    const provider = new TwoApiImageProvider(baseConfig, fetchMock);
+
+    const out = await provider.generate({
+      prompt: '4k wide',
+      count: 1,
+      aspectRatio: '16:9',
+      resolution: '4k',
+    });
+
+    expect(out.images[0]).toMatchObject({ width: 3840, height: 2160 });
+    const init = fetchMock.mock.calls[0]![1] as RequestInit;
+    const body = JSON.parse(init.body as string) as Record<string, unknown>;
+    expect(body['size']).toBe('3840x2160');
+  });
+
+  it('rejects 4k requests for unsupported aspect ratios before provider IO', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
+    );
+    const provider = new TwoApiImageProvider(baseConfig, fetchMock);
+
+    await expect(
+      provider.generate({
+        prompt: '4k square',
+        aspectRatio: '1:1',
+        resolution: '4k',
+      }),
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      status: 400,
+      details: { aspectRatio: '1:1', resolution: '4k' },
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('calls /v1/images/edits with multipart FormData when referencePath is set (image-to-image)', async () => {
     const refBytes = Buffer.from(TINY_PNG_B64, 'base64');
     const refPath = await seedUpload('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png', refBytes);
@@ -124,6 +182,29 @@ describe('TwoApiImageProvider', () => {
     expect(headers['content-type']).toBeUndefined();
   });
 
+  it('maps high-resolution image-to-image requests to multipart size payload', async () => {
+    const refBytes = Buffer.from(TINY_PNG_B64, 'base64');
+    const refPath = await seedUpload('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb.png', refBytes);
+
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
+    );
+    const provider = new TwoApiImageProvider(baseConfig, fetchMock);
+
+    const out = await provider.generate({
+      prompt: 'upscale edit',
+      referencePath: refPath,
+      count: 1,
+      aspectRatio: '9:16',
+      resolution: '4k',
+    });
+
+    expect(out.images[0]).toMatchObject({ width: 2160, height: 3840 });
+    const init = fetchMock.mock.calls[0]![1] as RequestInit;
+    const form = init.body as FormData;
+    expect(form.get('size')).toBe('2160x3840');
+  });
+
   it('maps prompt rejection upstream statuses to PROVIDER_PROMPT_REJECTED 422', async () => {
     const provider = new TwoApiImageProvider(
       baseConfig,
@@ -164,7 +245,10 @@ describe('TwoApiImageProvider', () => {
   });
 
   it('maps empty successful provider payloads to PROVIDER_EMPTY_RESULT 502', async () => {
-    const provider = new TwoApiImageProvider(baseConfig, vi.fn(async () => jsonResponse({ data: [] })));
+    const provider = new TwoApiImageProvider(
+      baseConfig,
+      vi.fn(async () => jsonResponse({ data: [] })),
+    );
 
     await expect(provider.generate({ prompt: 'x' })).rejects.toMatchObject({
       code: 'PROVIDER_EMPTY_RESULT',
