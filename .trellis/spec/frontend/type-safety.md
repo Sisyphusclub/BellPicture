@@ -180,8 +180,10 @@ function isImageRecord(value: unknown): value is ImageRecord {
 - `imagesApi.generateImage(request)` is the only frontend routing point:
   `resolution !== 'standard'` calls `/api/images/generate/high-res`; all other
   requests call `/api/images/generate`.
-- The generator UI exposes the clarity selector only when `useAuth().isAdmin`
-  is true. Non-admin UI must not render the selector or send a high-resolution
+- The generator UI exposes a directly visible `标准 / 2K / 4K` clarity
+  segmented control only when `useAuth().isAdmin` is true. Do not hide 2K/4K
+  behind a secondary menu; admins must see the available resolutions at a
+  glance. Non-admin UI must not render the selector or send a high-resolution
   field; backend authorization remains authoritative.
 - `demoPresetId` remains a legacy admin-only backend path for tests and
   compatibility. The generator UI must not expose a demo button; configured demo
@@ -272,8 +274,8 @@ function isImageRecord(value: unknown): value is ImageRecord {
   narrowing, and error conversion.
 - API wrapper: assert `resolution: '4k'` routes to
   `/api/images/generate/high-res` and keeps the high-resolution payload.
-- View/composable: assert admins can choose `2k`/`4k`, `4k` sends `16:9`, and
-  non-admins do not render or send the clarity selector.
+- View/composable: assert admins directly see and can choose `2k`/`4k`, `4k`
+  sends `16:9`, and non-admins do not render or send the clarity selector.
 - Use `fake-indexeddb` for blob persistence and assert blob round-trip.
 - Seed localStorage with valid, invalid, and wrong-version payloads and assert
   schema-gated reads.

@@ -486,13 +486,12 @@ describe('GenerateView', () => {
     const { wrapper, generate } = await mountGenerateView({ isAdmin: true });
     const homeComposer = wrapper.get('form.prompt-showcase');
     const resolutionControl = homeComposer.get('.prompt-showcase__resolution');
+    const resolutionOptions = resolutionControl.findAll('.prompt-showcase__resolution-option');
 
-    await resolutionControl.get('button.prompt-showcase__smart').trigger('click');
-    await getButtonByText(resolutionControl.findAll('.prompt-showcase__menu button'), '4K').trigger(
-      'click',
-    );
+    expect(resolutionOptions.map((button) => button.text())).toEqual(['标准', '2K', '4K']);
+    await getButtonByText(resolutionOptions, '4K').trigger('click');
 
-    expect(resolutionControl.get('button.prompt-showcase__smart').text()).toContain('4K');
+    expect(getButtonByText(resolutionOptions, '4K').attributes('aria-checked')).toBe('true');
 
     await homeComposer.get('textarea[name="heroPrompt"]').setValue('管理员 4K 海报');
     await homeComposer.trigger('submit');
@@ -691,13 +690,12 @@ describe('GenerateView', () => {
 
     const dockComposer = wrapper.get('form.prompt-showcase--dock');
     const resolutionControl = dockComposer.get('.prompt-showcase__resolution');
+    const resolutionOptions = resolutionControl.findAll('.prompt-showcase__resolution-option');
 
-    await resolutionControl.get('button.prompt-showcase__smart').trigger('click');
-    await getButtonByText(resolutionControl.findAll('.prompt-showcase__menu button'), '2K').trigger(
-      'click',
-    );
+    expect(resolutionOptions.map((button) => button.text())).toEqual(['标准', '2K', '4K']);
+    await getButtonByText(resolutionOptions, '2K').trigger('click');
 
-    expect(resolutionControl.get('button.prompt-showcase__smart').text()).toContain('2K');
+    expect(getButtonByText(resolutionOptions, '2K').attributes('aria-checked')).toBe('true');
 
     await dockComposer.get('textarea[name="prompt"]').setValue('管理员 2K 海报');
     await dockComposer.get('button.prompt-showcase__generate').trigger('click');

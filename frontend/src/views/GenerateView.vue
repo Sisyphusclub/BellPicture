@@ -122,7 +122,6 @@ const reusedReferenceId = ref<string | null>(null);
 const isComposerDragging = ref(false);
 const aspectMenuOpen = ref(false);
 const modelMenuOpen = ref(false);
-const resolutionMenuOpen = ref(false);
 const aspectButtonRef = ref<HTMLButtonElement | null>(null);
 const modelButtonRef = ref<HTMLButtonElement | null>(null);
 const selectedRecentEntry = ref<HistoryEntry | null>(null);
@@ -270,7 +269,6 @@ const quotaLabel = computed(() => {
   if (!quota.value) return '额度暂不可用';
   return `剩余额度 ${quota.value.remaining}`;
 });
-const resolutionLabel = computed(() => IMAGE_RESOLUTION_LABELS[resolution.value]);
 
 const groupedSidebarBatches = computed(() => {
   const groups: { bucket: DateBucket; batches: GroupedBatch[] }[] = [];
@@ -338,7 +336,6 @@ watch(shouldShowHeroSuggestion, (isVisible) => {
 watch(isAdmin, (admin) => {
   if (admin) return;
   resolution.value = DEFAULT_IMAGE_RESOLUTION;
-  resolutionMenuOpen.value = false;
 });
 
 async function handleSubmit(): Promise<void> {
@@ -796,20 +793,11 @@ function increaseCount(): void {
 function toggleAspectMenu(): void {
   aspectMenuOpen.value = !aspectMenuOpen.value;
   modelMenuOpen.value = false;
-  resolutionMenuOpen.value = false;
 }
 
 function toggleModelMenu(): void {
   modelMenuOpen.value = !modelMenuOpen.value;
   aspectMenuOpen.value = false;
-  resolutionMenuOpen.value = false;
-}
-
-function toggleResolutionMenu(): void {
-  if (!isAdmin.value) return;
-  resolutionMenuOpen.value = !resolutionMenuOpen.value;
-  aspectMenuOpen.value = false;
-  modelMenuOpen.value = false;
 }
 
 function chooseAspect(value: AspectChoice): void {
@@ -831,7 +819,6 @@ function chooseResolution(value: ImageResolution): void {
   if (value === '4k' && !isFourKAspectChoice(aspectRatio.value)) {
     aspectRatio.value = '16:9';
   }
-  resolutionMenuOpen.value = false;
 }
 
 function isFourKAspectChoice(value: AspectChoice): boolean {
@@ -854,7 +841,7 @@ function ensureAuthenticated(message = LOGIN_REQUIRED_MESSAGE): boolean {
 }
 
 function handleDocumentClick(event: MouseEvent): void {
-  if (!aspectMenuOpen.value && !modelMenuOpen.value && !resolutionMenuOpen.value) return;
+  if (!aspectMenuOpen.value && !modelMenuOpen.value) return;
   const target = event.target;
   if (
     target instanceof Element &&
@@ -864,7 +851,6 @@ function handleDocumentClick(event: MouseEvent): void {
   }
   aspectMenuOpen.value = false;
   modelMenuOpen.value = false;
-  resolutionMenuOpen.value = false;
 }
 
 function initializeHeroSuggestion(): void {
@@ -1393,43 +1379,26 @@ function formatStageDate(iso: string | undefined): string {
                     </li>
                   </ul>
                 </div>
-                <div v-if="isAdmin" class="prompt-showcase__resolution prompt-showcase__select">
+                <div
+                  v-if="isAdmin"
+                  class="prompt-showcase__resolution"
+                  role="radiogroup"
+                  aria-label="图片清晰度"
+                >
+                  <span class="prompt-showcase__resolution-label">清晰度</span>
                   <button
+                    v-for="value in IMAGE_RESOLUTIONS"
+                    :key="value"
                     type="button"
-                    class="prompt-showcase__smart"
-                    :aria-expanded="resolutionMenuOpen"
-                    aria-label="选择图片清晰度"
-                    @click.stop="toggleResolutionMenu"
+                    class="prompt-showcase__resolution-option"
+                    :class="{ 'prompt-showcase__resolution-option--active': value === resolution }"
+                    role="radio"
+                    :aria-checked="value === resolution"
+                    :disabled="isLoading"
+                    @click="chooseResolution(value)"
                   >
-                    <span>清晰度</span>
-                    <strong>{{ resolutionLabel }}</strong>
-                    <svg
-                      width="10"
-                      height="10"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2.4"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="m6 9 6 6 6-6" />
-                    </svg>
+                    {{ IMAGE_RESOLUTION_LABELS[value] }}
                   </button>
-                  <ul v-if="resolutionMenuOpen" class="prompt-showcase__menu" role="listbox">
-                    <li v-for="value in IMAGE_RESOLUTIONS" :key="value">
-                      <button
-                        type="button"
-                        role="option"
-                        :aria-selected="value === resolution"
-                        :class="{ 'prompt-showcase__menu-item--active': value === resolution }"
-                        @click.stop="chooseResolution(value)"
-                      >
-                        {{ IMAGE_RESOLUTION_LABELS[value] }}
-                      </button>
-                    </li>
-                  </ul>
                 </div>
                 <button
                   type="button"
@@ -1627,43 +1596,26 @@ function formatStageDate(iso: string | undefined): string {
             </li>
           </ul>
         </div>
-        <div v-if="isAdmin" class="prompt-showcase__resolution prompt-showcase__select">
+        <div
+          v-if="isAdmin"
+          class="prompt-showcase__resolution"
+          role="radiogroup"
+          aria-label="图片清晰度"
+        >
+          <span class="prompt-showcase__resolution-label">清晰度</span>
           <button
+            v-for="value in IMAGE_RESOLUTIONS"
+            :key="value"
             type="button"
-            class="prompt-showcase__smart"
-            :aria-expanded="resolutionMenuOpen"
-            aria-label="选择图片清晰度"
-            @click.stop="toggleResolutionMenu"
+            class="prompt-showcase__resolution-option"
+            :class="{ 'prompt-showcase__resolution-option--active': value === resolution }"
+            role="radio"
+            :aria-checked="value === resolution"
+            :disabled="isLoading"
+            @click="chooseResolution(value)"
           >
-            <span>清晰度</span>
-            <strong>{{ resolutionLabel }}</strong>
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.4"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
+            {{ IMAGE_RESOLUTION_LABELS[value] }}
           </button>
-          <ul v-if="resolutionMenuOpen" class="prompt-showcase__menu" role="listbox">
-            <li v-for="value in IMAGE_RESOLUTIONS" :key="value">
-              <button
-                type="button"
-                role="option"
-                :aria-selected="value === resolution"
-                :class="{ 'prompt-showcase__menu-item--active': value === resolution }"
-                @click.stop="chooseResolution(value)"
-              >
-                {{ IMAGE_RESOLUTION_LABELS[value] }}
-              </button>
-            </li>
-          </ul>
         </div>
         <span class="prompt-showcase__mode" aria-live="polite">{{ modeLabel }}</span>
         <button
@@ -2558,6 +2510,60 @@ function formatStageDate(iso: string | undefined): string {
   background: var(--color-chip);
 }
 
+.prompt-showcase__resolution {
+  display: inline-flex;
+  min-height: var(--control-height-sm);
+  align-items: center;
+  gap: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--pill-bg);
+  color: var(--pill-fg);
+  font-size: var(--text-label-size);
+  font-weight: 800;
+  padding: 3px;
+}
+
+.prompt-showcase__resolution-label {
+  padding: 0 7px 0 9px;
+  white-space: nowrap;
+}
+
+.prompt-showcase__resolution-option {
+  display: inline-flex;
+  min-width: 38px;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-body);
+  cursor: pointer;
+  font-size: var(--text-label-size);
+  font-weight: 800;
+  padding: 0 10px;
+}
+
+.prompt-showcase__resolution-option:not(:disabled):hover {
+  background: var(--color-overlay);
+  color: var(--color-ink);
+}
+
+.prompt-showcase__resolution-option--active {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.prompt-showcase__resolution-option--active:not(:disabled):hover {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.prompt-showcase__resolution-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
 .prompt-showcase__public {
   display: inline-flex;
   align-items: center;
@@ -2840,6 +2846,7 @@ function formatStageDate(iso: string | undefined): string {
 .prompt-showcase__attachment button:focus-visible,
 .prompt-showcase__smart:focus-visible,
 .prompt-showcase__menu button:focus-visible,
+.prompt-showcase__resolution-option:focus-visible,
 .prompt-showcase__public:focus-visible,
 .prompt-showcase__stepper button:focus-visible,
 .prompt-showcase__generate:focus-visible {
@@ -3099,6 +3106,7 @@ function formatStageDate(iso: string | undefined): string {
 
   .prompt-showcase__grid,
   .prompt-showcase__model,
+  .prompt-showcase__resolution,
   .prompt-showcase__smart,
   .prompt-showcase__stepper,
   .prompt-showcase__public {
