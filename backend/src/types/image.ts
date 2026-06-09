@@ -91,4 +91,6 @@ export interface GenerateImageItem {
 export interface GenerateOutput {
   images: GenerateImageItem[];
   aspectRatio: AspectRatio;
+  /** Provider-selected model after any resolution-specific override. */
+  model?: string;
 }

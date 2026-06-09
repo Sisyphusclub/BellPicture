@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { z, ZodError } from 'zod';
 
+import { env } from '../config/env.js';
 import { AppError } from '../errors/AppError.js';
 import { logger } from '../logger.js';
 import { generateDemoImage } from '../services/demoGeneration.service.js';
@@ -157,7 +158,7 @@ export function buildImagesController(deps: ImagesControllerDeps): {
             result,
             userId: user.id,
             prompt: parsed.prompt,
-            model: parsed.model ?? 'gpt-image-2',
+            ...(parsed.model !== undefined ? { requestedModel: parsed.model } : {}),
             referenceIds,
             isPublic: parsed.isPublic ?? false,
             requestId: req.requestId,
@@ -182,7 +183,7 @@ export function buildImagesController(deps: ImagesControllerDeps): {
               result: cachedResult,
               userId: user.id,
               prompt: parsed.prompt,
-              model: parsed.model ?? 'gpt-image-2',
+              ...(parsed.model !== undefined ? { requestedModel: parsed.model } : {}),
               referenceIds,
               isPublic: parsed.isPublic ?? false,
               requestId: req.requestId,
@@ -211,7 +212,7 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           result,
           userId: user.id,
           prompt: parsed.prompt,
-          model: parsed.model ?? 'gpt-image-2',
+          ...(parsed.model !== undefined ? { requestedModel: parsed.model } : {}),
           referenceIds,
           isPublic: parsed.isPublic ?? false,
           requestId: req.requestId,
@@ -244,7 +245,7 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           result,
           userId: user.id,
           prompt: parsed.prompt,
-          model: parsed.model ?? 'gpt-image-2',
+          ...(parsed.model !== undefined ? { requestedModel: parsed.model } : {}),
           referenceIds,
           isPublic: parsed.isPublic ?? false,
           requestId: req.requestId,
@@ -274,18 +275,19 @@ function persistGeneratedImages(input: {
   result: GenerateImageOutput;
   userId: string;
   prompt: string;
-  model: string;
+  requestedModel?: string;
   referenceIds: string[];
   isPublic: boolean;
   requestId: string;
 }): void {
   const createdAt = new Date();
+  const model = input.result.model ?? input.requestedModel ?? env.IMAGE_MODEL;
   const records: NewImageRecord[] = input.result.images.map((image) => ({
     id: image.filename,
     batchId: input.result.batchId,
     userId: input.userId,
     prompt: input.prompt,
-    model: input.model,
+    model,
     ...(input.referenceIds[0] !== undefined ? { referenceId: input.referenceIds[0] } : {}),
     ...(input.referenceIds.length > 0 ? { referenceIds: input.referenceIds } : {}),
     ...(input.result.aspectRatio !== undefined ? { aspectRatio: input.result.aspectRatio } : {}),

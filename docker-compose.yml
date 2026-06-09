@@ -8,9 +8,11 @@ services:
       NODE_ENV: production
       PORT: 3000
       IMAGE_API_BASE_URL: ${IMAGE_API_BASE_URL:?Set IMAGE_API_BASE_URL in the root .env file}
+      HIGH_RES_IMAGE_API_BASE_URL: ${HIGH_RES_IMAGE_API_BASE_URL:-}
       IMAGE_API_KEY: ${IMAGE_API_KEY:?Set IMAGE_API_KEY in the root .env file}
       OPENAI_COMPAT_API_KEY: ${OPENAI_COMPAT_API_KEY:?Set OPENAI_COMPAT_API_KEY in the root .env file}
       IMAGE_MODEL: ${IMAGE_MODEL:-gpt-image-2}
+      HIGH_RES_IMAGE_MODEL: ${HIGH_RES_IMAGE_MODEL:-}
       IMAGE_API_TIMEOUT_MS: ${IMAGE_API_TIMEOUT_MS:-120000}
       GPT_POOL_QUOTA: ${GPT_POOL_QUOTA:-100}
       UPLOAD_DIR: /app/tmp/uploads

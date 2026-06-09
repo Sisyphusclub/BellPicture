@@ -3,9 +3,11 @@ import process from 'node:process';
 export interface Env {
   PORT: number;
   IMAGE_API_BASE_URL: string;
+  HIGH_RES_IMAGE_API_BASE_URL: string | undefined;
   IMAGE_API_KEY: string;
   OPENAI_COMPAT_API_KEY: string;
   IMAGE_MODEL: string;
+  HIGH_RES_IMAGE_MODEL: string | undefined;
   IMAGE_API_TIMEOUT_MS: number;
   GPT_POOL_QUOTA: number;
   UPLOAD_DIR: string;
@@ -96,9 +98,11 @@ function loadEnv(): Env {
   return {
     PORT: readInt('PORT', 3000),
     IMAGE_API_BASE_URL: readString('IMAGE_API_BASE_URL'),
+    HIGH_RES_IMAGE_API_BASE_URL: readOptionalString('HIGH_RES_IMAGE_API_BASE_URL'),
     IMAGE_API_KEY: readString('IMAGE_API_KEY'),
     OPENAI_COMPAT_API_KEY: readString('OPENAI_COMPAT_API_KEY'),
     IMAGE_MODEL: readString('IMAGE_MODEL', 'gpt-image-2'),
+    HIGH_RES_IMAGE_MODEL: readOptionalString('HIGH_RES_IMAGE_MODEL'),
     IMAGE_API_TIMEOUT_MS: readInt('IMAGE_API_TIMEOUT_MS', 120_000),
     GPT_POOL_QUOTA: readInt('GPT_POOL_QUOTA', 100),
     UPLOAD_DIR: readString('UPLOAD_DIR', './tmp/uploads'),

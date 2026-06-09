@@ -17,8 +17,8 @@
 
 ## 页面截图
 
-| 发现页 | 生图工作区 | 资产页 |
-| --- | --- | --- |
+| 发现页                                   | 生图工作区                                       | 资产页                                      |
+| ---------------------------------------- | ------------------------------------------------ | ------------------------------------------- |
 | ![发现页截图](docs/screenshots/home.png) | ![生图工作区截图](docs/screenshots/generate.png) | ![资产页截图](docs/screenshots/history.png) |
 
 ## 功能亮点
@@ -35,12 +35,12 @@
 
 ## 技术栈
 
-| 层 | 技术 |
-| --- | --- |
-| Frontend | Vue 3, Vue Router, TypeScript, Vite, Element Plus, Vitest |
-| Backend | Node.js, Express, TypeScript, Better Auth, SQLite, Drizzle ORM |
-| Storage | SQLite 数据库, 本地上传目录, 本地输出目录 |
-| Deployment | Docker Compose, nginx, persistent Docker volumes |
+| 层         | 技术                                                           |
+| ---------- | -------------------------------------------------------------- |
+| Frontend   | Vue 3, Vue Router, TypeScript, Vite, Element Plus, Vitest      |
+| Backend    | Node.js, Express, TypeScript, Better Auth, SQLite, Drizzle ORM |
+| Storage    | SQLite 数据库, 本地上传目录, 本地输出目录                      |
+| Deployment | Docker Compose, nginx, persistent Docker volumes               |
 
 ## Docker Compose 快速启动
 
@@ -58,6 +58,8 @@ cp .env.docker.example .env
 
 ```env
 IMAGE_API_BASE_URL=https://api.2api.example
+# 可选：管理员 2K/4K 专用上游，例如 Codex 图像通道。
+HIGH_RES_IMAGE_API_BASE_URL=
 IMAGE_API_KEY=replace-me
 OPENAI_COMPAT_API_KEY=replace-me-openai-compat
 BETTER_AUTH_SECRET=replace-me-with-a-random-32-byte-secret
@@ -143,6 +145,8 @@ cp frontend/.env.example frontend/.env
 
 ```env
 IMAGE_API_BASE_URL=https://api.2api.example
+# 可选：管理员 2K/4K 专用上游，例如 Codex 图像通道。
+HIGH_RES_IMAGE_API_BASE_URL=
 IMAGE_API_KEY=replace-me
 OPENAI_COMPAT_API_KEY=replace-me-openai-compat
 BETTER_AUTH_SECRET=replace-me-with-a-random-secret
@@ -198,52 +202,54 @@ http://localhost:5173
 
 ## 环境变量
 
-| 变量 | 必需 | 说明 |
-| --- | --- | --- |
-| `IMAGE_API_BASE_URL` | 是 | 图像生成服务地址 |
-| `IMAGE_API_KEY` | 是 | 图像生成服务密钥 |
-| `OPENAI_COMPAT_API_KEY` | 是 | OpenAI-compatible API 调用密钥 |
-| `BETTER_AUTH_SECRET` | 是 | Better Auth 会话密钥 |
-| `IMAGE_MODEL` | 否 | 默认图像模型，默认 `gpt-image-2` |
-| `IMAGE_API_TIMEOUT_MS` | 否 | 图像生成请求超时时间 |
-| `GPT_POOL_QUOTA` | 否 | 后端图像生成池额度配置 |
-| `UPLOAD_MAX_BYTES` | 否 | 参考图上传大小上限 |
-| `DAILY_USER_QUOTA` | 否 | 默认用户每日生图额度 |
-| `GOOGLE_CLIENT_ID` | 否 | Google OAuth Client ID |
-| `GOOGLE_CLIENT_SECRET` | 否 | Google OAuth Client Secret |
-| `SEED_DEFAULT_ADMIN` | 否 | 是否启用默认管理员种子 |
+| 变量                          | 必需 | 说明                                                                  |
+| ----------------------------- | ---- | --------------------------------------------------------------------- |
+| `IMAGE_API_BASE_URL`          | 是   | 图像生成服务地址                                                      |
+| `HIGH_RES_IMAGE_API_BASE_URL` | 否   | 管理员 2K/4K 专用图像生成服务地址；留空则复用 `IMAGE_API_BASE_URL`    |
+| `IMAGE_API_KEY`               | 是   | 图像生成服务密钥                                                      |
+| `OPENAI_COMPAT_API_KEY`       | 是   | OpenAI-compatible API 调用密钥                                        |
+| `BETTER_AUTH_SECRET`          | 是   | Better Auth 会话密钥                                                  |
+| `IMAGE_MODEL`                 | 否   | 默认图像模型，默认 `gpt-image-2`                                      |
+| `HIGH_RES_IMAGE_MODEL`        | 否   | 管理员 2K/4K 专用模型名，例如 `codex-gpt-image-2`；留空则沿用请求模型 |
+| `IMAGE_API_TIMEOUT_MS`        | 否   | 图像生成请求超时时间                                                  |
+| `GPT_POOL_QUOTA`              | 否   | 后端图像生成池额度配置                                                |
+| `UPLOAD_MAX_BYTES`            | 否   | 参考图上传大小上限                                                    |
+| `DAILY_USER_QUOTA`            | 否   | 默认用户每日生图额度                                                  |
+| `GOOGLE_CLIENT_ID`            | 否   | Google OAuth Client ID                                                |
+| `GOOGLE_CLIENT_SECRET`        | 否   | Google OAuth Client Secret                                            |
+| `SEED_DEFAULT_ADMIN`          | 否   | 是否启用默认管理员种子                                                |
 
 ## 页面入口
 
-| 路径 | 说明 |
-| --- | --- |
-| `/` | 发现页，展示提示词输入、流式示例和公开画廊 |
-| `/generate` | 生图工作区，保留生成记录和结果流 |
-| `/history` | 个人资产页，查看和管理本地生成历史 |
-| `/admin/users` | 管理员用户管理页，仅管理员可用 |
+| 路径           | 说明                                       |
+| -------------- | ------------------------------------------ |
+| `/`            | 发现页，展示提示词输入、流式示例和公开画廊 |
+| `/generate`    | 生图工作区，保留生成记录和结果流           |
+| `/history`     | 个人资产页，查看和管理本地生成历史         |
+| `/admin/users` | 管理员用户管理页，仅管理员可用             |
 
 ## API 入口
 
-| 方法 | 路径 | 说明 |
-| --- | --- | --- |
-| `GET` | `/api/health` | 健康检查 |
-| `POST` | `/api/images/generations` | 应用内生图接口 |
-| `GET` | `/api/history` | 读取当前用户历史 |
-| `POST` | `/api/history` | 写入生成历史 |
-| `GET` | `/api/auth/me` | 读取当前用户资料和管理员状态 |
-| `GET` | `/api/admin/users` | 管理员查看用户列表 |
-| `POST` | `/api/admin/users` | 管理员创建用户 |
-| `PATCH` | `/api/admin/users/:id/quota` | 管理员设置用户每日额度 |
-| `DELETE` | `/api/admin/users/:id` | 管理员删除普通用户 |
-| `POST` | `/v1/images/generations` | OpenAI-compatible 生图接口 |
+| 方法     | 路径                         | 说明                         |
+| -------- | ---------------------------- | ---------------------------- |
+| `GET`    | `/api/health`                | 健康检查                     |
+| `POST`   | `/api/images/generations`    | 应用内生图接口               |
+| `GET`    | `/api/history`               | 读取当前用户历史             |
+| `POST`   | `/api/history`               | 写入生成历史                 |
+| `GET`    | `/api/auth/me`               | 读取当前用户资料和管理员状态 |
+| `GET`    | `/api/admin/users`           | 管理员查看用户列表           |
+| `POST`   | `/api/admin/users`           | 管理员创建用户               |
+| `PATCH`  | `/api/admin/users/:id/quota` | 管理员设置用户每日额度       |
+| `DELETE` | `/api/admin/users/:id`       | 管理员删除普通用户           |
+| `POST`   | `/v1/images/generations`     | OpenAI-compatible 生图接口   |
 
 ## 存储说明
 
-| 场景 | 本地开发默认位置 | Docker Compose 默认位置 |
-| --- | --- | --- |
-| SQLite 数据库 | `backend/data/app.sqlite` | `backend-data` volume |
-| 上传参考图 | `backend/tmp/uploads` | `backend-uploads` volume |
-| 生成结果 | `backend/tmp/outputs` | `backend-outputs` volume |
+| 场景          | 本地开发默认位置          | Docker Compose 默认位置  |
+| ------------- | ------------------------- | ------------------------ |
+| SQLite 数据库 | `backend/data/app.sqlite` | `backend-data` volume    |
+| 上传参考图    | `backend/tmp/uploads`     | `backend-uploads` volume |
+| 生成结果      | `backend/tmp/outputs`     | `backend-outputs` volume |
 
 前端资产历史以浏览器本地状态为主，云端同步仍可继续扩展。
 

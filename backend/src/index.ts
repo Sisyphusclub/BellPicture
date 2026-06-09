@@ -12,8 +12,12 @@ await seedDefaultAdminIfEnabled();
 
 const provider = new TwoApiImageProvider({
   baseUrl: env.IMAGE_API_BASE_URL,
+  ...(env.HIGH_RES_IMAGE_API_BASE_URL !== undefined
+    ? { highResBaseUrl: env.HIGH_RES_IMAGE_API_BASE_URL }
+    : {}),
   apiKey: env.IMAGE_API_KEY,
   defaultModel: env.IMAGE_MODEL,
+  ...(env.HIGH_RES_IMAGE_MODEL !== undefined ? { highResModel: env.HIGH_RES_IMAGE_MODEL } : {}),
   timeoutMs: env.IMAGE_API_TIMEOUT_MS,
 });
 

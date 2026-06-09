@@ -21,8 +21,10 @@ import type { ImageGenerationProvider } from './ImageGenerationProvider.js';
 
 export interface TwoApiConfig {
   baseUrl: string;
+  highResBaseUrl?: string;
   apiKey: string;
   defaultModel: string;
+  highResModel?: string;
   timeoutMs: number;
 }
 
@@ -43,9 +45,10 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
   }
 
   async generate(input: GenerateInput): Promise<GenerateOutput> {
-    const model = input.model ?? this.config.defaultModel;
     const aspectRatio: AspectRatio = input.aspectRatio ?? DEFAULT_ASPECT_RATIO;
     const resolution: ImageResolution = input.resolution ?? DEFAULT_IMAGE_RESOLUTION;
+    const model = this.modelForResolution(resolution, input.model);
+    const baseUrl = this.baseUrlForResolution(resolution);
     const count = input.count ?? DEFAULT_COUNT;
     const sizing = aspectSizeForResolution(aspectRatio, resolution);
     if (sizing === undefined) {
@@ -64,8 +67,8 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     let response: Response;
     try {
       response = hasReference
-        ? await this.callEdits(model, input.prompt, referencePaths, count, sizing.size)
-        : await this.callGenerations(model, input.prompt, count, sizing.size);
+        ? await this.callEdits(baseUrl, model, input.prompt, referencePaths, count, sizing.size)
+        : await this.callGenerations(baseUrl, model, input.prompt, count, sizing.size);
     } catch (err) {
       if (isTimeoutLike(err)) {
         throw new AppError(
@@ -157,21 +160,42 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
         outputCount: images.length,
         aspectRatio,
         resolution,
+        highResProvider: baseUrl !== this.config.baseUrl,
         hasReference,
       },
       'image generation: provider success',
     );
 
-    return { images, aspectRatio };
+    return { images, aspectRatio, model };
+  }
+
+  private baseUrlForResolution(resolution: ImageResolution): string {
+    if (resolution === DEFAULT_IMAGE_RESOLUTION) return this.config.baseUrl;
+    return this.config.highResBaseUrl ?? this.config.baseUrl;
+  }
+
+  private modelForResolution(
+    resolution: ImageResolution,
+    requestedModel: string | undefined,
+  ): string {
+    if (
+      resolution !== DEFAULT_IMAGE_RESOLUTION &&
+      this.config.highResModel !== undefined &&
+      (requestedModel === undefined || requestedModel === this.config.defaultModel)
+    ) {
+      return this.config.highResModel;
+    }
+    return requestedModel ?? this.config.defaultModel;
   }
 
   private async callGenerations(
+    baseUrl: string,
     model: string,
     prompt: string,
     count: number,
     size: string,
   ): Promise<Response> {
-    const url = buildUrl(this.config.baseUrl, 'v1/images/generations');
+    const url = buildUrl(baseUrl, 'v1/images/generations');
     logger.info(
       { model, promptPreview: prompt.slice(0, 80), url, count, size },
       'image generation: provider request (text-to-image)',
@@ -194,13 +218,14 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
   }
 
   private async callEdits(
+    baseUrl: string,
     model: string,
     prompt: string,
     referencePaths: string[],
     count: number,
     size: string,
   ): Promise<Response> {
-    const url = buildUrl(this.config.baseUrl, 'v1/images/edits');
+    const url = buildUrl(baseUrl, 'v1/images/edits');
     const referenceFiles = await Promise.all(
       referencePaths.map((referencePath) => readReferenceFile(referencePath)),
     );

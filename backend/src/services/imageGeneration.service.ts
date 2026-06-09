@@ -49,6 +49,8 @@ export interface GenerateImageOutput {
   batchId: string;
   aspectRatio: AspectRatio;
   mode: GenerationMode;
+  /** Provider-selected model after any resolution-specific override. */
+  model?: string;
   images: GenerateImageItemOutput[];
 }
 
@@ -141,6 +143,7 @@ export async function generateImage(
     batchId: randomUUID(),
     aspectRatio: result.aspectRatio,
     mode: hasReference ? 'image-to-image' : 'text-to-image',
+    ...(result.model !== undefined ? { model: result.model } : {}),
     images: result.images.map((image) => ({
       filename: path.basename(image.outputPath),
       absolutePath: image.outputPath,
