@@ -72,6 +72,21 @@ describe('imageGeneration.service', () => {
     });
   });
 
+  it('maps a zero-image provider result to PROVIDER_EMPTY_RESULT', async () => {
+    const provider: ImageGenerationProvider = {
+      generate: vi.fn(async (): Promise<GenerateOutput> => ({
+        images: [],
+        aspectRatio: '1:1',
+      })),
+    };
+
+    await expect(generateImage({ prompt: 'p' }, { provider })).rejects.toMatchObject({
+      code: 'PROVIDER_EMPTY_RESULT',
+      status: 502,
+      details: { reason: 'empty_result' },
+    });
+  });
+
   it('rejects count below MIN', async () => {
     const provider = fakeProvider();
     await expect(generateImage({ prompt: 'p', count: 0 }, { provider })).rejects.toMatchObject({

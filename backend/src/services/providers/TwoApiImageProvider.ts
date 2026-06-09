@@ -87,12 +87,21 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
         { upstreamStatus: response.status, summary, hasReference },
         'image generation: provider non-2xx',
       );
+      if (isPromptRejectionStatus(response.status)) {
+        throw new AppError(
+          'PROVIDER_PROMPT_REJECTED',
+          'Image generation provider rejected the prompt or reference image',
+          422,
+          undefined,
+          { upstreamStatus: response.status, reason: 'prompt_rejected' },
+        );
+      }
       throw new AppError(
         'PROVIDER_ERROR',
         `Image generation provider returned ${response.status}`,
         502,
         undefined,
-        { upstreamStatus: response.status },
+        { upstreamStatus: response.status, reason: 'provider_http_error' },
       );
     }
 
@@ -105,13 +114,25 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
 
     const data = parsed.data ?? [];
     if (data.length === 0) {
-      throw new AppError('PROVIDER_ERROR', 'Provider response missing data array', 502);
+      throw new AppError(
+        'PROVIDER_EMPTY_RESULT',
+        'Provider did not return image data',
+        502,
+        undefined,
+        { reason: 'empty_result' },
+      );
     }
 
     const images: GenerateImageItem[] = [];
     for (const item of data) {
       if (typeof item.b64_json !== 'string' || item.b64_json.length === 0) {
-        throw new AppError('PROVIDER_ERROR', 'Provider response missing b64_json data', 502);
+        throw new AppError(
+          'PROVIDER_EMPTY_RESULT',
+          'Provider did not return image data',
+          502,
+          undefined,
+          { reason: 'empty_result' },
+        );
       }
       const buffer = Buffer.from(item.b64_json, 'base64');
       const saved = await saveOutput(buffer, 'png');
@@ -227,6 +248,10 @@ function buildUrl(baseUrl: string, suffix: string): string {
 function isTimeoutLike(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
   return err.name === 'AbortError' || err.name === 'TimeoutError';
+}
+
+function isPromptRejectionStatus(status: number): boolean {
+  return status === 400 || status === 422;
 }
 
 async function summarizeBody(response: Response): Promise<string> {

@@ -27,6 +27,8 @@ export type ErrorCode =
   | 'UNSUPPORTED_MEDIA_TYPE'
   | 'PAYLOAD_TOO_LARGE'
   | 'PROVIDER_ERROR'        // 2API returned non-2xx or invalid payload
+  | 'PROVIDER_PROMPT_REJECTED' // 2API rejected prompt/reference content
+  | 'PROVIDER_EMPTY_RESULT' // 2API returned no image payload
   | 'PROVIDER_TIMEOUT'      // request exceeded IMAGE_API_TIMEOUT_MS
   | 'PROVIDER_RATE_LIMITED' // 2API returned 429
   | 'STORAGE_ERROR'         // local fs read/write failed
@@ -116,13 +118,17 @@ Mounted **last** in `app.ts`, after all routes.
 |---|---|---|
 | `AbortError` from `fetch` | `PROVIDER_TIMEOUT` | 504 |
 | 2API 429 | `PROVIDER_RATE_LIMITED` | 429 (the only upstream status we surface as-is) |
-| 2API other 4xx | `PROVIDER_ERROR` | 502 (don't pass through 4xx; the client called *us* correctly) |
+| 2API 400 / 422 | `PROVIDER_PROMPT_REJECTED` | 422 (`details = { upstreamStatus, reason: "prompt_rejected" }`) |
+| 2API other 4xx | `PROVIDER_ERROR` | 502 (configuration/auth/provider failure, `details.reason = "provider_http_error"`) |
 | 2API 5xx | `PROVIDER_ERROR` | 502 |
-| Malformed JSON / missing image data | `PROVIDER_ERROR` | 502 |
+| Malformed JSON | `PROVIDER_ERROR` | 502 |
+| Missing / empty image data | `PROVIDER_EMPTY_RESULT` | 502 (`details.reason = "empty_result"`) |
 | Local file-read fails before fetch (image-to-image) | `PROVIDER_ERROR` | 502 (treated as "provider unreachable" — the file should have existed if the service did the preflight) |
 
 Always log the upstream status + a redacted summary of the response body
 (no `Authorization` header echoes, no API key fragments).
+Never send the upstream response body to the frontend. The frontend should branch
+on stable `code` values and safe `details.reason` values, not provider prose.
 
 ## Upload / validation failure mapping
 

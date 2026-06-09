@@ -190,7 +190,13 @@ function messageForImageApiError(error: ImageApiError): string {
     case 'UNSUPPORTED_MEDIA_TYPE':
       return `后端无法识别此参考图格式，请改用 PNG、JPEG 或 WebP。${requestSuffix}`;
     case 'PROVIDER_TIMEOUT':
-      return `生成服务响应超时，请稍后重试。${requestSuffix}`;
+      return `上游生成服务响应超时，图片没有在限定时间内完成。请稍后重试，或减少参考图数量、改用更简单的提示词。${requestSuffix}`;
+    case 'PROVIDER_PROMPT_REJECTED':
+      return `提示词或参考图未通过上游安全策略。请避开敏感外貌、身体或衣物修改，改用更中性的风格和画质描述。${requestSuffix}`;
+    case 'PROVIDER_EMPTY_RESULT':
+      return `上游生成服务没有返回图片结果。请换一个更明确、限制更少的提示词后重试。${requestSuffix}`;
+    case 'PROVIDER_ERROR':
+      return `${messageForProviderError(error)}${requestSuffix}`;
     case 'PROVIDER_RATE_LIMITED':
       return `生成服务当前请求过多，请稍后再试。${requestSuffix}`;
     case 'QUOTA_EXHAUSTED':
@@ -206,8 +212,21 @@ function messageForImageApiError(error: ImageApiError): string {
       // fetch failures; surface it directly instead of appending status 0.
       return `${error.message}${requestSuffix}`;
     case 'HTTP_ERROR':
+      if (error.status === 504) return `生成服务响应超时，请稍后重试。${requestSuffix}`;
       return `请求失败，状态码 ${error.status}。${requestSuffix}`;
     default:
       return `生成请求失败，状态码 ${error.status}。${requestSuffix}`;
   }
+}
+
+function messageForProviderError(error: ImageApiError): string {
+  const upstreamStatus = error.details?.['upstreamStatus'];
+  const reason = error.details?.['reason'];
+  if (upstreamStatus === 400 || upstreamStatus === 422 || reason === 'prompt_rejected') {
+    return '提示词或参考图可能未通过上游安全策略。请避开敏感外貌、身体或衣物修改，改用更中性的风格和画质描述。';
+  }
+  if (reason === 'empty_result') {
+    return '上游生成服务没有返回图片结果。请换一个更明确、限制更少的提示词后重试。';
+  }
+  return '上游生成服务返回异常，请稍后重试。';
 }

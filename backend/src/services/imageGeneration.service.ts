@@ -110,7 +110,9 @@ export async function generateImage(
   });
 
   if (result.images.length === 0) {
-    throw new AppError('PROVIDER_ERROR', 'Provider returned zero images', 502);
+    throw new AppError('PROVIDER_EMPTY_RESULT', 'Provider returned zero images', 502, undefined, {
+      reason: 'empty_result',
+    });
   }
 
   deps.quotaPool?.consume(result.images.length);

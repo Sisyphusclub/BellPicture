@@ -185,6 +185,19 @@ function isImageRecord(value: unknown): value is ImageRecord {
   `usePublicGallery.removeAsAdmin(id)`. On success, remove the record from the
   module-level public gallery cache; do not mutate private history state.
 - Error response: `{ error: { code, message, requestId, details? } }`.
+  Generation UI must map backend provider errors to user-facing Chinese
+  explanations instead of rendering only `生成失败`:
+  - `PROVIDER_TIMEOUT` -> explain that the upstream generation service exceeded
+    the waiting window and suggest retrying with fewer references or a simpler
+    prompt.
+  - `PROVIDER_PROMPT_REJECTED` -> explain that the prompt/reference likely did
+    not pass upstream safety policy and suggest more neutral style/quality
+    wording.
+  - `PROVIDER_EMPTY_RESULT` -> explain that upstream returned no image result
+    and suggest a clearer, less constrained prompt.
+  - Legacy `PROVIDER_ERROR` with `details.upstreamStatus` 400 / 422 or
+    `details.reason = "prompt_rejected"` should use the same prompt-policy
+    message for backward compatibility.
 - Env: `VITE_API_BASE_URL` is required for real backend calls; default local
   development value is `http://localhost:3000`.
 
@@ -196,6 +209,9 @@ function isImageRecord(value: unknown): value is ImageRecord {
 | Upload response shape invalid    | Throw `ImageApiError` with `INVALID_RESPONSE`                                        |
 | Generate response shape invalid  | Throw `ImageApiError` with `INVALID_RESPONSE`                                        |
 | Backend error envelope present   | Throw `ImageApiError(status, code, message, requestId, details)`                     |
+| `PROVIDER_TIMEOUT` during generate | Show an upstream-timeout message with retry/simplification guidance                |
+| `PROVIDER_PROMPT_REJECTED` during generate | Show a safety-policy message with prompt/reference wording guidance          |
+| `PROVIDER_EMPTY_RESULT` during generate | Show an empty-result message with prompt adjustment guidance                    |
 | Non-JSON or malformed error body | Throw `ImageApiError(status, 'HTTP_ERROR', ...)`                                     |
 | localStorage schema mismatch     | Ignore stored payload and return an empty history                                    |
 | Existing history `referenceIds`  | Send them directly in `GenerateRequest.referenceIds`; do not call upload first       |

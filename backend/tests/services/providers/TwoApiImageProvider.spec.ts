@@ -124,7 +124,20 @@ describe('TwoApiImageProvider', () => {
     expect(headers['content-type']).toBeUndefined();
   });
 
-  it('maps 4xx upstream to PROVIDER_ERROR 502', async () => {
+  it('maps prompt rejection upstream statuses to PROVIDER_PROMPT_REJECTED 422', async () => {
+    const provider = new TwoApiImageProvider(
+      baseConfig,
+      vi.fn(async () => errorResponse(400, 'content rejected')),
+    );
+
+    await expect(provider.generate({ prompt: 'x' })).rejects.toMatchObject({
+      code: 'PROVIDER_PROMPT_REJECTED',
+      status: 422,
+      details: { upstreamStatus: 400, reason: 'prompt_rejected' },
+    });
+  });
+
+  it('maps auth-like upstream 4xx to PROVIDER_ERROR 502', async () => {
     const provider = new TwoApiImageProvider(
       baseConfig,
       vi.fn(async () => errorResponse(401, 'unauthorized')),
@@ -133,6 +146,7 @@ describe('TwoApiImageProvider', () => {
     await expect(provider.generate({ prompt: 'x' })).rejects.toMatchObject({
       code: 'PROVIDER_ERROR',
       status: 502,
+      details: { upstreamStatus: 401, reason: 'provider_http_error' },
     });
   });
 
@@ -145,6 +159,17 @@ describe('TwoApiImageProvider', () => {
     await expect(provider.generate({ prompt: 'x' })).rejects.toMatchObject({
       code: 'PROVIDER_ERROR',
       status: 502,
+      details: { upstreamStatus: 500, reason: 'provider_http_error' },
+    });
+  });
+
+  it('maps empty successful provider payloads to PROVIDER_EMPTY_RESULT 502', async () => {
+    const provider = new TwoApiImageProvider(baseConfig, vi.fn(async () => jsonResponse({ data: [] })));
+
+    await expect(provider.generate({ prompt: 'x' })).rejects.toMatchObject({
+      code: 'PROVIDER_EMPTY_RESULT',
+      status: 502,
+      details: { reason: 'empty_result' },
     });
   });
 
