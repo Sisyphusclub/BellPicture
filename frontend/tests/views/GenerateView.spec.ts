@@ -257,12 +257,18 @@ describe('GenerateView', () => {
   });
 
   it('submitting a discover prompt switches to the generate route and opens the inline generation surface', async () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(window.HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView,
+    });
     const { wrapper, generate, routerPush } = await mountGenerateView();
 
     expect(wrapper.get('.canvas-hero__title').text()).toBe('Turn your idea into images');
 
     await wrapper.get('textarea[name="heroPrompt"]').setValue('生成一张猫猫照片');
     await wrapper.get('form.prompt-showcase').trigger('submit');
+    await flushPromises();
 
     expect(routerPush).toHaveBeenCalledWith('/generate');
     expect(generate).toHaveBeenCalledWith(
@@ -279,6 +285,11 @@ describe('GenerateView', () => {
     expect(wrapper.text()).toContain('生成一张猫猫照片');
     expect(wrapper.text()).toContain('GPT-IMAGE-2');
     expect(wrapper.text()).toContain('生成中...');
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      behavior: 'smooth',
+      block: 'start',
+      inline: 'nearest',
+    });
   });
 
   it('requires login before submitting a discover generation prompt', async () => {

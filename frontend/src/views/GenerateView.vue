@@ -118,6 +118,7 @@ const activeBatchId = ref<string | null>(null);
 const pendingGeneration = ref<PendingGeneration | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 const composerTextareaRef = ref<HTMLTextAreaElement | null>(null);
+const generationStageRef = ref<HTMLElement | null>(null);
 const reusedReferenceId = ref<string | null>(null);
 const isComposerDragging = ref(false);
 const aspectMenuOpen = ref(false);
@@ -416,6 +417,7 @@ async function runGeneration(snapshot: PendingGeneration): Promise<void> {
   resolution.value = isAdmin.value ? snapshot.resolution : DEFAULT_IMAGE_RESOLUTION;
   isPublicGeneration.value = snapshot.isPublic;
   syncReferenceInputFromSnapshot(snapshot);
+  void scrollGenerationStageIntoView();
 
   try {
     const result = await generate(optionsFromSnapshot(snapshot));
@@ -434,6 +436,17 @@ async function runGeneration(snapshot: PendingGeneration): Promise<void> {
     }
     ElMessage.error(message);
   }
+}
+
+async function scrollGenerationStageIntoView(): Promise<void> {
+  await nextTick();
+  const behavior: ScrollBehavior = hasReducedMotion.value ? 'auto' : 'smooth';
+  const target = generationStageRef.value;
+  if (target && typeof target.scrollIntoView === 'function') {
+    target.scrollIntoView({ behavior, block: 'start', inline: 'nearest' });
+    return;
+  }
+  if (typeof window.scrollTo === 'function') window.scrollTo({ top: 0, behavior });
 }
 
 function handleSelectBatch(batch: GroupedBatch): void {
@@ -1142,7 +1155,12 @@ function formatStageDate(iso: string | undefined): string {
 
     <main class="studio__main" aria-label="生成结果">
       <div class="studio__content">
-        <section v-if="hasActiveSurface" class="generation-stage" aria-live="polite">
+        <section
+          v-if="hasActiveSurface"
+          ref="generationStageRef"
+          class="generation-stage"
+          aria-live="polite"
+        >
           <article v-if="shouldShowWorkspaceEmpty" class="generation-item generation-item--empty">
             <p class="generation-item__date">生成工作区</p>
             <h1 class="generation-item__prompt">从下方输入框开始生成图片</h1>
