@@ -21,6 +21,7 @@ describe('config/env', () => {
     delete process.env.GOOGLE_CLIENT_SECRET;
     delete process.env.IMAGE_MODEL;
     delete process.env.HIGH_RES_IMAGE_API_BASE_URL;
+    delete process.env.HIGH_RES_IMAGE_API_KEY;
     delete process.env.HIGH_RES_IMAGE_MODEL;
     delete process.env.PORT;
     delete process.env.IMAGE_API_TIMEOUT_MS;
@@ -42,6 +43,7 @@ describe('config/env', () => {
     expect(env.IMAGE_API_BASE_URL).toBe('https://api.example.com');
     expect(env.HIGH_RES_IMAGE_API_BASE_URL).toBeUndefined();
     expect(env.IMAGE_API_KEY).toBe('sk-test');
+    expect(env.HIGH_RES_IMAGE_API_KEY).toBeUndefined();
     expect(env.OPENAI_COMPAT_API_KEY).toBe('compat-test');
     expect(env.IMAGE_MODEL).toBe('gpt-image-2');
     expect(env.HIGH_RES_IMAGE_MODEL).toBeUndefined();
@@ -81,6 +83,7 @@ describe('config/env', () => {
     process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
     process.env.HIGH_RES_IMAGE_API_BASE_URL = 'https://codex.example.com';
     process.env.IMAGE_API_KEY = 'sk-test';
+    process.env.HIGH_RES_IMAGE_API_KEY = 'sk-high-res-test';
     process.env.OPENAI_COMPAT_API_KEY = 'compat-test';
     process.env.BETTER_AUTH_SECRET = 'test-secret-padding';
     process.env.HIGH_RES_IMAGE_MODEL = 'codex-gpt-image-2';
@@ -88,6 +91,7 @@ describe('config/env', () => {
     const { env } = await import('../../src/config/env.js');
 
     expect(env.HIGH_RES_IMAGE_API_BASE_URL).toBe('https://codex.example.com');
+    expect(env.HIGH_RES_IMAGE_API_KEY).toBe('sk-high-res-test');
     expect(env.HIGH_RES_IMAGE_MODEL).toBe('codex-gpt-image-2');
   });
 

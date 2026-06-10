@@ -120,6 +120,51 @@ describe('TwoApiImageProvider', () => {
     expect(calledUrl).toBe('https://codex.example.com/v1/images/generations');
   });
 
+  it('uses the base API key for standard requests even when a high-res key is configured', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
+    );
+    const provider = new TwoApiImageProvider(
+      { ...baseConfig, highResApiKey: 'sk-high-res' },
+      fetchMock,
+    );
+
+    await provider.generate({
+      prompt: 'standard square',
+      aspectRatio: '1:1',
+      resolution: 'standard',
+    });
+
+    const init = fetchMock.mock.calls[0]![1] as RequestInit;
+    const headers = init.headers as Record<string, string>;
+    expect(headers['Authorization']).toBe('Bearer sk-test');
+  });
+
+  it('uses the configured high-res API key for high-resolution requests', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
+    );
+    const provider = new TwoApiImageProvider(
+      {
+        ...baseConfig,
+        highResBaseUrl: 'https://codex.example.com',
+        highResApiKey: 'sk-high-res',
+      },
+      fetchMock,
+    );
+
+    await provider.generate({
+      prompt: '2k square',
+      aspectRatio: '1:1',
+      resolution: '2k',
+    });
+
+    const [calledUrl, init] = fetchMock.mock.calls[0]!;
+    expect(calledUrl).toBe('https://codex.example.com/v1/images/generations');
+    const headers = (init as RequestInit).headers as Record<string, string>;
+    expect(headers['Authorization']).toBe('Bearer sk-high-res');
+  });
+
   it('uses the configured high-res model when the app sends the default model', async () => {
     const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
       jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),

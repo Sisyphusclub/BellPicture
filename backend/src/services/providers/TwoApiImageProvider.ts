@@ -23,6 +23,7 @@ export interface TwoApiConfig {
   baseUrl: string;
   highResBaseUrl?: string;
   apiKey: string;
+  highResApiKey?: string;
   defaultModel: string;
   highResModel?: string;
   timeoutMs: number;
@@ -49,6 +50,7 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     const resolution: ImageResolution = input.resolution ?? DEFAULT_IMAGE_RESOLUTION;
     const model = this.modelForResolution(resolution, input.model);
     const baseUrl = this.baseUrlForResolution(resolution);
+    const apiKey = this.apiKeyForResolution(resolution);
     const count = input.count ?? DEFAULT_COUNT;
     const sizing = aspectSizeForResolution(aspectRatio, resolution);
     if (sizing === undefined) {
@@ -67,8 +69,16 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     let response: Response;
     try {
       response = hasReference
-        ? await this.callEdits(baseUrl, model, input.prompt, referencePaths, count, sizing.size)
-        : await this.callGenerations(baseUrl, model, input.prompt, count, sizing.size);
+        ? await this.callEdits(
+            baseUrl,
+            apiKey,
+            model,
+            input.prompt,
+            referencePaths,
+            count,
+            sizing.size,
+          )
+        : await this.callGenerations(baseUrl, apiKey, model, input.prompt, count, sizing.size);
     } catch (err) {
       if (isTimeoutLike(err)) {
         throw new AppError(
@@ -174,6 +184,11 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     return this.config.highResBaseUrl ?? this.config.baseUrl;
   }
 
+  private apiKeyForResolution(resolution: ImageResolution): string {
+    if (resolution === DEFAULT_IMAGE_RESOLUTION) return this.config.apiKey;
+    return this.config.highResApiKey ?? this.config.apiKey;
+  }
+
   private modelForResolution(
     resolution: ImageResolution,
     requestedModel: string | undefined,
@@ -190,6 +205,7 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
 
   private async callGenerations(
     baseUrl: string,
+    apiKey: string,
     model: string,
     prompt: string,
     count: number,
@@ -204,7 +220,7 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        Authorization: `Bearer ${this.config.apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model,
@@ -219,6 +235,7 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
 
   private async callEdits(
     baseUrl: string,
+    apiKey: string,
     model: string,
     prompt: string,
     referencePaths: string[],
@@ -260,7 +277,7 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
 
     return this.fetchImpl(url, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${this.config.apiKey}` },
+      headers: { Authorization: `Bearer ${apiKey}` },
       body: form,
       signal: AbortSignal.timeout(this.config.timeoutMs),
     });

@@ -197,6 +197,7 @@ outside `config/env.ts`.**
 | `IMAGE_API_BASE_URL`          | yes      | `https://api.2api.example`      | 2API reverse-proxy origin. **No `/v1` suffix and no trailing slash** — `TwoApiImageProvider` always appends `/v1/images/generations`. Trailing slashes are stripped before concat, so `https://x.com/` and `https://x.com///` are tolerated, but a base URL that already includes `/v1` will produce a double-`/v1` URL. |
 | `HIGH_RES_IMAGE_API_BASE_URL` | no       | `https://codex.example`         | Optional admin 2K/4K provider origin. **No `/v1` suffix and no trailing slash**. Empty means high-resolution calls reuse `IMAGE_API_BASE_URL`.                                                                                                                                                                           |
 | `IMAGE_API_KEY`               | yes      | `sk-...`                        | Server-side only provider key. Never log or expose to API clients.                                                                                                                                                                                                                                                       |
+| `HIGH_RES_IMAGE_API_KEY`      | no       | `sk-...`                        | Optional server-side provider key for admin 2K/4K calls. Empty means high-resolution calls reuse `IMAGE_API_KEY`. Never log or expose to API clients.                                                                                                                                                                    |
 | `OPENAI_COMPAT_API_KEY`       | yes      | `ref2img_...`                   | Inbound bearer token for OpenAI-compatible `/v1/*` clients. Never log.                                                                                                                                                                                                                                                   |
 | `IMAGE_MODEL`                 | no       | `gpt-image-2`                   | Default `gpt-image-2`                                                                                                                                                                                                                                                                                                    |
 | `HIGH_RES_IMAGE_MODEL`        | no       | `codex-gpt-image-2`             | Optional admin 2K/4K model override. Empty means use the request model/default model. If set, `TwoApiImageProvider` uses it when a high-resolution request omitted `model` or sent the configured default model.                                                                                                         |
@@ -348,8 +349,9 @@ IMAGE_API_TIMEOUT_MS=240000
   `aspectSizeForResolution(aspectRatio, resolution)` returns an
   `AspectSize | undefined`.
 - Provider config:
-  `TwoApiImageProvider` accepts optional `highResBaseUrl` and `highResModel`
-  values from `HIGH_RES_IMAGE_API_BASE_URL` and `HIGH_RES_IMAGE_MODEL`.
+  `TwoApiImageProvider` accepts optional `highResBaseUrl`, `highResApiKey`,
+  and `highResModel` values from `HIGH_RES_IMAGE_API_BASE_URL`,
+  `HIGH_RES_IMAGE_API_KEY`, and `HIGH_RES_IMAGE_MODEL`.
 
 ### 3. Contracts
 
@@ -360,6 +362,10 @@ IMAGE_API_TIMEOUT_MS=240000
   `IMAGE_API_BASE_URL`; high-resolution requests use
   `HIGH_RES_IMAGE_API_BASE_URL` when configured and otherwise fall back to
   `IMAGE_API_BASE_URL`.
+- Provider credential routing follows the same resolution boundary: standard
+  requests use `IMAGE_API_KEY`; high-resolution requests use
+  `HIGH_RES_IMAGE_API_KEY` when configured and otherwise fall back to
+  `IMAGE_API_KEY`.
 - `HIGH_RES_IMAGE_MODEL` is only applied for high-resolution requests when the
   request omitted `model` or sent the configured default `IMAGE_MODEL`. If a
   caller explicitly sends a different model, keep that caller choice.
@@ -396,6 +402,8 @@ IMAGE_API_TIMEOUT_MS=240000
 | `4k + 16:9` or `4k + 9:16`                      | Provider receives `3840x2160` or `2160x3840`                                   |
 | `HIGH_RES_IMAGE_API_BASE_URL` configured        | 2K/4K provider URL begins with that origin and still appends `/v1/images/...`  |
 | `HIGH_RES_IMAGE_API_BASE_URL` empty             | 2K/4K provider URL falls back to `IMAGE_API_BASE_URL`                          |
+| `HIGH_RES_IMAGE_API_KEY` configured             | 2K/4K provider `Authorization` uses the high-resolution key                    |
+| `HIGH_RES_IMAGE_API_KEY` empty                  | 2K/4K provider `Authorization` falls back to `IMAGE_API_KEY`                   |
 
 ### 5. Good/Base/Bad Cases
 
@@ -424,8 +432,8 @@ IMAGE_API_TIMEOUT_MS=240000
 - Provider unit: 2K and 4K text-to-image calls set the expected JSON `size`;
   high-resolution image-to-image calls set the expected multipart `size`.
 - Provider unit: 2K/4K requests use `highResBaseUrl` and `highResModel` when
-  configured, while standard requests continue using `baseUrl` and the
-  configured default/request model.
+  configured, use `highResApiKey` when configured, while standard requests
+  continue using `baseUrl`, `apiKey`, and the configured default/request model.
 - Frontend tests: admin UI sends `resolution` through the dedicated API route;
   non-admin UI does not render or send the clarity selector.
 

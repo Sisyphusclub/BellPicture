@@ -5,6 +5,7 @@ export interface Env {
   IMAGE_API_BASE_URL: string;
   HIGH_RES_IMAGE_API_BASE_URL: string | undefined;
   IMAGE_API_KEY: string;
+  HIGH_RES_IMAGE_API_KEY: string | undefined;
   OPENAI_COMPAT_API_KEY: string;
   IMAGE_MODEL: string;
   HIGH_RES_IMAGE_MODEL: string | undefined;
@@ -100,6 +101,7 @@ function loadEnv(): Env {
     IMAGE_API_BASE_URL: readString('IMAGE_API_BASE_URL'),
     HIGH_RES_IMAGE_API_BASE_URL: readOptionalString('HIGH_RES_IMAGE_API_BASE_URL'),
     IMAGE_API_KEY: readString('IMAGE_API_KEY'),
+    HIGH_RES_IMAGE_API_KEY: readOptionalString('HIGH_RES_IMAGE_API_KEY'),
     OPENAI_COMPAT_API_KEY: readString('OPENAI_COMPAT_API_KEY'),
     IMAGE_MODEL: readString('IMAGE_MODEL', 'gpt-image-2'),
     HIGH_RES_IMAGE_MODEL: readOptionalString('HIGH_RES_IMAGE_MODEL'),

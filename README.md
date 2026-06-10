@@ -61,6 +61,8 @@ IMAGE_API_BASE_URL=https://api.2api.example
 # 可选：管理员 2K/4K 专用上游，例如 Codex 图像通道。
 HIGH_RES_IMAGE_API_BASE_URL=
 IMAGE_API_KEY=replace-me
+# 可选：管理员 2K/4K 专用上游密钥；留空则复用 IMAGE_API_KEY。
+HIGH_RES_IMAGE_API_KEY=
 OPENAI_COMPAT_API_KEY=replace-me-openai-compat
 BETTER_AUTH_SECRET=replace-me-with-a-random-32-byte-secret
 ```
@@ -148,6 +150,8 @@ IMAGE_API_BASE_URL=https://api.2api.example
 # 可选：管理员 2K/4K 专用上游，例如 Codex 图像通道。
 HIGH_RES_IMAGE_API_BASE_URL=
 IMAGE_API_KEY=replace-me
+# 可选：管理员 2K/4K 专用上游密钥；留空则复用 IMAGE_API_KEY。
+HIGH_RES_IMAGE_API_KEY=
 OPENAI_COMPAT_API_KEY=replace-me-openai-compat
 BETTER_AUTH_SECRET=replace-me-with-a-random-secret
 ```
@@ -207,6 +211,7 @@ http://localhost:5173
 | `IMAGE_API_BASE_URL`          | 是   | 图像生成服务地址                                                      |
 | `HIGH_RES_IMAGE_API_BASE_URL` | 否   | 管理员 2K/4K 专用图像生成服务地址；留空则复用 `IMAGE_API_BASE_URL`    |
 | `IMAGE_API_KEY`               | 是   | 图像生成服务密钥                                                      |
+| `HIGH_RES_IMAGE_API_KEY`      | 否   | 管理员 2K/4K 专用图像生成服务密钥；留空则复用 `IMAGE_API_KEY`         |
 | `OPENAI_COMPAT_API_KEY`       | 是   | OpenAI-compatible API 调用密钥                                        |
 | `BETTER_AUTH_SECRET`          | 是   | Better Auth 会话密钥                                                  |
 | `IMAGE_MODEL`                 | 否   | 默认图像模型，默认 `gpt-image-2`                                      |
