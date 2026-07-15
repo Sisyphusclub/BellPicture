@@ -1280,7 +1280,7 @@ function formatStageDate(iso: string | undefined): string {
 
         <template v-else>
           <section class="canvas-hero" aria-live="polite">
-            <p class="canvas-hero__kicker hero-rise hero-rise--1">贝尔灵画</p>
+            <p class="canvas-hero__kicker hero-rise hero-rise--1">Nebulens</p>
             <h2 class="canvas-hero__title hero-rise hero-rise--2">
               Turn your idea <span>into images</span>
             </h2>

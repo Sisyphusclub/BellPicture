@@ -45,7 +45,7 @@ describe('App', () => {
   it('does not automatically open the login modal for anonymous visitors', async () => {
     const App = (await import('@/App.vue')).default;
 
-    mount(App, {
+    const wrapper = mount(App, {
       global: {
         stubs: {
           RouterView: {
@@ -56,6 +56,7 @@ describe('App', () => {
     });
 
     expect(openLoginModal).not.toHaveBeenCalled();
+    expect(wrapper.get('main.app-main').attributes('aria-label')).toBe('Nebulens 工作区');
   });
 
   it('shows the same video backdrop on generate, assets, and user management routes', async () => {

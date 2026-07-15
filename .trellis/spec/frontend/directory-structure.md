@@ -94,17 +94,9 @@ frontend/
 | Variable | Required | Example |
 |---|---|---|
 | `VITE_API_BASE_URL` | yes | `http://localhost:3000` |
-| `VITE_BRAND_ASSET_VERSION` | no | `20260601` |
 
 Vite only exposes vars prefixed with `VITE_`. **Never put secrets in
 frontend env vars** — they are bundled into the public JS.
-
-`VITE_BRAND_ASSET_VERSION` is optional because `vite.config.ts` provides a
-build-time timestamp fallback. Components that reference replaceable
-`public/brand/` files must append this value as a query string, e.g.
-`/brand/logo.png?v=${VITE_BRAND_ASSET_VERSION}`, so replacing a logo or brand
-image is visible after the next frontend deploy even when an older bare URL is
-cached by the browser or CDN.
 
 ---
 
@@ -136,33 +128,6 @@ Do not rely on nginx defaults here. A default proxy read timeout shorter than
 `IMAGE_API_TIMEOUT_MS` can return a gateway 504 while the backend/provider call
 is still legitimately running.
 
-## Static asset cache contract
-
-Hashed Vite bundles under `/assets/` are immutable and may keep the long cache
-header:
-
-```nginx
-location /assets/ {
-  try_files $uri =404;
-  add_header Cache-Control "public, max-age=31536000, immutable";
-}
-```
-
-Replaceable brand files under `public/brand/` must not use a long strong cache.
-They are served by fixed names such as `/brand/logo.png`, so stale browser/CDN
-entries otherwise survive a deploy. Required shape:
-
-```nginx
-location /brand/ {
-  try_files $uri =404;
-  add_header Cache-Control "public, max-age=0, must-revalidate";
-}
-```
-
-When adding a new fixed-name brand asset, also version the frontend reference
-with `VITE_BRAND_ASSET_VERSION`. Do not rely on users clearing browser cache or
-Cloudflare expiring the bare URL.
-
 ---
 
 ## Forbidden patterns
@@ -171,9 +136,6 @@ Cloudflare expiring the bare URL.
   the backend (`VITE_API_BASE_URL`).
 - ❌ Leaving production `/api/` or `/v1/` proxy timeouts below
   `IMAGE_API_TIMEOUT_MS`; slow valid image generations will surface as 504s.
-- ❌ Referencing replaceable files under `/brand/` without a version query.
-  Fixed bare URLs such as `/brand/logo.png` can keep serving the previous asset
-  from browser/CDN cache after a deploy.
 - ❌ Importing from `services/` inside `components/`. Go through a composable.
 - ❌ `fetch('/api/...')` scattered across components. All HTTP lives in
   `services/api/`.

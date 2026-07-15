@@ -115,6 +115,10 @@ describe('LoginModal', () => {
     expect(queryCloseButton()?.getAttribute('aria-label')).toBe('关闭此对话框');
 
     const bodyText = document.body.textContent ?? '';
+    expect(bodyText).toContain('Nebulens');
+    expect(document.body.querySelector('.login-modal')?.getAttribute('aria-label')).toBe(
+      '登录 Nebulens',
+    );
     expect(bodyText).toContain('用户名');
     expect(bodyText).toContain('使用 Google 登录');
     expect(bodyText).not.toContain('邮箱');

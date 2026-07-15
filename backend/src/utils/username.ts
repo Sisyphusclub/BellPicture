@@ -9,5 +9,5 @@ export function isValidUsername(username: string): boolean {
 }
 
 export function internalEmailForUsername(username: string): string {
-  return `${username}@users.ref2image.local`;
+  return `${username}@users.nebulens.local`;
 }

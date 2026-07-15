@@ -6,7 +6,7 @@ product
 
 ## Users
 
-贝尔灵画 serves creators and operators who want to generate, review, reuse, and locally archive AI images without leaving the workspace. They are usually in a focused desktop workflow: writing prompts, attaching optional reference images, comparing outputs, and returning to previous generations.
+Nebulens serves creators and operators who want to generate, review, reuse, and locally archive AI images without leaving the workspace. They are usually in a focused desktop workflow: writing prompts, attaching optional reference images, comparing outputs, and returning to previous generations.
 
 Each visitor signs in with a Google account; every account receives an independent daily generation quota. The product is a multi-account workstation rather than a single-user local tool — but each account's history still lives locally in their browser (cloud sync is on the roadmap).
 

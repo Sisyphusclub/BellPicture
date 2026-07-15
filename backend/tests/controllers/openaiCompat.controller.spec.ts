@@ -152,7 +152,7 @@ describe('GET /v1/models', () => {
       id: 'gpt-image-2',
       object: 'model',
       created: 1_710_000_000,
-      owned_by: 'ref2image',
+      owned_by: 'nebulens',
     });
     expect(harness.generate).not.toHaveBeenCalled();
   });

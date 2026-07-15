@@ -21,7 +21,7 @@ withDefaults(defineProps<Props>(), {
     </div>
     <p>{{ message }}</p>
     <div class="status-panel__code" aria-hidden="true">
-      <span>ref2image.generate()</span>
+      <span>nebulens.generate()</span>
       <span>模式：提示词 + 可选参考图</span>
       <span>历史：本地 IndexedDB</span>
     </div>

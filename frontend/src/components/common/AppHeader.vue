@@ -17,9 +17,6 @@ const navItems: NavItem[] = [
   { label: '生图', to: '/generate', icon: 'generate' },
   { label: '资产', to: '/history', icon: 'assets' },
 ];
-const brandLogoVersion = encodeURIComponent(import.meta.env.VITE_BRAND_ASSET_VERSION);
-const brandLogoSrc = `/brand/logo.png?v=${brandLogoVersion}`;
-
 const { user, isAuthenticated, isAdmin, logout } = useAuth();
 const { open: openLoginModal } = useAuthModal();
 
@@ -65,9 +62,14 @@ function initials(): string {
 </script>
 
 <template>
-  <header class="app-sidebar" aria-label="贝尔灵画主导航">
-    <RouterLink class="sidebar-brand" to="/" aria-label="返回发现首页">
-      <img class="sidebar-brand__mark" :src="brandLogoSrc" alt="贝尔灵画标志" />
+  <header class="app-sidebar" aria-label="Nebulens 主导航">
+    <RouterLink
+      class="sidebar-brand"
+      to="/"
+      aria-label="Nebulens，返回发现首页"
+      title="Nebulens"
+    >
+      <span class="sidebar-brand__monogram" aria-hidden="true">N</span>
     </RouterLink>
 
     <nav class="sidebar-nav" aria-label="主要导航">
@@ -232,10 +234,13 @@ function initials(): string {
   outline-offset: 3px;
 }
 
-.sidebar-brand__mark {
+.sidebar-brand__monogram {
   display: block;
-  width: 42px;
-  height: 42px;
+  color: var(--color-ink);
+  font-family: var(--font-brand);
+  font-size: 25px;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .sidebar-nav {
@@ -383,9 +388,8 @@ function initials(): string {
     border-radius: 15px;
   }
 
-  .sidebar-brand__mark {
-    width: 32px;
-    height: 32px;
+  .sidebar-brand__monogram {
+    font-size: 20px;
   }
 
   .sidebar-nav {

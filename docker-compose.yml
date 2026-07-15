@@ -41,7 +41,7 @@ services:
       default:
       provider:
         aliases:
-          - ref2image-backend
+          - nebulens-backend
     healthcheck:
       test:
         [

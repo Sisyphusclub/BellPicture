@@ -106,10 +106,10 @@ async function handleGoogleSignIn(): Promise<void> {
       :close-on-click-modal="true"
       :close-on-press-escape="true"
       align-center
-      aria-label="登录贝尔灵画"
+      aria-label="登录 Nebulens"
     >
       <template #header>
-        <h2 class="login-modal__title">贝尔灵画</h2>
+        <h2 class="login-modal__title">Nebulens</h2>
       </template>
       <div class="login-modal__body">
         <div class="login-modal__tabs" role="tablist" aria-label="账号操作">

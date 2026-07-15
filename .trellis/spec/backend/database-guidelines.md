@@ -346,6 +346,8 @@ body: { username: string; password: string; rememberMe?: boolean }
   hash field. Never write plaintext passwords or hand-roll hash storage.
 - `POST /api/auth/sign-up/username` may generate the internal Better Auth email
   needed by the library, but this value must not become user-facing UI copy.
+  `internalEmailForUsername(username)` must return
+  `${username}@users.nebulens.local`.
 - `SEED_DEFAULT_ADMIN=true` is the only switch that creates `admin` / `admin123`
   on boot; the default is disabled. The seed must call Better Auth APIs, not
   insert rows directly.
@@ -364,6 +366,7 @@ body: { username: string; password: string; rememberMe?: boolean }
 | `SEED_DEFAULT_ADMIN` absent/false | No default admin user is created |
 | `SEED_DEFAULT_ADMIN=true` and admin exists | No duplicate user; seed is idempotent |
 | User self-registers `blur` or `admin` while no seed/admin promotion ran | User remains `is_admin=false` and `/api/admin/*` returns 403 |
+| Existing database contains a legacy internal email domain | Do not rewrite silently at runtime; use a reviewed data migration before deploying the renamed identity contract |
 
 ### 5. Good/Base/Bad Cases
 - Good: fresh local demo database + `SEED_DEFAULT_ADMIN=true` can sign in with
@@ -380,6 +383,8 @@ body: { username: string; password: string; rememberMe?: boolean }
   behavior.
 - Backend authorization regression tests proving self-registered `blur` stays
   non-admin and direct `/api/admin/*` access returns 403.
+- Unit test `internalEmailForUsername('creator')` returns exactly
+  `creator@users.nebulens.local`.
 - Frontend tests for username labels/placeholders, normalized submission,
   disabled invalid registration, and Chinese error mapping.
 - Existing image/history/quota tests must continue to pass because they depend

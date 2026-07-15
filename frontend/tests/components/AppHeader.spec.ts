@@ -14,10 +14,6 @@ const isAdmin = computed(() => user.value?.isAdmin === true);
 const openLoginModal = vi.fn();
 const logout = vi.fn<() => Promise<void>>(() => Promise.resolve());
 
-vi.mock('@/assets/ref2image-logo-mark.svg', () => ({
-  default: '/mock-logo.svg',
-}));
-
 vi.mock('@/composables/useAuth', () => ({
   useAuth: () => ({
     user,
@@ -71,9 +67,11 @@ describe('AppHeader', () => {
 
     const links = wrapper.findAllComponents(RouterLinkStub);
     expect(links.map((link) => link.props('to'))).toEqual(['/', '/', '/generate', '/history']);
-    expect(wrapper.get('.sidebar-brand__mark').attributes('src')).toMatch(
-      /^\/brand\/logo\.png\?v=.+/,
+    expect(wrapper.get('.sidebar-brand__monogram').text()).toBe('N');
+    expect(wrapper.get('.sidebar-brand').attributes('aria-label')).toBe(
+      'Nebulens，返回发现首页',
     );
+    expect(wrapper.find('.sidebar-brand__monogram').exists()).toBe(true);
     expect(wrapper.findAll('.sidebar-nav__link').map((link) => link.text())).toEqual(['发现', '生图', '资产']);
     expect(wrapper.text()).not.toContain('用户管理');
     expect(wrapper.html()).toContain('M4 7.5A2.5 2.5 0 0 1 6.5 5H10l2 2.5h5.5A2.5 2.5 0 0 1 20 10v6.5A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5Z');
@@ -83,16 +81,14 @@ describe('AppHeader', () => {
     expect(wrapper.text()).not.toContain('入');
   });
 
-  it('keeps the brand logo visually compact inside the sidebar button', async () => {
+  it('keeps the Nebulens monogram visually compact inside the sidebar button', async () => {
     const appHeaderSource = await import('@/components/common/AppHeader.vue?raw');
-    const logoRules = extractStyleRules(appHeaderSource.default, '.sidebar-brand__mark');
-    const desktopLogoRule = logoRules[0] ?? '';
-    const mobileLogoRule = logoRules[1] ?? '';
+    const monogramRules = extractStyleRules(appHeaderSource.default, '.sidebar-brand__monogram');
+    const desktopMonogramRule = monogramRules[0] ?? '';
+    const mobileMonogramRule = monogramRules[1] ?? '';
 
-    expectStyleDeclaration(desktopLogoRule, 'width', '42px');
-    expectStyleDeclaration(desktopLogoRule, 'height', '42px');
-    expectStyleDeclaration(mobileLogoRule, 'width', '32px');
-    expectStyleDeclaration(mobileLogoRule, 'height', '32px');
+    expectStyleDeclaration(desktopMonogramRule, 'font-size', '25px');
+    expectStyleDeclaration(mobileMonogramRule, 'font-size', '20px');
   });
 
   it('opens login modal for anonymous users and shows logout for signed-in users', async () => {

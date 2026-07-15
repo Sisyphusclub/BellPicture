@@ -1,6 +1,6 @@
-# Ref2Image Studio 前端
+# Nebulens 前端
 
-这是面向 Ref2Image 后端的 Vue 3 + Vite 浏览器界面。
+这是面向 Nebulens 后端的 Vue 3 + Vite 浏览器界面。
 
 ## 本地启动
 

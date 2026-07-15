@@ -119,7 +119,7 @@ async function handleDelete(target: AdminUser): Promise<void> {
   <section class="admin-users" aria-labelledby="admin-users-title">
     <header class="admin-users__hero">
       <div class="admin-users__hero-copy">
-        <p class="admin-users__eyebrow">REF2IMAGE 管理</p>
+        <p class="admin-users__eyebrow">Nebulens 管理</p>
         <h1 id="admin-users-title">用户管理</h1>
         <p>集中创建成员、调整每日额度，并保护管理员账号。</p>
       </div>

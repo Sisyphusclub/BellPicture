@@ -242,7 +242,7 @@ services:
       default:
       provider:
         aliases:
-          - ref2image-backend
+          - nebulens-backend
 
 networks:
   provider:
@@ -500,7 +500,8 @@ if (sizing === undefined) {
   `/v1` before the first-party `/api/*` routers.
 - Auth middleware: `openaiCompatAuth(req, res, next)` accepts only bearer tokens
   that timing-safe-equal `env.OPENAI_COMPAT_API_KEY`.
-- Models response: `GET /v1/models -> 200 { object: "list", data: Model[] }`.
+- Models response: `GET /v1/models -> 200 { object: "list", data: Model[] }`,
+  where every model advertises `owned_by: "nebulens"`.
 - Images response: `/v1/images/generations` and `/v1/images/edits` return
   `{ created: number, data: Array<{ b64_json?: string; url?: string }> }`.
 
@@ -555,7 +556,8 @@ if (sizing === undefined) {
 
 - Integration: every `/v1` endpoint rejects missing, non-bearer, and wrong
   bearer auth without calling the provider.
-- Integration: `/v1/models` returns all required model IDs in order.
+- Integration: `/v1/models` returns all required model IDs in order and reports
+  `owned_by: "nebulens"` for the model records.
 - Integration: generations supports `n = 2`, `b64_json`, `url`, size mapping,
   and typed failures.
 - Integration: edits supports one uploaded reference image and rejects missing

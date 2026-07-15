@@ -20,7 +20,7 @@ Object.defineProperty(URL, 'createObjectURL', {
   configurable: true,
   value: vi.fn(() => {
     objectUrlCount += 1;
-    return `blob:ref2image-test-${objectUrlCount}`;
+    return `blob:nebulens-test-${objectUrlCount}`;
   }),
 });
 

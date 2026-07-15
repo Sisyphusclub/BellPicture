@@ -146,7 +146,7 @@ ElMessage.error('生成失败，请稍后重试。');
 ```
 
 **Allowed English**: Code identifiers, route paths, API fields, env keys, model
-names (`gpt-image-2`), brand/product names (`Ref2Image Studio`), and technical
+names (`gpt-image-2`), brand/product names (`Nebulens`), and technical
 terms (`Vue`, `Vite`, `IndexedDB`, `localStorage`, `PNG/JPEG/WebP`) may remain
 English where translating would reduce clarity.
 
@@ -317,7 +317,7 @@ import zhCn from 'element-plus/es/locale/lang/zh-cn';
 
 <template>
   <ElConfigProvider :locale="zhCn">
-    <ElDialog v-model="open" class="login-modal" title="登录 Ref2Image Studio">
+    <ElDialog v-model="open" class="login-modal" title="登录 Nebulens">
       <!-- body -->
     </ElDialog>
   </ElConfigProvider>

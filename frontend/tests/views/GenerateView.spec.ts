@@ -232,13 +232,12 @@ describe('GenerateView', () => {
     expect(wrapper.find('.prompt-showcase__suggestion i').exists()).toBe(false);
   });
 
-  it('uses 贝尔灵画 as the discover hero product name', async () => {
+  it('uses Nebulens as the discover hero product name', async () => {
     const { wrapper } = await mountGenerateView();
     const kickerRule = extractStyleRules('.canvas-hero__kicker')[0] ?? '';
     const mobileKickerRule = extractStyleRules('.canvas-hero__kicker')[1] ?? '';
 
-    expect(wrapper.get('.canvas-hero__kicker').text()).toBe('贝尔灵画');
-    expect(wrapper.text()).not.toContain('REF2IMAGE STUDIO');
+    expect(wrapper.get('.canvas-hero__kicker').text()).toBe('Nebulens');
     expectStyleDeclaration(kickerRule, 'font-family', 'var(--font-display)');
     expectStyleDeclaration(kickerRule, 'font-size', '28px');
     expectStyleDeclaration(kickerRule, 'letter-spacing', '0.08em');

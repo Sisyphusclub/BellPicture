@@ -147,7 +147,7 @@ export function buildOpenAICompatController(deps: OpenAICompatControllerDeps): {
             id,
             object: 'model',
             created: MODEL_CREATED_AT,
-            owned_by: 'ref2image',
+            owned_by: 'nebulens',
           })),
         });
       } catch (err) {
