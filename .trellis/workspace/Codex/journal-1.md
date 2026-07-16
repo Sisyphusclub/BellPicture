@@ -103,3 +103,36 @@ Replaced the first generated logo with a lighter two-shape Nebulens N mark, vali
 ### Next Steps
 
 - None - task complete
+
+
+## Session 4: Define Nebulens design system
+
+**Date**: 2026-07-16
+**Task**: Define Nebulens design system
+**Branch**: `main`
+
+### Summary
+
+Replaced the imported Vercel reference with a Nebulens-specific design system and added the adapted full-screen video hero specification.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `35893a4` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
