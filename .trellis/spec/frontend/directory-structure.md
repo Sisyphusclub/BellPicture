@@ -128,6 +128,86 @@ Do not rely on nginx defaults here. A default proxy read timeout shorter than
 `IMAGE_API_TIMEOUT_MS` can return a gateway 504 while the backend/provider call
 is still legitimately running.
 
+## Scenario: fixed Nebulens brand logo asset
+
+### 1. Scope / Trigger
+
+- Trigger: adding or replacing the fixed sidebar logo served from Vite
+  `public/` and production nginx.
+- Scope: `frontend/public/brand/logo.png`, `AppHeader.vue`, Header component
+  tests, the Vite production copy, and nginx `/brand/` caching.
+
+### 2. Signatures
+
+```text
+Source file: frontend/public/brand/logo.png
+Public URL:  /brand/logo.png
+Rendered by: <img class="sidebar-brand__mark" src="/brand/logo.png" alt="Nebulens 标志" />
+Desktop CSS: 42px x 42px
+Mobile CSS:  32px x 32px
+```
+
+### 3. Contracts
+
+- The committed source must be a 256x256 RGBA PNG with transparent corners,
+  non-empty visible pixels, and a silhouette that remains legible at 32px.
+- `AppHeader` must keep the Simplified-Chinese alt label `Nebulens 标志` and
+  the containing link's full Nebulens accessible name.
+- Vite must copy the file unchanged to `dist/brand/logo.png` during build.
+- Production nginx must revalidate fixed brand assets rather than cache them as
+  immutable:
+
+```nginx
+location /brand/ {
+  try_files $uri =404;
+  add_header Cache-Control "public, max-age=0, must-revalidate";
+}
+```
+
+### 4. Validation & Error Matrix
+
+| Condition | Expected behavior |
+|---|---|
+| Source file missing | Header test/build verification fails; do not ship a broken image URL |
+| PNG is non-square or not 256x256 | Asset validation fails before commit |
+| Corners are opaque or key-color pixels remain | Transparency validation fails; regenerate or reprocess the asset |
+| Header path differs from `/brand/logo.png` | Component test fails |
+| Built hash differs from source hash | Build verification fails |
+| `/brand/` is placed under immutable caching | Review-blocking stale-logo risk |
+
+### 5. Good/Base/Bad Cases
+
+- Good: a clean RGBA mark loads from `/brand/logo.png`, renders at 42px, and
+  retains its silhouette at the 32px mobile breakpoint.
+- Base: replacing the PNG at the same path requires no component API change and
+  nginx revalidates the next request.
+- Bad: committing a chroma-key source, an opaque app-icon tile, a text-heavy
+  wordmark, or a fixed URL cached as immutable.
+
+### 6. Tests Required
+
+- Component: assert `src`, `alt`, desktop size, and mobile size.
+- Asset: assert 256x256 RGBA, transparent corners, non-empty alpha bounds, and
+  zero visible chroma-key pixels.
+- Build: compare SHA-256 for `public/brand/logo.png` and
+  `dist/brand/logo.png`.
+- Browser: verify natural 256x256 dimensions, rendered 42px/32px dimensions,
+  visual transparency, and no console errors.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```vue
+<img src="/brand/logo-key.png" alt="logo" />
+```
+
+#### Correct
+
+```vue
+<img class="sidebar-brand__mark" src="/brand/logo.png" alt="Nebulens 标志" />
+```
+
 ---
 
 ## Forbidden patterns

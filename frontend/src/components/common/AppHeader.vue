@@ -21,7 +21,9 @@ const { user, isAuthenticated, isAdmin, logout } = useAuth();
 const { open: openLoginModal } = useAuthModal();
 
 const visibleNavItems = computed<NavItem[]>(() =>
-  isAdmin.value ? [...navItems, { label: '用户管理', to: '/admin/users', icon: 'users' }] : navItems,
+  isAdmin.value
+    ? [...navItems, { label: '用户管理', to: '/admin/users', icon: 'users' }]
+    : navItems,
 );
 const isMenuOpen = ref(false);
 const accountLabel = computed(() => (isAuthenticated.value ? displayName() : '登录'));
@@ -63,13 +65,8 @@ function initials(): string {
 
 <template>
   <header class="app-sidebar" aria-label="Nebulens 主导航">
-    <RouterLink
-      class="sidebar-brand"
-      to="/"
-      aria-label="Nebulens，返回发现首页"
-      title="Nebulens"
-    >
-      <span class="sidebar-brand__monogram" aria-hidden="true">N</span>
+    <RouterLink class="sidebar-brand" to="/" aria-label="Nebulens，返回发现首页" title="Nebulens">
+      <img class="sidebar-brand__mark" src="/brand/logo.png" alt="Nebulens 标志" />
     </RouterLink>
 
     <nav class="sidebar-nav" aria-label="主要导航">
@@ -119,7 +116,9 @@ function initials(): string {
             stroke-linecap="round"
             stroke-linejoin="round"
           >
-            <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H10l2 2.5h5.5A2.5 2.5 0 0 1 20 10v6.5A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5Z" />
+            <path
+              d="M4 7.5A2.5 2.5 0 0 1 6.5 5H10l2 2.5h5.5A2.5 2.5 0 0 1 20 10v6.5A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5Z"
+            />
             <path d="M8 13h8" />
           </svg>
           <svg
@@ -164,7 +163,11 @@ function initials(): string {
         >
           {{ initials() }}
         </span>
-        <span v-else class="sidebar-account__avatar sidebar-account__avatar--guest" aria-hidden="true">
+        <span
+          v-else
+          class="sidebar-account__avatar sidebar-account__avatar--guest"
+          aria-hidden="true"
+        >
           <svg
             class="sidebar-account__guest-icon"
             width="18"
@@ -234,13 +237,11 @@ function initials(): string {
   outline-offset: 3px;
 }
 
-.sidebar-brand__monogram {
+.sidebar-brand__mark {
   display: block;
-  color: var(--color-ink);
-  font-family: var(--font-brand);
-  font-size: 25px;
-  font-weight: 900;
-  line-height: 1;
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
 }
 
 .sidebar-nav {
@@ -388,8 +389,9 @@ function initials(): string {
     border-radius: 15px;
   }
 
-  .sidebar-brand__monogram {
-    font-size: 20px;
+  .sidebar-brand__mark {
+    width: 32px;
+    height: 32px;
   }
 
   .sidebar-nav {
@@ -459,5 +461,4 @@ function initials(): string {
     gap: 4px;
   }
 }
-
 </style>
