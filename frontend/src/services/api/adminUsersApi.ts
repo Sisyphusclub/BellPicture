@@ -7,14 +7,24 @@ import type {
 } from '@/types/admin';
 import { isNumber, isRecord, readNumber, readString } from '@/utils/narrowing';
 
-import { ImageApiError, authedFetch, buildApiError, buildApiUrl, parseJsonResponse } from './httpClient';
+import {
+  ImageApiError,
+  authedFetch,
+  buildApiError,
+  buildApiUrl,
+  parseJsonResponse,
+} from './httpClient';
 
 export async function fetchAdminUsers(): Promise<AdminUser[]> {
   const response = await authedFetch(buildApiUrl('/api/admin/users'));
   const payload = await parseJsonResponse(response);
   if (!response.ok) throw buildApiError(response.status, payload);
   if (!isAdminUsersResponse(payload)) {
-    throw new ImageApiError(response.status, 'INVALID_RESPONSE', '用户管理接口返回了无法识别的响应。');
+    throw new ImageApiError(
+      response.status,
+      'INVALID_RESPONSE',
+      '用户管理接口返回了无法识别的响应。',
+    );
   }
   return payload.users;
 }
@@ -28,7 +38,11 @@ export async function createAdminUser(request: CreateAdminUserRequest): Promise<
   const payload = await parseJsonResponse(response);
   if (!response.ok) throw buildApiError(response.status, payload);
   if (!isAdminUserResponse(payload)) {
-    throw new ImageApiError(response.status, 'INVALID_RESPONSE', '创建用户接口返回了无法识别的响应。');
+    throw new ImageApiError(
+      response.status,
+      'INVALID_RESPONSE',
+      '创建用户接口返回了无法识别的响应。',
+    );
   }
   return payload.user;
 }
@@ -37,11 +51,14 @@ export async function updateAdminUserQuota(
   userId: string,
   request: UpdateAdminUserQuotaRequest,
 ): Promise<AdminUser> {
-  const response = await authedFetch(buildApiUrl(`/api/admin/users/${encodeURIComponent(userId)}/quota`), {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
-  });
+  const response = await authedFetch(
+    buildApiUrl(`/api/admin/users/${encodeURIComponent(userId)}/quota`),
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    },
+  );
   const payload = await parseJsonResponse(response);
   if (!response.ok) throw buildApiError(response.status, payload);
   if (!isAdminUserResponse(payload)) {
@@ -51,9 +68,12 @@ export async function updateAdminUserQuota(
 }
 
 export async function deleteAdminUser(userId: string): Promise<void> {
-  const response = await authedFetch(buildApiUrl(`/api/admin/users/${encodeURIComponent(userId)}`), {
-    method: 'DELETE',
-  });
+  const response = await authedFetch(
+    buildApiUrl(`/api/admin/users/${encodeURIComponent(userId)}`),
+    {
+      method: 'DELETE',
+    },
+  );
   if (!response.ok && response.status !== 204) {
     const payload = await parseJsonResponse(response);
     throw buildApiError(response.status, payload);

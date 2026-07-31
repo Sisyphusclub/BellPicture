@@ -1,0 +1,9 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Review SFC style, accessibility, Chinese copy, and product-surface boundaries."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Run the repository's required test, lint, typecheck, build, and accessibility checks."}
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"Verify route ownership and public brand asset usage remain consistent."}
+{"file": ".trellis/tasks/07-16-cinematic-nebulens-landing-hero/research/full-ui-inventory.md", "reason": "Audit all existing route behaviors, responsive states, overlays, assets, and tests after the redesign."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Verify no type-contract regressions were introduced."}
+{"file": "design.md", "reason": "Compare every route and shared surface against the authoritative Squarespace-derived visual system."}
+{"file": ".impeccable.md", "reason": "Verify the result serves creators and administrators with the confirmed brand and accessibility principles."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify visual changes do not break shared composable state or persistence contracts."}
+{"file": ".trellis/tasks/07-16-cinematic-nebulens-landing-hero/research/react-beui-migration.md", "reason": "Verify the React migration preserves API, authentication, route, state, design, and beUI compatibility boundaries."}

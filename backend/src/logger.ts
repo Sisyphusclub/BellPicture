@@ -4,7 +4,7 @@ import { env } from './config/env.js';
 
 export const logger: Logger = pino({
   level: env.LOG_LEVEL,
-  base: { service: 'ref2image-backend' },
+  base: { service: 'nebulens-backend' },
   redact: {
     paths: [
       'req.headers.authorization',

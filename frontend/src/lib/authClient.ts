@@ -1,5 +1,5 @@
 import { usernameClient } from 'better-auth/client/plugins';
-import { createAuthClient } from 'better-auth/vue';
+import { createAuthClient } from 'better-auth/react';
 
 const baseURL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
 
@@ -8,4 +8,4 @@ export const authClient = createAuthClient({
   plugins: [usernameClient()],
 });
 
-export const { signIn, signOut, useSession } = authClient;
+export const { signIn, signOut, signUp, useSession } = authClient;

@@ -1,6 +1,6 @@
-# ref2image-backend
+# Nebulens backend
 
-Express + TypeScript backend for **Ref2Image_Studio**. Proxies image generation
+Express + TypeScript backend for **Nebulens**. Proxies image generation
 requests to a 2API reverse proxy (OpenAI Images API–compatible). The backend
 is intentionally stateless — all persistent history lives on the frontend
 (IndexedDB for blobs, localStorage for metadata).

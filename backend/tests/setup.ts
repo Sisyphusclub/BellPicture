@@ -2,7 +2,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-const root = mkdtempSync(path.join(tmpdir(), 'ref2image-test-'));
+const root = mkdtempSync(path.join(tmpdir(), 'nebulens-test-'));
 
 process.env.IMAGE_API_BASE_URL ??= 'https://test.example.com';
 process.env.IMAGE_API_KEY ??= 'test-key';

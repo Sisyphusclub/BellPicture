@@ -37,9 +37,21 @@ export function buildHistoryRouter(deps: HistoryRouterDeps = {}): Router {
     controller.list(req, res, next);
   });
 
+  router.patch('/', (req, res, next) => {
+    controller.updateMany(req, res, next);
+  });
+
+  router.post('/bulk-delete', (req, res, next) => {
+    controller.removeMany(req, res, next);
+  });
+
   // DELETE /api/history/batch/:batchId → delete all records in a batch owned by the user.
   router.delete('/batch/:batchId', (req, res, next) => {
     controller.removeBatch(req, res, next);
+  });
+
+  router.patch('/:id', (req, res, next) => {
+    controller.updateOne(req, res, next);
   });
 
   // DELETE /api/history/:id → delete one record owned by the user.

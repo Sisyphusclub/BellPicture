@@ -1,140 +1,110 @@
 # Frontend Quality Guidelines
 
-> **Status**: Verified by the first `frontend/` implementation.
+> **Status**: Verified against the React implementation in `frontend/`.
 
----
+Quality is evaluated at the contract boundary closest to the behavior. Tests and
+visual checks should catch meaningful regressions without asserting framework
+implementation details.
 
-## Toolchain
+## Required Automated Checks
 
-| Tool | Purpose | Config file |
-|---|---|---|
-| Vite 5+ | Dev server / bundler | `vite.config.ts` |
-| TypeScript 5.x | Static typing | `tsconfig.json` |
-| ESLint 9 (flat config) | Lint (with `eslint-plugin-vue`) | `eslint.config.js` |
-| Prettier 3 | Formatting | `.prettierrc` |
-| Vitest + jsdom | Unit + component tests | `vitest.config.ts` |
-| `@vue/test-utils` | Component mounting helpers | (peer dep) |
-| husky+lint-staged *(or lefthook)* | Pre-commit gate | `package.json` + `.husky/` or `lefthook.yml` |
+Run from `frontend/`:
 
-### ESLint baseline
-
-Extends:
-- `eslint-plugin-vue/flat/recommended`
-- `@vue/eslint-config-typescript`
-- `@vue/eslint-config-prettier`
-
-Project-specific rules:
-- `@typescript-eslint/no-explicit-any: error`
-- `@typescript-eslint/no-floating-promises: error`
-- `@typescript-eslint/consistent-type-imports: error`
-- `vue/multi-word-component-names: error`
-- `vue/component-api-style: ['error', ['script-setup']]`
-- `vue/define-macros-order: ['error', { order: ['defineProps', 'defineEmits', 'defineModel'] }]`
-- `no-console: error` (use a small `logger` util if needed; otherwise
-  remove debug logs before commit)
-
----
-
-## Required scripts in `package.json`
-
-```jsonc
-{
-  "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc -b && vite build",
-    "preview": "vite preview",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "typecheck": "vue-tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest"
-  }
-}
+```powershell
+npm run typecheck
+npm run lint
+npm run test
+npm run build
+npm run format:check
 ```
 
----
+Run `git diff --check` from the repository root before handoff.
 
-## Pre-commit gate
+## Test Strategy
 
-Prefer husky + lint-staged for consistency with the backend package. Lefthook is
-also acceptable if the repository standard changes.
+| Layer | Tool | Primary assertions |
+| --- | --- | --- |
+| utilities | Vitest | pure inputs, outputs, and edge cases |
+| API services | Vitest with stubbed `fetch` | URL, method, payload, narrowing, normalized errors |
+| components | React Testing Library | accessible rendering and user-visible interactions |
+| routes | React Testing Library | workflow states and integration between hooks/components |
+| browser QA | chosen browser | responsive layout, motion, focus, overflow, console, real rendering |
 
-```jsonc
-{
-  "scripts": {
-    "prepare": "husky"
-  },
-  "lint-staged": {
-    "*.{ts,vue,js,cjs,mjs}": "eslint --fix",
-    "*.{ts,vue,js,cjs,mjs,json,md,css}": "prettier --write"
-  }
-}
-```
+- Query elements by role, label, or visible name before using test ids.
+- Use `user-event` for user interaction.
+- Assert visible outcomes, not hook call order, CSS implementation, or internal
+  component-library markup.
+- Use `fake-indexeddb` only where browser persistence behavior is part of the
+  contract.
+- Mock at network/service boundaries. Avoid mocking React itself.
+- Add a regression test for every fixed behavior that is inexpensive to express.
 
-Never bypass with `--no-verify` unless explicitly authorized.
+## Accessibility
 
----
+- Use semantic landmarks, headings, buttons, links, labels, tables, and lists.
+- All interactive elements are keyboard reachable and have visible focus.
+- Icon-only buttons have accessible names and tooltips when the icon is not
+  universally clear.
+- Dialogs expose a name, focus an appropriate control, close with Escape, and do
+  not strand focus.
+- Status feedback uses an appropriate live region without repeatedly announcing
+  decorative updates.
+- Images have meaningful alt text or empty alt text when decorative.
+- Color is never the only carrier of state.
+- Support reduced motion and do not autoplay nonessential video for users who
+  request it.
 
-## Testing requirements
+## Responsive and Visual QA
 
-| Layer | Tooling | Coverage target |
-|---|---|---|
-| `services/` (API + storage) | Vitest, no Vue | services/api: stub `fetch`; services/storage: real IndexedDB via `fake-indexeddb` |
-| `composables/` | Vitest + a tiny harness component | Test the public API (refs, methods), not internals |
-| `components/` | Vitest + `@vue/test-utils` | Smoke-test rendering + key interactions; avoid asserting on Element Plus internals |
-| `views/` | Light. Prefer testing composables + components. | — |
+For interface changes, inspect desktop and mobile in the user's selected browser.
 
-Coverage target for week 1: services > 80%. Composables > 70%. Components
-informational only. Not enforced in CI yet.
+- Confirm there is no horizontal document overflow.
+- Confirm fixed navigation does not cover the page end or primary actions.
+- Test loading, empty, error, unauthenticated, forbidden, and populated states
+  that the change affects.
+- Check long Chinese text, long filenames, prompts, and account identifiers.
+- Check browser console warnings and errors.
+- For reference matching, compare source and implementation at the same viewport
+  and state. A screenshot alone is not a comparison.
 
-Test names: `it('shows the error banner when generation fails', ...)`.
-One assertion focus per test.
+The landing reference comparison uses 1440 x 813. Product routes additionally
+use 1440px desktop and 390 x 844 mobile checks.
 
----
+## Performance
 
-## Code review checklist
+- Keep render-time computations pure and avoid rebuilding large arrays when a
+  stable memo has measurable value.
+- Give images explicit dimensions or aspect ratios to prevent layout shift.
+- Use local media sized for its rendered slot; do not stretch tiny assets.
+- Clean up timers, subscriptions, and object URLs.
+- Avoid introducing large dependencies for a single primitive.
+- Keep animation on transform/opacity where possible and preserve a static
+  reduced-motion state.
 
-- [ ] No `any`, no `as` casts on API responses.
-- [ ] All HTTP goes through `services/api/`. No `fetch` in components/composables.
-- [ ] All persistent storage goes through `services/storage/`.
-- [ ] No new dependency without justification (esp. UI libs that
-      overlap with Element Plus).
-- [ ] No global side effects on import (top-level `await`, `window.x = ...`).
-- [ ] Hybrid UI boundary is respected: custom Claude-styled product surfaces;
-      Element Plus only for utility primitives.
-- [ ] All async paths handle errors via composable `error` ref + UI feedback.
-- [ ] All user-facing strings are Simplified Chinese, including status panels,
-      validation, errors, toasts, `aria-label`s, `alt` text, `index.html`, and
-      frontend README usage guidance.
-- [ ] New types added to `src/types/`, not inline-duplicated.
-- [ ] `schemaVersion` bumped if localStorage shape changed.
+## Error Resilience
 
----
+- Normalize network and backend errors at the service/hook boundary.
+- Never render raw unknown exceptions directly.
+- Keep retry paths available for recoverable failures.
+- Prevent duplicate submissions while a mutation is pending.
+- Treat invalid API and browser-storage data as recoverable boundary failures.
+- Backend authorization remains authoritative even when the UI hides controls.
 
-## Accessibility (baseline)
+## Definition of Done
 
-- Element Plus components ship reasonable a11y; **don't override their
-  semantics** (e.g., don't `role="button"` an `el-button`).
-- Every interactive element has a visible Simplified Chinese label or
-  Simplified Chinese `aria-label`, except brand/model/technical terms.
-- Color contrast ≥ 4.5:1 for body text. Don't rely on color alone for
-  state (also use icon/text).
-- Forms have associated labels, either native `<label>` text for custom
-  controls or `el-form-item` labels for Element Plus form controls.
+- The requested behavior works on every affected route.
+- Typecheck, lint, tests, build, formatting, and whitespace checks pass.
+- Relevant desktop/mobile layouts have been inspected.
+- Keyboard, focus, labels, and reduced-motion behavior remain intact.
+- Browser console has no new warnings or errors.
+- Specifications and QA evidence are updated when the architecture or visual
+  contract changes.
 
----
+## Forbidden Patterns
 
-## Forbidden patterns
-
-- ❌ Disabling lint rules inline without a comment + TODO.
-- ❌ `it.skip` / `describe.skip` without a tracking note.
-- ❌ Importing CSS from `node_modules` directly inside components (do it
-  once in `main.ts`).
-- ❌ Using `v-html` with backend-returned strings.
-- ❌ Committing `console.log` / `console.warn`.
-- ❌ Letting raw browser/backend/runtime English errors escape into UI; map
-  them to Simplified Chinese user messages at the composable/UI boundary.
-- ❌ Adding a state-management lib (Pinia, Vuex) — see
-  `state-management.md` for the agreed escalation path.
+- Snapshot-only testing of complex user workflows.
+- Assertions on generated component-library class strings.
+- Silencing TypeScript, ESLint, React hook, or accessibility failures without a
+  documented cause.
+- Shipping a visual clone without same-viewport reference comparison.
+- Treating a successful build as proof of runtime or responsive correctness.

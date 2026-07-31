@@ -20,7 +20,7 @@ import pino from "pino";
 
 export const logger = pino({
   level: process.env.LOG_LEVEL ?? "info",
-  base: { service: "ref2image-backend" },
+  base: { service: "nebulens-backend" },
   redact: {
     paths: [
       // request headers

@@ -2,7 +2,7 @@ import { and, desc, eq, inArray } from 'drizzle-orm';
 
 import { db } from '../db/drizzle.js';
 import { imageRecords } from '../db/schema.js';
-import type { AspectRatio } from '../types/image.js';
+import type { AspectRatio, ImageResolution } from '../types/image.js';
 
 export interface ImageRecordDTO {
   id: string;
@@ -16,8 +16,12 @@ export interface ImageRecordDTO {
   mime: string;
   width: number;
   height: number;
+  count: number;
+  resolution: ImageResolution;
   elapsedMs?: number;
   isPublic: boolean;
+  isFavorite: boolean;
+  collection?: string;
   createdAt: string; // ISO 8601
 }
 
@@ -34,6 +38,8 @@ export interface NewImageRecord {
   mime: string;
   width: number;
   height: number;
+  count: number;
+  resolution: ImageResolution;
   elapsedMs?: number;
   isPublic: boolean;
   createdAt: Date;
@@ -44,7 +50,9 @@ function parseReferenceIds(raw: string | null, fallback: string | null): string[
     try {
       const parsed = JSON.parse(raw) as unknown;
       if (Array.isArray(parsed)) {
-        return Array.from(new Set(parsed.filter((item): item is string => typeof item === 'string')));
+        return Array.from(
+          new Set(parsed.filter((item): item is string => typeof item === 'string')),
+        );
       }
     } catch {
       // Fall back to the legacy single reference id below.
@@ -63,7 +71,10 @@ function toDTO(row: typeof imageRecords.$inferSelect): ImageRecordDTO {
     mime: row.mime,
     width: row.width,
     height: row.height,
+    count: row.count,
+    resolution: row.resolution as ImageResolution,
     isPublic: row.isPublic,
+    isFavorite: row.isFavorite,
     createdAt: row.createdAt.toISOString(),
   };
   const referenceIds = parseReferenceIds(row.referenceIds, row.referenceId);
@@ -71,6 +82,7 @@ function toDTO(row: typeof imageRecords.$inferSelect): ImageRecordDTO {
   if (referenceIds.length > 0) dto.referenceIds = referenceIds;
   if (row.aspectRatio !== null) dto.aspectRatio = row.aspectRatio as AspectRatio;
   if (row.elapsedMs !== null) dto.elapsedMs = row.elapsedMs;
+  if (row.collection !== null) dto.collection = row.collection;
   return dto;
 }
 
@@ -85,18 +97,72 @@ export function insertImageRecords(records: NewImageRecord[]): void {
         prompt: r.prompt,
         model: r.model,
         referenceId: r.referenceId ?? r.referenceIds?.[0] ?? null,
-        referenceIds: r.referenceIds && r.referenceIds.length > 0 ? JSON.stringify(r.referenceIds) : null,
+        referenceIds:
+          r.referenceIds && r.referenceIds.length > 0 ? JSON.stringify(r.referenceIds) : null,
         aspectRatio: r.aspectRatio ?? null,
         filename: r.filename,
         mime: r.mime,
         width: r.width,
         height: r.height,
+        count: r.count,
+        resolution: r.resolution,
         elapsedMs: r.elapsedMs ?? null,
         isPublic: r.isPublic,
         createdAt: r.createdAt,
       })),
     )
     .run();
+}
+
+export interface ImageMetadataUpdate {
+  isFavorite?: boolean | undefined;
+  isPublic?: boolean | undefined;
+  collection?: string | null | undefined;
+}
+
+function metadataValues(updates: ImageMetadataUpdate) {
+  return {
+    ...(updates.isFavorite === undefined ? {} : { isFavorite: updates.isFavorite }),
+    ...(updates.isPublic === undefined ? {} : { isPublic: updates.isPublic }),
+    ...(updates.collection === undefined ? {} : { collection: updates.collection }),
+  };
+}
+
+export function updateImageRecordForUser(
+  userId: string,
+  id: string,
+  updates: ImageMetadataUpdate,
+): ImageRecordDTO | null {
+  const row = db
+    .update(imageRecords)
+    .set(metadataValues(updates))
+    .where(and(eq(imageRecords.userId, userId), eq(imageRecords.id, id)))
+    .returning()
+    .get();
+  return row ? toDTO(row) : null;
+}
+
+export function updateImageRecordsForUser(
+  userId: string,
+  ids: readonly string[],
+  updates: ImageMetadataUpdate,
+): ImageRecordDTO[] {
+  if (ids.length === 0) return [];
+  return db
+    .update(imageRecords)
+    .set(metadataValues(updates))
+    .where(and(eq(imageRecords.userId, userId), inArray(imageRecords.id, [...ids])))
+    .returning()
+    .all()
+    .map(toDTO);
+}
+
+export function deleteImageRecordsForUser(userId: string, ids: readonly string[]): number {
+  if (ids.length === 0) return 0;
+  return db
+    .delete(imageRecords)
+    .where(and(eq(imageRecords.userId, userId), inArray(imageRecords.id, [...ids])))
+    .run().changes;
 }
 
 export function listImageRecordsForUser(userId: string): ImageRecordDTO[] {

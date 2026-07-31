@@ -1,0 +1,9 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Defines Vue SFC structure, Chinese copy, custom product surfaces, and accessibility conventions."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Defines required tests, lint/typecheck/build checks, and accessibility baseline."}
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"Defines route/view ownership and existing brand asset contract."}
+{"file": ".trellis/tasks/07-16-cinematic-nebulens-landing-hero/research/full-ui-inventory.md", "reason": "Route-by-route behavior, responsive, asset, test, and component contracts to preserve."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Preserve request/response and image record type contracts."}
+{"file": ".impeccable.md", "reason": "Confirmed Nebulens users, workflows, brand tone, aesthetic direction, and design principles."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Preserve composable state, history, auth, and shared cache contracts during visual restructuring."}
+{"file": "design.md", "reason": "Authoritative Squarespace-derived black/white tokens, typography, full-width bands, components, imagery, and responsive layout direction."}
+{"file": ".trellis/tasks/07-16-cinematic-nebulens-landing-hero/research/react-beui-migration.md", "reason": "Defines the React 19, Tailwind v4, shadcn, beUI, Better Auth, and framework-neutral service migration boundaries."}

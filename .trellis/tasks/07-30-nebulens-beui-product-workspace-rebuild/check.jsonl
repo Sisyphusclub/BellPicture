@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend quality gate and required checks"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Testing, visual QA, accessibility, and build verification"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Review component contracts, keyboard access, and responsive behavior"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Review TypeScript and runtime boundary safety"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Review API and UI contract completeness"}
+{"file": "design.md", "reason": "Review every requested route against the beUI page patterns and quality gate"}
+{"file": ".trellis/tasks/07-30-nebulens-beui-product-workspace-rebuild/research/competitive-workflows.md", "reason": "Review implemented capabilities against verified workflow gaps"}

@@ -1,15 +1,11 @@
 import { fileURLToPath, URL } from 'node:url';
 
-import vue from '@vitejs/plugin-vue';
+import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  define: {
-    'import.meta.env.VITE_BRAND_ASSET_VERSION': JSON.stringify(
-      process.env.VITE_BRAND_ASSET_VERSION ?? Date.now().toString(),
-    ),
-  },
-  plugins: [vue()],
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
