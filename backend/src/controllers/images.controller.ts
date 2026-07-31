@@ -26,6 +26,7 @@ import {
   MAX_COUNT,
   MAX_REFERENCE_IMAGES,
   MIN_COUNT,
+  type ImageResolution,
 } from '../types/image.js';
 
 import '../types/express.js';
@@ -160,6 +161,8 @@ export function buildImagesController(deps: ImagesControllerDeps): {
             prompt: parsed.prompt,
             ...(parsed.model !== undefined ? { requestedModel: parsed.model } : {}),
             referenceIds,
+            count: parsed.count ?? DEFAULT_COUNT,
+            resolution: DEFAULT_IMAGE_RESOLUTION,
             isPublic: parsed.isPublic ?? false,
             requestId: req.requestId,
           });
@@ -185,6 +188,8 @@ export function buildImagesController(deps: ImagesControllerDeps): {
               prompt: parsed.prompt,
               ...(parsed.model !== undefined ? { requestedModel: parsed.model } : {}),
               referenceIds,
+              count: parsed.count ?? DEFAULT_COUNT,
+              resolution: DEFAULT_IMAGE_RESOLUTION,
               isPublic: parsed.isPublic ?? false,
               requestId: req.requestId,
             });
@@ -214,6 +219,8 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           prompt: parsed.prompt,
           ...(parsed.model !== undefined ? { requestedModel: parsed.model } : {}),
           referenceIds,
+          count: parsed.count ?? DEFAULT_COUNT,
+          resolution: DEFAULT_IMAGE_RESOLUTION,
           isPublic: parsed.isPublic ?? false,
           requestId: req.requestId,
         });
@@ -247,6 +254,8 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           prompt: parsed.prompt,
           ...(parsed.model !== undefined ? { requestedModel: parsed.model } : {}),
           referenceIds,
+          count: parsed.count ?? DEFAULT_COUNT,
+          resolution: parsed.resolution,
           isPublic: parsed.isPublic ?? false,
           requestId: req.requestId,
         });
@@ -277,6 +286,8 @@ function persistGeneratedImages(input: {
   prompt: string;
   requestedModel?: string;
   referenceIds: string[];
+  count: number;
+  resolution: ImageResolution;
   isPublic: boolean;
   requestId: string;
 }): void {
@@ -295,6 +306,8 @@ function persistGeneratedImages(input: {
     mime: image.mime,
     width: image.width,
     height: image.height,
+    count: input.count,
+    resolution: input.resolution,
     isPublic: input.isPublic,
     createdAt,
   }));

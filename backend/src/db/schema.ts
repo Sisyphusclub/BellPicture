@@ -114,8 +114,12 @@ export const imageRecords = sqliteTable(
     mime: text('mime').notNull(),
     width: integer('width').notNull(),
     height: integer('height').notNull(),
+    count: integer('count').notNull().default(1),
+    resolution: text('resolution').notNull().default('standard'),
     elapsedMs: integer('elapsed_ms'),
     isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(false),
+    isFavorite: integer('is_favorite', { mode: 'boolean' }).notNull().default(false),
+    collection: text('collection'),
     createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
   },
   (t) => ({

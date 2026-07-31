@@ -18,6 +18,7 @@ import {
   buildApiError,
   buildApiUrl,
   parseJsonResponse,
+  publicFetch,
   registerUnauthorizedHandler,
 } from './httpClient';
 
@@ -33,13 +34,17 @@ export async function fetchImageQuota(): Promise<QuotaResponse> {
   return payload;
 }
 
-export async function uploadReferenceImage(file: File): Promise<UploadResponse> {
+export async function uploadReferenceImage(
+  file: File,
+  signal?: AbortSignal,
+): Promise<UploadResponse> {
   const form = new FormData();
   form.append('image', file);
 
   const response = await authedFetch(buildApiUrl('/api/images/upload'), {
     method: 'POST',
     body: form,
+    ...(signal === undefined ? {} : { signal }),
   });
   const payload = await parseJsonResponse(response);
   if (!response.ok) throw buildApiError(response.status, payload);
@@ -49,21 +54,28 @@ export async function uploadReferenceImage(file: File): Promise<UploadResponse> 
   return payload;
 }
 
-export async function uploadReferenceImages(files: readonly File[]): Promise<UploadResponse[]> {
+export async function uploadReferenceImages(
+  files: readonly File[],
+  signal?: AbortSignal,
+): Promise<UploadResponse[]> {
   const uploads: UploadResponse[] = [];
   for (const file of files) {
-    uploads.push(await uploadReferenceImage(file));
+    uploads.push(await uploadReferenceImage(file, signal));
   }
   return uploads;
 }
 
-export async function generateImage(request: GenerateRequest): Promise<GenerateResponse> {
+export async function generateImage(
+  request: GenerateRequest,
+  signal?: AbortSignal,
+): Promise<GenerateResponse> {
   const response = await authedFetch(buildApiUrl(generateEndpointForRequest(request)), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(request),
+    ...(signal === undefined ? {} : { signal }),
   });
   const payload = await parseJsonResponse(response);
   if (!response.ok) throw buildApiError(response.status, payload);
@@ -90,7 +102,18 @@ function normalizeReferenceIds(
 }
 
 export function toDisplayImageUrl(outputUrl: string): string {
-  return buildApiUrl(outputUrl);
+  return /^https?:\/\//u.test(outputUrl) ? outputUrl : buildApiUrl(outputUrl);
+}
+
+export async function fetchOutputBlob(outputUrl: string, signal?: AbortSignal): Promise<Blob> {
+  const response = await publicFetch(toDisplayImageUrl(outputUrl), {
+    ...(signal === undefined ? {} : { signal }),
+  });
+  if (!response.ok) {
+    const payload = await parseJsonResponse(response);
+    throw buildApiError(response.status, payload);
+  }
+  return response.blob();
 }
 
 function isQuotaResponse(value: unknown): value is QuotaResponse {

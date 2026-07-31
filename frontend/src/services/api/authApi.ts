@@ -1,6 +1,12 @@
 import { isRecord, readString } from '@/utils/narrowing';
 
-import { ImageApiError, authedFetch, buildApiError, buildApiUrl, parseJsonResponse } from './httpClient';
+import {
+  ImageApiError,
+  authedFetch,
+  buildApiError,
+  buildApiUrl,
+  parseJsonResponse,
+} from './httpClient';
 
 export interface AuthUserProfile {
   id: string;
@@ -20,7 +26,11 @@ export async function fetchAuthProfile(): Promise<AuthUserProfile> {
   const payload = await parseJsonResponse(response);
   if (!response.ok) throw buildApiError(response.status, payload);
   if (!isAuthMeResponse(payload)) {
-    throw new ImageApiError(response.status, 'INVALID_RESPONSE', '登录状态接口返回了无法识别的响应。');
+    throw new ImageApiError(
+      response.status,
+      'INVALID_RESPONSE',
+      '登录状态接口返回了无法识别的响应。',
+    );
   }
   return payload.user;
 }

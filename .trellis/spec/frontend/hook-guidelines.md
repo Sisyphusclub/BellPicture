@@ -1,285 +1,102 @@
-# Composable Guidelines
+# React Hook Guidelines
 
-> **Status**: Verified by the first `frontend/` implementation. (Vue calls
-> these "composables", not "hooks", but this file fills the role of
-> `hook-guidelines.md` from the bootstrap scaffold.)
+> **Status**: Verified against the React implementation in `frontend/`.
 
----
+Hooks encapsulate reusable stateful behavior. Pure calculations belong in
+utilities; HTTP contracts belong in services; markup belongs in components.
 
-## What is a composable
+## When to Add a Hook
 
-A composable is a **function** that:
+Add a hook when behavior:
 
-- Has a name starting with `use` (`useImageGeneration`, `useFileUpload`).
-- Encapsulates reactive state and the logic that drives it.
-- Is called from `<script setup>` (or another composable).
-- Is **not** a Vue component, not a service, not a store.
+- uses React state, effects, refs, context, or external-store subscriptions;
+- is shared by more than one component; or
+- makes a route component materially easier to understand.
 
-Composables are how the project shares stateful logic across components.
+Do not add a hook around a single pure function or a one-line state value merely
+to reduce line count.
 
----
+## Rules
 
-## Standard shape
+- Name hooks `useCamelCase` and call them only at component/hook top level.
+- Return an object when consumers benefit from named fields.
+- Use `useCallback` for functions passed through Context or used as effect
+  dependencies; do not memoize every local callback by default.
+- Use `useMemo` for referential stability or expensive work, not semantic
+  correctness.
+- Keep effect dependency lists complete. Restructure unstable dependencies rather
+  than suppressing the lint rule.
+- Effects synchronize with systems outside React. Derive render data during
+  render when no external synchronization is involved.
+- Store mutable request ids, timer ids, and DOM handles in refs.
+- Clean up timers, media-query listeners, and subscriptions.
+
+## Async State
+
+Hooks that call services expose the states the UI needs: loading, data, error,
+and explicit actions. Catch `unknown`, normalize it to an `Error`, and give the
+view enough information to render a useful state.
 
 ```ts
-// composables/useImageGeneration.ts
-import { ref, readonly } from 'vue';
-import { generateImage } from '@/services/api/imagesApi';
-import type { GenerateRequest, ImageRecord } from '@/types/image';
-
-export function useImageGeneration() {
-  const isLoading = ref(false);
-  const error = ref<Error | null>(null);
-  const lastResult = ref<ImageRecord | null>(null);
-
-  async function generate(req: GenerateRequest): Promise<ImageRecord> {
-    isLoading.value = true;
-    error.value = null;
-    try {
-      const result = await generateImage(req);
-      lastResult.value = result;
-      return result;
-    } catch (e) {
-      error.value = e instanceof Error ? e : new Error(String(e));
-      throw error.value;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  return {
-    isLoading: readonly(isLoading),
-    error: readonly(error),
-    lastResult: readonly(lastResult),
-    generate,
-  };
-}
-```
-
-### Conventions
-
-- **Return an object with named refs and methods.** Never return a tuple
-  array (Vue community convention is object-shaped, unlike React).
-- **Wrap exposed refs in `readonly()`** when callers shouldn't mutate them.
-  Mutation happens through the composable's own methods.
-- **Errors set `error.value` AND throw.** Components can `await` and
-  `try/catch`, OR ignore the throw and read `error.value`. Both work.
-- **Never accept reactive props directly.** Take plain values. If reactivity
-  is needed, accept `Ref<T>` or `MaybeRefOrGetter<T>` and unwrap explicitly.
-
----
-
-## Scenario: auth-dependent server-state composables
-
-### 1. Scope / Trigger
-- Trigger: a composable reads server state that only exists for authenticated
-  users, such as image quota.
-- Scope: composables that wrap authenticated API calls and expose shared UI
-  state. Backend authorization remains authoritative.
-
-### 2. Signatures
-```ts
-interface QuotaResponse {
-  total: number;
-  remaining: number;
-}
-
-export function useImageQuota(): {
-  quota: Readonly<Ref<QuotaResponse | null>>;
-  isLoading: Readonly<Ref<boolean>>;
-  error: Readonly<Ref<Error | null>>;
+interface UseRecordsResult {
+  records: readonly ImageRecord[];
+  isLoading: boolean;
+  error: Error | null;
   refresh: () => Promise<void>;
 }
 ```
 
-### 3. Contracts
-- Watch `useAuth()` session state when the data depends on login status.
-- Do not let a pre-login 401/network failure permanently poison logged-in UI
-  state; becoming authenticated must trigger a refresh.
-- For authenticated quota fetch failures, show the product default `{ total: 20,
-  remaining: 20 }` as an optimistic display only.
-- Successful refreshes must replace optimistic data with the server response.
-- On logout, clear quota state and invalidate in-flight requests so old user
-  data cannot overwrite the logged-out or next-user state.
-- Do not call `fetch` directly; use the service layer (`services/api/*`).
+- Prevent stale responses from overwriting newer state by using request ids,
+  abort signals, or an equivalent ordering guard.
+- Use `void action()` only when the rejection is handled inside the action.
+- Reset errors at the start of a retry when the interface should leave the error
+  state immediately.
+- Do not duplicate API validation in hooks; services return typed results or
+  normalized errors.
 
-### 4. Validation & Error Matrix
-| Condition | Expected behavior |
-|---|---|
-| Initial load while unauthenticated | Quota remains `null`; no permanent `额度暂不可用` after later login |
-| Session becomes authenticated | Composable refreshes quota automatically |
-| Authenticated quota fetch fails | UI can show optimistic `剩余额度 20`; `error` still records the read failure |
-| Later quota refresh succeeds | Server `{ total, remaining }` replaces optimistic fallback |
-| User logs out with request in flight | In-flight result is ignored and quota is cleared |
+## Providers
 
-### 5. Good/Base/Bad Cases
-- Good: login flips `isAuthenticated` and quota refreshes without a page reload.
-- Base: generation success calls `refresh()` so the server count replaces any
-  optimistic value.
-- Bad: module-level `requested = true` from an unauthenticated failure blocks
-  every future logged-in refresh.
+Providers are reserved for state that crosses unrelated route branches or must be
+available at the application shell. Current examples are authentication and
+toast feedback.
 
-### 6. Tests Required
-- Composable test: pre-login failure followed by authentication triggers a
-  second fetch and fills quota.
-- Composable test: authenticated fetch failure yields `{ total: 20, remaining: 20 }`.
-- Composable test: successful refresh after fallback replaces remaining with the
-  server value.
-- Regression test: logout/in-flight requests cannot leak previous user quota.
+- Keep Context values small and domain-specific.
+- Memoize provider values when they contain functions or objects.
+- Throw a clear error when a required provider-backed hook is used outside its
+  provider.
+- Do not put page-local forms, filters, or modal drafts in Context.
 
-### 7. Wrong vs Correct
-#### Wrong
-```ts
-let requested = false;
-if (!requested) void refresh();
-```
+## External Stores
 
-#### Correct
-```ts
-watch([isAuthLoading, isAuthenticated], ([authLoading, authenticated]) => {
-  if (authLoading) return;
-  if (authenticated) void refresh();
-  else clearQuotaAndInvalidateRequests();
-}, { immediate: true });
-```
+Module-level caches that need React subscriptions use `useSyncExternalStore`
+through the helper in `src/lib/externalStore.ts`. A store must expose stable
+`subscribe` and `getSnapshot` behavior. Mutations notify subscribers after the
+cache is updated.
 
----
+Use this pattern only when the same cache is intentionally shared across mounted
+components. Route-local data should stay in the route's hook.
 
-## Scenario: username auth composable contract
+## Domain Boundaries
 
-### 1. Scope / Trigger
-- Trigger: login/register changed from email/password to username/password while
-  Better Auth still owns sessions.
-- Scope: `useAuth`, auth client plugin setup, and login/register components.
+- `useAuth` owns session/profile state and exposes authentication actions.
+- `useAuthModal` and `useImageDetailModalState` own shared modal state.
+- Image generation, quota, history, public gallery, upload, and admin-user hooks
+  call the corresponding API services and expose UI-ready state.
+- `useMediaQuery` owns browser media-query subscription and cleanup.
 
-### 2. Signatures
-```ts
-interface SignInUsernameInput {
-  username: string;
-  password: string;
-}
+## Testing Hooks
 
-interface SignUpUsernameInput {
-  username: string;
-  password: string;
-}
+Prefer testing hooks through the component behavior they enable. Test a hook
+directly only when it contains meaningful state transitions that would be awkward
+to cover through a route/component. Stub the service boundary rather than React
+internals.
 
-export function useAuth(): {
-  user: ComputedRef<AuthUser | null>;
-  isAuthenticated: ComputedRef<boolean>;
-  isLoading: ComputedRef<boolean>;
-  signInWithUsername(input: SignInUsernameInput): Promise<void>;
-  signUpWithUsername(input: SignUpUsernameInput): Promise<void>;
-  logout(): Promise<void>;
-}
-```
+## Forbidden Patterns
 
-### 3. Contracts
-- Components submit `username`, not `email`, for login and registration.
-- The composable trims and lowercases usernames before validation and requests.
-- Username validation is `^[a-z0-9_]{3,32}$`; registration password validation is
-  at least 8 characters.
-- Login uses Better Auth username client support (`signIn.username`).
-- Registration uses the backend wrapper route `/api/auth/sign-up/username` so
-  backend validation, uniqueness, and Better Auth hashing stay authoritative.
-- After successful sign-in or sign-up, call `session.value.refetch()` so header,
-  quota, and route guards observe the new session immediately.
-
-### 4. Validation & Error Matrix
-| Condition | Expected user-facing behavior |
-|---|---|
-| Invalid username before request | Throw `用户名需为 3-32 位小写字母、数字或下划线。` |
-| Registration password shorter than 8 | Throw `密码至少需要 8 个字符。` |
-| Wrong username/password | Throw `用户名或密码错误。` |
-| Duplicate username | Throw `该用户名已被占用，请换一个。` |
-| Native fetch/network failure | Throw `无法连接到服务器，请检查网络或稍后重试。` |
-| Unknown non-Chinese auth error | Throw a Chinese fallback, not raw English library text |
-
-### 5. Good/Base/Bad Cases
-- Good: `Admin_User` is submitted as `admin_user`, succeeds, and the session is
-  refetched before the modal closes.
-- Base: invalid username disables or rejects registration before a backend write.
-- Bad: components keep calling `signInWithEmail` or render internal generated
-  Better Auth emails in account UI.
-
-### 6. Tests Required
-- Component tests for username labels/placeholders and submitted payloads.
-- Component/composable tests for invalid username, short password, duplicate
-  username, and Chinese error mapping.
-- Regression test that the account header prefers `user.username` and does not
-  expose internal email surrogates.
-
-### 7. Wrong vs Correct
-#### Wrong
-```ts
-await signIn.email({ email, password });
-```
-
-#### Correct
-```ts
-await signIn.username({ username: normalizeUsername(username), password });
-await session.value.refetch();
-```
-
----
-
-## Module-level vs. instance-level state
-
-By default, composables hold **per-call state** — calling `useImageGeneration()`
-in two components gives two independent `isLoading` refs. This is
-intentional.
-
-For **shared state** across components (e.g., the global history list),
-declare module-level refs **outside** the function:
-
-```ts
-// composables/useImageHistory.ts
-import { ref } from 'vue';
-
-const history = ref<ImageRecord[]>([]);  // module-level: shared across all callers
-let initialized = false;
-
-export function useImageHistory() {
-  if (!initialized) {
-    void loadFromIndexedDb();   // see services/storage/indexedDb.ts
-    initialized = true;
-  }
-  return {
-    history: readonly(history),
-    add(rec: ImageRecord) { /* ... */ },
-    remove(id: string) { /* ... */ },
-  };
-}
-```
-
-This pattern replaces Pinia for the MVP. Keep module-level state usage
-**explicit and rare** — most composables should be per-instance.
-
----
-
-## Lifecycle inside composables
-
-- `onMounted`, `onUnmounted`, `watch`, `watchEffect` may be used inside a
-  composable; they hook into the **calling component's** lifecycle.
-- Always pair side-effect setup with cleanup
-  (`onUnmounted(() => removeListener(...))`).
-- If a composable is called outside `setup()` (e.g., from another
-  composable that's called inside `setup()`), lifecycle hooks still work.
-  But **don't call composables conditionally** — they must be called at
-  the top of `setup()`.
-
----
-
-## Forbidden patterns
-
-- ❌ Naming a stateful function without a `use` prefix.
-- ❌ Calling a composable inside `if`, `for`, or after an `await`. Same
-  rule as React hooks: call at the top, every render.
-- ❌ Calling `fetch` / `axios` directly inside a composable. Wrap a
-  service in `services/api/`, then call the service.
-- ❌ Mutating module-level refs from outside the composable's exported
-  methods. Encapsulation matters.
-- ❌ Returning raw `ref`s when callers shouldn't write. Use `readonly`.
-- ❌ Using composables as a substitute for utility functions. If there's
-  no reactive state, it's a util, not a composable — drop the `use`
-  prefix and put it in `utils/`.
+- Conditional hook calls.
+- Empty dependency arrays that capture changing values.
+- Disabling `react-hooks/exhaustive-deps` to silence a design problem.
+- Fetch/JSON parsing copied into multiple hooks.
+- Global mutable caches without a subscription contract.
+- Returning JSX from a `.ts` hook module.
+- Context as a replacement for all local state.

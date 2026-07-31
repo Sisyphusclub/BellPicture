@@ -250,6 +250,8 @@ describe('POST /api/images/generate', () => {
       prompt: '管理员生成 4K 宽屏图',
       width: 3840,
       height: 2160,
+      count: 1,
+      resolution: '4k',
       isPublic: true,
     });
   });

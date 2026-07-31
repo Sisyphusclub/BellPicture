@@ -12,8 +12,8 @@ let onUnauthorized: (() => void) | null = null;
 
 /**
  * Register a callback fired whenever an API call returns 401 UNAUTHORIZED.
- * Wired at app startup from `main.ts` to the auth modal. Kept here instead
- * of importing a composable so `services/` remains Vue-free.
+ * Wired at app startup from `main.tsx` to the auth modal. Kept here instead
+ * of importing a React hook so `services/` remains framework-neutral.
  */
 export function registerUnauthorizedHandler(handler: () => void): void {
   onUnauthorized = handler;

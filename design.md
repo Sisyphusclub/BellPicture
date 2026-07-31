@@ -1,299 +1,356 @@
----
-version: "1.0"
-name: Nebulens
-description: Design system and brand-surface specification for the Nebulens AI image creation workstation.
-language: zh-CN
-theme: warm-light-workstation
-token_source: frontend/src/styles/tokens.css
-product_source: PRODUCT.md
-navigation_source: frontend/src/components/common/AppHeader.vue
----
+# Nebulens - beUI Pro Design System
 
-# Nebulens Design System
+> A dark-first AI image studio built from layered graphite surfaces, compact controls, and continuous morphing interactions.
 
-## Overview
+**Visual source:** [beUI Pro](https://pro.beui.dev/components)<br>
+**Primary references:** Agent Chat Input, Animated Dropdown, Morphic Card Modal, Morphic Tooltip, Data Table<br>
+**Product:** Nebulens AI image creation workspace<br>
+**Updated:** 2026-07-30
 
-Nebulens is a calm, precise, premium workstation for generating, reviewing, reusing, and locally archiving AI images. Its visual language is minimal and editorial: warm near-white canvases, exact typography, quiet borders, tactile controls, restrained coral accents, and generous working space.
+## Product Direction
 
-This document describes the implemented design system. `frontend/src/styles/tokens.css` remains the single source of truth for token values; use its CSS custom properties directly instead of copying values into component styles. The full-screen video hero at the end of this document is an optional public brand surface and an intentional exception to the authenticated warm-light workstation shell.
+Nebulens is a working image studio, not a marketing template. The interface should make it fast to describe an image, add references, tune generation settings, compare results, revisit assets, and manage accounts. Generated imagery provides most of the color. The application chrome stays quiet, responsive, and consistent with beUI Pro.
 
-## Product Principles
+The default theme is dark, matching beUI Pro's primary presentation. Use layered near-black and graphite surfaces rather than one flat black canvas so creators can scan controls and inspect image detail without losing hierarchy. Light surfaces are reserved for inverse actions, focused media metadata, and an optional light theme. The experience should feel precise and modern, with the distinctive character coming from morphing continuity between controls, menus, cards, and detail views.
 
-1. Lead with spacious clarity while keeping creation controls close to hand.
-2. Prefer hierarchy, proportion, and tactile surfaces over decoration.
-3. Treat image history as part of the creative loop, not a separate database.
-4. Keep visible copy concise and in Simplified Chinese by default.
-5. Preserve familiar controls and predictable navigation even when the composition is editorial.
-6. Use motion to explain state changes; never make the workstation compete with the artwork.
+## Design Principles
 
-## Language and Voice
+1. **Start with the task.** The first meaningful surface is the prompt composer or the current asset collection, never an explanatory marketing block.
+2. **Use semantic components.** Buttons, menus, tooltips, dialogs, tables, inputs, and status feedback use the shared beUI/shadcn contracts instead of page-specific replicas.
+3. **Keep imagery dominant.** Product chrome is neutral; generated images carry saturation, texture, and emotional impact.
+4. **Show continuity through motion.** Menus expand from triggers, cards morph into detail views, and tooltips move between nearby controls. Motion explains state rather than decorating it.
+5. **Keep operational density calm.** Controls are compact but not cramped, with stable dimensions, clear groups, and progressive disclosure for secondary settings.
+6. **Design both themes, ship dark first.** Every semantic token has a light counterpart, but all routes open in dark mode unless the user changes theme.
 
-- The default interface language is Simplified Chinese (`zh-CN`). This includes navigation, labels, buttons, helper text, validation, errors, toasts, `aria-label`s, image `alt` text, and metadata.
-- Keep the product name `Nebulens`, model names such as `gpt-image-2`, route paths, API fields, file formats, and established technical terms in English where translation would reduce clarity.
-- Write short, direct action labels such as `开始创作`, `生成图片`, `下载图片`, and `删除记录`.
-- State errors as what happened plus the next action: `生成失败，请稍后重试。`
-- Avoid hype, unexplained jargon, and borrowed product language.
+## Foundations
 
-## Token Contract
+### Semantic Colors
 
-### Color and Surfaces
+Use semantic names in product code. Component implementations should not hard-code page-specific neutral values.
 
-Use semantic variables rather than raw colors. The current key values are listed for reference; implementation must consume the variable names.
+| Token                  | Default dark             | Optional light           | Use                                                    |
+| ---------------------- | ------------------------ | ------------------------ | ------------------------------------------------------ |
+| `--background`         | `oklch(0.135 0 0)`       | `oklch(0.985 0 0)`       | Application canvas                                     |
+| `--foreground`         | `oklch(0.96 0 0)`        | `oklch(0.145 0 0)`       | Primary text and icons                                 |
+| `--card`               | `oklch(0.175 0 0)`       | `oklch(1 0 0)`           | Composer, modal, menu, and framed tool surfaces        |
+| `--card-foreground`    | `oklch(0.96 0 0)`        | `oklch(0.145 0 0)`       | Content on card surfaces                               |
+| `--muted`              | `oklch(0.225 0 0)`       | `oklch(0.965 0 0)`       | Quiet controls and grouped regions                     |
+| `--muted-foreground`   | `oklch(0.67 0 0)`        | `oklch(0.48 0 0)`        | Secondary labels and metadata                          |
+| `--border`             | `oklch(1 0 0 / 0.1)`     | `oklch(0.91 0 0)`        | Standard boundaries                                    |
+| `--border-strong`      | `oklch(1 0 0 / 0.18)`    | `oklch(0.82 0 0)`        | Focused grouping and draggable regions                 |
+| `--primary`            | `oklch(0.94 0 0)`        | `oklch(0.18 0 0)`        | Primary actions and selected controls                  |
+| `--primary-foreground` | `oklch(0.16 0 0)`        | `oklch(0.985 0 0)`       | Content on primary surfaces                            |
+| `--accent`             | `oklch(0.72 0.15 250)`   | `oklch(0.62 0.18 250)`   | Sparse Nebulens status and brand emphasis              |
+| `--accent-soft`        | `oklch(0.28 0.06 250)`   | `oklch(0.94 0.035 250)`  | Selected skill, active search, and informational state |
+| `--destructive`        | `oklch(0.68 0.18 25)`    | `oklch(0.56 0.2 25)`     | Destructive commands and errors                        |
+| `--ring`               | `oklch(0.72 0.02 250)`   | `oklch(0.55 0.02 250)`   | Keyboard focus ring                                    |
+| `--overlay`            | `oklch(0.04 0 0 / 0.82)` | `oklch(0.08 0 0 / 0.72)` | Image inspection backdrop                              |
 
-| Role                | Token                          | Current value                     |
-| ------------------- | ------------------------------ | --------------------------------- |
-| Primary canvas      | `--color-canvas`               | `oklch(97.4% 0.006 82deg)`        |
-| Clean canvas        | `--color-canvas-clean`         | `oklch(99.1% 0.004 88deg)`        |
-| Soft canvas         | `--color-canvas-soft`          | `oklch(98.7% 0.006 86deg)`        |
-| Warm canvas         | `--color-canvas-warm`          | `oklch(94.8% 0.018 82deg)`        |
-| Base surface        | `--color-surface`              | `oklch(99.2% 0.005 86deg)`        |
-| Sidebar surface     | `--color-surface-sidebar`      | `oklch(99% 0.004 88deg / 0.72)`   |
-| Glass surface       | `--color-surface-glass`        | `oklch(98.8% 0.006 86deg / 0.72)` |
-| Strong glass        | `--color-surface-glass-strong` | `oklch(98.9% 0.006 86deg / 0.9)`  |
-| Dark surface        | `--color-surface-dark`         | `oklch(18.6% 0.009 76deg)`        |
-| Inspection backdrop | `--color-inspection-backdrop`  | `oklch(9% 0.01 276deg / 0.84)`    |
-| Primary ink         | `--color-ink`                  | `oklch(22% 0.012 78deg)`          |
-| Body text           | `--color-body`                 | `oklch(31% 0.012 78deg)`          |
-| Muted text          | `--color-muted`                | `oklch(58% 0.012 78deg)`          |
-| Text on dark        | `--color-on-dark`              | `oklch(98.4% 0.005 88deg)`        |
-| Quiet text on dark  | `--color-on-dark-muted`        | `oklch(78% 0.006 88deg)`          |
-| Primary action      | `--color-primary`              | `oklch(18.6% 0.009 76deg)`        |
-| Coral accent        | `--color-accent`               | `oklch(66% 0.1 42deg)`            |
-| Coral hover         | `--color-accent-hover`         | `oklch(60% 0.1 42deg)`            |
-| Success             | `--color-success`              | `oklch(72% 0.11 138deg)`          |
-| Warning             | `--color-warning`              | `oklch(72% 0.14 82deg)`           |
-| Error               | `--color-error`                | `oklch(55% 0.17 28deg)`           |
-| Hairline            | `--color-hairline`             | `oklch(24% 0.012 78deg / 0.1)`    |
-| Focus ring          | `--color-focus`                | `oklch(78% 0.13 57deg / 0.78)`    |
-
-Warm neutral surfaces carry the product. Coral is a directional accent for the primary creation path, active inspection controls, and focus support; it is not a decorative wash. Teal and amber are secondary semantic accents, not competing brand colors. State must never be communicated by color alone.
+Generated images are exempt from the neutral palette. Do not tint, blur, or darken them unless text or inspection controls require local contrast.
 
 ### Typography
 
-| Role                    | Token                       | Stack or size                                                                              |
-| ----------------------- | --------------------------- | ------------------------------------------------------------------------------------------ |
-| Display and UI          | `--font-display`            | `'Geist', 'Noto Serif SC', 'LXGW WenKai Screen', system-ui, sans-serif`                    |
-| Editorial serif         | `--font-serif`              | `'Instrument Serif', 'Noto Serif SC', Georgia, 'Songti SC', serif`                         |
-| Brand                   | `--font-brand`              | Same stack as `--font-display`                                                             |
-| Body                    | `--font-body`               | Same stack as `--font-display`                                                             |
-| Code and technical data | `--font-code`               | `'Söhne Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace` |
-| Caption                 | `--text-caption-size`       | `12px`                                                                                     |
-| Label                   | `--text-label-size`         | `13px`                                                                                     |
-| Small body              | `--text-body-sm-size`       | `14px`                                                                                     |
-| Body                    | `--text-body-size`          | `16px`                                                                                     |
-| Card title              | `--text-card-title-size`    | `18px`                                                                                     |
-| Section title           | `--text-section-title-size` | `clamp(22px, 2vw, 28px)`                                                                   |
-| Page title              | `--text-page-title-size`    | `clamp(30px, 3.2vw, 44px)`                                                                 |
-| Hero title              | `--text-hero-title-size`    | `clamp(42px, 6.4vw, 80px)`                                                                 |
+Use `Geist Sans`, `Inter`, `Helvetica Neue`, and `ui-sans-serif` as the interface stack. Reserve `Oxanium` for the Nebulens wordmark and compact brand-led labels. In the home headline, pair `Geist Variable` for `Turn your idea` with `Instrument Serif Italic` for `into images` at one shared display scale.
 
-Use `--font-display` for controls, navigation, and direct product copy. Use `--font-serif` sparingly for editorial emphasis, never for dense forms or status data. Use `--font-code` only where the content is genuinely technical. Default label and title weights are `--font-weight-label: 700` and `--font-weight-title: 700`. Keep letter spacing at `0`; hierarchy should come from size, weight, line height, and spacing.
+| Role          | Size / line height                            | Weight | Use                                   |
+| ------------- | --------------------------------------------- | ------ | ------------------------------------- |
+| Display       | `64-80px / 0.9` desktop, `40px / 0.88` mobile | 460    | Home prompt-led headline only         |
+| Page title    | `36px / 1.12` desktop, `28px / 1.15` mobile   | 550    | Generate, history, and admin headings |
+| Section title | `22px / 1.25`                                 | 600    | Result groups and major panels        |
+| Card title    | `15px / 1.35`                                 | 600    | Asset and modal titles                |
+| Body          | `15px / 1.6`                                  | 400    | Main product copy                     |
+| UI            | `13px / 1.4`                                  | 500    | Controls, menus, and table values     |
+| Caption       | `11px / 1.35`                                 | 500    | Metadata and helper text              |
+
+Letter spacing is `0`. Use weight, contrast, and spacing for hierarchy. Do not use oversized editorial typography inside work surfaces.
 
 ### Spacing
 
-The spacing scale is based on 4px and should be used without local substitutes:
+Base unit: `4px`.
 
-| Token             | Value  |
-| ----------------- | ------ |
-| `--space-xxs`     | `4px`  |
-| `--space-xs`      | `8px`  |
-| `--space-sm`      | `12px` |
-| `--space-md`      | `16px` |
-| `--space-lg`      | `24px` |
-| `--space-xl`      | `32px` |
-| `--space-xxl`     | `48px` |
-| `--space-section` | `96px` |
+| Token        | Value  | Typical use                     |
+| ------------ | ------ | ------------------------------- |
+| `--space-1`  | `4px`  | Icon/text micro-gap             |
+| `--space-2`  | `8px`  | Menu padding and compact groups |
+| `--space-3`  | `12px` | Standard control gaps           |
+| `--space-4`  | `16px` | Card and mobile page padding    |
+| `--space-5`  | `20px` | Composer and toolbar sections   |
+| `--space-6`  | `24px` | Page groups                     |
+| `--space-8`  | `32px` | Section separation              |
+| `--space-10` | `40px` | Desktop page inset              |
+| `--space-16` | `64px` | Major page rhythm               |
 
-Use 8-12px inside compact groups, 16-24px between related groups, 32-48px between major blocks, and 96px only for true section separation. Preserve whitespace around artwork and avoid card-heavy page composition.
+Use stable grids, `aspect-ratio`, and min/max constraints for repeated assets and controls. Dynamic content must not resize toolbars or shift adjacent controls.
 
-### Radii and Shape
+### Radius
 
-| Token           | Value    | Use                                          |
-| --------------- | -------- | -------------------------------------------- |
-| `--radius-xs`   | `4px`    | Tiny indicators and compact internal details |
-| `--radius-sm`   | `12px`   | Fields, buttons, and images                  |
-| `--radius-md`   | `18px`   | Navigation states and medium surfaces        |
-| `--radius-lg`   | `24px`   | Panels and shell surfaces                    |
-| `--radius-xl`   | `28px`   | Popups and prominent composer-like surfaces  |
-| `--radius-pill` | `9999px` | Pills and badges only                        |
+beUI uses radius to express component role rather than one global corner value.
 
-Use `--radius-panel`, `--radius-popup`, `--radius-image`, and `--radius-image-lg` aliases for their intended component roles. Do not mix multiple radius families inside one compact control group.
+| Token           | Value   | Use                                             |
+| --------------- | ------- | ----------------------------------------------- |
+| `--radius-xs`   | `4px`   | Tooltips, code labels, tiny status surfaces     |
+| `--radius-sm`   | `8px`   | Menu items, thumbnails, inputs, compact buttons |
+| `--radius-md`   | `12px`  | Dropdowns, cards, grouped controls              |
+| `--radius-lg`   | `16px`  | Asset cards and modal panels                    |
+| `--radius-xl`   | `20px`  | Prompt composer and large morphing surfaces     |
+| `--radius-full` | `999px` | Icon buttons, switches, and true pills          |
 
-### Shadows and Elevation
+Do not make every container round. Page bands, tables, and unframed content regions remain square.
 
-| Token               | Current value                               |
-| ------------------- | ------------------------------------------- |
-| `--shadow-soft`     | `0 8px 24px oklch(24% 0.012 78deg / 0.06)`  |
-| `--shadow-surface`  | `0 12px 34px oklch(24% 0.012 78deg / 0.07)` |
-| `--shadow-composer` | `0 18px 60px oklch(24% 0.012 78deg / 0.08)` |
-| `--shadow-button`   | `0 14px 28px oklch(0% 0 0deg / 0.16)`       |
+### Elevation
 
-Establish hierarchy with surface tone and hairline borders first. Reserve shadows for the persistent shell, composer, or a clearly raised action. Dialogs, menus, popovers, preview surfaces, and popup-contained images use warm surfaces, a subtle border, and `box-shadow: none`; avoid decorative glass blur in those surfaces.
+Use borders for ordinary separation. Shadows are reserved for floating or morphing surfaces.
 
-### Layout
+| Token            | Value                                                         | Use                                    |
+| ---------------- | ------------------------------------------------------------- | -------------------------------------- |
+| `--shadow-float` | `0 16px 48px -28px rgb(0 0 0 / 0.35)`                         | Dropdowns and floating composer layers |
+| `--shadow-modal` | `0 24px 80px -36px rgb(0 0 0 / 0.48)`                         | Modal content above backdrop           |
+| `--shadow-focus` | `0 0 0 3px color-mix(in oklch, var(--ring) 24%, transparent)` | Keyboard focus support                 |
 
-| Token                    | Value    | Contract                              |
-| ------------------------ | -------- | ------------------------------------- |
-| `--app-sidebar-width`    | `86px`   | Authenticated desktop navigation rail |
-| `--sidebar-width`        | `280px`  | Wider secondary-panel allowance       |
-| `--composer-height`      | `188px`  | Stable composer reservation           |
-| `--container-width`      | `1200px` | Main maximum container                |
-| `--content-width`        | `1200px` | Standard content width                |
-| `--content-width-narrow` | `960px`  | Focused reading or form width         |
-| `--breakpoint-mobile`    | `860px`  | Primary layout breakpoint             |
+Do not apply shadows to every card, image tile, table row, or page section.
 
-Use constrained containers with responsive side padding. Fixed-format elements such as image grids, toolbars, controls, and preview frames need stable tracks, explicit minimums, or aspect ratios so loading and hover states do not shift the page.
+## Motion System
 
-## Core Components
+Motion uses `transform`, `opacity`, shared layout IDs, and measured dimensions. New product motion should use `cubic-bezier(0.16, 1, 0.3, 1)`.
 
-### Buttons
+| Motion   | Duration    | Use                                               |
+| -------- | ----------- | ------------------------------------------------- |
+| Fast     | `120-160ms` | Hover, selected state, icon feedback              |
+| Standard | `180-240ms` | Dropdown reveal, toolbar changes, attachment tray |
+| Morph    | `320-520ms` | Card-to-modal and shared-surface continuity       |
 
-- Primary: `--button-primary-bg`, `--button-primary-bg-hover`, and `--button-primary-fg` for the single dominant command.
-- Secondary: `--button-secondary-bg`, `--button-secondary-bg-hover`, and `--button-secondary-fg` for supporting actions.
-- Ghost: `--button-ghost-bg`, `--button-ghost-bg-hover`, and `--button-ghost-fg` for low-emphasis tools.
-- Danger: `--button-danger-fg` with `--button-danger-bg-hover`; destructive intent must also be explicit in the label.
-- Standard heights are `--control-height-sm: 34px`, `--control-height-md: 40px`, and `--control-height-lg: 44px`; mobile touch targets must be at least 44px.
-- Use an icon-only button when a familiar symbol is clearer than text. Give every icon-only control a Simplified Chinese accessible name and a tooltip when the meaning is not universal.
+Installed beUI components may keep their internal spring transitions. Product-level additions should avoid elastic overshoot. Under `prefers-reduced-motion`, stop autoplay and replace spatial movement with immediate state changes or short opacity fades.
 
-### Fields and Composer
+## Component Language
 
-Fields use `--field-background`, `--field-foreground`, `--field-placeholder`, and `--field-border`. Hover uses `--field-background-hover` and `--field-border-hover`; focus uses `--field-border-focus` plus `--field-focus-ring`. The standard field radius is `--field-radius`.
+### Agent Composer
 
-The image composer is a product-defining surface. Keep prompt entry, reference-image controls, generation settings, and the primary action visually connected. Avoid nested cards, oversized helper copy, or controls that move when labels and loading states change.
+The prompt composer is the signature product surface. Use the installed beUI Agent Chat Input as its interaction model.
 
-### Panels, Cards, and Popups
+- Place it at the center of the creation flow, up to `768px` wide on home and `880px` in the generate workspace.
+- Use a `20px` outer radius, muted 3px frame, card-colored inner surface, and no permanent heavy shadow.
+- Prompt text starts at `16px` and may reach `18px` on desktop.
+- Attachments appear as compact thumbnail chips above the toolbar.
+- Model, ratio, count, and secondary controls sit in the lower toolbar or a morphing top layer.
+- Use a circular primary submit button. Disabled, submitting, streaming, and stop states must be visible.
+- Keep generation shortcuts out of visible instructional copy; expose them through tooltips or accessible descriptions.
 
-- Use cards only for repeated items, modals, and genuinely framed tools. Page sections remain unframed within the content container.
-- Do not nest cards inside cards.
-- Artwork is the visual subject; surrounding chrome stays quiet and must not crop an image when inspection is the task.
-- Popup surfaces follow the composer vocabulary: warm off-white, one hairline border, generous radius, no shadow, and no ornamental blur.
-- Custom modals require `role="dialog"`, `aria-modal="true"`, an accessible title, Escape handling, backdrop close, initial focus, and a labeled close button.
+### Animated Dropdown
 
-### Authenticated Navigation
+- Dropdown surfaces use `12px` radius, 1px border, card background, `6px` padding, and `--shadow-float` only when separation requires it.
+- Menu items use `8px` radius and a stable minimum height of `40px`.
+- The highlighted background moves between items rather than flashing each row independently.
+- Destructive items use semantic destructive color and a soft destructive highlight.
+- Long labels truncate; descriptions may use a second muted line.
 
-The workstation shell uses the existing `AppHeader.vue` navigation model:
+### Morphic Tooltip
 
-- Desktop: a fixed 86px rail with the Nebulens mark and `发现`, `生图`, and `资产`; administrators also see `用户管理`.
-- Mobile: the rail becomes a stable 68px bottom navigation bar, with safe-area offsets and compact labels.
-- The brand asset is `/brand/logo.png`, rendered at 42px on desktop and 32px on mobile.
-- Login and account actions stay at the end of the navigation flow. Active state, hover, and focus each need a distinct visible treatment.
+- Use on unfamiliar icon-only controls and dense toolbars.
+- Tooltip surface uses inverse foreground/background, `4px` radius, `12px` text, and no decorative shadow.
+- Tooltips move between adjacent controls when the pointer travels across a toolbar.
+- Focus-triggered tooltips appear immediately and do not animate spatially.
 
-## Motion
+### Morphic Card Modal
 
-Motion should clarify entry, completion, selection, or spatial change. Keep interaction transitions short and quiet. Do not add looping decorative animation to the workstation. Respect `prefers-reduced-motion` by removing nonessential transforms, parallax, and auto-advancing effects.
+- Use for generated-image and history-image inspection.
+- The clicked card is the origin of the detail surface; preserve crop and position continuity into the modal.
+- Modal panels use `16px` radius and `--shadow-modal`; the overlay uses `--overlay`.
+- Do not use backdrop blur on product modals.
+- Keep close, download, reuse prompt, public state, and destructive actions reachable by keyboard.
+- Route destructive image actions through the shared `ConfirmActionModal`; use an `alertdialog`, explicit irreversible copy, an 8px radius, guarded pending state, and cancel/confirm actions that remain usable at 320px.
+- Do not use native `window.confirm` in Generate or Assets because it breaks beUI styling, focus continuity, and pending feedback.
+
+### Buttons and Icon Controls
+
+- Primary buttons use `--primary`, `--primary-foreground`, `8px` radius, and a stable `40px` or `44px` height.
+- Secondary buttons use card background and border. Ghost controls use transparent backgrounds and muted foreground.
+- Icon-only controls are circular or `8px` rounded squares with a stable `36-40px` box.
+- Every icon-only control has an accessible name. Add a Morphic Tooltip when the icon is not universally obvious.
+- Use Lucide icons already installed in the project. Do not draw custom SVG icons.
+
+### Inputs and Selection Controls
+
+- Text inputs use an `8px` radius, 1px border, card background, and a visible semantic focus ring.
+- Use animated menus for option sets, segmented controls for a small number of modes, switches for binary settings, and steppers for bounded image count.
+- Do not hide primary generation settings behind multiple nested menus.
+
+### Data Tables
+
+- Keep tables dense and calm: `44-48px` rows, muted uppercase-free headers, hairline row dividers, and no card around every row.
+- The table toolbar owns search, result count, page size, and relevant bulk actions.
+- Pagination uses icon buttons and an animated page-size menu.
+- Mobile changes rows into labeled records without dropping quota editing or delete actions.
+
+### Empty, Loading, and Error States
+
+- Empty states explain the next useful action in one sentence and provide one clear command when action is possible.
+- Use inline skeletons or reserved space for loading; do not replace an entire page with a spinner.
+- Errors stay near the failed task and preserve retry or correction paths.
+- Status text uses live regions where appropriate and must not depend on color alone.
+
+### Operational Copy
+
+- Generate, Templates, Assets, Sign In, and Sign Up show only labels, values, state, validation, and concise empty/error recovery.
+- Do not place page subtitles, feature summaries, tutorials, keyboard instructions, workflow explanations, or marketing copy inside work surfaces.
+- Prefer a tooltip or accessible name for unfamiliar icon controls. Do not use visible helper copy to compensate for an unclear layout.
+
+## Page Patterns
+
+### Home (`/`)
+
+The home page is a product-first creation screen, not a Squarespace clone.
+
+- Use a full dark first viewport with the beUI Expanding pill navigation, centered product statement, and a functional Agent Composer. The desktop pill stays fixed at the top, expands continuously from `720px` to `960px` over the first `320px` of scroll, and uses one shared-layout surface for hover and current-route emphasis.
+- On mobile, reduce the Expanding pill to brand plus menu control and open navigation/actions in a rounded graphite overlay below it. Preserve Escape closing, route-current semantics, and zero horizontal overflow.
+- Keep the copy short: brand/product name, one concrete creation promise, and the composer placeholder. Set `Turn your idea` in Geist Variable at 460 weight with slightly tightened word spacing, and `into images` in same-scale Instrument Serif Italic. Align both on one baseline with a deliberate natural-space gap between the font treatments. Retain the restrained upward fade on entry.
+- Keep the video, navigation, headline, and Agent Composer within a full `100svh` first viewport. Preserve the video across that complete viewport; pull the creation feed upward into the open space below the composer so the first image row appears within the first viewport rather than starting near the bottom.
+- Present the six bundled works with beUI Pro `image-gallery-vertical`: four alternating motion columns on wide screens and the component's compact two-column layout below the large breakpoint. The gallery loops its local images vertically, never horizontally, and has no pagination or previous/next controls. Respect `prefers-reduced-motion` by freezing the columns.
+- Keep the home gallery unlabeled and separate it from the Agent Composer with a generous `64-96px` visual gap. Blend its moving columns into the graphite canvas with a long, symmetric multi-stop edge mask instead of a short linear fade. Use real generated images with `16px` radius, subtle borders, a restrained hover zoom, and the shared image-detail modal on primary images.
+
+### Generate (`/generate`)
+
+- Use a precision-first studio: a quiet app rail, one persistent creation bar, and a continuous session feed.
+- Do not display a page title or explanatory introduction above the composer. The active workspace and current collection are communicated through navigation state and compact controls.
+- The Agent Chat Input owns prompt, attachments, model, ratio, count, quality, visibility, quota, and submit/stop behavior.
+- Advanced options open through one Animated Dropdown or responsive side sheet. Core settings stay visible and stable.
+- Reference thumbnails live inside the composer tray. Each thumbnail exposes preview and remove; reference roles or influence appear only when the generation API can honor them.
+- Generation status reserves the result geometry immediately. Completed batches expose inspect, rerun, use as reference, reuse settings, download, visibility, and delete without requiring the detail modal.
+- Reuse and rerun restore the complete supported generation contract, not prompt text alone.
+- Image cards morph into the shared detail modal. The modal remains a continuation surface, not a dead-end preview.
+
+### Creation Templates (`/templates`)
+
+- Use an image-led browser with a compact sticky search/filter toolbar and no explanatory hero.
+- Template data includes image, title, category, prompt, supported generation settings, favorite state, and recent-use state.
+- Each visible template owns a distinct Nebulens raster thumbnail matched to its prompt. Do not reuse third-party page imagery, source-site UI, unrelated in-image copy, logos, or watermarks.
+- Search updates immediately. Category and sort controls use Animated Dropdown or a compact segmented filter where the option count is small.
+- Cards reveal only high-frequency actions on hover/focus: favorite and quick use. Full prompt, settings, copy, and use live in a Morphic Card Modal.
+- Using a template opens Generate with its supported prompt and settings prefilled. Never show a template action that does not reach a working generation state.
+
+### History (`/history`)
+
+- Treat History as the Assets library. Use a compact sticky toolbar, collection rail, image grid/list switch, and optional selection action bar.
+- Do not show an explanatory page heading. Search, item count, filters, view mode, and sorting provide the page context.
+- Search, sort, date, visibility, favorites, and collection filters use shared inputs and Animated Dropdown patterns.
+- Generated images are the repeated surface; do not put image cards inside a larger decorative card.
+- Selection mode supports select all in the current result set, bulk download, collection assignment, and bulk delete. Destructive bulk actions require confirmation.
+- Preserve inspect, download, reuse prompt/settings, public state, pagination/load-more, single delete, loading, empty, error, unauthenticated, and retry behavior.
+- Grid mode optimizes visual scanning. List mode exposes prompt, model, dimensions, visibility, collection, and created date without opening each image.
+
+### Admin Users (`/admin/users`)
+
+- Use a compact page heading and a restrained account-creation form.
+- Present users in a responsive data-table pattern with search, result count, page-size menu, and pagination.
+- Quota editing remains inline. Destructive actions require clear text or a tooltip plus confirmation.
+- Mobile records must retain identity, role, quota, created date, save, and delete actions.
+
+### Authentication and Overlays
+
+- Login/sign-up uses the beUI Auth interaction model in a focused one-column overlay with a `16px` radius and clear segmented mode switch.
+- Preserve username/password and Google. Do not add password recovery, verification, or social providers that the backend does not support.
+- Provide password visibility, inline field validation, pending/error states, correct autocomplete, and an explicit primary action. Do not add explanatory account-benefit copy.
+- Successful authentication returns focus and execution context to the command that requested login.
+- Image inspection uses the Morphic Card Modal and a near-black media stage with a raised graphite metadata panel when space permits.
+- Escape, outside-click where safe, focus containment, and focus return are required.
+
+## Responsive Rules
+
+### Desktop: `>= 1180px`
+
+- Navigation rail: `224-240px`.
+- Page inset: `32-40px`.
+- Main content max width: `1180px`; composer max width: `880px`.
+- Asset grids use 3-4 stable columns depending on available width.
+
+### Tablet: `720-1179px`
+
+- Collapse the navigation rail to icons or a compact top bar.
+- Use two-column result and asset grids.
+- Keep primary settings visible; move secondary settings into one animated dropdown or disclosure.
+
+### Mobile: `< 720px`
+
+- Use `14-16px` page insets and a fixed bottom navigation with safe-area padding.
+- Composer fills the available width and keeps `16-20px` radius while visibly inset.
+- Toolbars wrap into deliberate rows; controls remain at least `40px` high.
+- The home vertical gallery uses its compact two-column component layout and remains horizontally contained; images continue to move only along the vertical axis.
+- Tables become labeled records. Modals become full-height sheets only when the media and actions cannot fit otherwise.
+- Do not hide primary actions, quota controls, filters, or destructive commands.
 
 ## Accessibility
 
-- Meet WCAG AA contrast for body text and controls.
-- Show a visible `:focus-visible` treatment for every interactive element.
-- Pair semantic color with an icon, label, or status text.
-- Use semantic landmarks and heading order; never simulate buttons with generic elements.
-- Associate every field with a visible Simplified Chinese label or equivalent accessible name.
-- Protect text and controls from image backgrounds with a reliable overlay or solid fallback.
-- Verify text overflow, keyboard order, touch targets, and horizontal scrolling at desktop and mobile widths.
+- Meet WCAG AA contrast for text, icons, focus, and disabled states.
+- All interactions work with keyboard and expose stable accessible names.
+- Focus indicators use `--ring` and remain visible on light and dark surfaces.
+- Tooltips supplement accessible names; they never replace them.
+- Dialogs expose a title, manage focus, close with Escape, and return focus to the originating card.
+- Respect reduced motion and stop nonessential autoplay.
+- Images use prompt-based alt text when meaningful and empty alt text when decorative.
 
-## Full-Screen Video Hero
+## Do
 
-### Role and Boundary
+- Use beUI components as source-owned product primitives and adapt them through semantic tokens.
+- Let menus, tooltips, attachments, and image details morph continuously from their triggers.
+- Keep operational screens dark, layered, focused, and scan-friendly.
+- Use generated imagery and the existing Nebulens logo as the visual identity.
+- Use progressive disclosure for advanced options while keeping core generation controls visible.
+- Test populated, loading, empty, error, unauthenticated, forbidden, and mobile states.
 
-The full-screen video hero is an optional unauthenticated landing or brand-entry surface. It does not replace the authenticated workstation shell, its warm-light tokens, or `AppHeader.vue`. The cinematic black treatment and gradient headline are deliberate, page-scoped exceptions; they must not spread into generation, history, account, or admin views.
+## Do Not
 
-Use the existing `--font-display` stack throughout this surface. Do not add the source brief's General Sans or another hero-only webfont; the 14px subtitle intentionally uses `--text-body-sm-size` instead of the source's 15px value so the hero remains on the Nebulens type scale.
+- Do not reproduce Squarespace navigation, typography, black/white section alternation, or editorial page composition.
+- Do not flatten generation, history, or admin into one undifferentiated black surface; use semantic graphite layers and borders.
+- Do not force the old 4-8px radius limit onto beUI components.
+- Do not wrap every section or row in a card.
+- Do not nest cards, add decorative gradient backgrounds, or use glow as a substitute for hierarchy.
+- Do not replace real images or familiar library icons with placeholders, CSS drawings, emoji, or handcrafted SVG.
+- Do not keep a component merely because it was installed; use it only where its interaction model improves the task.
+- Do not expose Canvas, video, reference-role, personalization, folder, favorite, or bulk controls until their actions and persistence work end to end.
+- Do not place explanatory subtitles, keyboard tips, feature descriptions, or onboarding prose inside operational pages.
 
-### Required Copy
+## Persisted Product Contracts
 
-All visible copy is Simplified Chinese except the `Nebulens` brand name.
+### Generation Settings Snapshot
 
-| Element          | Copy                                                                                     |
-| ---------------- | ---------------------------------------------------------------------------------------- |
-| Brand            | `Nebulens`                                                                               |
-| Navigation       | `发现`, `生图`, `资产`                                                                   |
-| Navbar CTA       | `进入工作台`                                                                             |
-| Badge muted text | `全新创作体验已于`                                                                       |
-| Badge emphasis   | `2026 年 5 月 1 日开放`                                                                  |
-| Heading          | `Nebulens，让灵感抵达画面`                                                               |
-| Subtitle         | `将提示词和参考图转化为成组作品，在一个安静、精确的工作台中完成生成、回看、复用与归档。` |
-| Primary CTA      | `开始创作`                                                                               |
+Every completed generation retains the settings required to reproduce its request: `prompt`, `model`, `aspectRatio`, `count`, `resolution`, `isPublic`, and all uploaded `referenceIds`. Reuse settings and rerun restore this complete snapshot. A persisted output used as a new reference is loaded from its output blob and uploaded through the same reference pipeline as a local attachment.
 
-Both CTAs lead to `/generate`. If authentication is required, preserve the destination and open the existing login flow rather than introducing a separate waitlist interaction.
+Generation history records persist `count` and `resolution` alongside the existing prompt, model, aspect ratio, reference IDs, dimensions, visibility, and timestamps. Standard generation stores `resolution: "standard"`; high-resolution generation stores the requested resolution. Older records may omit the new fields at the frontend validation boundary and use UI defaults, while all newly written records include them.
 
-### Media and Layering
+### Asset Metadata
 
-The hero fills the viewport with a pure black (`#000000`) fallback and a full-bleed looping background video:
+Favorites, visibility, and collection membership are server-owned image metadata rather than browser-only preferences. The history contract exposes `isFavorite`, `isPublic`, and optional `collection` on each image record. Collection removal is represented by `collection: null` in update commands and by an omitted collection in returned records.
 
-`https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260217_030345_246c0224-10a4-422c-b324-070b7c0eceda.mp4`
+Authenticated metadata mutations are owner-scoped:
 
-- Root: `position: relative`, `isolation: isolate`, `min-height: 100svh`, and `min-height: 100dvh` where supported; clip overflow.
-- Video: absolute inset `0`, width and height `100%`, `object-fit: cover`, `muted`, `autoplay`, `loop`, and `playsInline`. It is decorative and must be hidden from assistive technology.
-- Overlay: absolute inset `0`, black at 50% opacity (`rgb(0 0 0 / 0.5)`). The overlay always remains between video and content.
-- Content layer: navbar and hero content sit above both media layers with an explicit `z-index`.
-- Do not blur, dark-crop, or otherwise obscure the video beyond the required overlay.
+- `PATCH /api/history/:id` updates one owned image.
+- `PATCH /api/history` applies one metadata update to the supplied owned image IDs.
+- `POST /api/history/bulk-delete` deletes the supplied owned image IDs and returns the removed count.
 
-### Navbar
+Foreign or nonexistent IDs are never mutated by bulk operations. The frontend validates every returned image record before updating the shared history cache so Generate, Assets, and detail views observe one consistent state.
 
-- Position the navbar across the top with 120px horizontal and 20px vertical padding on desktop.
-- The left side uses the real `/brand/logo.png` mark with the `Nebulens` wordmark in white. Keep the lockup within the source composition's approximately 187px by 25px footprint.
-- Place the direct links `发现`, `生图`, and `资产` after the wordmark with 30px gaps. Links use `--font-display`, 14px, weight 500, and white.
-- Do not show a dropdown chevron on a direct route. A 14px white chevron may appear with a 14px label gap only when the item actually opens a menu and exposes the correct expanded state.
-- Hide the link group at and below `--breakpoint-mobile`; retain the brand and navbar CTA.
-- The right CTA is a layered pill: a fully rounded outer shell with a `0.6px` white border, containing a black inner pill with centered white 14px medium text and 29px horizontal by 11px vertical padding.
-- Add a restrained top-edge light streak inside the outer pill using a blurred white-to-transparent gradient. It must not enlarge the control, obscure the label, or replace the visible focus ring.
+## Implementation Mapping
 
-### Content Stack
+| Product need                                   | Preferred implementation                                                |
+| ---------------------------------------------- | ----------------------------------------------------------------------- |
+| Prompt, attachments, quota, and generation     | `AgentChatInput` Studio Composer                                        |
+| Model, ratio, sort, filters, contextual action | `AnimatedDropdown` through shared select/menu wrappers                  |
+| Icon guidance                                  | `MorphicTooltip` through `IconTooltip`                                  |
+| Image/template inspection and continuation     | `MorphicCard` + `MorphicCardModal`                                      |
+| Asset list mode and bulk selection             | beUI `Data Table` adapted to image metadata                             |
+| Asset and template browsing                    | beUI `Image Galleries` patterns with product-owned actions              |
+| Authentication                                 | beUI `Auth` pattern with existing Better Auth behavior                  |
+| Empty and disconnected states                  | beUI `Empty States` adapted to concise product recovery                 |
+| User list                                      | Local responsive table using shared tokens and animated pagination menu |
+| Buttons                                        | Shared `Button` primitive and icon-button contract                      |
+| Navigation                                     | Existing React Router shell restyled with semantic tokens               |
 
-Center the content horizontally and vertically within the space below the navbar. Preserve approximately 280px top padding and 102px bottom padding on desktop; use approximately 200px top padding on mobile. If a short viewport cannot fit those values, reduce the padding before allowing content to overflow.
+## Quality Gate
 
-- Stack the badge, headline group, and CTA with 40px gaps.
-- Keep the heading and subtitle in one group with a 24px internal gap.
-- Constrain all copy with responsive inline padding so no text touches the viewport edge.
-
-### Badge
-
-- Use a pill with a 20px radius, 10% white background, and a 1px white border at 20% opacity.
-- Place a 4px white dot before the copy.
-- Render `全新创作体验已于` at 60% white and `2026 年 5 月 1 日开放` in solid white.
-- Use `--font-display`, `--text-label-size` (13px), and weight 500.
-- Keep the entire badge as one readable phrase for assistive technology; the dot is decorative.
-
-### Heading and Subtitle
-
-- Heading: one `h1`, maximum width 613px, 56px on desktop and 36px on mobile, weight 500, line-height `1.28`, letter spacing `0`.
-- Apply the source visual treatment only here: `linear-gradient(144.5deg, #ffffff 28%, rgb(0 0 0 / 0) 115%)` clipped to the text. Declare solid white text first as fallback and disable clipping in forced-colors mode.
-- Subtitle: maximum width 680px, centered, `--font-display`, `--text-body-sm-size` (14px), normal weight, readable line height, and white at 70% opacity.
-- Confirm the gradient headline and subtitle still meet readable contrast over representative video frames; strengthen the overlay if a frame fails rather than adding a text shadow.
-
-### Primary CTA
-
-The main `开始创作` CTA repeats the layered navbar construction with reversed inner colors:
-
-- Outer shell: fully rounded, `0.6px` solid white border, position context for the glow.
-- Inner pill: white background, black 14px medium label, 29px horizontal by 11px vertical padding.
-- Top edge: the same subtle blurred white-to-transparent light streak.
-- Maintain a minimum 44px touch target and a visible `--color-focus-dark` focus ring.
-- The glow is decorative, ignores pointer events, and is removed under reduced motion or increased-contrast preferences if it impairs clarity.
-
-### Responsive Behavior
-
-- At and below 860px, hide desktop navigation links, reduce navbar side padding to 24px, use the 36px heading, and use approximately 200px content top padding.
-- At narrow phone widths, reduce side padding to 16px, keep both brand and CTA legible, and allow the badge copy to wrap without clipping.
-- Use `max-width`, stable control heights, and `box-sizing: border-box` so the navbar and content never create horizontal overflow.
-- On short landscape screens, prioritize a complete heading, CTA, and safe-area spacing over the nominal 280px/200px top padding.
-
-### Accessibility and Fallbacks
-
-- The video has no controls, audio, caption obligation, or accessible name because it is decorative. Meaning must live entirely in text and controls.
-- When `prefers-reduced-motion: reduce` is active, pause or omit autoplay and show a representative poster frame or the pure-black fallback.
-- If the video fails, stalls, data saving is active, or autoplay is blocked, keep the black fallback, overlay, navigation, copy, and CTAs fully functional. Never show a broken-media icon.
-- Use a descriptive `alt` for the Nebulens mark or hide the image when adjacent visible wordmark text already names the brand.
-- Preserve logical focus order: brand, navigation, navbar CTA, primary CTA.
-- Validate keyboard access, focus visibility, mobile safe areas, text contrast across video frames, and no horizontal overflow.
-
-## Do and Do Not
-
-- Do use the CSS custom properties in `tokens.css` as the implementation contract.
-- Do keep artwork, prompt controls, and history visually connected.
-- Do make the Nebulens brand and the next creation action immediately clear.
-- Do preserve warm neutral restraint inside the workstation.
-- Do not reintroduce source-brand, unrelated product, or placeholder copy.
-- Do not use neon science-fiction styling, repeated gradients, decorative orbs, heavy glassmorphism, or nested cards.
-- Do not turn operational screens into landing pages.
-- Do not use the video hero's black palette or gradient headline as a default application theme.
+- Every route uses the semantic token layer in this document.
+- Homepage presents a usable prompt-first beUI experience followed by the beUI Pro six-image vertical gallery.
+- Generate, templates, assets, authentication, and image detail preserve existing behavior and satisfy their page-pattern requirements above.
+- Dark theme is complete across every route; optional light tokens remain coherent.
+- Operational pages contain no visible explanatory subtitles, feature descriptions, tutorials, or keyboard shortcut prose.
+- Every visible action works end to end; unsupported provider capabilities are absent rather than disabled decoration.
+- No horizontal overflow, clipped text, overlapping controls, or layout shifts at 1440px, 1024px, 768px, 390px, and 320px.
+- Typecheck, lint, tests, production build, formatting, whitespace checks, browser console checks, and same-viewport visual QA pass before handoff.

@@ -52,9 +52,29 @@ export interface ImageRecord {
   aspectRatio?: AspectRatio;
   width: number;
   height: number;
+  count?: number;
+  resolution?: ImageResolution;
   /** Wall-clock ms from request start to image saved. Optional. */
   elapsedMs?: number;
   isPublic: boolean;
+  isFavorite?: boolean;
+  collection?: string;
+}
+
+export interface GenerationSettingsSnapshot {
+  prompt: string;
+  model: string;
+  count: number;
+  aspectRatio: AspectRatio;
+  resolution: ImageResolution;
+  isPublic: boolean;
+  referenceIds: readonly string[];
+}
+
+export interface ImageMetadataUpdate {
+  isFavorite?: boolean;
+  isPublic?: boolean;
+  collection?: string | null;
 }
 
 export interface UploadResponse {

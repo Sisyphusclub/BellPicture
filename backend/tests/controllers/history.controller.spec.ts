@@ -91,6 +91,9 @@ describe('GET /api/history', () => {
       expect(record.batchId).toMatch(/^[0-9a-f-]{36}$/);
       expect(record.filename).toBe(record.id);
       expect(record.isPublic).toBe(false);
+      expect(record.isFavorite).toBe(false);
+      expect(record.resolution).toBe('standard');
+      expect(record.count).toBeGreaterThanOrEqual(1);
       expect(record.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     }
   });
@@ -132,6 +135,78 @@ describe('GET /api/history', () => {
     expect(bHistory.body.records.some((r: { prompt: string }) => r.prompt === 'A only')).toBe(
       false,
     );
+  });
+});
+
+describe('history asset metadata', () => {
+  it('updates one owned record and persists favorite, collection, and visibility', async () => {
+    const userId = `hist-meta-${randomUUID()}`;
+    const app = createApp({ provider: fakeProvider(), authMiddleware: stubAuth(userId) });
+    const generated = await request(app)
+      .post('/api/images/generate')
+      .send({ prompt: 'metadata target', count: 2 });
+    const id = generated.body.images[0].id as string;
+
+    const updated = await request(app).patch(`/api/history/${id}`).send({
+      isFavorite: true,
+      collection: '客户项目',
+      isPublic: true,
+    });
+
+    expect(updated.status).toBe(200);
+    expect(updated.body.record).toMatchObject({
+      id,
+      count: 2,
+      resolution: 'standard',
+      isFavorite: true,
+      collection: '客户项目',
+      isPublic: true,
+    });
+
+    const history = await request(app).get('/api/history');
+    expect(history.body.records.find((record: { id: string }) => record.id === id)).toMatchObject({
+      isFavorite: true,
+      collection: '客户项目',
+      isPublic: true,
+    });
+  });
+
+  it('bulk-updates and bulk-deletes only the current user records', async () => {
+    const userA = `hist-bulk-a-${randomUUID()}`;
+    const userB = `hist-bulk-b-${randomUUID()}`;
+    const provider = fakeProvider();
+    const appA = createApp({ provider, authMiddleware: stubAuth(userA) });
+    const appB = createApp({ provider, authMiddleware: stubAuth(userB) });
+    const generatedA = await request(appA)
+      .post('/api/images/generate')
+      .send({ prompt: 'bulk owned', count: 2 });
+    const generatedB = await request(appB)
+      .post('/api/images/generate')
+      .send({ prompt: 'bulk foreign', count: 1 });
+    const ownedIds = generatedA.body.images.map((image: { id: string }) => image.id) as string[];
+    const foreignId = generatedB.body.images[0].id as string;
+
+    const updated = await request(appA)
+      .patch('/api/history')
+      .send({ ids: [...ownedIds, foreignId], updates: { collection: '灵感库' } });
+    expect(updated.status).toBe(200);
+    expect(updated.body.records.map((record: { id: string }) => record.id)).toEqual(
+      expect.arrayContaining(ownedIds),
+    );
+    expect(updated.body.records.some((record: { id: string }) => record.id === foreignId)).toBe(
+      false,
+    );
+
+    const removed = await request(appA)
+      .post('/api/history/bulk-delete')
+      .send({ ids: [...ownedIds, foreignId] });
+    expect(removed.status).toBe(200);
+    expect(removed.body.removed).toBe(ownedIds.length);
+
+    const foreignHistory = await request(appB).get('/api/history');
+    expect(
+      foreignHistory.body.records.some((record: { id: string }) => record.id === foreignId),
+    ).toBe(true);
   });
 });
 

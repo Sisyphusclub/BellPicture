@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend architecture and required quality commands"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "React and beUI component composition, accessibility, and responsive rules"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Hook ownership and async interaction requirements"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "State placement and cross-route persistence rules"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Strict TypeScript and API boundary requirements"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Frontend and backend contract coordination for persisted asset features"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Shared primitive and workflow reuse decisions"}
+{"file": "design.md", "reason": "Nebulens beUI design system and page interaction source of truth"}
+{"file": ".trellis/tasks/07-30-nebulens-beui-product-workspace-rebuild/research/competitive-workflows.md", "reason": "Verified competitor patterns, product gaps, and beUI mapping"}

@@ -6,8 +6,7 @@
 
 ## TypeScript settings (non-negotiable)
 
-`tsconfig.json` extends `@vue/tsconfig/tsconfig.dom.json` (or equivalent)
-with:
+`tsconfig.json` uses the React JSX transform and strict bundler settings:
 
 ```jsonc
 {
@@ -15,6 +14,7 @@ with:
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
@@ -32,11 +32,15 @@ with:
 
 ## Typing component APIs
 
-- **Props**: `defineProps<Interface>()`. Don't use the runtime form
-  (`defineProps({ x: { type: String } })`) — TS form gives full inference.
-- **Emits**: `defineEmits<{ (e: 'foo', payload: T): void }>()`.
-- **Refs to DOM nodes**: `const el = ref<HTMLDivElement | null>(null)`.
-- **Refs to component instances**: `ref<InstanceType<typeof Child> | null>(null)`.
+- **Props**: declare an interface and destructure it in a named function
+  component.
+- **Callbacks**: type domain callbacks explicitly, for example
+  `onOpen: (record: ImageRecord) => void`.
+- **DOM events**: use React event types such as
+  `React.ChangeEvent<HTMLInputElement>` when inference does not suffice.
+- **DOM refs**: use `useRef<HTMLDivElement | null>(null)`.
+- **Children**: use `PropsWithChildren` or `ReactNode` only when the component
+  actually accepts children.
 
 ---
 
@@ -224,7 +228,7 @@ function isImageRecord(value: unknown): value is ImageRecord {
 
 | Condition                                                     | Frontend behavior                                                                                    |
 | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Empty prompt                                                  | Composable throws `Error('Describe the image before generating.')` before network IO                 |
+| Empty prompt                                                  | Generation hook throws before network IO                                                             |
 | Upload response shape invalid                                 | Throw `ImageApiError` with `INVALID_RESPONSE`                                                        |
 | Generate response shape invalid                               | Throw `ImageApiError` with `INVALID_RESPONSE`                                                        |
 | Backend error envelope present                                | Throw `ImageApiError(status, code, message, requestId, details)`                                     |
@@ -274,12 +278,12 @@ function isImageRecord(value: unknown): value is ImageRecord {
   narrowing, and error conversion.
 - API wrapper: assert `resolution: '4k'` routes to
   `/api/images/generate/high-res` and keeps the high-resolution payload.
-- View/composable: assert admins directly see and can choose `2k`/`4k`, `4k`
+- View/hook: assert admins directly see and can choose `2k`/`4k`, `4k`
   sends `16:9`, and non-admins do not render or send the clarity selector.
 - Use `fake-indexeddb` for blob persistence and assert blob round-trip.
 - Seed localStorage with valid, invalid, and wrong-version payloads and assert
   schema-gated reads.
-- Mount critical components/composables and assert user-facing error/status
+- Render critical components/hooks and assert user-facing error/status
   behavior, not implementation internals.
 - Regression: regenerating a saved image-to-image batch asserts `referenceIds`
   is present and `referenceFiles` is absent; regenerating a saved text-to-image
@@ -326,7 +330,7 @@ await deleteHistoryRecord(id);
 
 ```ts
 await deletePublicGalleryRecordAsAdmin(id);
-records.value = records.value.filter((record) => record.id !== id);
+updatePublicGalleryCache((records) => records.filter((record) => record.id !== id));
 ```
 
 #### Wrong

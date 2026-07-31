@@ -1,167 +1,104 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
-@import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/style.css');
-
 :root {
-  /* === Color primitives and semantic surfaces (warm cream + restrained glass) === */
-  --color-canvas: oklch(97.4% 0.006 82deg);
-  --color-canvas-clean: oklch(99.1% 0.004 88deg);
-  --color-canvas-soft: oklch(98.7% 0.006 86deg);
-  --color-canvas-warm: oklch(94.8% 0.018 82deg);
-  --color-background: var(--color-canvas-clean);
-  --color-surface: oklch(99.2% 0.005 86deg);
-  --color-surface-secondary: oklch(98.6% 0.008 86deg / 0.72);
-  --color-surface-tertiary: oklch(96% 0.008 86deg);
-  --color-overlay: oklch(99.1% 0.004 88deg / 0.96);
-  --color-overlay-backdrop: oklch(95.5% 0.008 86deg / 0.72);
-  --color-surface-soft: oklch(98.6% 0.008 86deg / 0.48);
-  --color-surface-glass: oklch(98.8% 0.006 86deg / 0.72);
-  --color-surface-glass-strong: oklch(98.9% 0.006 86deg / 0.9);
-  --color-surface-card: oklch(99% 0.004 86deg / 0.78);
-  --color-surface-card-solid: var(--color-surface);
-  --color-surface-cream-strong: oklch(93.4% 0.018 82deg);
-  --color-surface-sidebar: oklch(99% 0.004 88deg / 0.72);
-  --color-surface-dark: oklch(18.6% 0.009 76deg);
-  --color-surface-dark-elevated: oklch(26.4% 0.01 76deg);
-  --color-surface-dark-soft: oklch(23.8% 0.009 76deg);
-  --color-inspection-backdrop: oklch(9% 0.01 276deg / 0.84);
-  --color-inspection-surface: oklch(18.6% 0.009 76deg / 0.94);
-  --color-inspection-surface-soft: oklch(25% 0.011 76deg / 0.76);
-  --color-inspection-border: oklch(98% 0.004 88deg / 0.14);
-  --color-inspection-accent: var(--color-accent);
-  --color-inspection-accent-hover: var(--color-accent-hover);
-  --color-inspection-focus: var(--color-focus-dark);
-  --color-inspection-foreground: var(--color-on-dark);
-  --color-inspection-muted: var(--color-on-dark-muted);
+  color-scheme: dark;
 
-  /* === Text === */
-  --color-ink: oklch(22% 0.012 78deg);
-  --color-body: oklch(31% 0.012 78deg);
-  --color-body-strong: oklch(25% 0.012 78deg);
-  --color-muted: oklch(58% 0.012 78deg);
-  --color-muted-soft: oklch(64% 0.012 78deg);
-  --color-foreground: var(--color-ink);
-  --color-foreground-muted: var(--color-muted);
-  --color-on-primary: oklch(98.8% 0.004 88deg);
-  --color-on-accent: oklch(99% 0.004 88deg);
-  --color-on-dark: oklch(98.4% 0.005 88deg);
-  --color-on-dark-muted: oklch(78% 0.006 88deg);
-  --color-on-dark-soft: oklch(68% 0.006 88deg);
+  /* shadcn/beUI semantic foundation */
+  --background: oklch(0.135 0.006 265);
+  --foreground: oklch(0.96 0.004 255);
+  --card: oklch(0.178 0.007 265);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.205 0.008 265);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.94 0.005 255);
+  --primary-foreground: oklch(0.16 0.006 265);
+  --secondary: oklch(0.235 0.008 265);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.225 0.008 265);
+  --muted-foreground: oklch(0.69 0.012 255);
+  --accent: oklch(0.72 0.15 250);
+  --accent-foreground: oklch(0.985 0.005 255);
+  --accent-soft: oklch(0.28 0.06 250);
+  --destructive: oklch(0.68 0.18 25);
+  --destructive-foreground: oklch(0.985 0.005 25);
+  --border: oklch(1 0 0 / 0.1);
+  --border-strong: oklch(1 0 0 / 0.18);
+  --input: oklch(1 0 0 / 0.12);
+  --ring: oklch(0.72 0.02 250);
+  --overlay: oklch(0.04 0 0 / 0.82);
+  --surface-raised: oklch(0.215 0.008 265);
+  --surface-hover: oklch(0.255 0.009 265);
+  --surface-media: oklch(0.09 0.005 265);
 
-  /* === Lines, focus, and control state === */
-  --color-hairline: oklch(24% 0.012 78deg / 0.1);
-  --color-hairline-soft: oklch(24% 0.012 78deg / 0.07);
-  --color-border: var(--color-hairline);
-  --color-separator: var(--color-hairline-soft);
-  --color-focus: oklch(78% 0.13 57deg / 0.78);
-  --color-focus-soft: oklch(78% 0.13 57deg / 0.28);
-  --color-focus-dark: oklch(72% 0.13 57deg / 0.82);
+  /* Compatibility aliases while legacy selectors move to semantic names. */
+  --color-canvas-dark: var(--background);
+  --color-canvas-light: var(--primary);
+  --color-workspace: var(--background);
+  --color-panel: var(--card);
+  --color-surface-dark-1: var(--card);
+  --color-surface-dark-2: var(--surface-raised);
+  --color-surface-subtle: oklch(1 0 0 / 0.055);
+  --color-selection-subtle: oklch(1 0 0 / 0.09);
+  --color-hairline-light: var(--border);
+  --color-hairline-dark: var(--border-strong);
+  --color-ink: var(--foreground);
+  --color-ink-inverse: var(--primary-foreground);
+  --color-ink-muted: var(--muted-foreground);
+  --color-danger: var(--destructive);
 
-  /* === Brand / accent / semantic feedback === */
-  --color-primary: oklch(18.6% 0.009 76deg);
-  --color-primary-active: oklch(15.4% 0.008 76deg);
-  --color-primary-disabled: oklch(18.6% 0.009 76deg / 0.32);
-  --color-accent: oklch(66% 0.1 42deg);
-  --color-accent-active: oklch(54% 0.1 42deg);
-  --color-accent-hover: oklch(60% 0.1 42deg);
-  --color-accent-soft: oklch(93.4% 0.035 52deg / 0.62);
-  --color-accent-teal: oklch(70% 0.09 176deg);
-  --color-accent-amber: oklch(77% 0.12 74deg);
-  --color-success: oklch(72% 0.11 138deg);
-  --color-warning: oklch(72% 0.14 82deg);
-  --color-error: oklch(55% 0.17 28deg);
-  --color-error-soft: oklch(94% 0.035 28deg / 0.72);
-  --color-chip: oklch(95.5% 0.014 84deg);
-  --color-chip-strong: oklch(93.2% 0.016 84deg);
-  --color-control-soft: var(--color-surface-tertiary);
-  --color-control-soft-hover: var(--color-chip);
-  --color-image-surface: var(--color-surface-card-solid);
-  --color-image-surface-hover: var(--color-canvas-soft);
+  --font-sans: 'Geist Sans', Inter, 'Helvetica Neue', ui-sans-serif, sans-serif;
+  --font-display: 'Oxanium Variable', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  --font-hero-sans: 'Geist Variable', 'Helvetica Neue', ui-sans-serif, sans-serif;
+  --font-hero-serif: 'Instrument Serif', 'Times New Roman', serif;
+  --font-serif: 'Geist Sans', Inter, 'Helvetica Neue', ui-sans-serif, sans-serif;
+  --sidebar-width: 232px;
 
-  /* === Fields and buttons === */
-  --field-background: var(--color-surface);
-  --field-background-hover: var(--color-canvas-soft);
-  --field-foreground: var(--color-ink);
-  --field-placeholder: var(--color-muted-soft);
-  --field-border: var(--color-hairline);
-  --field-border-hover: oklch(24% 0.012 78deg / 0.18);
-  --field-border-focus: var(--color-accent-active);
-  --field-focus-ring: 0 0 0 3px var(--color-focus-soft);
-  --field-radius: var(--radius-sm);
-  --control-height-sm: 34px;
-  --control-height-md: 40px;
-  --control-height-lg: 44px;
-  --control-radius: var(--radius-sm);
-  --button-primary-bg: var(--color-primary);
-  --button-primary-bg-hover: var(--color-primary-active);
-  --button-primary-fg: var(--color-on-primary);
-  --button-secondary-bg: var(--color-surface-glass-strong);
-  --button-secondary-bg-hover: var(--color-surface-card-solid);
-  --button-secondary-fg: var(--color-ink);
-  --button-ghost-bg: transparent;
-  --button-ghost-bg-hover: var(--color-chip);
-  --button-ghost-fg: var(--color-body-strong);
-  --button-danger-fg: var(--color-error);
-  --button-danger-bg-hover: var(--color-error-soft);
-  --pill-bg: var(--color-control-soft);
-  --pill-bg-hover: var(--color-control-soft-hover);
-  --pill-fg: var(--color-body-strong);
-
-  /* === Fonts and typography roles === */
-  --font-display: 'Geist', 'Noto Serif SC', 'LXGW WenKai Screen', system-ui, sans-serif;
-  --font-serif: 'Instrument Serif', 'Noto Serif SC', Georgia, 'Songti SC', serif;
-  --font-brand: 'Geist', 'Noto Serif SC', 'LXGW WenKai Screen', system-ui, sans-serif;
-  --font-body: 'Geist', 'Noto Serif SC', 'LXGW WenKai Screen', system-ui, sans-serif;
-  --font-code:
-    'Söhne Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --text-caption-size: 12px;
-  --text-label-size: 13px;
-  --text-body-sm-size: 14px;
-  --text-body-size: 16px;
-  --text-card-title-size: 18px;
-  --text-section-title-size: clamp(22px, 2vw, 28px);
-  --text-page-title-size: clamp(30px, 3.2vw, 44px);
-  --text-hero-title-size: clamp(42px, 6.4vw, 80px);
-  --font-weight-label: 700;
-  --font-weight-title: 700;
-
-  /* === Radii === */
   --radius-xs: 4px;
-  --radius-sm: 12px;
-  --radius-md: 18px;
-  --radius-lg: 24px;
-  --radius-xl: 28px;
-  --radius-pill: 9999px;
-  --radius-full: 9999px;
-  --radius-panel: var(--radius-lg);
-  --radius-popup: var(--radius-xl);
-  --radius-image: var(--radius-sm);
-  --radius-image-lg: var(--radius-md);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 999px;
+  --radius-control: var(--radius-sm);
+  --radius-card: var(--radius-lg);
+  --radius-pill: var(--radius-full);
 
-  /* === Shadows / elevation === */
-  --shadow-glass: 0 18px 50px oklch(24% 0.012 78deg / 0.08);
-  --shadow-soft: 0 8px 24px oklch(24% 0.012 78deg / 0.06);
-  --shadow-surface: 0 12px 34px oklch(24% 0.012 78deg / 0.07);
-  --shadow-composer: 0 18px 60px oklch(24% 0.012 78deg / 0.08);
-  --shadow-button: 0 14px 28px oklch(0% 0 0deg / 0.16);
-  --shadow-button-soft: 0 4px 12px oklch(24% 0.012 78deg / 0.03);
+  --shadow-float: 0 16px 48px -28px rgb(0 0 0 / 0.62);
+  --shadow-modal: 0 24px 80px -36px rgb(0 0 0 / 0.78);
+  --shadow-focus: 0 0 0 3px color-mix(in oklch, var(--ring) 24%, transparent);
+  --focus-ring: var(--shadow-focus);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
 
-  /* === Spacing === */
-  --space-xxs: 4px;
-  --space-xs: 8px;
-  --space-sm: 12px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
-  --space-xxl: 48px;
-  --space-section: 96px;
-
-  /* === Layout === */
-  --app-sidebar-width: 86px;
-  --sidebar-width: 280px;
-  --topbar-height: 0px;
-  --composer-height: 188px;
-  --container-width: 1200px;
-  --content-width: 1200px;
-  --content-width-narrow: 960px;
-  --breakpoint-mobile: 860px;
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-canvas-dark: var(--background);
+  --color-canvas-light: var(--primary);
+  --color-workspace: var(--background);
+  --color-ink: var(--foreground);
+  --color-ink-muted: var(--muted-foreground);
+  --font-sans: 'Geist Sans', Inter, 'Helvetica Neue', ui-sans-serif, sans-serif;
+  --font-display: 'Oxanium Variable', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  --font-hero-sans: 'Geist Variable', 'Helvetica Neue', ui-sans-serif, sans-serif;
+  --font-hero-serif: 'Instrument Serif', 'Times New Roman', serif;
+  --font-serif: 'Geist Sans', Inter, 'Helvetica Neue', ui-sans-serif, sans-serif;
+  --radius-control: 8px;
+  --radius-card: 16px;
+  --radius-pill: 999px;
 }
