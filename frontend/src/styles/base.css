@@ -5106,15 +5106,15 @@ video {
   }
 }
 
-/* Generation history stays inside the canvas. The dock owns the transparent
-   corridor between the rail and panel so hover can travel without collapsing it. */
+/* Keep the history rail fixed to the viewport edge while its transparent
+   corridor lets hover travel into the panel without collapsing it. */
 .generation-console {
   position: relative;
 }
 .generation-history-dock {
-  position: absolute;
+  position: fixed;
   z-index: 22;
-  top: calc(50svh - 110px);
+  top: 50%;
   right: 16px;
   height: min(560px, calc(100svh - 260px));
   width: min(404px, calc(100% - 24px));
@@ -5152,13 +5152,13 @@ video {
 }
 .generation-history-track .generation-history-track__mark {
   display: block;
-  width: 24px;
-  height: 2px;
+  width: 28px;
+  height: 3px;
   flex: 0 0 auto;
   border-radius: var(--radius-full);
-  background: color-mix(in oklch, var(--muted-foreground) 56%, transparent);
-  opacity: 0.58;
-  transform: scaleX(0.92);
+  background: color-mix(in oklch, var(--foreground) 36%, var(--background));
+  opacity: 0.72;
+  transform: scaleX(0.96);
   transition:
     transform 160ms var(--ease-out-expo),
     background 160ms var(--ease-out-expo),
@@ -5167,9 +5167,9 @@ video {
 .generation-history-track:hover .generation-history-track__mark,
 .generation-history-track:focus-visible .generation-history-track__mark,
 .generation-history-dock.is-open .generation-history-track__mark {
-  background: color-mix(in oklch, var(--muted-foreground) 78%, transparent);
-  opacity: 0.82;
-  transform: scaleX(1);
+  background: color-mix(in oklch, var(--foreground) 56%, var(--background));
+  opacity: 0.92;
+  transform: scaleX(1.08);
 }
 .generation-history-track .generation-history-track__mark.is-current,
 .generation-history-track:hover .generation-history-track__mark.is-current,
@@ -5179,6 +5179,12 @@ video {
   box-shadow: 0 0 8px color-mix(in oklch, var(--accent) 20%, transparent);
   opacity: 1;
   transform: scaleX(1.18) scaleY(1.35);
+}
+.generation-history-track .generation-history-track__mark.is-hovered {
+  background: color-mix(in oklch, var(--accent) 48%, var(--foreground));
+  box-shadow: 0 0 10px color-mix(in oklch, var(--accent) 32%, transparent);
+  opacity: 1;
+  transform: scaleX(1.32) scaleY(1.5);
 }
 .generation-history-dock.is-open .generation-history-track .generation-history-track__mark,
 .generation-history-dock.is-open
@@ -5450,7 +5456,7 @@ video {
 
 @media (max-width: 860px) {
   .generation-history-dock {
-    top: calc(50svh - 120px);
+    top: 50%;
     right: 10px;
     height: min(420px, calc(100svh - 300px));
     width: min(360px, calc(100% - 20px));
@@ -5463,7 +5469,7 @@ video {
 }
 @media (max-width: 560px) {
   .generation-history-dock {
-    top: calc(50svh - 140px);
+    top: 50%;
     right: 4px;
     height: min(360px, calc(100svh - 380px));
     width: min(352px, calc(100% - 8px));

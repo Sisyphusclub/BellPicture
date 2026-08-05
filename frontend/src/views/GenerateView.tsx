@@ -387,6 +387,7 @@ export function GenerateView() {
   latestFeed.current = feed;
   const [selected, setSelected] = useState<HistoryEntry | null>(null);
   const [activeHistoryBatchId, setActiveHistoryBatchId] = useState<string | null>(null);
+  const [hoveredBatchId, setHoveredBatchId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [mutatingId, setMutatingId] = useState<string | null>(null);
   const activeSessionId = searchParams.get('session');
@@ -828,6 +829,7 @@ export function GenerateView() {
       <GenerationHistoryFlyout
         batches={sessionHistoryBatches}
         activeBatchId={activeHistoryBatchId}
+        hoveredBatchId={hoveredBatchId}
         isHydrating={history.isHydrating}
         hydrateError={history.hydrateError}
         isGenerating={generation.isLoading}
@@ -1012,6 +1014,16 @@ export function GenerateView() {
               data-generation-batch={item.id}
               data-state={!item.entries.length && !item.error ? 'generating' : undefined}
               data-count={item.entries.length || item.settings.count}
+              onMouseEnter={() => setHoveredBatchId(item.id)}
+              onMouseLeave={() =>
+                setHoveredBatchId((current) => (current === item.id ? null : current))
+              }
+              onFocusCapture={() => setHoveredBatchId(item.id)}
+              onBlurCapture={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) {
+                  setHoveredBatchId((current) => (current === item.id ? null : current));
+                }
+              }}
             >
               <header className="session-batch__header">
                 <EditablePromptBubble
