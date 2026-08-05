@@ -19,3 +19,10 @@ If you're using Codex or another agent-capable tool, additional project-scoped h
 Managed by Trellis. Edits outside this block are preserved; edits inside may be overwritten by a future `trellis update`.
 
 <!-- TRELLIS:END -->
+
+## Git 提交规范
+
+- 每一次代码改动完成并通过必要验证后，都必须立即创建独立的 Git 提交。
+- 提交信息只使用 `feat: 中文说明` 或 `fix: 中文说明` 格式，冒号后必须是简洁、明确的中文描述。
+- 新增功能或功能增强使用 `feat:`；缺陷修复、样式修复或行为修正使用 `fix:`。
+- 每次提交只包含当前改动相关文件，不得夹带工作区中的其他未提交内容。
