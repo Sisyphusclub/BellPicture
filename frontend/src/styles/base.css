@@ -6201,7 +6201,7 @@ video {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 12px;
+  column-gap: 16px;
 }
 .session-batch__prompt-edit-actions .button {
   flex: 0 0 auto;
