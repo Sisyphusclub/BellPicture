@@ -383,6 +383,7 @@ export function GenerateView() {
   const feedBySession = useRef(new Map<string, FeedItem[]>());
   const feedSessionId = useRef<string | null>(null);
   const latestFeed = useRef(feed);
+  const pendingScrollId = useRef<string | null>(null);
   latestFeed.current = feed;
   const [selected, setSelected] = useState<HistoryEntry | null>(null);
   const [activeHistoryBatchId, setActiveHistoryBatchId] = useState<string | null>(null);
@@ -429,7 +430,6 @@ export function GenerateView() {
         .map((item) => [item.id, item]),
     );
     const next = [...session.batchIds]
-      .reverse()
       .map((batchId) => transient.get(batchId) ?? persisted.get(batchId))
       .filter((item): item is FeedItem => item !== undefined);
     feedSessionId.current = activeSessionId;
@@ -440,6 +440,20 @@ export function GenerateView() {
   useEffect(() => {
     if (!feedSessionId.current) return;
     feedBySession.current.set(feedSessionId.current, feed);
+  }, [feed]);
+
+  useLayoutEffect(() => {
+    const pendingId = pendingScrollId.current;
+    if (!pendingId) return;
+    pendingScrollId.current = null;
+    const target = document.querySelector<HTMLElement>(
+      `[data-generation-batch="${pendingId}"]`,
+    );
+    if (!target || typeof target.scrollIntoView !== 'function') return;
+    const reduceMotion =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
   }, [feed]);
 
   useEffect(() => {
@@ -546,7 +560,8 @@ export function GenerateView() {
       if (activeHistoryBatchId === replaceItem.id) setActiveHistoryBatchId(null);
     } else {
       attachGenerationBatch(generationSessionId, pendingId, settings.prompt);
-      setFeed((current) => [pendingItem, ...current]);
+      pendingScrollId.current = pendingId;
+      setFeed((current) => [...current, pendingItem]);
     }
 
     const restoreReplacedItem = (): void => {
@@ -994,6 +1009,7 @@ export function GenerateView() {
             <article
               className={`session-batch${!item.entries.length && !item.error ? ' is-generating' : ''}`}
               key={item.id}
+              data-generation-batch={item.id}
               data-state={!item.entries.length && !item.error ? 'generating' : undefined}
               data-count={item.entries.length || item.settings.count}
             >

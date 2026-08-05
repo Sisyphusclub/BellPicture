@@ -203,6 +203,69 @@ it('supports up to four images per generation', async () => {
   );
 });
 
+it('keeps earlier batches above a newly submitted generation', async () => {
+  const pending = deferred<Awaited<ReturnType<typeof generation.generate>>>();
+  generation.generate.mockResolvedValueOnce({
+    batchId: 'first-batch',
+    aspectRatio: '16:9',
+    generationMode: 'text-to-image',
+    entries: [
+      {
+        record: {
+          id: 'first-result.png',
+          batchId: 'first-batch',
+          createdAt: '2026-08-05T08:00:00.000Z',
+          prompt: '第一幅提示',
+          model: 'gpt-image-2',
+          aspectRatio: '16:9',
+          width: 1792,
+          height: 1024,
+          count: 1,
+          resolution: '2k',
+          isPublic: false,
+          isFavorite: false,
+        },
+        imageUrl: '/first-result.png',
+      },
+    ],
+  });
+  generation.generate.mockReturnValueOnce(pending.promise);
+  const user = userEvent.setup();
+  const { container } = render(
+    <MemoryRouter initialEntries={['/generate']}>
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+
+  const promptInput = screen.getByRole('textbox', { name: '图像提示词' });
+  await user.type(promptInput, '第一幅提示');
+  await user.click(screen.getByRole('button', { name: '生成图片' }));
+  await screen.findByRole('button', { name: '查看图片：第一幅提示' });
+
+  await user.type(promptInput, '第二幅提示');
+  await user.click(screen.getByRole('button', { name: '生成图片' }));
+
+  await waitFor(() => {
+    expect(
+      Array.from(container.querySelectorAll('.session-batch__prompt p')).map(
+        (element) => element.textContent,
+      ),
+    ).toEqual(['第一幅提示', '第二幅提示']);
+  });
+
+  await act(async () => {
+    pending.resolve({
+      batchId: 'second-batch',
+      aspectRatio: '16:9',
+      generationMode: 'text-to-image',
+      entries: [],
+    });
+    await pending.promise;
+  });
+});
+
 it('starts generation once when discovery navigation requests it', async () => {
   render(
     <MemoryRouter

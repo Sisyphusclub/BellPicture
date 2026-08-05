@@ -7489,3 +7489,105 @@ video {
   height: 26px;
   font-size: 10px;
 }
+
+/* Keep new generations in a calm chat-like sequence and make the pending
+   state readable against the dot-field canvas. */
+.generation-console.has-results .session-feed {
+  gap: 48px;
+}
+.generation-console.has-results .session-batch {
+  scroll-margin-block: 20vh 260px;
+}
+.generation-console.has-results .session-batch.is-generating {
+  animation: generation-batch-enter 280ms var(--ease-out-expo) both;
+}
+.session-batch.is-generating .generation-pending__label {
+  margin-bottom: 12px;
+  border: 1px solid color-mix(in oklch, var(--border-strong) 62%, transparent);
+  border-radius: var(--radius-full);
+  background: color-mix(in oklch, var(--surface-raised) 58%, transparent);
+  padding: 7px 10px;
+  color: color-mix(in oklch, var(--foreground) 82%, var(--muted-foreground));
+  font-size: 13px;
+  font-weight: 600;
+}
+.session-batch.is-generating .generation-pending__label svg {
+  width: 15px;
+  height: 15px;
+  color: color-mix(in oklch, var(--accent) 70%, var(--foreground));
+}
+.session-batch.is-generating .generation-skeleton__card {
+  border: 1px solid color-mix(in oklch, var(--border-strong) 64%, transparent);
+  background: color-mix(in oklch, var(--surface-raised) 70%, var(--card));
+  box-shadow: inset 0 1px 0 color-mix(in oklch, var(--foreground) 5%, transparent);
+}
+.session-batch.is-generating .generation-skeleton__card::before {
+  background: color-mix(in oklch, var(--surface-raised) 86%, var(--card));
+  opacity: 0.52;
+}
+.session-batch.is-generating .generation-skeleton__card::after {
+  background-image: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--muted-foreground) 64%, transparent) 1.1px,
+    transparent 1.5px
+  );
+  background-size: 17px 17px;
+}
+.session-batch.is-generating .generation-skeleton__content {
+  color: color-mix(in oklch, var(--foreground) 88%, var(--muted-foreground));
+  font-size: 14px;
+  font-weight: 600;
+  text-shadow: 0 1px 14px color-mix(in oklch, var(--background) 72%, transparent);
+}
+.session-batch.is-generating .generation-skeleton__content svg {
+  width: 18px;
+  height: 18px;
+  color: color-mix(in oklch, var(--accent) 68%, var(--foreground));
+}
+.studio-toolbar-status[data-active='true'] {
+  color: color-mix(in oklch, var(--foreground) 92%, var(--accent));
+  font-size: 12px;
+  font-weight: 600;
+}
+.studio-toolbar-status__dot[data-active='true'] {
+  width: 7px;
+  height: 7px;
+  animation: generation-status-pulse 1.8s ease-in-out infinite;
+}
+@keyframes generation-batch-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes generation-status-pulse {
+  0%,
+  100% {
+    opacity: 0.62;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .generation-console.has-results .session-batch.is-generating,
+  .studio-toolbar-status__dot[data-active='true'] {
+    animation: none;
+  }
+}
+@media (max-width: 860px) {
+  .generation-console.has-results .session-feed {
+    gap: 40px;
+  }
+}
+@media (max-width: 560px) {
+  .generation-console.has-results .session-feed {
+    gap: 32px;
+  }
+}
