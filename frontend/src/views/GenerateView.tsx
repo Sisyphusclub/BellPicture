@@ -1,39 +1,46 @@
 import {
   ArrowDownToLine,
+  CircleAlert,
   Copy,
   Download,
-  Eye,
   Globe2,
   ImagePlus,
   Lock,
+  Minus,
+  Pencil,
+  Plus,
   RefreshCw,
-  SlidersHorizontal,
+  Sparkles,
   Trash2,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ClipboardEvent } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
 import { useToast } from '@/components/common/ToastProvider';
+import { GenerationHistoryFlyout } from '@/components/generation/GenerationHistoryFlyout';
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
-import {
-  AnimatedDropdown,
-  AnimatedDropdownCheckboxItem,
-  AnimatedDropdownContent,
-  AnimatedDropdownLabel,
-  AnimatedDropdownTrigger,
-} from '@/components/premium/animated-dropdown';
 import { AgentChatInput } from '@/components/premium/agent-chat-input/agent-chat-input';
 import type { AgentChatAttachment } from '@/components/premium/agent-chat-input/types';
 import { MorphicCard } from '@/components/premium/morphic-card-modal';
+import { ModelLogo } from '@/components/premium/agent-chat-input/model-logo';
+import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/ui/icon-tooltip';
 import { SelectMenu } from '@/components/ui/select-menu';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
 import { openAuthModal } from '@/hooks/useAuthModal';
 import { useFileUpload } from '@/hooks/useFileUpload';
+import {
+  attachGenerationBatch,
+  replaceGenerationBatch,
+  useGenerationSessions,
+} from '@/hooks/useGenerationSessions';
 import { useImageGeneration } from '@/hooks/useImageGeneration';
 import { useImageHistory } from '@/hooks/useImageHistory';
+import type { GroupedBatch } from '@/hooks/useImageHistory';
 import { useImageQuota } from '@/hooks/useImageQuota';
 import { addPublicRecord } from '@/hooks/usePublicGallery';
 import { fetchOutputBlob } from '@/services/api/imagesApi';
@@ -64,6 +71,32 @@ interface FeedItem {
   error?: string;
 }
 
+function feedItemFromBatch(batch: GroupedBatch): FeedItem {
+  return {
+    id: batch.batchId,
+    createdAt: batch.createdAt,
+    entries: [...batch.entries],
+    settings: batch.settings,
+  };
+}
+
+function sameFeed(left: readonly FeedItem[], right: readonly FeedItem[]): boolean {
+  return (
+    left.length === right.length &&
+    left.every((item, index) => {
+      const candidate = right[index];
+      return (
+        candidate?.id === item.id &&
+        candidate.error === item.error &&
+        candidate.entries.length === item.entries.length &&
+        candidate.entries.every(
+          (entry, entryIndex) => entry.record === item.entries[entryIndex]?.record,
+        )
+      );
+    })
+  );
+}
+
 type DeleteTarget = { kind: 'entry'; entry: HistoryEntry } | { kind: 'batch'; item: FeedItem };
 
 const ASPECT_MENU_OPTIONS = ASPECT_RATIOS.map((value) => ({
@@ -79,80 +112,349 @@ function isImageResolution(value: string | null): value is ImageResolution {
   return value !== null && (IMAGE_RESOLUTIONS as readonly string[]).includes(value);
 }
 
-interface AdvancedSettingsProps {
+interface GenerationErrorCopy {
+  message: string;
+  requestId: string | null;
+}
+
+function splitGenerationError(message: string): GenerationErrorCopy {
+  const requestSuffix = message.match(/[（(]\s*请求编号[:：]\s*([^）)]+)\s*[）)]\s*$/);
+  if (!requestSuffix) return { message, requestId: null };
+  return {
+    message: message.slice(0, requestSuffix.index).trim(),
+    requestId: requestSuffix[1]?.trim() || null,
+  };
+}
+
+function readCount(searchParams: URLSearchParams): number {
+  const value = Number(searchParams.get('count'));
+  return Number.isInteger(value) && value >= MIN_COUNT && value <= MAX_COUNT
+    ? value
+    : DEFAULT_COUNT;
+}
+
+function readReferenceIds(searchParams: URLSearchParams): string[] {
+  return [
+    ...new Set(
+      searchParams
+        .getAll('referenceId')
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .slice(0, 4),
+    ),
+  ];
+}
+
+function requestsAutoGeneration(state: unknown): boolean {
+  return (
+    typeof state === 'object' &&
+    state !== null &&
+    'autoGenerate' in state &&
+    state.autoGenerate === true
+  );
+}
+
+function cssAspectRatio(aspectRatio: AspectRatio): string {
+  return aspectRatio.replace(':', ' / ');
+}
+
+interface GenerationPlaceholderProps {
+  aspectRatio?: AspectRatio;
+  className?: string;
+}
+
+function GenerationPlaceholder({ aspectRatio, className }: GenerationPlaceholderProps) {
+  return (
+    <div
+      className={`generation-skeleton__card${className ? ` ${className}` : ''}`}
+      style={aspectRatio ? { aspectRatio: cssAspectRatio(aspectRatio) } : undefined}
+      aria-hidden="true"
+    >
+      <span className="generation-skeleton__content">
+        <Sparkles aria-hidden="true" />
+        <span>正在生成</span>
+      </span>
+    </div>
+  );
+}
+
+interface SessionResultPreviewProps {
+  entry: HistoryEntry;
+  onOpen: () => void;
+}
+
+function SessionResultPreview({ entry, onOpen }: SessionResultPreviewProps) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  return (
+    <MorphicCard id={entry.record.id} className="session-result__morph">
+      <Button
+        type="button"
+        variant="ghost"
+        className={`session-result__preview${imageLoaded ? ' is-loaded' : ''}`}
+        style={{
+          aspectRatio: `${entry.record.width} / ${entry.record.height}`,
+        }}
+        aria-label={`查看图片：${entry.record.prompt}`}
+        onClick={onOpen}
+      >
+        <GenerationPlaceholder className="session-result__loading" />
+        <img src={entry.imageUrl} alt={entry.record.prompt} onLoad={() => setImageLoaded(true)} />
+      </Button>
+    </MorphicCard>
+  );
+}
+
+interface PrivateModeToggleProps {
   isPublic: boolean;
   disabled: boolean;
   onPublicChange: (value: boolean) => void;
 }
 
-function AdvancedSettings({ isPublic, disabled, onPublicChange }: AdvancedSettingsProps) {
+function PrivateModeToggle({ isPublic, disabled, onPublicChange }: PrivateModeToggleProps) {
+  const isPrivate = !isPublic;
+
   return (
-    <AnimatedDropdown>
-      <AnimatedDropdownTrigger asChild>
-        <button
-          type="button"
-          className="studio-control studio-control--advanced"
-          aria-label="高级生成设置"
+    <label className="studio-private-toggle" data-mode={isPrivate ? 'private' : 'public'}>
+      <Switch
+        aria-label="私有模式"
+        checked={!isPublic}
+        disabled={disabled}
+        onCheckedChange={(checked) => onPublicChange(!checked)}
+      />
+      <span className="studio-private-toggle__track" aria-hidden="true" />
+      <span>{isPrivate ? '私有' : '公开'}</span>
+    </label>
+  );
+}
+
+interface EditablePromptBubbleProps {
+  item: FeedItem;
+  disabled: boolean;
+  onRegenerate: (prompt: string) => void;
+}
+
+const PROMPT_EDITOR_MIN_HEIGHT = 56;
+const PROMPT_EDITOR_MAX_HEIGHT = 120;
+
+function resizePromptEditor(textarea: HTMLTextAreaElement): void {
+  textarea.style.height = '0px';
+  const contentHeight = textarea.scrollHeight;
+  textarea.style.height = `${Math.max(
+    PROMPT_EDITOR_MIN_HEIGHT,
+    Math.min(contentHeight, PROMPT_EDITOR_MAX_HEIGHT),
+  )}px`;
+  textarea.style.overflowY = contentHeight > PROMPT_EDITOR_MAX_HEIGHT ? 'auto' : 'hidden';
+}
+
+function EditablePromptBubble({ item, disabled, onRegenerate }: EditablePromptBubbleProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(item.settings.prompt);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const trimmedDraft = draft.trim();
+
+  useEffect(() => {
+    if (!isEditing) setDraft(item.settings.prompt);
+  }, [isEditing, item.settings.prompt]);
+
+  useEffect(() => {
+    if (!isEditing) return;
+    const textarea = textareaRef.current;
+    textarea?.focus();
+    textarea?.setSelectionRange(textarea.value.length, textarea.value.length);
+  }, [isEditing]);
+
+  useLayoutEffect(() => {
+    if (!isEditing || !textareaRef.current) return;
+    resizePromptEditor(textareaRef.current);
+  }, [draft, isEditing]);
+
+  const cancelEditing = (): void => {
+    setDraft(item.settings.prompt);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <form
+        className="session-batch__prompt session-batch__prompt--editing"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!trimmedDraft || disabled) return;
+          setIsEditing(false);
+          onRegenerate(trimmedDraft);
+        }}
+      >
+        <Textarea
+          ref={textareaRef}
+          value={draft}
+          rows={1}
+          aria-label="编辑生成提示词"
           disabled={disabled}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              cancelEditing();
+            } else if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+              event.preventDefault();
+              event.currentTarget.form?.requestSubmit();
+            }
+          }}
+        />
+        <div className="session-batch__prompt-edit-footer">
+          <span className="session-batch__prompt-edit-actions">
+            <Button
+              type="button"
+              variant="secondary"
+              size="compact"
+              className="session-batch__prompt-cancel"
+              onClick={cancelEditing}
+            >
+              取消
+            </Button>
+            <Button
+              type="submit"
+              size="compact"
+              className="session-batch__prompt-regenerate"
+              disabled={!trimmedDraft || disabled}
+            >
+              修改
+            </Button>
+          </span>
+        </div>
+      </form>
+    );
+  }
+
+  return (
+    <div className="session-batch__prompt session-batch__prompt--editable">
+      <p>{item.settings.prompt}</p>
+      <span className="session-batch__meta">
+        {formatClockTime(item.createdAt)} · {ASPECT_RATIO_LABELS[item.settings.aspectRatio]} ·{' '}
+        {item.settings.count} 张
+      </span>
+      <IconTooltip label="编辑提示词">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="session-batch__prompt-edit"
+          aria-label="编辑提示词"
+          disabled={disabled}
+          onClick={() => setIsEditing(true)}
         >
-          <SlidersHorizontal aria-hidden="true" />
-          <span>{isPublic ? '公开' : '私有'}</span>
-        </button>
-      </AnimatedDropdownTrigger>
-      <AnimatedDropdownContent align="end" className="studio-settings-menu">
-        <AnimatedDropdownLabel>可见性</AnimatedDropdownLabel>
-        <AnimatedDropdownCheckboxItem
-          checked={isPublic}
-          onCheckedChange={(checked) => onPublicChange(checked === true)}
-        >
-          {isPublic ? <Globe2 aria-hidden="true" /> : <Lock aria-hidden="true" />}
-          <span>{isPublic ? '公开作品' : '私有作品'}</span>
-        </AnimatedDropdownCheckboxItem>
-      </AnimatedDropdownContent>
-    </AnimatedDropdown>
+          <Pencil aria-hidden="true" />
+        </Button>
+      </IconTooltip>
+    </div>
   );
 }
 
 export function GenerateView() {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { notify } = useToast();
   const { isAuthenticated, isLoading: authLoading, isAdmin } = useAuth();
   const history = useImageHistory();
+  const { sessions, create: createSession } = useGenerationSessions();
   const { quota, isLoading: quotaLoading, refresh: refreshQuota } = useImageQuota();
   const upload = useFileUpload();
   const clearUpload = upload.clear;
   const generation = useImageGeneration();
+  const generationErrorCopy = generation.error ? splitGenerationError(generation.error.message) : null;
+  const autoGenerationHandled = useRef(false);
   const [prompt, setPrompt] = useState(searchParams.get('prompt') ?? '');
-  const [count, setCount] = useState(DEFAULT_COUNT);
-  const [aspect, setAspect] = useState<AspectRatio>(DEFAULT_ASPECT_RATIO);
-  const [resolution, setResolution] = useState<ImageResolution>(DEFAULT_IMAGE_RESOLUTION);
-  const [isPublic, setIsPublic] = useState(false);
-  const [reusedReferenceIds, setReusedReferenceIds] = useState<string[]>([]);
+  const [count, setCount] = useState(() => readCount(searchParams));
+  const [aspect, setAspect] = useState<AspectRatio>(() => {
+    const value = searchParams.get('aspect');
+    return isAspectRatio(value) ? value : DEFAULT_ASPECT_RATIO;
+  });
+  const [resolution, setResolution] = useState<ImageResolution>(() => {
+    const value = searchParams.get('resolution');
+    return isAdmin && isImageResolution(value) ? value : DEFAULT_IMAGE_RESOLUTION;
+  });
+  const [isPublic, setIsPublic] = useState(() => searchParams.get('isPublic') === 'true');
+  const [reusedReferenceIds, setReusedReferenceIds] = useState<string[]>(() =>
+    readReferenceIds(searchParams),
+  );
   const [feed, setFeed] = useState<FeedItem[]>([]);
+  const feedBySession = useRef(new Map<string, FeedItem[]>());
+  const feedSessionId = useRef<string | null>(null);
+  const latestFeed = useRef(feed);
+  latestFeed.current = feed;
   const [selected, setSelected] = useState<HistoryEntry | null>(null);
+  const [activeHistoryBatchId, setActiveHistoryBatchId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [mutatingId, setMutatingId] = useState<string | null>(null);
+  const activeSessionId = searchParams.get('session');
+  const previousSessionId = useRef<string | null>(activeSessionId);
+
+  useEffect(() => {
+    if (!activeSessionId || previousSessionId.current === activeSessionId) return;
+    previousSessionId.current = activeSessionId;
+    setPrompt(searchParams.get('prompt') ?? '');
+    setSelected(null);
+    setActiveHistoryBatchId(null);
+    clearUpload();
+    setReusedReferenceIds([]);
+  }, [activeSessionId, clearUpload, searchParams]);
+
+  useEffect(() => {
+    if (!activeSessionId) {
+      if (feedSessionId.current) {
+        feedBySession.current.set(feedSessionId.current, latestFeed.current);
+        feedSessionId.current = null;
+        setFeed([]);
+      }
+      return;
+    }
+    const session = sessions.find((candidate) => candidate.id === activeSessionId);
+    if (!session) {
+      feedSessionId.current = null;
+      setFeed([]);
+      return;
+    }
+    const previousFeedSessionId = feedSessionId.current;
+    if (previousFeedSessionId && previousFeedSessionId !== activeSessionId) {
+      feedBySession.current.set(previousFeedSessionId, latestFeed.current);
+    }
+    const persisted = new Map(
+      history.batches.map((batch) => [batch.batchId, feedItemFromBatch(batch)]),
+    );
+    const transient = new Map(
+      [...(feedBySession.current.get(activeSessionId) ?? []), ...latestFeed.current]
+        .filter((item) => session.batchIds.includes(item.id) && !persisted.has(item.id))
+        .map((item) => [item.id, item]),
+    );
+    const next = [...session.batchIds]
+      .reverse()
+      .map((batchId) => transient.get(batchId) ?? persisted.get(batchId))
+      .filter((item): item is FeedItem => item !== undefined);
+    feedSessionId.current = activeSessionId;
+    feedBySession.current.set(activeSessionId, next);
+    setFeed((current) => (sameFeed(current, next) ? current : next));
+  }, [activeSessionId, history.batches, sessions]);
+
+  useEffect(() => {
+    if (!feedSessionId.current) return;
+    feedBySession.current.set(feedSessionId.current, feed);
+  }, [feed]);
 
   useEffect(() => {
     const queryPrompt = searchParams.get('prompt');
     if (queryPrompt !== null) setPrompt(queryPrompt);
     const queryAspect = searchParams.get('aspect');
     if (isAspectRatio(queryAspect)) setAspect(queryAspect);
-    const queryCount = Number(searchParams.get('count'));
-    if (Number.isInteger(queryCount) && queryCount >= MIN_COUNT && queryCount <= MAX_COUNT) {
-      setCount(queryCount);
-    }
+    setCount(readCount(searchParams));
     const queryResolution = searchParams.get('resolution');
     if (isAdmin && isImageResolution(queryResolution)) setResolution(queryResolution);
     const queryPublic = searchParams.get('isPublic');
     if (queryPublic === 'true' || queryPublic === 'false') setIsPublic(queryPublic === 'true');
-    const queryReferenceIds = searchParams
-      .getAll('referenceId')
-      .map((value) => value.trim())
-      .filter(Boolean)
-      .slice(0, 4);
+    const queryReferenceIds = readReferenceIds(searchParams);
     if (queryReferenceIds.length) {
-      setReusedReferenceIds([...new Set(queryReferenceIds)]);
+      setReusedReferenceIds(queryReferenceIds);
       clearUpload();
     }
   }, [clearUpload, isAdmin, searchParams]);
@@ -176,6 +478,13 @@ export function GenerateView() {
     [upload.selectedFiles],
   );
 
+  const sessionHistoryBatches = useMemo(() => {
+    const session = sessions.find((candidate) => candidate.id === activeSessionId);
+    if (!activeSessionId || !session) return history.batches;
+    const batchIds = new Set(session.batchIds);
+    return history.batches.filter((batch) => batchIds.has(batch.batchId));
+  }, [activeSessionId, history.batches, sessions]);
+
   const currentSettings = (promptValue = prompt): GenerationSettingsSnapshot => ({
     prompt: promptValue.trim(),
     model: 'gpt-image-2',
@@ -190,22 +499,63 @@ export function GenerateView() {
     settings: GenerationSettingsSnapshot,
     referenceFiles: readonly File[] = [],
     clearComposer = false,
+    replaceItem?: FeedItem,
   ): Promise<void> => {
     if (generation.isLoading) return;
     if (!settings.prompt) {
       notify('请先描述你想生成的图片。', 'error');
       return;
     }
+    let generationSession = sessions.find((session) => session.id === activeSessionId);
+    let generationSessionId = generationSession?.id;
+    if (!generationSessionId) {
+      const session = createSession();
+      generationSession = session;
+      generationSessionId = session.id;
+      const nextSearch = new URLSearchParams({
+        session: session.id,
+        aspect: settings.aspectRatio,
+        count: String(settings.count),
+        isPublic: String(settings.isPublic),
+      });
+      if (isAdmin) nextSearch.set('resolution', settings.resolution);
+      void navigate(`/generate?${nextSearch.toString()}`, { replace: true });
+    }
+    const generationSessionBatchIds = generationSession?.batchIds ?? [];
     const pendingId = `pending-${crypto.randomUUID()}`;
-    setFeed((current) => [
-      {
-        id: pendingId,
-        createdAt: new Date().toISOString(),
-        entries: [],
-        settings,
-      },
-      ...current,
-    ]);
+    const pendingItem: FeedItem = {
+      id: pendingId,
+      createdAt: new Date().toISOString(),
+      entries: [],
+      settings,
+    };
+    if (replaceItem) {
+      if (generationSessionBatchIds.includes(replaceItem.id)) {
+        replaceGenerationBatch(generationSessionId, replaceItem.id, pendingId);
+      } else {
+        attachGenerationBatch(generationSessionId, pendingId, settings.prompt);
+      }
+      setFeed((current) =>
+        current.map((item) => (item.id === replaceItem.id ? pendingItem : item)),
+      );
+      setSelected((current) =>
+        current && replaceItem.entries.some((entry) => entry.record.id === current.record.id)
+          ? null
+          : current,
+      );
+      if (activeHistoryBatchId === replaceItem.id) setActiveHistoryBatchId(null);
+    } else {
+      attachGenerationBatch(generationSessionId, pendingId, settings.prompt);
+      setFeed((current) => [pendingItem, ...current]);
+    }
+
+    const restoreReplacedItem = (): void => {
+      if (!replaceItem) return;
+      replaceGenerationBatch(generationSessionId, pendingId, replaceItem.id);
+      setFeed((current) => current.map((item) => (item.id === pendingId ? replaceItem : item)));
+      setActiveHistoryBatchId(replaceItem.id);
+    };
+
     try {
       const { resolution: settingsResolution, ...requestSettings } = settings;
       const result = await generation.generate({
@@ -238,25 +588,58 @@ export function GenerateView() {
             : item,
         ),
       );
+      replaceGenerationBatch(generationSessionId, pendingId, result.batchId);
+      setActiveHistoryBatchId(result.batchId);
+      let replacementCleanupFailed = false;
+      if (replaceItem) {
+        try {
+          await history.removeBatch(replaceItem.id);
+        } catch {
+          replacementCleanupFailed = true;
+        }
+      }
       if (clearComposer) {
         setPrompt('');
         upload.clear();
         setReusedReferenceIds([]);
       }
       await refreshQuota();
-      notify('图片生成完成。');
+      if (replacementCleanupFailed) {
+        notify('新结果已生成，但旧记录暂未清理，请稍后删除。', 'error');
+      } else {
+        notify(replaceItem ? '已重新生成并替换原结果。' : '图片生成完成。');
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : '生成失败，请稍后重试。';
+      const userMessage = splitGenerationError(message).message;
       if (message === '生成已停止。') {
-        setFeed((current) => current.filter((item) => item.id !== pendingId));
+        if (replaceItem) restoreReplacedItem();
+        else setFeed((current) => current.filter((item) => item.id !== pendingId));
         notify(message);
         return;
       }
-      setFeed((current) =>
-        current.map((item) => (item.id === pendingId ? { ...item, error: message } : item)),
-      );
-      notify(message, 'error');
+      if (replaceItem) restoreReplacedItem();
+      else {
+        setFeed((current) =>
+          current.map((item) => (item.id === pendingId ? { ...item, error: message } : item)),
+        );
+      }
+      notify(userMessage, 'error');
     }
+  };
+
+  const regenerateReplacingBatch = (item: FeedItem, promptValue: string): void => {
+    const settings: GenerationSettingsSnapshot = {
+      ...item.settings,
+      prompt: promptValue.trim(),
+      resolution: isAdmin ? item.settings.resolution : DEFAULT_IMAGE_RESOLUTION,
+    };
+    if (authLoading) return;
+    if (!isAuthenticated) {
+      openAuthModal({ onSuccess: () => performGeneration(settings, [], false, item) });
+      return;
+    }
+    void performGeneration(settings, [], false, item);
   };
 
   const submitCurrent = (promptValue = prompt): void => {
@@ -269,6 +652,18 @@ export function GenerateView() {
     }
     void performGeneration(settings, files, true);
   };
+  const submitCurrentRef = useRef(submitCurrent);
+  submitCurrentRef.current = submitCurrent;
+
+  useEffect(() => {
+    if (authLoading || autoGenerationHandled.current || !requestsAutoGeneration(location.state)) {
+      return;
+    }
+
+    autoGenerationHandled.current = true;
+    void navigate(`${location.pathname}${location.search}`, { replace: true, state: null });
+    submitCurrentRef.current();
+  }, [authLoading, location.pathname, location.search, location.state, navigate]);
 
   const handleAttachments = (next: AgentChatAttachment[]): void => {
     const nextIds = new Set(next.map((item) => item.id));
@@ -333,6 +728,7 @@ export function GenerateView() {
     try {
       await history.removeBatch(item.id);
       setFeed((current) => current.filter((candidate) => candidate.id !== item.id));
+      if (activeHistoryBatchId === item.id) setActiveHistoryBatchId(null);
       notify('整组图片已删除。');
       setDeleteTarget(null);
     } catch (error) {
@@ -401,27 +797,51 @@ export function GenerateView() {
     else await deleteEntry(deleteTarget.entry);
   };
 
+  const loadHistoryBatch = (batch: GroupedBatch): void => {
+    const item = feedItemFromBatch(batch);
+    setFeed((current) => [item, ...current.filter((candidate) => candidate.id !== batch.batchId)]);
+    setSelected(null);
+    setActiveHistoryBatchId(batch.batchId);
+  };
+
   return (
-    <section className="generation-console" aria-label="图像生成工作区">
-      <div className="studio-create-bar" onPaste={paste}>
-        <div className="studio-create-bar__status">
-          <span role="status" aria-live="polite">
-            {generation.isLoading ? generation.statusMessage : '准备生成'}
-          </span>
-          <span aria-label="今日生成额度">
-            {quotaLoading
-              ? '额度同步中'
-              : isAuthenticated
-                ? `${quota?.remaining ?? '—'} / ${quota?.total ?? '—'}`
-                : '登录后查看额度'}
-          </span>
+    <section
+      className={`generation-console ${feed.length ? 'has-results' : 'is-empty'}`}
+      data-view="generate"
+      aria-label="图像生成工作区"
+    >
+      <GenerationHistoryFlyout
+        batches={sessionHistoryBatches}
+        activeBatchId={activeHistoryBatchId}
+        isHydrating={history.isHydrating}
+        hydrateError={history.hydrateError}
+        isGenerating={generation.isLoading}
+        pendingPrompt={prompt}
+        onSelectBatch={loadHistoryBatch}
+      />
+      {!feed.length ? (
+        <div className="generation-empty-state" aria-label="开始你的创作">
+          <div className="generation-empty-state__art" aria-hidden="true">
+            <ImagePlus className="generation-empty-state__image-icon" />
+            <Sparkles className="generation-empty-state__sparkle generation-empty-state__sparkle--top" />
+            <Sparkles className="generation-empty-state__sparkle generation-empty-state__sparkle--side" />
+          </div>
+          <h2>开始你的创作</h2>
+          <p>在下方输入描述，或提供参考图，让 AI 帮你生成想象中的画面</p>
         </div>
+      ) : null}
+      <div className="studio-create-bar" onPaste={paste}>
         {reusedReferenceIds.length ? (
           <div className="reused-references">
             <span>沿用 {reusedReferenceIds.length} 张历史参考图</span>
-            <button type="button" onClick={() => setReusedReferenceIds([])}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="compact"
+              onClick={() => setReusedReferenceIds([])}
+            >
               清除
-            </button>
+            </Button>
           </div>
         ) : null}
         <AgentChatInput
@@ -430,7 +850,7 @@ export function GenerateView() {
           onSubmit={(payload) => submitCurrent(payload.text)}
           onStop={generation.cancel}
           status={generation.isLoading ? 'streaming' : generation.error ? 'error' : 'ready'}
-          placeholder="描述主体、场景、光线、构图与风格"
+          placeholder="描述你想生成的画面…"
           ariaLabel="图像提示词"
           submitLabel="生成图片"
           disabled={authLoading}
@@ -448,7 +868,8 @@ export function GenerateView() {
           toolbarContent={
             <div className="studio-controls">
               <span className="studio-model" aria-label="当前模型 gpt-image-2">
-                gpt-image-2
+                <ModelLogo modelId="gpt-image-2" className="studio-model__icon" />
+                <span>gpt-image-2</span>
               </span>
               <SelectMenu
                 label="选择画面比例"
@@ -467,30 +888,36 @@ export function GenerateView() {
                 }}
               />
               <div className="studio-count-stepper" role="group" aria-label="生成张数">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   aria-label="减少生成张数"
                   disabled={generation.isLoading || count <= MIN_COUNT}
                   onClick={() => setCount((value) => Math.max(MIN_COUNT, value - 1))}
                 >
-                  −
-                </button>
+                  <Minus aria-hidden="true" />
+                </Button>
                 <output aria-label={`${count} 张`}>{count}</output>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   aria-label="增加生成张数"
                   disabled={generation.isLoading || count >= MAX_COUNT}
                   onClick={() => setCount((value) => Math.min(MAX_COUNT, value + 1))}
                 >
-                  +
-                </button>
+                  <Plus aria-hidden="true" />
+                </Button>
               </div>
               {isAdmin ? (
                 <div className="studio-resolution-control" role="radiogroup" aria-label="清晰度">
                   {IMAGE_RESOLUTIONS.map((option) => (
-                    <button
+                    <Button
                       key={option}
                       type="button"
+                      variant="ghost"
+                      size="compact"
                       role="radio"
                       aria-checked={resolution === option}
                       disabled={generation.isLoading}
@@ -505,145 +932,150 @@ export function GenerateView() {
                       }}
                     >
                       {IMAGE_RESOLUTION_LABELS[option]}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               ) : null}
-              <AdvancedSettings
+              <PrivateModeToggle
                 isPublic={isPublic}
                 disabled={generation.isLoading}
                 onPublicChange={setIsPublic}
               />
+              <span className="studio-toolbar-spacer" aria-hidden="true" />
+              <span className="studio-toolbar-meta">
+                <span
+                  className="studio-toolbar-status"
+                  data-active={generation.isLoading ? 'true' : undefined}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span
+                    className="studio-toolbar-status__dot"
+                    data-active={generation.isLoading ? 'true' : undefined}
+                    aria-hidden="true"
+                  />
+                  {generation.isLoading ? generation.statusMessage : '准备生成'}
+                </span>
+                <span className="studio-toolbar-quota" aria-label="今日生成额度">
+                  {quotaLoading
+                    ? '额度：同步中'
+                    : isAuthenticated
+                      ? `额度：${quota?.remaining ?? '—'} / ${quota?.total ?? '—'}`
+                      : '额度：登录后查看'}
+                </span>
+              </span>
             </div>
           }
           className="studio-agent-input"
         />
-        {generation.error ? (
-          <p className="form-error" role="alert">
-            {generation.error.message}
-          </p>
+        {generationErrorCopy ? (
+          <div className="studio-create-bar__error" role="alert">
+            <CircleAlert aria-hidden="true" />
+            <span className="studio-create-bar__error-message">{generationErrorCopy.message}</span>
+            {generationErrorCopy.requestId ? (
+              <small
+                className="studio-create-bar__error-request"
+                title={`请求编号：${generationErrorCopy.requestId}`}
+              >
+                请求编号 {generationErrorCopy.requestId}
+              </small>
+            ) : null}
+          </div>
         ) : null}
       </div>
 
-      <section className="session-feed" aria-label="本次创作结果" aria-busy={generation.isLoading}>
-        {!feed.length ? (
-          <div className="empty-stage" role="status">
-            <ImagePlus aria-hidden="true" />
-            <p>暂无本次会话结果。</p>
-          </div>
-        ) : (
-          feed.map((item) => (
-            <article className="session-batch" key={item.id}>
+      {feed.length ? (
+        <section
+          className="session-feed"
+          aria-label="本次创作结果"
+          aria-busy={generation.isLoading}
+        >
+          {feed.map((item) => (
+            <article
+              className={`session-batch${!item.entries.length && !item.error ? ' is-generating' : ''}`}
+              key={item.id}
+              data-state={!item.entries.length && !item.error ? 'generating' : undefined}
+              data-count={item.entries.length || item.settings.count}
+            >
               <header className="session-batch__header">
-                <div>
-                  <p>{item.settings.prompt}</p>
-                  <span>
-                    {formatClockTime(item.createdAt)} ·{' '}
-                    {ASPECT_RATIO_LABELS[item.settings.aspectRatio]} · {item.settings.count} 张
-                  </span>
-                </div>
-                <div className="session-batch__actions">
-                  {item.entries.length ? (
-                    <>
-                      <IconTooltip label="复用完整设置">
-                        <button
-                          type="button"
-                          aria-label="复用完整设置"
-                          onClick={() => reuseSettings(item.settings)}
-                        >
-                          <Copy aria-hidden="true" />
-                        </button>
-                      </IconTooltip>
-                      <IconTooltip label="再次生成">
-                        <button
-                          type="button"
-                          aria-label="再次生成"
-                          disabled={generation.isLoading}
-                          onClick={() => void performGeneration(item.settings)}
-                        >
-                          <RefreshCw aria-hidden="true" />
-                        </button>
-                      </IconTooltip>
-                      <IconTooltip label="下载整组图片">
-                        <button
-                          type="button"
-                          aria-label="下载整组图片"
-                          onClick={() => void downloadBatch(item)}
-                        >
-                          <ArrowDownToLine aria-hidden="true" />
-                        </button>
-                      </IconTooltip>
-                    </>
-                  ) : null}
-                  {item.entries.length ? (
-                    <button
-                      type="button"
-                      className="session-delete"
-                      disabled={mutatingId === item.id}
-                      onClick={() => setDeleteTarget({ kind: 'batch', item })}
-                    >
-                      <Trash2 aria-hidden="true" />
-                      删除整组
-                    </button>
-                  ) : null}
-                </div>
+                <EditablePromptBubble
+                  item={item}
+                  disabled={generation.isLoading || mutatingId === item.id}
+                  onRegenerate={(promptValue) => regenerateReplacingBatch(item, promptValue)}
+                />
               </header>
               {item.error ? (
-                <div className="inline-error" role="alert">
-                  <span>{item.error}</span>
-                  <button
-                    type="button"
-                    disabled={generation.isLoading}
-                    onClick={() => void performGeneration(item.settings)}
+                <div className="generation-error-grid">
+                  <div
+                    className="generation-error-card"
+                    style={{ aspectRatio: cssAspectRatio(item.settings.aspectRatio) }}
+                    role="alert"
                   >
-                    重试
-                  </button>
+                    <span className="generation-error-card__content">
+                      {(() => {
+                        const errorCopy = splitGenerationError(item.error);
+                        return (
+                          <>
+                            <CircleAlert aria-hidden="true" />
+                            <strong>生成失败</strong>
+                            <span>{errorCopy.message}</span>
+                            {errorCopy.requestId ? (
+                              <small
+                                className="generation-error-card__request"
+                                title={`请求编号：${errorCopy.requestId}`}
+                              >
+                                请求编号 {errorCopy.requestId}
+                              </small>
+                            ) : null}
+                          </>
+                        );
+                      })()}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="compact"
+                        disabled={generation.isLoading}
+                        onClick={() => void performGeneration(item.settings)}
+                      >
+                        <RefreshCw aria-hidden="true" />
+                        重试
+                      </Button>
+                    </span>
+                  </div>
                 </div>
               ) : item.entries.length ? (
                 <div className="session-result-grid">
                   {item.entries.map((entry) => (
                     <article className="session-result" key={entry.record.id}>
-                      <MorphicCard id={entry.record.id} className="session-result__morph">
-                        <button
-                          type="button"
-                          className="session-result__preview"
-                          aria-label={`查看图片：${entry.record.prompt}`}
-                          onClick={() => setSelected(entry)}
-                        >
-                          <img src={entry.imageUrl} alt={entry.record.prompt} />
-                        </button>
-                      </MorphicCard>
+                      <SessionResultPreview entry={entry} onOpen={() => setSelected(entry)} />
                       <div className="session-result__actions">
-                        <IconTooltip label="查看图片">
-                          <button
-                            type="button"
-                            aria-label="查看图片"
-                            onClick={() => setSelected(entry)}
-                          >
-                            <Eye aria-hidden="true" />
-                          </button>
-                        </IconTooltip>
                         <IconTooltip label="用作参考图">
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="icon"
                             aria-label="用作参考图"
                             onClick={() => void addAsReference(entry)}
                           >
                             <ImagePlus aria-hidden="true" />
-                          </button>
+                          </Button>
                         </IconTooltip>
                         <IconTooltip label="下载图片">
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="icon"
                             aria-label="下载图片"
                             onClick={() => void downloadUrl(entry.imageUrl, entry.record.id)}
                           >
                             <Download aria-hidden="true" />
-                          </button>
+                          </Button>
                         </IconTooltip>
                         <IconTooltip label={entry.record.isPublic ? '设为私有' : '设为公开'}>
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="icon"
                             aria-label={entry.record.isPublic ? '设为私有' : '设为公开'}
                             disabled={mutatingId === entry.record.id}
                             onClick={() => void toggleVisibility(entry)}
@@ -653,37 +1085,103 @@ export function GenerateView() {
                             ) : (
                               <Lock aria-hidden="true" />
                             )}
-                          </button>
+                          </Button>
                         </IconTooltip>
                         <IconTooltip label="删除图片">
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="icon"
                             aria-label="删除图片"
                             disabled={mutatingId === entry.record.id}
                             onClick={() => setDeleteTarget({ kind: 'entry', entry })}
                           >
                             <Trash2 aria-hidden="true" />
-                          </button>
+                          </Button>
                         </IconTooltip>
                       </div>
                     </article>
                   ))}
                 </div>
               ) : (
-                <div
-                  className="generation-skeleton"
-                  role="status"
-                  aria-label={generation.statusMessage}
-                >
-                  {Array.from({ length: item.settings.count }, (_, index) => (
-                    <span key={`${item.id}-${index}`} />
-                  ))}
+                <div className="generation-pending">
+                  <div className="generation-pending__label" aria-hidden="true">
+                    <Sparkles />
+                    <span>正在构思</span>
+                  </div>
+                  <div
+                    className="generation-skeleton"
+                    role="status"
+                    aria-label={generation.statusMessage}
+                  >
+                    {Array.from({ length: item.settings.count }, (_, index) => (
+                      <GenerationPlaceholder
+                        key={`${item.id}-${index}`}
+                        aspectRatio={item.settings.aspectRatio}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
+              {item.entries.length ? (
+                <div className="session-batch__actions" role="toolbar" aria-label="整组操作">
+                  <IconTooltip label="复用完整设置">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="复用完整设置"
+                      onClick={() => reuseSettings(item.settings)}
+                    >
+                      <Copy aria-hidden="true" />
+                    </Button>
+                  </IconTooltip>
+                  <IconTooltip label="再次生成">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="再次生成"
+                      disabled={generation.isLoading}
+                      onClick={() => void performGeneration(item.settings)}
+                    >
+                      <RefreshCw aria-hidden="true" />
+                    </Button>
+                  </IconTooltip>
+                  {item.entries.length > 1 ? (
+                    <>
+                      <IconTooltip label="下载整组图片">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label="下载整组图片"
+                          onClick={() => void downloadBatch(item)}
+                        >
+                          <ArrowDownToLine aria-hidden="true" />
+                        </Button>
+                      </IconTooltip>
+                      <IconTooltip label="删除整组">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="session-delete"
+                          aria-label="删除整组"
+                          disabled={mutatingId === item.id}
+                          onClick={() => setDeleteTarget({ kind: 'batch', item })}
+                        >
+                          <Trash2 aria-hidden="true" />
+                        </Button>
+                      </IconTooltip>
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
             </article>
-          ))
-        )}
-      </section>
+          ))}
+        </section>
+      ) : null}
 
       <ImageDetailModal
         entry={selected}
