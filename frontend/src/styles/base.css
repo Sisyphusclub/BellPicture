@@ -7437,3 +7437,55 @@ video {
     margin-inline: 8px;
   }
 }
+
+/* Keep the sidebar account footer compact and anchored to the same left edge
+   as the navigation. The quota and identity remain separate, but neither
+   row should read as a standalone card. */
+.sidebar-account-area {
+  display: grid;
+  gap: 3px;
+  padding: 5px 6px 6px;
+  border-color: color-mix(in oklch, var(--border) 52%, transparent);
+  background: color-mix(in oklch, var(--surface-raised) 42%, transparent);
+}
+.sidebar-account-area .sidebar-quota {
+  min-height: 24px;
+  align-items: center;
+  padding: 0 5px 5px;
+  border-bottom: 1px solid color-mix(in oklch, var(--border) 38%, transparent);
+}
+.sidebar-account-area .sidebar-quota span,
+.sidebar-account-area .sidebar-quota strong {
+  font-size: 11px;
+  line-height: 1.3;
+}
+.sidebar-account-area .sidebar-quota span {
+  color: color-mix(in oklch, var(--foreground) 64%, var(--background));
+}
+.sidebar-account-area .sidebar-quota strong {
+  color: color-mix(in oklch, var(--foreground) 86%, var(--background));
+  font-variant-numeric: tabular-nums;
+  font-weight: 550;
+}
+.sidebar-account-area .account-control {
+  min-width: 0;
+  padding: 0;
+  border-top: 0;
+}
+.sidebar-account-area .account-control > button {
+  min-height: 34px;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 0 5px;
+  color: color-mix(in oklch, var(--foreground) 88%, var(--background));
+  font-size: 12px;
+  line-height: 1;
+}
+.sidebar-account-area .account-control > button:hover {
+  background: color-mix(in oklch, var(--surface-hover) 62%, transparent);
+}
+.sidebar-account-area .account-avatar {
+  width: 26px;
+  height: 26px;
+  font-size: 10px;
+}
