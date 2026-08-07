@@ -3,9 +3,9 @@
 > A dark-first AI image studio built from layered graphite surfaces, compact controls, and continuous morphing interactions.
 
 **Visual source:** [beUI Pro](https://pro.beui.dev/components)<br>
-**Primary references:** Agent Chat Input, Animated Dropdown, Morphic Card Modal, Morphic Tooltip, Data Table<br>
+**Primary references:** Agent Chat Input, Expanding Pill, Animated Dropdown, Morphic Card Modal, Morphic Tooltip, Image Gallery Vertical, Data Table, Empty States, Auth<br>
 **Product:** Nebulens AI image creation workspace<br>
-**Updated:** 2026-07-30
+**Updated:** 2026-08-04
 
 ## Product Direction
 
@@ -47,6 +47,10 @@ Use semantic names in product code. Component implementations should not hard-co
 | `--overlay`            | `oklch(0.04 0 0 / 0.82)` | `oklch(0.08 0 0 / 0.72)` | Image inspection backdrop                              |
 
 Generated images are exempt from the neutral palette. Do not tint, blur, or darken them unless text or inspection controls require local contrast.
+
+### Nebulens Brand Accents
+
+Use the existing Nebulens logo as the source for sparse chromatic accents. The composer `BorderGlow` mesh uses logo-aligned golden orange (`#ffb51b`), cyan (`#12c8f4`), and royal blue (`#1464ff`), with the warm orange node appearing slightly more often so it remains visible in motion. Its directional outer light uses the cyan HSL value `198 96% 70%` to balance the warmer mesh. Keep these colors limited to focused creation surfaces and brand-led moments so generated imagery remains the dominant source of saturation.
 
 ### Typography
 
@@ -109,6 +113,16 @@ Use borders for ordinary separation. Shadows are reserved for floating or morphi
 
 Do not apply shadows to every card, image tile, table row, or page section.
 
+### Workspace Surface
+
+All authenticated work routes sit on a shared graphite working plane inside the app rail. The
+plane uses a raised graphite fill, a single quiet boundary, and a restrained inset highlight so
+the page is visibly distinct from the application canvas without becoming a nested card. The
+Generate canvas uses a React Flow-inspired, very low-contrast dot field to communicate an open
+image-making surface; the dots must never compete with the prompt or media.
+Toolbars and image collections inherit this plane rather than creating a separate full-page black
+panel.
+
 ## Motion System
 
 Motion uses `transform`, `opacity`, shared layout IDs, and measured dimensions. New product motion should use `cubic-bezier(0.16, 1, 0.3, 1)`.
@@ -123,13 +137,88 @@ Installed beUI components may keep their internal spring transitions. Product-le
 
 ## Component Language
 
+### beUI Pro Source and Usage Contract
+
+beUI Pro is the authoritative component source for Nebulens. The canonical reference
+is the [beUI Pro component catalog](https://pro.beui.dev/components) and its
+[installation and registry guide](https://pro.beui.dev/components/installation). The
+`@beui-pro` registry in `frontend/components.json` is the install/update path; it is
+not a second visual system. Components copied from that registry live in this repository
+so they can be typed, tested, and connected to Nebulens domain data without a runtime
+dependency on the site.
+
+The rules below are binding for new UI work:
+
+- Start with the closest beUI Pro component and compose it with product data. Do not
+  create a page-local dropdown, tooltip, modal, composer, gallery, or table when a
+  mapped component exists.
+- Local files are adapters, not alternative designs. They may add labels, event
+  contracts, loading/error handling, or semantic token classes, but must preserve the
+  source component's keyboard, focus, motion, and morphing behavior.
+- Use the source component's documented interaction model before adding props. A new
+  variant requires a concrete Nebulens workflow and must be documented in this file.
+- Every interactive state is required: default, hover, active/pressed, selected,
+  disabled, focus-visible, pending/error where relevant, and
+  `prefers-reduced-motion` behavior. Color alone cannot communicate state.
+- Option sets use an animated dropdown or select wrapper; binary state uses a switch;
+  bounded numeric values use a stepper/input; unfamiliar icon-only actions use Lucide
+  icons with an accessible name and `IconTooltip`.
+- Keep one source of truth for spacing, color, radius, and elevation. Extend semantic
+  tokens rather than adding one-off hex values in a route or component.
+
+Toast providers, route shells, API clients, hooks, upload transport, and motion helpers
+are infrastructure rather than visual components. They remain local when they do not
+replace a beUI Pro surface; any visible UI they render still follows the mapped component
+contract above.
+
+#### Source-to-code mapping
+
+| beUI Pro source                | Canonical reference                                                      | Local implementation                                                                    | Allowed adaptation                                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Agent Chat Input               | [agent-chat-input](https://pro.beui.dev/components/agent-chat-input)     | `src/components/premium/agent-chat-input/*` and `AgentChatInput`                        | Prompt, attachments, model, ratio, count, private mode, quota, submit/stop, and product callbacks      |
+| Expanding Pill / Navbar Expand | [navbar](https://pro.beui.dev/components/navbar)                         | `src/components/premium/navbar-expand/navbar-expand.tsx` and `NavbarExpand`             | Route items, current state, mobile collapse, and Nebulens logo                                         |
+| Animated Dropdown              | [animated-dropdown](https://pro.beui.dev/components/animated-dropdown)   | `src/components/premium/animated-dropdown/*` and `src/components/ui/select-menu.tsx`    | Typed option data, labels, collision padding, and route-specific values                                |
+| Morphic Card Modal             | [morphic-card-modal](https://pro.beui.dev/components/morphic-card-modal) | `src/components/premium/morphic-card-modal/*`, `ImageDetailModal`, `ConfirmActionModal` | Image metadata, destructive confirmation, download/reuse actions, and focus return                     |
+| Morphic Tooltip                | [morphic-tooltip](https://pro.beui.dev/components/morphic-tooltip)       | `src/components/premium/morphic-tooltip/*` and `src/components/ui/icon-tooltip.tsx`     | Accessible labels and placement only                                                                   |
+| Image Gallery Vertical         | [image-galleries](https://pro.beui.dev/components/image-galleries)       | `src/components/premium/image-galleries/image-gallery-vertical.tsx`                     | Six product-owned images, vertical looping columns, responsive column count, and reduced-motion freeze |
+| Data Table                     | [data-table](https://pro.beui.dev/components/data-table)                 | Admin users table in `src/views/AdminUsersView.tsx`                                     | User rows, inline quota editing, pagination, and mobile record layout                                  |
+| Empty States                   | [empty-states](https://pro.beui.dev/components/empty-states)             | Empty/loading/error patterns in route views                                             | Concise Chinese recovery copy and product actions                                                      |
+| Auth                           | [auth](https://pro.beui.dev/components/auth)                             | `src/components/auth/*` and auth views                                                  | Existing Better Auth fields, validation, pending state, and provider limits                            |
+| Shared button primitive        | beUI Pro control language via the `@beui-pro` registry                   | `src/components/ui/button.tsx`                                                          | Semantic variants and Lucide icon slots; no new button family                                          |
+
+#### Explicit exception
+
+`BorderGlow` is the only intentional non-beUI Pro visual primitive. It follows the
+previous product decision to use the [ReactBits Border Glow](https://reactbits.dev/components/border-glow)
+effect around the Agent Chat Input. It is limited to the focused composer boundary,
+uses Nebulens logo-aligned cyan/blue/orange tokens, has no content or layout responsibility,
+and must honor reduced motion. Do not use it on navigation, cards, tables, galleries,
+or generic page backgrounds. Any future third-party component requires the same explicit
+exception and a documented replacement/ownership boundary before use.
+
+#### Component review checklist
+
+Before merging a component change, verify:
+
+1. The component appears in the mapping above or has a documented beUI Pro source URL.
+2. The implementation is imported from the shared component path, not duplicated in a
+   view. A route may compose a component, but it may not fork its interaction logic.
+3. The component has stable dimensions and does not cause overflow at 1366px, 1440px,
+   1920px, 390px, or 320px widths.
+4. Keyboard navigation, focus return, accessible names, disabled/pending/error states,
+   and reduced-motion behavior are covered by tests or a documented manual check.
+5. Visual changes use semantic tokens and keep the source component's hierarchy; do not
+   add nested cards, decorative gradients, or a second component library.
+
 ### Agent Composer
 
 The prompt composer is the signature product surface. Use the installed beUI Agent Chat Input as its interaction model.
 
-- Place it at the center of the creation flow, up to `768px` wide on home and `880px` in the generate workspace.
+- Place it at the center of the creation flow, up to `768px` wide on home and `1060px` in the generate workspace.
 - Use a `20px` outer radius, muted 3px frame, card-colored inner surface, and no permanent heavy shadow.
-- Prompt text starts at `16px` and may reach `18px` on desktop.
+- Use ReactBits `BorderGlow` as the composer's only decorative focus effect. Keep a restrained logo-aligned golden orange, cyan, and royal blue mesh while the prompt editor is focused, intensify and orient it as the pointer approaches an edge, and replace pointer tracking with a static focus treatment under `prefers-reduced-motion`.
+- On Discover/Home, stream concise image-prompt examples one character at a time from the shared prompt list. Use a low-saturation white, pale blue, and soft peach gradient (`#f3f5fa`, `#c5d9f2`, `#efc9ac`) for that shortcut prompt text; keep the logo-aligned orange, cyan, and royal-blue palette reserved for `BorderGlow`. The Generate workspace uses the quiet top-left composer placeholder `描述你想生成的画面…` instead of discovery or marketing copy.
+- Keep prompt text, placeholders, and streamed prompt examples at `16px` across Discover and Generate so both composers share the same reading scale.
 - Attachments appear as compact thumbnail chips above the toolbar.
 - Model, ratio, count, and secondary controls sit in the lower toolbar or a morphing top layer.
 - Use a circular primary submit button. Disabled, submitting, streaming, and stop states must be visible.
@@ -159,6 +248,66 @@ The prompt composer is the signature product surface. Use the installed beUI Age
 - Keep close, download, reuse prompt, public state, and destructive actions reachable by keyboard.
 - Route destructive image actions through the shared `ConfirmActionModal`; use an `alertdialog`, explicit irreversible copy, an 8px radius, guarded pending state, and cancel/confirm actions that remain usable at 320px.
 - Do not use native `window.confirm` in Generate or Assets because it breaks beUI styling, focus continuity, and pending feedback.
+
+### Generation History Flyout
+
+- Keep the history entry inside the right edge of the Generate canvas. The closed state is
+  only a `28-32px` GPT-style rail with one horizontal tick per persisted generation batch.
+  Older batches sit above newer batches, the current batch tick is slightly longer and
+  brighter, and an empty history renders no ticks. The rail must not consume a main-canvas
+  grid track or change the composer width.
+- Hovering the rail for `180ms` reveals a `320-360px` absolute overlay that translates
+  from right to left over `220ms` with opacity. Keep a transparent pointer-safe corridor
+  between rail and panel; hide the rail ticks while the panel is open so the rail becomes
+  the panel instead of leaving a second control behind it. Close only after `300ms` outside
+  the combined interaction area.
+- Center the expanded panel in the available canvas above the fixed Agent Composer using
+  viewport-relative sizing; do not pin it to the canvas top or make it participate in the
+  main content grid.
+- The panel uses a translucent graphite surface, a low-contrast boundary,
+  `backdrop-filter: blur`, and a restrained floating shadow. Its bottom edge stays above
+  the fixed Agent Composer so generated results and input controls remain reachable.
+- Search matches prompt/task fallback text, model, batch id, and localized date text.
+  Results group as `今天`, `昨天`, `过去 7 天`, and `更早`; each item exposes thumbnail,
+  prompt summary, time, model, aspect ratio, and count.
+- Selecting an item restores its complete batch into the current result feed, closes the
+  overlay immediately, and marks the rail as active. A pending generation may show a
+  low-frequency brand pulse, never a progress percentage.
+- With no records, show only `暂无生成记录，完成第一次创作后将在这里显示`. Respect
+  keyboard focus, `Escape` close/focus return, and `prefers-reduced-motion` by removing
+  the pulse and spatial transitions while preserving the state change.
+
+### Creation Sessions
+
+- Treat the left sidebar session list as the GPT-style conversation history for Generate.
+  It sits directly below `新建生成`, uses the heading `最近会话`, and remains independent
+  from the right-side Generation History Flyout: the left list switches complete creation
+  sessions, while the right flyout searches generation batches inside the active session.
+- Activating `新建生成` creates a fresh session immediately, navigates to
+  `/generate?session=<id>`, clears the current composer/result context, and adds one
+  `未命名会话` row. The first valid generation prompt automatically becomes the title;
+  normalize whitespace and truncate long automatic titles to 30 characters plus an ellipsis.
+- Order sessions by most recent activity. Each session persists its id, title, creation time,
+  update time, and owned batch ids so switching sessions restores only that session's results.
+  Keep direct `/generate` compatible with older unassigned generation history and create a
+  session lazily on first submission.
+- Keep a page-lifetime result cache keyed by session id and merge it with hydrated server batches
+  during every switch. This prevents newly completed or still-transient results from disappearing
+  when users move between sessions before history hydration catches up. Returning to bare
+  `/generate` after removing the active session clears the visible feed without deleting cached or
+  persisted results owned by other sessions.
+- Rows are compact, single-line, and borderless with an `8px` radius. The active session uses a
+  persistent full-row low-contrast fill and higher-contrast title, while inactive rows remain
+  unfilled until hover or keyboard focus. Truncate long titles instead of changing sidebar width
+  or row height. Do not show a visible session count beside the heading.
+- Each row exposes one shared beUI `AnimatedDropdown` trigger using the shared ghost icon `Button`.
+  Reveal the three-dot trigger only on hover, focus, or while its menu is open. Put `重命名` and
+  `删除` inside that menu; do not reserve two visible action columns or expose a standalone trash
+  button. Menu icons use Lucide and destructive state uses the dropdown's semantic variant.
+- Rename in place without opening a modal. Focus the input immediately, accept Enter or the
+  explicit save control, keep the current name when submitted empty, and preserve keyboard
+  focus visibility. Session navigation and renaming must not reset model, ratio, count,
+  visibility, resolution, or any in-flight generation owned by that session.
 
 ### Buttons and Icon Controls
 
@@ -205,22 +354,47 @@ The home page is a product-first creation screen, not a Squarespace clone.
 - Keep the copy short: brand/product name, one concrete creation promise, and the composer placeholder. Set `Turn your idea` in Geist Variable at 460 weight with slightly tightened word spacing, and `into images` in same-scale Instrument Serif Italic. Align both on one baseline with a deliberate natural-space gap between the font treatments. Retain the restrained upward fade on entry.
 - Keep the video, navigation, headline, and Agent Composer within a full `100svh` first viewport. Preserve the video across that complete viewport; pull the creation feed upward into the open space below the composer so the first image row appears within the first viewport rather than starting near the bottom.
 - Present the six bundled works with beUI Pro `image-gallery-vertical`: four alternating motion columns on wide screens and the component's compact two-column layout below the large breakpoint. The gallery loops its local images vertically, never horizontally, and has no pagination or previous/next controls. Respect `prefers-reduced-motion` by freezing the columns.
-- Keep the home gallery unlabeled and separate it from the Agent Composer with a generous `64-96px` visual gap. Blend its moving columns into the graphite canvas with a long, symmetric multi-stop edge mask instead of a short linear fade. Use real generated images with `16px` radius, subtle borders, a restrained hover zoom, and the shared image-detail modal on primary images.
+- Keep the home gallery unlabeled and pull it upward into the lower hero space while preserving a clear visual boundary below the Agent Composer. Blend its moving columns into the graphite canvas with a long, symmetric multi-stop edge mask instead of a short linear fade. Use real generated images with `16px` radius, subtle borders, a restrained hover zoom, and the shared image-detail modal on primary images.
 
 ### Generate (`/generate`)
 
-- Use a precision-first studio: a quiet app rail, one persistent creation bar, and a continuous session feed.
+- Use a precision-first studio: a quiet app rail, one bottom-docked creation bar, and a continuous session feed. Keep the bar anchored near the lower edge for both empty and populated sessions, leaving the upper workspace open for generated results.
+- Keep the main canvas visually quiet and reserve it for generated results. When empty, show one centered low-contrast empty state with a dashed image placeholder, `开始你的创作`, and the concise supporting line `在下方输入描述，或提供参考图，让 AI 帮你生成想象中的画面`; the bottom composer alone carries the `描述你想生成的画面…` placeholder in its upper-left prompt area. Never repeat the home headline, discovery examples, gallery, or marketing explanation.
+- Treat every completed batch as one GPT-style conversation turn: a compact right-aligned prompt and metadata bubble leads into the generated media, then a quiet output-aligned batch toolbar. Do not restore the detached full-width batch header.
+- On wide screens, keep the conversation column near `960px`, but cap a single result near `360px` so the workspace remains ready for batches of up to four images. Two results use a compact two-column grid, three use three smaller columns, and four use a restrained `2 x 2` grid whose total width stays near `640px`. Pending skeletons and completed media must share the same count-aware geometry. Preserve each result's source aspect ratio and collapse to one centered column on narrow mobile screens.
 - Do not display a page title or explanatory introduction above the composer. The active workspace and current collection are communicated through navigation state and compact controls.
-- The Agent Chat Input owns prompt, attachments, model, ratio, count, quality, visibility, quota, and submit/stop behavior.
+- The Agent Chat Input owns prompt, reference upload, model, ratio, count, private-mode switch, quota, and submit/stop behavior. Keep the toolbar in one row where space allows: upload, model, ratio, count, and private mode on the left; quota/status and generation on the right.
 - Advanced options open through one Animated Dropdown or responsive side sheet. Core settings stay visible and stable.
 - Reference thumbnails live inside the composer tray. Each thumbnail exposes preview and remove; reference roles or influence appear only when the generation API can honor them.
-- Generation status reserves the result geometry immediately. Completed batches expose inspect, rerun, use as reference, reuse settings, download, visibility, and delete without requiring the detail modal.
+- Generation status reserves the exact result geometry immediately: render one placeholder per requested image using the selected aspect ratio and the same responsive grid tracks as completed results. Use a low-contrast graphite pulse that moves only between `0.45` and `0.85` opacity over `1.8s`, with a small sparkle icon and `正在生成`; never use a shimmer sweep or invented percentage. Crossfade each loaded image over roughly `220ms` with only a slight scale correction, remove all looping motion under `prefers-reduced-motion`, and replace failed placeholders with an equal-ratio retry card.
+- During pending and completed batches, keep the prompt as a compact right-aligned conversation
+  bubble. Pending results render as a larger centered work card with a restrained dot field;
+  completed results replace that card in the same reading flow without becoming a detached
+  thumbnail grid. Batch actions sit below and align to the generated media. A single-image batch
+  exposes only `复用完整设置` and `再次生成`; batch download and deletion appear only for batches
+  with two to four results. Image-level actions remain attached to their corresponding result:
+  using the image as a reference, downloading it, changing visibility, and deleting it. Clicking
+  the image itself opens detail, so do not add a duplicate `查看图片` icon action.
+- Completed prompt bubbles expose a quiet edit action on hover and keyboard focus. Editing happens
+  in place inside one continuous GPT-style surface: the text area has no nested border or background,
+  the desktop editor may widen to `640px` while remaining right-aligned, and a quiet `取消` action
+  plus high-contrast `修改` action sit at the lower right. Both actions use the shared `Button`
+  primitive (`secondary` and `primary`) at the compact `36px` control height with a `16px` gap; do not
+  recreate their borders, radii, hover, focus, or disabled states in the page stylesheet. Keep a one-line editor compact with a
+  `56px` text-area minimum and roughly `110-125px` total surface height. Grow multiline content only
+  as needed up to a `120px` text-area maximum, then scroll internally with a low-contrast thin scrollbar; never expose the native resize
+  handle. Submitting
+  reuses the batch's model, aspect ratio, count, resolution, visibility, and
+  reference IDs, then replaces that turn with equal-geometry loading placeholders. Commit the new
+  batch to the session before removing the old persisted batch, and restore the original result if
+  replacement generation is cancelled or fails.
 - Reuse and rerun restore the complete supported generation contract, not prompt text alone.
 - Image cards morph into the shared detail modal. The modal remains a continuation surface, not a dead-end preview.
 
 ### Creation Templates (`/templates`)
 
 - Use an image-led browser with a compact sticky search/filter toolbar and no explanatory hero.
+- Keep the toolbar inside the shared working plane with a visible search surface and clear separation from the image-led gallery.
 - Template data includes image, title, category, prompt, supported generation settings, favorite state, and recent-use state.
 - Each visible template owns a distinct Nebulens raster thumbnail matched to its prompt. Do not reuse third-party page imagery, source-site UI, unrelated in-image copy, logos, or watermarks.
 - Search updates immediately. Category and sort controls use Animated Dropdown or a compact segmented filter where the option count is small.
@@ -230,6 +404,7 @@ The home page is a product-first creation screen, not a Squarespace clone.
 ### History (`/history`)
 
 - Treat History as the Assets library. Use a compact sticky toolbar, collection rail, image grid/list switch, and optional selection action bar.
+- Keep the collection rail and image library on the same graphite plane; use each image's source aspect ratio for scanning instead of forcing every asset into a square crop.
 - Do not show an explanatory page heading. Search, item count, filters, view mode, and sorting provide the page context.
 - Search, sort, date, visibility, favorites, and collection filters use shared inputs and Animated Dropdown patterns.
 - Generated images are the repeated surface; do not put image cards inside a larger decorative card.
@@ -259,7 +434,7 @@ The home page is a product-first creation screen, not a Squarespace clone.
 
 - Navigation rail: `224-240px`.
 - Page inset: `32-40px`.
-- Main content max width: `1180px`; composer max width: `880px`.
+- Main content max width: `1180px`; composer max width: `1060px` on desktop.
 - Asset grids use 3-4 stable columns depending on available width.
 
 ### Tablet: `720-1179px`
@@ -330,22 +505,32 @@ Foreign or nonexistent IDs are never mutated by bulk operations. The frontend va
 
 ## Implementation Mapping
 
-| Product need                                   | Preferred implementation                                                |
-| ---------------------------------------------- | ----------------------------------------------------------------------- |
-| Prompt, attachments, quota, and generation     | `AgentChatInput` Studio Composer                                        |
+| Product need                               | Preferred implementation                                                |
+| ------------------------------------------ | ----------------------------------------------------------------------- |
+| Prompt, attachments, quota, and generation | `AgentChatInput` Studio Composer                                        |
 | Model, ratio, sort, filters, contextual action | `AnimatedDropdown` through shared select/menu wrappers                  |
-| Icon guidance                                  | `MorphicTooltip` through `IconTooltip`                                  |
-| Image/template inspection and continuation     | `MorphicCard` + `MorphicCardModal`                                      |
-| Asset list mode and bulk selection             | beUI `Data Table` adapted to image metadata                             |
-| Asset and template browsing                    | beUI `Image Galleries` patterns with product-owned actions              |
-| Authentication                                 | beUI `Auth` pattern with existing Better Auth behavior                  |
-| Empty and disconnected states                  | beUI `Empty States` adapted to concise product recovery                 |
-| User list                                      | Local responsive table using shared tokens and animated pagination menu |
+| Icon guidance                              | `MorphicTooltip` through `IconTooltip`                                  |
+| Image/template inspection and continuation | `MorphicCard` + `MorphicCardModal`                                      |
+| Asset list mode and bulk selection         | beUI `Data Table` adapted to image metadata                             |
+| Asset and template browsing                | beUI `Image Galleries` patterns with product-owned actions              |
+| Authentication                             | beUI `Auth` pattern with existing Better Auth behavior                  |
+| Empty and disconnected states              | beUI `Empty States` adapted to concise product recovery                 |
+| User list                                  | Local responsive table using shared tokens and animated pagination menu |
 | Buttons                                        | Shared `Button` primitive and icon-button contract                      |
 | Navigation                                     | Existing React Router shell restyled with semantic tokens               |
 
 ## Quality Gate
 
+- `frontend/component-provenance.json` is the machine-readable source policy. Visible controls in
+  route and domain components must compose the shared beUI/ui primitives; native control
+  implementation is limited to `src/components/premium/`, `src/components/ui/`, and exact audited
+  exceptions.
+- Run `npm run check:components` from `frontend/` after adding or changing a component. The check
+  rejects unapproved native controls, direct foundation imports outside shared roots, competing
+  component systems, browser dialogs, and undocumented consumers of external visual exceptions.
+- `BorderGlow` remains the only non-beUI visual exception and may only wrap the beUI Agent Chat
+  Input focus surface. The hidden file input in `ReferenceUploader` is the only business-component
+  native-control exception; its visible trigger remains the shared `Button`.
 - Every route uses the semantic token layer in this document.
 - Homepage presents a usable prompt-first beUI experience followed by the beUI Pro six-image vertical gallery.
 - Generate, templates, assets, authentication, and image detail preserve existing behavior and satisfy their page-pattern requirements above.

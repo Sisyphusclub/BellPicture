@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, MouseEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthModal } from '@/hooks/useAuthModal';
 
@@ -18,18 +19,33 @@ export function LoginModal() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [touched, setTouched] = useState({ username: false, password: false });
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   const dialogRef = useRef<HTMLElement>(null);
   const usernameRef = useRef<HTMLInputElement>(null);
 
   const validation = useMemo(
-    () => ({
-      username:
-        touched.username && !USERNAME_PATTERN.test(username.trim().toLowerCase())
-          ? '用户名需为 3-32 位小写字母、数字或下划线。'
-          : null,
-      password: touched.password && password.length < 8 ? '密码至少需要 8 个字符。' : null,
-    }),
-    [password, touched, username],
+    () => {
+      const normalizedUsername = username.trim().toLowerCase();
+      return {
+        username:
+          touched.username && normalizedUsername.length > 0
+            ? USERNAME_PATTERN.test(normalizedUsername)
+              ? null
+              : '仅支持 3-32 位小写字母、数字或下划线。'
+            : hasSubmitted && normalizedUsername.length === 0
+              ? '请输入用户名。'
+              : null,
+        password:
+          touched.password && password.length > 0
+            ? password.length >= 8
+              ? null
+              : '密码至少为 8 个字符。'
+            : hasSubmitted && password.length === 0
+              ? '请输入密码。'
+              : null,
+      };
+    },
+    [hasSubmitted, password, touched, username],
   );
 
   const resetAndClose = useCallback((): void => {
@@ -39,6 +55,7 @@ export function LoginModal() {
     setError(null);
     setPending(false);
     setTouched({ username: false, password: false });
+    setHasSubmitted(false);
     close();
   }, [close]);
 
@@ -83,6 +100,7 @@ export function LoginModal() {
   };
   const submit = async (event: FormEvent): Promise<void> => {
     event.preventDefault();
+    setHasSubmitted(true);
     setTouched({ username: true, password: true });
     const normalizedUsername = username.trim().toLowerCase();
     if (!USERNAME_PATTERN.test(normalizedUsername) || password.length < 8) return;
@@ -121,23 +139,26 @@ export function LoginModal() {
         aria-modal="true"
         aria-labelledby="login-title"
       >
-        <button
+        <Button
           className="icon-button dialog__close"
           type="button"
+          variant="ghost"
+          size="icon"
           aria-label="关闭账户对话框"
           disabled={pending}
           onClick={resetAndClose}
         >
           <X aria-hidden="true" />
-        </button>
+        </Button>
         <div className="auth-brand" aria-hidden="true">
           <img src="/brand/logo.png" alt="" />
           <span>Nebulens</span>
         </div>
         <h2 id="login-title">{mode === 'signin' ? '登录' : '创建账户'}</h2>
         <div className="auth-mode-tabs" role="tablist" aria-label="账户操作">
-          <button
+          <Button
             type="button"
+            variant="ghost"
             role="tab"
             aria-selected={mode === 'signin'}
             disabled={pending}
@@ -145,12 +166,14 @@ export function LoginModal() {
               setMode('signin');
               setError(null);
               setTouched({ username: false, password: false });
+              setHasSubmitted(false);
             }}
           >
             登录
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="ghost"
             role="tab"
             aria-selected={mode === 'signup'}
             disabled={pending}
@@ -158,21 +181,23 @@ export function LoginModal() {
               setMode('signup');
               setError(null);
               setTouched({ username: false, password: false });
+              setHasSubmitted(false);
             }}
           >
             注册
-          </button>
+          </Button>
         </div>
         <form className="form-stack auth-form" noValidate onSubmit={(event) => void submit(event)}>
           <label>
             <span>用户名</span>
-            <input
+            <Input
               ref={usernameRef}
               value={username}
               disabled={pending}
               autoCapitalize="none"
               autoCorrect="off"
               autoComplete="username"
+              placeholder="3-32 位小写字母、数字或下划线"
               aria-invalid={validation.username !== null}
               aria-describedby={validation.username ? 'username-error' : undefined}
               onBlur={() => setTouched((current) => ({ ...current, username: true }))}
@@ -187,24 +212,27 @@ export function LoginModal() {
           <label>
             <span>密码</span>
             <span className="password-field">
-              <input
+              <Input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 disabled={pending}
                 autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+                placeholder="至少 8 个字符"
                 aria-invalid={validation.password !== null}
                 aria-describedby={validation.password ? 'password-error' : undefined}
                 onBlur={() => setTouched((current) => ({ ...current, password: true }))}
                 onChange={(event) => setPassword(event.target.value)}
               />
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 aria-label={showPassword ? '隐藏密码' : '显示密码'}
                 disabled={pending}
                 onClick={() => setShowPassword((current) => !current)}
               >
                 {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-              </button>
+              </Button>
             </span>
             {validation.password ? (
               <small id="password-error" className="field-error">

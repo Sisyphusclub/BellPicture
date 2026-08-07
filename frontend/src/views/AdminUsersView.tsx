@@ -2,9 +2,11 @@ import { ChevronLeft, ChevronRight, Plus, RefreshCw, Save, Search, Trash2 } from
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 
+import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
 import { useToast } from '@/components/common/ToastProvider';
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/ui/icon-tooltip';
+import { Input } from '@/components/ui/input';
 import { SelectMenu } from '@/components/ui/select-menu';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,6 +33,7 @@ export function AdminUsersView() {
   const [quotaEdits, setQuotaEdits] = useState<Record<string, number>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
   const [query, setQuery] = useState('');
   const [pageSize, setPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]['value']>('10');
   const [page, setPage] = useState(1);
@@ -101,16 +104,12 @@ export function AdminUsersView() {
     }
   };
   const remove = async (target: AdminUser): Promise<void> => {
-    if (
-      target.isAdmin ||
-      target.id === currentUser?.id ||
-      !window.confirm(`确认删除用户 ${displayName(target)}？`)
-    )
-      return;
+    if (target.isAdmin || target.id === currentUser?.id) return;
     setDeletingId(target.id);
     try {
       await removeUser(target.id);
       notify('用户已删除。');
+      setDeleteTarget(null);
     } catch (caught) {
       notify(caught instanceof Error ? caught.message : '删除用户失败。', 'error');
     } finally {
@@ -158,7 +157,7 @@ export function AdminUsersView() {
             </div>
             <label>
               <span>用户名</span>
-              <input
+              <Input
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 autoComplete="username"
@@ -167,7 +166,7 @@ export function AdminUsersView() {
             </label>
             <label>
               <span>初始密码</span>
-              <input
+              <Input
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -177,7 +176,7 @@ export function AdminUsersView() {
             </label>
             <label>
               <span>每日额度</span>
-              <input
+              <Input
                 type="number"
                 min="0"
                 max="10000"
@@ -209,9 +208,14 @@ export function AdminUsersView() {
             {error ? (
               <div className="inline-error" role="alert">
                 <span>{error.message}</span>
-                <button type="button" onClick={() => void refresh()}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="compact"
+                  onClick={() => void refresh()}
+                >
                   重新加载
-                </button>
+                </Button>
               </div>
             ) : null}
             {isLoading && !users.length ? (
@@ -228,7 +232,7 @@ export function AdminUsersView() {
                   <label className="admin-search">
                     <Search aria-hidden="true" />
                     <span className="sr-only">搜索用户</span>
-                    <input
+                    <Input
                       type="search"
                       value={query}
                       onChange={(event) => setQuery(event.target.value)}
@@ -265,7 +269,7 @@ export function AdminUsersView() {
                         <div className="admin-quota" role="cell" data-label="今日额度">
                           <label htmlFor={`quota-${item.id}`}>
                             <span className="sr-only">设置 {displayName(item)} 的每日额度</span>
-                            <input
+                            <Input
                               id={`quota-${item.id}`}
                               type="number"
                               min="0"
@@ -314,7 +318,7 @@ export function AdminUsersView() {
                             disabled={
                               item.isAdmin || item.id === currentUser?.id || deletingId === item.id
                             }
-                            onClick={() => void remove(item)}
+                            onClick={() => setDeleteTarget(item)}
                           >
                             <Trash2 aria-hidden="true" />
                             {deletingId === item.id ? '删除中…' : '删除'}
@@ -326,9 +330,14 @@ export function AdminUsersView() {
                 ) : (
                   <div className="empty-state admin-table-empty">
                     <p>没有匹配“{query.trim()}”的账号。</p>
-                    <button type="button" onClick={() => setQuery('')}>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="compact"
+                      onClick={() => setQuery('')}
+                    >
                       清除搜索
-                    </button>
+                    </Button>
                   </div>
                 )}
                 <footer className="admin-pagination" aria-label="用户列表分页">
@@ -344,26 +353,30 @@ export function AdminUsersView() {
                       className="admin-page-size"
                     />
                     <IconTooltip label="上一页">
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
                         className="icon-button"
                         aria-label="上一页"
                         disabled={safePage <= 1}
                         onClick={() => setPage((current) => Math.max(1, current - 1))}
                       >
                         <ChevronLeft aria-hidden="true" />
-                      </button>
+                      </Button>
                     </IconTooltip>
                     <IconTooltip label="下一页">
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
                         className="icon-button"
                         aria-label="下一页"
                         disabled={safePage >= pageCount}
                         onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
                       >
                         <ChevronRight aria-hidden="true" />
-                      </button>
+                      </Button>
                     </IconTooltip>
                   </div>
                 </footer>
@@ -372,6 +385,16 @@ export function AdminUsersView() {
           </section>
         </>
       ) : null}
+      <ConfirmActionModal
+        id="admin-user-delete"
+        open={deleteTarget !== null}
+        title="删除用户"
+        description={deleteTarget ? `确认删除用户“${displayName(deleteTarget)}”？` : ''}
+        confirmLabel="删除用户"
+        isPending={deleteTarget !== null && deletingId === deleteTarget.id}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => (deleteTarget ? remove(deleteTarget) : undefined)}
+      />
     </section>
   );
 }

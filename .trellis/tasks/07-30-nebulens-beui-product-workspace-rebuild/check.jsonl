@@ -5,3 +5,4 @@
 {"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Review API and UI contract completeness"}
 {"file": "design.md", "reason": "Review every requested route against the beUI page patterns and quality gate"}
 {"file": ".trellis/tasks/07-30-nebulens-beui-product-workspace-rebuild/research/competitive-workflows.md", "reason": "Review implemented capabilities against verified workflow gaps"}
+{"file": ".trellis/tasks/07-30-nebulens-beui-product-workspace-rebuild/research/generate-result-ui-regression-1963.png", "reason": "Reference screenshot for same-viewport visual verification"}

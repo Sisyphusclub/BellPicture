@@ -32,6 +32,66 @@ Completely rebuild the Generate, Creation Templates, Assets, Sign In, and Sign U
 - Results expose direct actions for inspect, rerun, use as reference, reuse settings, download, visibility where supported, and delete.
 - Advanced options use progressive disclosure through beUI menus or a responsive side sheet.
 
+#### Result-state visual regression follow-up (2026-08-03)
+
+- Fix the completed-result workspace shown in
+  `research/generate-result-ui-regression-1963.png` without changing generation behavior.
+- Replace the detached full-width batch header with the established GPT-style conversation
+  hierarchy: a compact right-aligned prompt/meta bubble followed by the generated media and
+  contextual actions in one centered reading column.
+- Make a single generated image materially larger on wide desktop while preserving its source
+  aspect ratio. Keep multi-image batches balanced and centered instead of stretching or leaving an
+  orphaned first column.
+- Keep batch actions available but visually subordinate. Destructive actions must not dominate the
+  prompt or image, and image-level actions stay attached to the corresponding result.
+- Preserve the bottom-centered Agent Chat Input, right-side generation history rail, canvas dot
+  field, session switching, rerun/reuse/download/delete behavior, and reduced-motion handling.
+- Harden the left recent-session presentation so the heading, numeric count, title, and hover
+  three-dot action retain separate alignment and never collapse into consecutive raw text at wide
+  desktop widths.
+- Keep the page free of horizontal overflow and ensure the result column remains clear of the fixed
+  composer at 1366px, 1440px, and 1920px-class viewports.
+
+#### Prompt editor action normalization follow-up (2026-08-04)
+
+- Replace the prompt editor's page-local action buttons with the shared beUI-aligned `Button`
+  primitive. Use `secondary` for `取消` and `primary` for `修改`.
+- Keep a visible `16px` gap between the actions so they read as separate commands rather than a
+  segmented control. Preserve submit, cancel, disabled, focus, keyboard, and mobile behavior.
+
+#### GPT-style recent session differentiation follow-up (2026-08-04)
+
+- Match the supplied GPT Recents reference in the Generate sidebar: the active session has a
+  persistent full-row low-contrast highlight and high-contrast title; inactive sessions remain
+  borderless and unfilled until hover or focus.
+- Keep the `最近会话` heading clear and remove the visible numeric badge.
+- Replace the two per-row action columns with one shared beUI `AnimatedDropdown` trigger. Reveal
+  the three-dot trigger only on hover/focus/menu-open, with rename and delete inside the menu.
+- Preserve session creation, navigation, inline rename, delete confirmation, keyboard access,
+  truncation, ordering, and sidebar width.
+
+#### Recent session result restoration follow-up (2026-08-04)
+
+- Preserve each session's current result feed in a page-lifetime cache and merge it with server
+  history when switching sessions, so A to B to A navigation never clears newly generated results.
+- Keep pending, completed, failed, and replaced batches associated with their owning session until
+  the server-backed history can restore them.
+- Clear the visible feed when the active session is removed and navigation returns to bare
+  `/generate`, without deleting other session results.
+
+#### Component provenance quality gate follow-up (2026-08-04)
+
+- Audit every frontend route and component against the beUI Pro source contract.
+- Replace visible page-local native controls and browser dialogs with shared beUI/ui adapters while
+  preserving existing behavior, focus, disabled, responsive, and pending states.
+- Keep browser-required native controls as exact, documented exceptions only; the hidden reference
+  file input is permitted while its visible trigger remains shared.
+- Add a machine-readable provenance policy and AST check that fails on unapproved native controls,
+  direct foundation imports outside shared roots, competing component systems, browser dialogs,
+  or undocumented external-component consumers.
+- Run the provenance check before frontend lint and production build, and document the source
+  inventory, exceptions, findings, and residual risk.
+
 ### Creation templates
 
 - Replace the current six-card demo grid with an image-led template browser.
@@ -68,6 +128,21 @@ Completely rebuild the Generate, Creation Templates, Assets, Sign In, and Sign U
 - [x] No fake buttons or unsupported model features are exposed.
 - [x] No horizontal overflow, clipped text, overlap, or unstable controls at 1440px, 1024px, 768px, 390px, and 320px.
 - [x] Typecheck, lint, formatting, frontend tests, backend tests where changed, production build, browser console checks, and visual QA pass.
+- [x] At 1963 x 1282, one completed square result renders in a coherent conversation column with
+      the prompt bubble, image, and actions visibly connected rather than as a detached full-width bar.
+- [x] Single-result media is larger than the previous 340px card on wide desktop, remains fully
+      visible above the composer, and preserves its intrinsic aspect ratio.
+- [x] Recent-session heading and title/ellipsis controls remain separated and aligned with two or
+      more sessions; hover, active, focus, and inline rename states remain functional.
+- [x] Recent sessions visually distinguish the active conversation from inactive rows without a
+      count badge, and row actions use one beUI Animated Dropdown instead of parallel icon buttons.
+- [x] Repeated switching between recent sessions restores each session's own generated results even
+      before server history hydration completes.
+- [x] All visible route and domain controls use shared beUI/ui contracts; the only native-control
+      exception is the exact hidden reference file input required by the browser.
+- [x] `npm run check:components` passes and runs before frontend lint and build.
+- [x] Result-state screenshots pass at 1366px, 1440px, and 1963px with no overlap, clipping, or
+      horizontal overflow; route tests, lint, typecheck, formatting, and production build pass.
 
 ## Independent Check Evidence
 
@@ -78,6 +153,7 @@ Completely rebuild the Generate, Creation Templates, Assets, Sign In, and Sign U
 - Gallery follow-up: the standalone Public Gallery section and its hydration request are absent; the home hero is followed by a static six-image `今日创作` waterfall with 3/2/1 responsive columns and retained detail inspection.
 - Destructive-action follow-up: Generate single/batch deletion and Assets single/bulk deletion use the shared beUI Morphic confirmation alert dialog. Integration and browser QA cover cancel, confirm, failure, retry, pending guards, focus containment/return, Escape, backdrop close, and 320px layout.
 - Template asset follow-up: all 12 visible templates now use distinct Nebulens-owned GPT Image 2 WebP assets; browser QA found 12 unique URLs, zero broken images, no overflow at 1447px/394px, and no third-party source text, logos, or watermarks.
+- Result-state follow-up: independent Trellis review plus in-app browser measurement confirmed the GPT-style prompt/media/action hierarchy, 520px wide-desktop square result, 36px batch action targets, intrinsic 16:9 preview ratio (422 x 241), separated recent-session controls, zero horizontal overflow, and 24px composer clearance at 1366 x 768 and 1440 x 900.
 
 ## Definition of Done
 

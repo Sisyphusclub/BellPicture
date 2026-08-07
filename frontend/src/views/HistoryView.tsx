@@ -20,6 +20,7 @@ import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
 import { ImageGrid } from '@/components/gallery/ImageGrid';
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/ui/icon-tooltip';
+import { Input } from '@/components/ui/input';
 import { SelectMenu } from '@/components/ui/select-menu';
 import { useAuth } from '@/hooks/useAuth';
 import { openAuthModal } from '@/hooks/useAuthModal';
@@ -268,7 +269,7 @@ export function HistoryView() {
     filtered.length > 0 && filtered.every((entry) => selectedIds.has(entry.record.id));
 
   return (
-    <section className="workspace-page assets-page" aria-label="个人资产">
+    <section className="workspace-page assets-page" data-view="assets" aria-label="个人资产">
       {authLoading ? (
         <div className="asset-auth-loading" role="status" aria-label="正在确认登录状态">
           <div className="asset-auth-loading__toolbar" aria-hidden="true">
@@ -301,7 +302,7 @@ export function HistoryView() {
             <label className="search-field asset-search">
               <Search aria-hidden="true" />
               <span className="sr-only">搜索资产</span>
-              <input
+              <Input
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -330,33 +331,39 @@ export function HistoryView() {
               onValueChange={setSort}
             />
             <IconTooltip label="仅显示收藏资产">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 className={cn('icon-button', favoritesOnly && 'is-active')}
                 aria-label="仅显示收藏资产"
                 aria-pressed={favoritesOnly}
                 onClick={() => setFavoritesOnly((current) => !current)}
               >
                 <Heart aria-hidden="true" />
-              </button>
+              </Button>
             </IconTooltip>
             <div className="view-switch" role="group" aria-label="资产视图">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 aria-label="网格视图"
                 aria-pressed={view === 'grid'}
                 onClick={() => setView('grid')}
               >
                 <Grid2X2 aria-hidden="true" />
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 aria-label="列表视图"
                 aria-pressed={view === 'list'}
                 onClick={() => setView('list')}
               >
                 <List aria-hidden="true" />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -366,23 +373,31 @@ export function HistoryView() {
               { id: 'none', label: '未分类' },
               ...collections.map((item) => ({ id: item, label: item })),
             ].map((item) => (
-              <button
+              <Button
                 key={item.id}
                 type="button"
+                variant="ghost"
+                size="compact"
                 aria-pressed={collection === item.id}
                 onClick={() => setCollection(item.id)}
               >
                 {item.label}
-              </button>
+              </Button>
             ))}
           </nav>
 
           {selectedIds.size ? (
             <div className="selection-bar" role="toolbar" aria-label="已选资产操作">
-              <button type="button" aria-pressed={allFilteredSelected} onClick={selectAll}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="compact"
+                aria-pressed={allFilteredSelected}
+                onClick={selectAll}
+              >
                 <Check aria-hidden="true" />
                 {allFilteredSelected ? '取消全选' : '全选结果'}
-              </button>
+              </Button>
               <strong>{selectedIds.size} 项</strong>
               <Button
                 type="button"
@@ -410,31 +425,40 @@ export function HistoryView() {
                 <Trash2 aria-hidden="true" />
                 删除
               </Button>
-              <button type="button" onClick={() => setSelectedIds(new Set())}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="compact"
+                onClick={() => setSelectedIds(new Set())}
+              >
                 取消
-              </button>
+              </Button>
             </div>
           ) : (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="compact"
               className="select-all-entry"
               disabled={!filtered.length}
               onClick={selectAll}
             >
               选择当前结果
-            </button>
+            </Button>
           )}
 
           {history.hydrateError ? (
             <div className="inline-error" role="alert">
               <span>{history.hydrateError.message}</span>
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="compact"
                 disabled={history.isHydrating}
                 onClick={() => void history.refresh()}
               >
                 {history.isHydrating ? '重试中' : '重新加载'}
-              </button>
+              </Button>
             </div>
           ) : null}
 
@@ -485,8 +509,10 @@ export function HistoryView() {
                 {filtered.map((entry) => (
                   <div className="asset-list__row" role="row" key={entry.record.id}>
                     <span role="cell">
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
                         className="asset-row-select"
                         aria-label={
                           selectedIds.has(entry.record.id)
@@ -497,17 +523,18 @@ export function HistoryView() {
                         onClick={() => toggleSelection(entry)}
                       >
                         {selectedIds.has(entry.record.id) ? <Check aria-hidden="true" /> : null}
-                      </button>
+                      </Button>
                     </span>
                     <span role="cell">
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
                         className="asset-list__preview"
                         aria-label={`查看图片：${entry.record.prompt}`}
                         onClick={() => setSelected(entry)}
                       >
                         <img src={entry.imageUrl} alt="" loading="lazy" />
-                      </button>
+                      </Button>
                     </span>
                     <span role="cell" className="asset-list__prompt">
                       {entry.record.prompt}
@@ -531,8 +558,10 @@ export function HistoryView() {
                     <span role="cell">{formatDateTime(entry.record.createdAt)}</span>
                     <span role="cell" className="asset-list__actions">
                       <IconTooltip label={entry.record.isFavorite ? '取消收藏' : '收藏'}>
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon"
                           aria-label={entry.record.isFavorite ? '取消收藏' : '收藏'}
                           onClick={() =>
                             void updateEntry(entry, { isFavorite: !entry.record.isFavorite })
@@ -542,25 +571,35 @@ export function HistoryView() {
                             aria-hidden="true"
                             fill={entry.record.isFavorite ? 'currentColor' : 'none'}
                           />
-                        </button>
+                        </Button>
                       </IconTooltip>
                       <IconTooltip label="复制提示词">
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon"
                           aria-label="复制提示词"
                           onClick={() => void copyPrompt(entry)}
                         >
                           <Copy aria-hidden="true" />
-                        </button>
+                        </Button>
                       </IconTooltip>
                       <IconTooltip label="复用设置">
-                        <button type="button" aria-label="复用设置" onClick={() => reuse(entry)}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label="复用设置"
+                          onClick={() => reuse(entry)}
+                        >
                           <RefreshCw aria-hidden="true" />
-                        </button>
+                        </Button>
                       </IconTooltip>
                       <IconTooltip label={entry.record.isPublic ? '设为私有' : '设为公开'}>
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon"
                           aria-label={entry.record.isPublic ? '设为私有' : '设为公开'}
                           onClick={() =>
                             void updateEntry(entry, { isPublic: !entry.record.isPublic })
@@ -571,25 +610,29 @@ export function HistoryView() {
                           ) : (
                             <Lock aria-hidden="true" />
                           )}
-                        </button>
+                        </Button>
                       </IconTooltip>
                       <IconTooltip label="下载图片">
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon"
                           aria-label="下载图片"
                           onClick={() => void downloadUrl(entry.imageUrl, entry.record.id)}
                         >
                           <Download aria-hidden="true" />
-                        </button>
+                        </Button>
                       </IconTooltip>
                       <IconTooltip label="删除图片">
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon"
                           aria-label="删除图片"
                           onClick={() => setDeleteTarget({ kind: 'entry', entry })}
                         >
                           <Trash2 aria-hidden="true" />
-                        </button>
+                        </Button>
                       </IconTooltip>
                     </span>
                   </div>

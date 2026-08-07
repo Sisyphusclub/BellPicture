@@ -57,6 +57,7 @@ export interface AgentChatInputProps {
   onStop?: () => void;
   status?: AgentChatInputStatus;
   placeholder?: string;
+  streamingPlaceholders?: readonly string[];
   ariaLabel?: string;
   submitLabel?: string;
   disabled?: boolean;

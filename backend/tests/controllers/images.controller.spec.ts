@@ -609,7 +609,7 @@ describe('POST /api/images/generate', () => {
     const { provider } = fakeProvider();
     const app = buildApp(provider);
 
-    const res = await request(app).post('/api/images/generate').send({ prompt: 'p', count: 3 });
+    const res = await request(app).post('/api/images/generate').send({ prompt: 'p', count: 5 });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('BAD_REQUEST');
   });
@@ -680,9 +680,9 @@ describe('POST /api/images/generate', () => {
     const userId = `cap-${randomUUID()}`;
     const app = buildApp(provider, stubAuth(userId));
 
-    // DAILY_USER_QUOTA defaults to 20, MAX_COUNT=2 per request → 10 generate calls to drain.
-    for (let i = 0; i < 10; i += 1) {
-      const res = await request(app).post('/api/images/generate').send({ prompt: 'p', count: 2 });
+    // DAILY_USER_QUOTA defaults to 20, MAX_COUNT=4 per request -> 5 generate calls to drain.
+    for (let i = 0; i < 5; i += 1) {
+      const res = await request(app).post('/api/images/generate').send({ prompt: 'p', count: 4 });
       expect(res.status).toBe(200);
     }
 

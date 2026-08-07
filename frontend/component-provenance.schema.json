@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nebulens.local/schemas/component-provenance.schema.json",
+  "title": "Nebulens component provenance policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "authoritativeSource",
+    "nativeImplementationRoots",
+    "nativeControlExceptions",
+    "foundationImports",
+    "forbiddenComponentPackages",
+    "externalVisualExceptions"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 1 },
+    "authoritativeSource": { "$ref": "#/$defs/source" },
+    "nativeImplementationRoots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["root", "source", "rationale"],
+        "properties": {
+          "root": { "type": "string" },
+          "source": { "type": "string" },
+          "rationale": { "type": "string" }
+        }
+      }
+    },
+    "nativeControlExceptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["file", "tag", "count", "rationale"],
+        "properties": {
+          "file": { "type": "string" },
+          "tag": { "enum": ["button", "input", "select", "textarea"] },
+          "count": { "type": "integer", "minimum": 1 },
+          "requiredAttributes": { "type": "object" },
+          "rationale": { "type": "string" }
+        }
+      }
+    },
+    "foundationImports": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["prefix", "allowedRoots", "rationale"],
+        "properties": {
+          "prefix": { "type": "string" },
+          "allowedRoots": { "type": "array", "items": { "type": "string" } },
+          "rationale": { "type": "string" }
+        }
+      }
+    },
+    "forbiddenComponentPackages": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "externalVisualExceptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["module", "file", "source", "allowedConsumers", "rationale"],
+        "properties": {
+          "module": { "type": "string" },
+          "file": { "type": "string" },
+          "source": { "type": "string" },
+          "allowedConsumers": { "type": "array", "items": { "type": "string" } },
+          "rationale": { "type": "string" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "catalog", "registry"],
+      "properties": {
+        "name": { "type": "string" },
+        "catalog": { "type": "string", "format": "uri" },
+        "registry": { "type": "string" }
+      }
+    }
+  }
+}

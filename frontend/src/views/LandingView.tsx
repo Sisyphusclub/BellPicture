@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
@@ -10,6 +10,7 @@ import {
   type GalleryImage,
 } from '@/components/premium/image-galleries/image-gallery-vertical';
 import { NavbarExpand } from '@/components/premium/navbar-expand/navbar-expand';
+import { IMAGE_PROMPT_EXAMPLES } from '@/data/imagePromptExamples';
 import { useAuth } from '@/hooks/useAuth';
 import { openAuthModal } from '@/hooks/useAuthModal';
 import { useImageQuota } from '@/hooks/useImageQuota';
@@ -19,6 +20,7 @@ import { DEFAULT_ASPECT_CHOICE, DEFAULT_COUNT } from '@/types/image';
 
 const HERO_VIDEO =
   'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260217_030345_246c0224-10a4-422c-b324-070b7c0eceda.mp4';
+const LANDING_SCROLL_KEY = 'nebulens:landing-scroll';
 const LANDING_MODELS = [{ id: 'gpt-image-2', label: 'gpt-image-2' }] as const;
 const LANDING_REASONING = [
   { id: 'standard', label: '标准', description: '快速完成日常创作' },
@@ -133,6 +135,22 @@ export function LandingView() {
   const [isPublic, setIsPublic] = useState(false);
   const [selected, setSelected] = useState<HistoryEntry | null>(null);
 
+  useEffect(() => {
+    const savedScroll = Number(sessionStorage.getItem(LANDING_SCROLL_KEY));
+    if (Number.isFinite(savedScroll) && savedScroll > 0) {
+      window.setTimeout(() => window.scrollTo({ top: savedScroll, behavior: 'auto' }), 0);
+    }
+
+    const saveScroll = () => {
+      sessionStorage.setItem(LANDING_SCROLL_KEY, String(window.scrollY));
+    };
+    window.addEventListener('pagehide', saveScroll);
+    return () => {
+      saveScroll();
+      window.removeEventListener('pagehide', saveScroll);
+    };
+  }, []);
+
   const copyPrompt = async (entry: HistoryEntry): Promise<void> => {
     try {
       await navigator.clipboard.writeText(entry.record.prompt);
@@ -156,6 +174,7 @@ export function LandingView() {
   const submitPrompt = (value: string): void => {
     const trimmed = value.trim();
     if (!trimmed) return;
+    sessionStorage.setItem(LANDING_SCROLL_KEY, String(window.scrollY));
     void navigate(
       `/generate?${new URLSearchParams({
         prompt: trimmed,
@@ -163,6 +182,7 @@ export function LandingView() {
         count: String(count),
         isPublic: String(isPublic),
       }).toString()}`,
+      { state: { autoGenerate: true } },
     );
   };
 
@@ -213,6 +233,7 @@ export function LandingView() {
             defaultReasoning="standard"
             speedModes={LANDING_SPEED}
             defaultSpeed="balanced"
+            streamingPlaceholders={IMAGE_PROMPT_EXAMPLES}
             placeholder="描述你想生成的画面..."
             ariaLabel="首页创作提示词"
             submitLabel="带着提示词开始创作"

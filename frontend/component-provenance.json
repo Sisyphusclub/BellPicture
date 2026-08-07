@@ -1,0 +1,62 @@
+{
+  "$schema": "./component-provenance.schema.json",
+  "version": 1,
+  "authoritativeSource": {
+    "name": "beUI Pro",
+    "catalog": "https://pro.beui.dev/components",
+    "registry": "@beui-pro"
+  },
+  "nativeImplementationRoots": [
+    {
+      "root": "src/components/premium",
+      "source": "beUI Pro copied-source components",
+      "rationale": "Registry components own their native semantics and interaction internals."
+    },
+    {
+      "root": "src/components/ui",
+      "source": "Nebulens semantic adapters",
+      "rationale": "Shared primitives are the only local boundary allowed to implement native controls."
+    }
+  ],
+  "nativeControlExceptions": [
+    {
+      "file": "src/components/upload/ReferenceUploader.tsx",
+      "tag": "input",
+      "count": 1,
+      "requiredAttributes": {
+        "type": "file",
+        "hidden": true
+      },
+      "rationale": "A hidden native file input is required to open the browser file picker; the visible trigger uses the shared Button primitive."
+    }
+  ],
+  "foundationImports": [
+    {
+      "prefix": "@radix-ui/",
+      "allowedRoots": ["src/components/premium", "src/components/ui"],
+      "rationale": "Radix is an implementation foundation for shared beUI adapters, not a route-level component API."
+    }
+  ],
+  "forbiddenComponentPackages": [
+    "@chakra-ui/",
+    "@headlessui/",
+    "@mantine/",
+    "@mui/",
+    "antd",
+    "element-plus",
+    "primereact",
+    "react-bootstrap",
+    "semantic-ui-react"
+  ],
+  "externalVisualExceptions": [
+    {
+      "module": "@/components/BorderGlow",
+      "file": "src/components/BorderGlow.tsx",
+      "source": "ReactBits Border Glow",
+      "allowedConsumers": [
+        "src/components/premium/agent-chat-input/agent-chat-input.tsx"
+      ],
+      "rationale": "Documented focus-only composer effect; it does not replace a semantic beUI control."
+    }
+  ]
+}

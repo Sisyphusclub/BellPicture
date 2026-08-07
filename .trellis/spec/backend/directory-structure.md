@@ -513,7 +513,7 @@ if (sizing === undefined) {
   per-user daily quota. It is an API-key surface, separate from `/api/images/*`.
 - Route handlers reuse `generateImage()`; controllers must not duplicate
   provider HTTP calls.
-- `n` maps to `count`; default `1`; valid range is `1..MAX_COUNT` (currently 2).
+- `n` maps to `count`; default `1`; valid range is `1..MAX_COUNT` (currently 4).
   Reject out-of-range values instead of clamping.
 - `size` maps exactly to existing aspect ratios:
   `auto|1024x1024 -> 1:1`, `1536x1024 -> 3:2`, `1024x1536 -> 2:3`,

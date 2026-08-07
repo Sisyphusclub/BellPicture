@@ -7,3 +7,4 @@
 {"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Shared primitive and workflow reuse decisions"}
 {"file": "design.md", "reason": "Nebulens beUI design system and page interaction source of truth"}
 {"file": ".trellis/tasks/07-30-nebulens-beui-product-workspace-rebuild/research/competitive-workflows.md", "reason": "Verified competitor patterns, product gaps, and beUI mapping"}
+{"file": ".trellis/tasks/07-30-nebulens-beui-product-workspace-rebuild/research/generate-result-ui-regression-1963.png", "reason": "Wide-desktop visual regression evidence for result feed and recent sessions"}

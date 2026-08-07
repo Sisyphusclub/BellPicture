@@ -15,6 +15,8 @@
 - Do not mirror props in state unless the component deliberately owns a draft.
 
 ```tsx
+import { Button } from "@/components/ui/button";
+
 interface ImageGridProps {
   records: readonly ImageRecord[];
   onOpen: (record: ImageRecord) => void;
@@ -22,9 +24,14 @@ interface ImageGridProps {
 
 export function ImageGrid({ records, onOpen }: ImageGridProps) {
   return records.map((record) => (
-    <button key={record.id} type="button" onClick={() => onOpen(record)}>
+    <Button
+      key={record.id}
+      type="button"
+      variant="ghost"
+      onClick={() => onOpen(record)}
+    >
       <img src={toDisplayImageUrl(record.outputUrl)} alt={record.prompt} />
-    </button>
+    </Button>
   ));
 }
 ```
@@ -59,6 +66,11 @@ by this repository, not a runtime black box.
   and workbench screens.
 - Keep card radii at 8px or less unless a source primitive requires otherwise.
 - Do not add decorative gradients, orbs, fake artwork, or handcrafted SVG icons.
+- Grouped toolbar controls use a stable `40px` outer height. When a grid or
+  segmented control contains smaller icon buttons, set `align-items: center`
+  on the container and `place-items: center` on each item explicitly; CSS Grid's
+  default stretch alignment can leave `32px` buttons visibly above the text
+  baseline.
 
 ### Image-led Library Assets
 
@@ -104,6 +116,11 @@ const templates = [
 - Autoplay surfaces must pause on hover and keyboard focus.
 - Honor `prefers-reduced-motion`; disable autoplay video and remove nonessential
   transitions for reduced-motion users.
+- Generate-result skeletons must preserve the requested count, aspect ratio, and
+  final responsive grid tracks. Use a low-contrast 1.8s opacity pulse with no
+  shimmer or fake percentage, disable its loop for reduced motion, reveal loaded
+  images with a roughly 220ms opacity/scale transition, and replace failures with
+  an equal-ratio retry card.
 - Keep carousel dimensions stable while slides move. The landing carousel uses
   five virtual slots, three visible positions, 5-second autoplay, and an 800ms
   transition.
@@ -134,6 +151,11 @@ const templates = [
 
 ## Forbidden Patterns
 
+- Raw visible `<button>`, `<input>`, `<textarea>`, or `<select>` elements outside
+  `src/components/ui/` and `src/components/premium/`. Browser-required hidden controls must be
+  recorded as exact exceptions in `frontend/component-provenance.json`.
+- Direct Radix imports outside shared component roots, imports from competing component systems,
+  and `window.confirm` / `window.alert` / `window.prompt`.
 - Anonymous default-export components.
 - Fetch calls or response casting inside visual components.
 - Click handlers on non-interactive `div` elements.

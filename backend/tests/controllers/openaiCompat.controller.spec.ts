@@ -159,27 +159,27 @@ describe('GET /v1/models', () => {
 });
 
 describe('POST /v1/images/generations', () => {
-  it('generates two b64_json images with one provider call', async () => {
+  it('generates four b64_json images with one provider call', async () => {
     const harness = fakeProvider();
     const app = buildApp(harness.provider);
 
     const res = await request(app)
       .post('/v1/images/generations')
       .set('Authorization', AUTH_HEADER)
-      .send({ prompt: 'cream canvas', model: 'gpt-5-mini', n: 2, size: '1536x1024' });
+      .send({ prompt: 'cream canvas', model: 'gpt-5-mini', n: 4, size: '1536x1024' });
 
     expect(res.status).toBe(200);
     expect(typeof res.body.created).toBe('number');
-    expect(res.body.data).toHaveLength(2);
+    expect(res.body.data).toHaveLength(4);
     expectBase64Png(res.body.data[0].b64_json);
-    expectBase64Png(res.body.data[1].b64_json);
+    expectBase64Png(res.body.data[3].b64_json);
     expect(res.body.data[0].url).toBeUndefined();
     expect(harness.generate).toHaveBeenCalledOnce();
     const call = harness.generate.mock.calls[0]?.[0] as GenerateInput | undefined;
     expect(call).toMatchObject({
       prompt: 'cream canvas',
       model: 'gpt-5-mini',
-      count: 2,
+      count: 4,
       aspectRatio: '3:2',
     });
   });
@@ -243,7 +243,7 @@ describe('POST /v1/images/generations', () => {
     const res = await request(buildApp(harness.provider))
       .post('/v1/images/generations')
       .set('Authorization', AUTH_HEADER)
-      .send({ prompt: 'too many', n: 3 });
+      .send({ prompt: 'too many', n: 5 });
 
     expectBadRequest(res);
     expect(harness.generate).not.toHaveBeenCalled();
@@ -380,7 +380,7 @@ describe('POST /v1/images/edits', () => {
       .post('/v1/images/edits')
       .set('Authorization', AUTH_HEADER)
       .field('prompt', 'bad count')
-      .field('n', '3')
+      .field('n', '5')
       .attach('image', pngBytes(7), { filename: 'ref.png', contentType: 'image/png' });
 
     expectBadRequest(nRes);

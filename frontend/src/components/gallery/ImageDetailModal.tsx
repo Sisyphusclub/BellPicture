@@ -64,14 +64,16 @@ export function ImageDetailModal({
         aria-labelledby="image-detail-title"
       >
         <IconTooltip label="关闭图片详情" side="left">
-          <button
+          <Button
             className="icon-button dialog__close"
             type="button"
+            variant="ghost"
+            size="icon"
             aria-label="关闭图片详情"
             onClick={onClose}
           >
             <X aria-hidden="true" />
-          </button>
+          </Button>
         </IconTooltip>
         <div className="image-detail__media">
           <img src={entry.imageUrl} alt={entry.record.prompt || '生成图片'} />

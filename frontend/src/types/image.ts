@@ -36,7 +36,7 @@ export const IMAGE_RESOLUTION_LABELS: Record<ImageResolution, string> = {
 export const DEFAULT_IMAGE_RESOLUTION: ImageResolution = 'standard';
 export const DEFAULT_COUNT = 1;
 export const MIN_COUNT = 1;
-export const MAX_COUNT = 2;
+export const MAX_COUNT = 4;
 export const MAX_REFERENCE_IMAGES = 4;
 
 export interface ImageRecord {

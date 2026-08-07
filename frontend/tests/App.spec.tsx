@@ -3,6 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const generation = vi.hoisted(() => ({
+  generate: vi.fn(),
+  cancel: vi.fn(),
+}));
+
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
     user: { id: 'admin', email: 'admin@example.com', username: 'admin', isAdmin: true },
@@ -23,6 +28,16 @@ vi.mock('@/hooks/useImageQuota', () => ({
     isLoading: false,
     error: null,
     refresh: vi.fn(),
+  }),
+}));
+
+vi.mock('@/hooks/useImageGeneration', () => ({
+  useImageGeneration: () => ({
+    isLoading: false,
+    error: null,
+    statusMessage: '准备生成',
+    generate: generation.generate,
+    cancel: generation.cancel,
   }),
 }));
 
@@ -56,6 +71,7 @@ vi.mock('@/hooks/useAdminUsers', () => ({
 
 import { App } from '@/App';
 import { ToastProvider } from '@/components/common/ToastProvider';
+import { resetGenerationSessionsForTests } from '@/hooks/useGenerationSessions';
 
 function renderRoute(path: string) {
   return render(
@@ -67,8 +83,44 @@ function renderRoute(path: string) {
   );
 }
 
+// Radix menu teardown and Motion modal exit keep React's jsdom act queue alive indefinitely.
+async function clickDuringMotionHandoff(element: HTMLElement): Promise<void> {
+  Reflect.set(globalThis, 'IS_REACT_ACT_ENVIRONMENT', false);
+  try {
+    element.click();
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+  } finally {
+    Reflect.set(globalThis, 'IS_REACT_ACT_ENVIRONMENT', true);
+  }
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
+  resetGenerationSessionsForTests();
+  generation.generate.mockResolvedValue({
+    batchId: 'landing-batch',
+    aspectRatio: '16:9',
+    generationMode: 'text-to-image',
+    entries: [
+      {
+        record: {
+          id: 'landing-result.png',
+          batchId: 'landing-batch',
+          createdAt: '2026-08-03T08:00:00.000Z',
+          prompt: '雨夜的未来城市',
+          model: 'gpt-image-2',
+          aspectRatio: '16:9',
+          width: 1792,
+          height: 1024,
+          count: 2,
+          resolution: 'standard',
+          isPublic: true,
+          isFavorite: false,
+        },
+        imageUrl: '/landing-result.png',
+      },
+    ],
+  });
 });
 
 describe('React application routes', () => {
@@ -154,20 +206,21 @@ describe('React application routes', () => {
     ).toBeInTheDocument();
   });
 
-  it('activates the official border beam while the homepage prompt is focused', async () => {
+  it('activates the ReactBits border glow while the homepage prompt is focused', async () => {
     const user = userEvent.setup();
     const { container } = renderRoute('/');
 
     await user.click(screen.getByRole('textbox', { name: '首页创作提示词' }));
 
     await waitFor(() => {
-      expect(container.querySelector('.agent-chat-input__border-beam')).toHaveAttribute(
-        'data-active',
+      expect(container.querySelector('.border-glow-card')).toHaveAttribute(
+        'data-glow-active',
+        'true',
       );
     });
   });
 
-  it('carries a homepage prompt into the generation workspace', async () => {
+  it('carries a homepage prompt into the generation workspace and starts generation', async () => {
     const user = userEvent.setup();
     renderRoute('/');
 
@@ -179,10 +232,21 @@ describe('React application routes', () => {
     await user.click(screen.getByRole('button', { name: '带着提示词开始创作' }));
 
     expect(screen.getByRole('region', { name: '图像生成工作区' })).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: '图像提示词' })).toHaveTextContent('雨夜的未来城市');
+    await waitFor(() => expect(generation.generate).toHaveBeenCalledTimes(1));
+    expect(generation.generate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: '雨夜的未来城市',
+        aspectRatio: '16:9',
+        count: 2,
+        isPublic: true,
+      }),
+    );
+    expect(screen.getByRole('region', { name: '本次创作结果' })).toHaveTextContent(
+      '雨夜的未来城市',
+    );
     expect(screen.getByRole('button', { name: '选择画面比例' })).toHaveTextContent('16:9');
     expect(screen.getByRole('status', { name: '2 张' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '高级生成设置' })).toHaveTextContent('公开');
+    expect(screen.getByRole('switch', { name: '私有模式' })).not.toBeChecked();
   });
 
   it('opens and closes the expanding pill mobile navigation', async () => {
@@ -220,9 +284,153 @@ describe('React application routes', () => {
 
   it('keeps the generation route and its operational controls', () => {
     renderRoute('/generate');
-    expect(screen.getByRole('region', { name: '图像生成工作区' })).toBeInTheDocument();
-    expect(screen.getByLabelText('选择画面比例')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /生成图片/ })).toBeInTheDocument();
+    const workspace = screen.getByRole('region', { name: '图像生成工作区' });
+    const generate = within(workspace);
+    expect(generate.getByLabelText('当前模型 gpt-image-2')).toHaveTextContent('gpt-image-2');
+    expect(generate.getByLabelText('今日生成额度')).toBeInTheDocument();
+    expect(generate.getByLabelText('选择画面比例')).toBeInTheDocument();
+    expect(generate.getByRole('button', { name: /生成图片/ })).toBeInTheDocument();
+    expect(workspace).toHaveClass('is-empty');
+    expect(generate.queryByRole('region', { name: '本次创作结果' })).not.toBeInTheDocument();
+  });
+
+  it('creates a generation session and supports inline renaming from the sidebar', async () => {
+    const user = userEvent.setup();
+    const { container } = renderRoute('/generate');
+
+    expect(screen.getByRole('region', { name: '最近会话' })).toHaveTextContent(
+      '生成后会自动记录在这里',
+    );
+    await user.click(screen.getByRole('link', { name: '新建生成' }));
+
+    const untitledSession = screen.getByRole('link', { name: '未命名会话' });
+    expect(untitledSession).toHaveAttribute('href', expect.stringMatching(/^\/generate\?session=/));
+    expect(container.querySelector('.sidebar-session')).toHaveClass('is-active');
+
+    await user.click(screen.getByRole('button', { name: '会话选项：未命名会话' }));
+    await user.click(screen.getByRole('menuitem', { name: '重命名' }));
+    await user.type(screen.getByRole('textbox', { name: '会话名称' }), '霓虹城市方案');
+    await user.keyboard('{Enter}');
+
+    expect(screen.getByRole('link', { name: '霓虹城市方案' })).toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: '会话名称' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('link', { name: '新建生成' }));
+    expect(screen.getByRole('link', { name: '霓虹城市方案' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /会话选项/ })).toHaveLength(2);
+  });
+
+  it('keeps generated results when switching between recent sessions repeatedly', async () => {
+    generation.generate
+      .mockResolvedValueOnce({
+        batchId: 'session-a-batch',
+        aspectRatio: '1:1',
+        generationMode: 'text-to-image',
+        entries: [
+          {
+            record: {
+              id: 'session-a.png',
+              batchId: 'session-a-batch',
+              createdAt: '2026-08-04T09:00:00.000Z',
+              prompt: '橙色机械城市',
+              model: 'gpt-image-2',
+              aspectRatio: '1:1',
+              width: 1024,
+              height: 1024,
+              count: 1,
+              resolution: 'standard',
+              isPublic: false,
+              isFavorite: false,
+            },
+            imageUrl: '/session-a.png',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        batchId: 'session-b-batch',
+        aspectRatio: '1:1',
+        generationMode: 'text-to-image',
+        entries: [
+          {
+            record: {
+              id: 'session-b.png',
+              batchId: 'session-b-batch',
+              createdAt: '2026-08-04T09:01:00.000Z',
+              prompt: '蓝色玻璃森林',
+              model: 'gpt-image-2',
+              aspectRatio: '1:1',
+              width: 1024,
+              height: 1024,
+              count: 1,
+              resolution: 'standard',
+              isPublic: false,
+              isFavorite: false,
+            },
+            imageUrl: '/session-b.png',
+          },
+        ],
+      });
+    const user = userEvent.setup();
+    renderRoute('/generate');
+
+    await user.click(screen.getByRole('link', { name: '新建生成' }));
+    await user.type(screen.getByRole('textbox', { name: '图像提示词' }), '橙色机械城市');
+    await user.click(screen.getByRole('button', { name: '生成图片' }));
+    expect(await screen.findByRole('button', { name: '查看图片：橙色机械城市' })).toBeVisible();
+
+    await user.click(screen.getByRole('link', { name: '新建生成' }));
+    await user.type(screen.getByRole('textbox', { name: '图像提示词' }), '蓝色玻璃森林');
+    await user.click(screen.getByRole('button', { name: '生成图片' }));
+    expect(await screen.findByRole('button', { name: '查看图片：蓝色玻璃森林' })).toBeVisible();
+
+    await user.click(screen.getByRole('link', { name: '橙色机械城市' }));
+    expect(await screen.findByRole('button', { name: '查看图片：橙色机械城市' })).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: '查看图片：蓝色玻璃森林' }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('link', { name: '蓝色玻璃森林' }));
+    expect(await screen.findByRole('button', { name: '查看图片：蓝色玻璃森林' })).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: '查看图片：橙色机械城市' }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('link', { name: '橙色机械城市' }));
+    expect(await screen.findByRole('button', { name: '查看图片：橙色机械城市' })).toBeVisible();
+  });
+
+  it('confirms deleting the active generation session without deleting image assets', async () => {
+    const user = userEvent.setup();
+    renderRoute('/generate');
+
+    await user.click(screen.getByRole('link', { name: '新建生成' }));
+    await user.click(screen.getByRole('button', { name: '会话选项：未命名会话' }));
+    await user.click(screen.getByRole('menuitem', { name: '删除' }));
+
+    expect(screen.getByRole('alertdialog', { name: '删除历史会话' })).toHaveTextContent(
+      '已生成的图片资产会保留',
+    );
+    await clickDuringMotionHandoff(screen.getByRole('button', { name: '删除会话' }));
+
+    expect(screen.getByRole('region', { name: '最近会话' })).toHaveTextContent(
+      '生成后会自动记录在这里',
+    );
+    expect(screen.queryByRole('link', { name: '未命名会话' })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '图像生成工作区' })).toHaveClass('is-empty');
+  });
+
+  it('automatically names a new session from its first generation prompt', async () => {
+    const user = userEvent.setup();
+    renderRoute('/generate');
+
+    await user.click(screen.getByRole('link', { name: '新建生成' }));
+    await user.type(screen.getByRole('textbox', { name: '图像提示词' }), '薄雾中的未来海港');
+    await user.click(screen.getByRole('button', { name: '生成图片' }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: '薄雾中的未来海港' })).toBeInTheDocument(),
+    );
+    expect(generation.generate).toHaveBeenCalledTimes(1);
   });
 
   it('opens the creation template library and carries a template into generation', async () => {
@@ -248,7 +456,8 @@ describe('React application routes', () => {
     );
     expect(screen.getByRole('button', { name: '选择画面比例' })).toHaveTextContent('2:3');
     expect(screen.getByRole('status', { name: '2 张' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '高级生成设置' })).toHaveTextContent('私有');
+    expect(screen.getByRole('switch', { name: '私有模式' })).toBeChecked();
+    expect(generation.generate).not.toHaveBeenCalled();
   });
 
   it('keeps history and admin routes', () => {

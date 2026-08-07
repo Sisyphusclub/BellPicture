@@ -14,7 +14,6 @@ import {
   Trash2,
   WandSparkles,
 } from 'lucide-react';
-import { BorderBeam } from 'border-beam';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
   type ChangeEvent,
@@ -30,6 +29,7 @@ import {
   MorphPopoverContent,
   MorphPopoverTrigger,
 } from '@/components/motion/popover-morph';
+import BorderGlow from '@/components/BorderGlow';
 import { SPRING_PRESS, SPRING_SWAP } from '@/lib/ease';
 import { cn } from '@/lib/utils';
 
@@ -62,7 +62,6 @@ interface OptionMenuProps {
   selectedId: string;
   onSelect: (id: string) => void;
 }
-
 function OptionMenu({ label, options, selectedId, onSelect }: OptionMenuProps) {
   if (options.length === 0) return null;
 
@@ -406,6 +405,70 @@ function IconButton({ label, disabled = false, reduce, onClick, children }: Icon
   );
 }
 
+interface StreamingPlaceholderProps {
+  active: boolean;
+  examples: readonly string[];
+  reduce: boolean;
+}
+
+function StreamingPlaceholder({ active, examples, reduce }: StreamingPlaceholderProps) {
+  const textRef = useRef<HTMLSpanElement>(null);
+  const signature = examples.join('\u0000');
+
+  useEffect(() => {
+    const prompts = signature.split('\u0000').filter(Boolean);
+    const target = textRef.current;
+    if (!target || !active || prompts.length === 0) {
+      if (target) target.textContent = '';
+      return;
+    }
+    if (reduce) {
+      target.textContent = prompts[0] ?? '';
+      return;
+    }
+
+    let promptIndex = 0;
+    let characterCount = 0;
+    let deleting = false;
+    let timeoutId: number | undefined;
+
+    const renderNextFrame = () => {
+      const prompt = prompts[promptIndex] ?? '';
+      if (deleting) {
+        characterCount = Math.max(0, characterCount - 1);
+      } else {
+        characterCount = Math.min(prompt.length, characterCount + 1);
+      }
+      target.textContent = prompt.slice(0, characterCount);
+
+      let delay = deleting ? 22 : 46;
+      if (!deleting && characterCount === prompt.length) {
+        deleting = true;
+        delay = 1800;
+      } else if (deleting && characterCount === 0) {
+        deleting = false;
+        promptIndex = (promptIndex + 1) % prompts.length;
+        delay = 260;
+      }
+      timeoutId = window.setTimeout(renderNextFrame, delay);
+    };
+
+    timeoutId = window.setTimeout(renderNextFrame, 180);
+    return () => window.clearTimeout(timeoutId);
+  }, [active, reduce, signature]);
+
+  return (
+    <span
+      className="agent-chat-input__streaming-placeholder"
+      data-active={active ? 'true' : undefined}
+      aria-hidden="true"
+    >
+      <span ref={textRef} className="agent-chat-input__streaming-placeholder-text" />
+      <span className="agent-chat-input__streaming-placeholder-caret" />
+    </span>
+  );
+}
+
 export function AgentChatInput({
   value,
   defaultValue = '',
@@ -414,6 +477,7 @@ export function AgentChatInput({
   onStop,
   status = 'ready',
   placeholder = 'Ask for follow-up changes',
+  streamingPlaceholders = [],
   ariaLabel = 'Agent prompt',
   submitLabel = 'Send message',
   disabled = false,
@@ -462,7 +526,7 @@ export function AgentChatInput({
   const composerRef = useRef<AgentChatComposerHandle>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewAttachmentId, setPreviewAttachmentId] = useState<string | null>(null);
-  const [beamActive, setBeamActive] = useState(false);
+  const [glowActive, setGlowActive] = useState(false);
   const [text, setText] = useControllableString({
     value,
     defaultValue,
@@ -523,13 +587,13 @@ export function AgentChatInput({
 
   function handleFocusCapture(event: FocusEvent<HTMLDivElement>) {
     const target = event.target as HTMLElement;
-    if (target.closest('.agent-chat-input__textarea')) setBeamActive(true);
+    if (target.closest('.agent-chat-input__textarea')) setGlowActive(true);
   }
 
   function handleBlurCapture(event: FocusEvent<HTMLDivElement>) {
     const editor = event.currentTarget.querySelector('.agent-chat-input__textarea');
     if (!event.relatedTarget || !editor?.contains(event.relatedTarget)) {
-      setBeamActive(false);
+      setGlowActive(false);
     }
   }
 
@@ -579,9 +643,21 @@ export function AgentChatInput({
   }
 
   return (
-    <div
+    <BorderGlow
       data-slot="agent-chat-input"
       data-status={status}
+      active={glowActive}
+      animated={false}
+      backgroundColor="var(--muted)"
+      borderRadius={20}
+      colors={['#ffb51b', '#12c8f4', '#1464ff']}
+      coneSpread={22}
+      edgeSensitivity={24}
+      fillOpacity={0.24}
+      glowColor="198 96 70"
+      glowIntensity={0.9}
+      glowRadius={34}
+      reducedMotion={reduce}
       onFocusCapture={handleFocusCapture}
       onBlurCapture={handleBlurCapture}
       className={cn(
@@ -591,23 +667,6 @@ export function AgentChatInput({
         classNames?.root,
       )}
     >
-      <BorderBeam
-        active={beamActive && !reduce}
-        aria-hidden="true"
-        borderRadius={20}
-        brightness={1.85}
-        className="agent-chat-input__border-beam"
-        colorVariant="sunset"
-        duration={3.2}
-        hueRange={18}
-        saturation={1.4}
-        size="md"
-        strength={1}
-        style={{ position: 'absolute', inset: '-2px', zIndex: 2, pointerEvents: 'none' }}
-      >
-        <span className="agent-chat-input__border-beam-anchor" />
-      </BorderBeam>
-
       <QueuedMessages
         messages={currentQueue}
         onSteer={(message) => onQueuedMessageSteer?.(message)}
@@ -616,11 +675,18 @@ export function AgentChatInput({
       />
 
       <div className="agent-chat-input__surface">
+        {streamingPlaceholders.length ? (
+          <StreamingPlaceholder
+            active={text.length === 0}
+            examples={streamingPlaceholders}
+            reduce={reduce}
+          />
+        ) : null}
         <AgentChatComposer
           ref={composerRef}
           value={text}
           skills={skills}
-          placeholder={placeholder}
+          placeholder={streamingPlaceholders.length ? '' : placeholder}
           ariaLabel={ariaLabel}
           disabled={disabled}
           minRows={minRows}
@@ -743,6 +809,6 @@ export function AgentChatInput({
         reduce={reduce}
         onClose={() => setPreviewAttachmentId(null)}
       />
-    </div>
+    </BorderGlow>
   );
 }

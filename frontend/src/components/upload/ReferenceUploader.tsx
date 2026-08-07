@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import type { ChangeEvent, DragEvent } from 'react';
 
 import type { SelectedReferenceFile } from '@/hooks/useFileUpload';
+import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/ui/icon-tooltip';
 
 interface ReferenceUploaderProps {
@@ -48,8 +49,9 @@ export function ReferenceUploader({
         disabled={disabled}
         onChange={change}
       />
-      <button
+      <Button
         type="button"
+        variant="ghost"
         className="reference-uploader__add"
         disabled={disabled}
         onClick={() => inputRef.current?.click()}
@@ -57,7 +59,7 @@ export function ReferenceUploader({
         <ImagePlus aria-hidden="true" />
         <span>添加参考图</span>
         <small>PNG、JPEG 或 WebP，最多 4 张</small>
-      </button>
+      </Button>
       {files.length ? (
         <div className="reference-list">
           {files.map((item) => (
@@ -68,13 +70,15 @@ export function ReferenceUploader({
                 <span>{item.file.name}</span>
               )}
               <IconTooltip label="移除参考图">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   aria-label={`移除参考图 ${item.file.name}`}
                   onClick={() => onRemove(item.id)}
                 >
                   <X aria-hidden="true" />
-                </button>
+                </Button>
               </IconTooltip>
               {item.validationMessage ? <figcaption>{item.validationMessage}</figcaption> : null}
             </figure>

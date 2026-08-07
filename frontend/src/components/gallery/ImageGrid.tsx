@@ -1,6 +1,7 @@
 import { Check, Copy, Download, Globe2, Heart, Lock, RefreshCw, Trash2 } from 'lucide-react';
 
 import { MorphicCard } from '@/components/premium/morphic-card-modal';
+import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/ui/icon-tooltip';
 import { cn } from '@/lib/utils';
 import type { HistoryEntry } from '@/types/image';
@@ -47,30 +48,36 @@ export function ImageGrid({
         return (
           <article className={cn('image-tile', selected && 'is-selected')} key={entry.record.id}>
             <MorphicCard id={entry.record.id} className="image-tile__morph">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 className="image-tile__preview"
+                style={{ aspectRatio: `${entry.record.width} / ${entry.record.height}` }}
                 aria-label={`查看图片：${entry.record.prompt}`}
                 onClick={() => onSelect(entry)}
               >
                 <img src={entry.imageUrl} alt={entry.record.prompt || '生成图片'} loading="lazy" />
-              </button>
+              </Button>
             </MorphicCard>
             {onToggleSelection ? (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 className="image-tile__select"
                 aria-label={selected ? `取消选择 ${entry.record.id}` : `选择 ${entry.record.id}`}
                 aria-pressed={selected}
                 onClick={() => onToggleSelection(entry)}
               >
                 {selected ? <Check aria-hidden="true" /> : null}
-              </button>
+              </Button>
             ) : null}
             {onToggleFavorite ? (
               <IconTooltip label={entry.record.isFavorite ? '取消收藏' : '收藏'}>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   className="image-tile__favorite"
                   aria-label={entry.record.isFavorite ? '取消收藏图片' : '收藏图片'}
                   aria-pressed={entry.record.isFavorite === true}
@@ -80,7 +87,7 @@ export function ImageGrid({
                     aria-hidden="true"
                     fill={entry.record.isFavorite ? 'currentColor' : 'none'}
                   />
-                </button>
+                </Button>
               </IconTooltip>
             ) : null}
             <div className="image-tile__meta">
@@ -93,29 +100,49 @@ export function ImageGrid({
             <div className="image-tile__actions">
               {onCopyPrompt ? (
                 <IconTooltip label="复制提示词">
-                  <button type="button" aria-label="复制提示词" onClick={() => onCopyPrompt(entry)}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="复制提示词"
+                    onClick={() => onCopyPrompt(entry)}
+                  >
                     <Copy aria-hidden="true" />
-                  </button>
+                  </Button>
                 </IconTooltip>
               ) : null}
               {onReuse ? (
                 <IconTooltip label="复用设置">
-                  <button type="button" aria-label="复用设置" onClick={() => onReuse(entry)}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="复用设置"
+                    onClick={() => onReuse(entry)}
+                  >
                     <RefreshCw aria-hidden="true" />
-                  </button>
+                  </Button>
                 </IconTooltip>
               ) : null}
               {onDownload ? (
                 <IconTooltip label="下载图片">
-                  <button type="button" aria-label="下载图片" onClick={() => onDownload(entry)}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="下载图片"
+                    onClick={() => onDownload(entry)}
+                  >
                     <Download aria-hidden="true" />
-                  </button>
+                  </Button>
                 </IconTooltip>
               ) : null}
               {onToggleVisibility ? (
                 <IconTooltip label={entry.record.isPublic ? '设为私有' : '设为公开'}>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     aria-label={entry.record.isPublic ? '设为私有' : '设为公开'}
                     onClick={() => onToggleVisibility(entry)}
                   >
@@ -124,18 +151,20 @@ export function ImageGrid({
                     ) : (
                       <Lock aria-hidden="true" />
                     )}
-                  </button>
+                  </Button>
                 </IconTooltip>
               ) : null}
               {onRemove ? (
                 <IconTooltip label="删除图片">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     aria-label={`删除图片 ${entry.record.id}`}
                     onClick={() => onRemove(entry)}
                   >
                     <Trash2 aria-hidden="true" />
-                  </button>
+                  </Button>
                 </IconTooltip>
               ) : null}
             </div>

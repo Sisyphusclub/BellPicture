@@ -17,7 +17,9 @@ export function App() {
         className={cn('app-main', isLanding && 'app-main--landing')}
         aria-label={isLanding ? 'Nebulens 首页' : 'Nebulens 工作区'}
       >
-        <AppRoutes />
+        <div className={cn('app-workspace', !isLanding && 'app-workspace--studio')}>
+          <AppRoutes />
+        </div>
       </main>
       <LoginModal />
     </div>

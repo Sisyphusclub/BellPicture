@@ -11,6 +11,7 @@ implementation details.
 Run from `frontend/`:
 
 ```powershell
+npm run check:components
 npm run typecheck
 npm run lint
 npm run test
@@ -22,13 +23,13 @@ Run `git diff --check` from the repository root before handoff.
 
 ## Test Strategy
 
-| Layer | Tool | Primary assertions |
-| --- | --- | --- |
-| utilities | Vitest | pure inputs, outputs, and edge cases |
-| API services | Vitest with stubbed `fetch` | URL, method, payload, narrowing, normalized errors |
-| components | React Testing Library | accessible rendering and user-visible interactions |
-| routes | React Testing Library | workflow states and integration between hooks/components |
-| browser QA | chosen browser | responsive layout, motion, focus, overflow, console, real rendering |
+| Layer        | Tool                        | Primary assertions                                                  |
+| ------------ | --------------------------- | ------------------------------------------------------------------- |
+| utilities    | Vitest                      | pure inputs, outputs, and edge cases                                |
+| API services | Vitest with stubbed `fetch` | URL, method, payload, narrowing, normalized errors                  |
+| components   | React Testing Library       | accessible rendering and user-visible interactions                  |
+| routes       | React Testing Library       | workflow states and integration between hooks/components            |
+| browser QA   | chosen browser              | responsive layout, motion, focus, overflow, console, real rendering |
 
 - Query elements by role, label, or visible name before using test ids.
 - Use `user-event` for user interaction.

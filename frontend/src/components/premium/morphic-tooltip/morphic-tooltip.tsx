@@ -78,7 +78,7 @@ type MorphicTooltipContextValue = {
     trigger: HTMLElement,
     interaction: ActiveTooltip['interaction'],
   ) => void;
-  close: (id: string) => void;
+  close: (id: string, immediate?: boolean) => void;
 };
 
 const MorphicTooltipContext = createContext<MorphicTooltipContextValue | null>(null);
@@ -131,6 +131,7 @@ export function MorphicTooltipProvider({
   const closeTimerRef = useRef<number | null>(null);
   const frameRef = useRef<number | null>(null);
   const lastCloseAtRef = useRef(0);
+  const providerMountedRef = useRef(false);
 
   const clearOpenTimer = useCallback(() => {
     if (openTimerRef.current === null) {
@@ -236,22 +237,30 @@ export function MorphicTooltipProvider({
   );
 
   const close = useCallback<MorphicTooltipContextValue['close']>(
-    (id) => {
+    (id, immediate = false) => {
       clearOpenTimer();
       clearCloseTimer();
 
-      closeTimerRef.current = window.setTimeout(() => {
+      const hide = () => {
         if (activeRef.current?.id !== id) {
           return;
         }
 
         activeRef.current = null;
         lastCloseAtRef.current = performance.now();
+        if (!providerMountedRef.current) return;
         setActive(null);
         setPosition(null);
         setSurfaceSize(null);
         sizeRef.current = null;
-      }, closeDelay);
+      };
+
+      if (immediate) {
+        hide();
+        return;
+      }
+
+      closeTimerRef.current = window.setTimeout(hide, closeDelay);
     },
     [clearCloseTimer, clearOpenTimer, closeDelay],
   );
@@ -265,9 +274,11 @@ export function MorphicTooltipProvider({
   );
 
   useEffect(() => {
+    providerMountedRef.current = true;
     setMounted(true);
 
     return () => {
+      providerMountedRef.current = false;
       clearOpenTimer();
       clearCloseTimer();
       clearFrame();
@@ -459,6 +470,11 @@ export function MorphicTooltip({
   const generatedId = useId();
   const context = useContext(MorphicTooltipContext);
   const triggerRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!context) return undefined;
+    return () => context.close(generatedId, true);
+  }, [context, generatedId]);
 
   if (!context) {
     return (

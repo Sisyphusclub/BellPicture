@@ -6,6 +6,7 @@ import { useToast } from '@/components/common/ToastProvider';
 import { MorphicCard, MorphicCardModal } from '@/components/premium/morphic-card-modal';
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/ui/icon-tooltip';
+import { Input } from '@/components/ui/input';
 import { SelectMenu } from '@/components/ui/select-menu';
 import {
   CREATION_TEMPLATES,
@@ -83,12 +84,12 @@ export function TemplatesView() {
   };
 
   return (
-    <section className="workspace-page templates-page" aria-label="创作模板">
+    <section className="workspace-page templates-page" data-view="templates" aria-label="创作模板">
       <div className="workspace-toolbar template-toolbar">
         <label className="search-field template-search">
           <Search aria-hidden="true" />
           <span className="sr-only">搜索创作模板</span>
-          <input
+          <Input
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -106,15 +107,17 @@ export function TemplatesView() {
         />
         <SelectMenu label="模板排序" value={sort} options={SORT_OPTIONS} onValueChange={setSort} />
         <IconTooltip label="仅显示收藏模板">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             className={cn('icon-button', favoritesOnly && 'is-active')}
             aria-label="仅显示收藏模板"
             aria-pressed={favoritesOnly}
             onClick={() => setFavoritesOnly((current) => !current)}
           >
             <Heart aria-hidden="true" />
-          </button>
+          </Button>
         </IconTooltip>
       </div>
 
@@ -129,8 +132,9 @@ export function TemplatesView() {
                 key={template.id}
               >
                 <MorphicCard id={`template-${template.id}`} className="template-tile__morph">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     className="template-tile__preview"
                     aria-label={`预览模板：${template.title}`}
                     onClick={() => setSelected(template)}
@@ -140,12 +144,14 @@ export function TemplatesView() {
                       <small>{used ? '最近使用' : template.category}</small>
                       <strong>{template.title}</strong>
                     </span>
-                  </button>
+                  </Button>
                 </MorphicCard>
                 <div className="template-tile__actions">
                   <IconTooltip label={favorite ? '取消收藏模板' : '收藏模板'}>
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       aria-label={
                         favorite ? `取消收藏 ${template.title}` : `收藏 ${template.title}`
                       }
@@ -153,16 +159,18 @@ export function TemplatesView() {
                       onClick={() => toggleFavorite(template.id)}
                     >
                       <Heart aria-hidden="true" fill={favorite ? 'currentColor' : 'none'} />
-                    </button>
+                    </Button>
                   </IconTooltip>
                   <IconTooltip label="使用模板">
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       aria-label={`使用模板 ${template.title}`}
                       onClick={() => applyTemplate(template)}
                     >
                       <ArrowUpRight aria-hidden="true" />
-                    </button>
+                    </Button>
                   </IconTooltip>
                 </div>
               </article>
@@ -203,14 +211,16 @@ export function TemplatesView() {
               <img src={selected.imageUrl} alt={`${selected.title}示例`} />
             </div>
             <div className="template-detail__body">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 className="icon-button dialog__close"
                 aria-label="关闭模板预览"
                 onClick={closePreview}
               >
                 <X aria-hidden="true" />
-              </button>
+              </Button>
               <span>{selected.category}</span>
               <h2 id="template-detail-title">{selected.title}</h2>
               <p>{selected.prompt}</p>

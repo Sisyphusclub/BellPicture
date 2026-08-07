@@ -43,15 +43,15 @@ describe('TwoApiImageProvider', () => {
     const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
       jsonResponse({
         created: 1,
-        data: [{ b64_json: TINY_PNG_B64 }, { b64_json: TINY_PNG_B64 }],
+        data: Array.from({ length: 4 }, () => ({ b64_json: TINY_PNG_B64 })),
       }),
     );
     const provider = new TwoApiImageProvider(baseConfig, fetchMock);
 
-    const out = await provider.generate({ prompt: 'a red cube', count: 2, aspectRatio: '1:1' });
+    const out = await provider.generate({ prompt: 'a red cube', count: 4, aspectRatio: '1:1' });
 
     expect(out.aspectRatio).toBe('1:1');
-    expect(out.images).toHaveLength(2);
+    expect(out.images).toHaveLength(4);
     for (const image of out.images) {
       expect(image.width).toBe(1024);
       expect(image.height).toBe(1024);
@@ -65,7 +65,7 @@ describe('TwoApiImageProvider', () => {
     expect(body['model']).toBe('gpt-image-2');
     expect(body['prompt']).toBe('a red cube');
     expect(body['response_format']).toBe('b64_json');
-    expect(body['n']).toBe(2);
+    expect(body['n']).toBe(4);
     expect(body['size']).toBe('1024x1024');
     const headers = (init as RequestInit).headers as Record<string, string>;
     expect(headers['Authorization']).toBe('Bearer sk-test');

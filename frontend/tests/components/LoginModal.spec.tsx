@@ -42,15 +42,37 @@ describe('LoginModal', () => {
     const password = screen.getByLabelText('密码');
     await waitFor(() => expect(username).toHaveFocus());
 
+    expect(username).toHaveAttribute('placeholder', '3-32 位小写字母、数字或下划线');
+    expect(password).toHaveAttribute('placeholder', '至少 8 个字符');
     await user.click(password);
-    expect(screen.getByText('用户名需为 3-32 位小写字母、数字或下划线。')).toBeInTheDocument();
+    expect(screen.queryByText('请输入用户名。')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('仅支持 3-32 位小写字母、数字或下划线。'),
+    ).not.toBeInTheDocument();
+
+    await user.click(username);
+    await user.type(username, 'creator@example.com');
+    await user.tab();
+    expect(screen.getByText('仅支持 3-32 位小写字母、数字或下划线。')).toBeInTheDocument();
+
     await user.type(password, '123');
     await user.tab();
-    expect(screen.getByText('密码至少需要 8 个字符。')).toBeInTheDocument();
+    expect(screen.getByText('密码至少为 8 个字符。')).toBeInTheDocument();
 
     expect(password).toHaveAttribute('type', 'password');
     await user.click(screen.getByRole('button', { name: '显示密码' }));
     expect(password).toHaveAttribute('type', 'text');
+  });
+
+  it('shows required errors only after an invalid submit', async () => {
+    const user = userEvent.setup();
+    render(<LoginModal />);
+
+    await user.click(screen.getByRole('button', { name: '登录' }));
+
+    expect(screen.getByText('请输入用户名。')).toBeInTheDocument();
+    expect(screen.getByText('请输入密码。')).toBeInTheDocument();
+    expect(auth.signInWithUsername).not.toHaveBeenCalled();
   });
 
   it('submits sign-up credentials and completes the pending command', async () => {
