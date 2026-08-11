@@ -5013,7 +5013,7 @@ video {
   position: fixed;
   z-index: 22;
   top: 50%;
-  right: 16px;
+  right: 32px;
   height: min(560px, calc(100svh - 260px));
   width: min(404px, calc(100% - 24px));
   min-height: 260px;
