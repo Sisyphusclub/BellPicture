@@ -29,7 +29,7 @@ Completely rebuild the Generate, Creation Templates, Assets, Sign In, and Sign U
   and generation handoff intact.
 - Replace only the Discover composer material with the Wanxiang-style layered glass technique:
   continuous full-surface directional SVG displacement refraction, a lightly tinted radial sheen, a
-  restrained directional inset rim, and a separate low chrome blur.
+  restrained directional inset rim, and a separate `20px` desktop / `18px` mobile chrome blur.
 - Reframe the overscanned desktop hero video around its visual focal point rather than its source-box
   midpoint so the vortex reads centered behind the title and composer.
 - Apply the supplied 6-second blue-lilac-blush-ivory shiny gradient only to the italic `into images`

@@ -225,7 +225,8 @@ The prompt composer is the signature product surface. Use the installed beUI Age
 - Use a `20px` outer radius and a quiet 3px frame. Generate keeps the card-colored inner surface and
   no permanent heavy shadow. Discover may use one cool graphite glass material on this same beUI
   surface: a continuous full-surface SVG displacement-map refraction layer, a lightly tinted radial
-  sheen, and a separate `4-6px` chrome blur with restrained saturation. Discover uses a `30px`
+  sheen, and a separate `20px` desktop / `18px` mobile chrome blur with restrained saturation.
+  Discover uses a `30px`
   material radius and a low-contrast directional inset rim so the lens remains legible when the
   focus gradient is absent. Keep the moving hero video perceptible through the prompt area without
   reducing text contrast. Clip each material layer inside the radius, leave the root overflow

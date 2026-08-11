@@ -5915,7 +5915,7 @@ video {
 }
 
 /* Discover keeps the beUI composer interaction contract while using the hero
-   video as a refracted material layer. The body follows Wanxiang's low-blur
+   video as a refracted material layer. The body follows Wanxiang's softened
    glass stack while the existing Nebulens focus ring remains independent. */
 .agent-chat-input.landing-composer.border-glow-card {
   --card-bg: transparent !important;
@@ -5927,7 +5927,7 @@ video {
   --liquid-glass-shadow-rim: rgb(94 163 219 / 0.14);
   --liquid-glass-side-highlight: rgb(235 247 255 / 0.1);
   --liquid-glass-side-shadow: rgb(94 163 219 / 0.08);
-  --liquid-glass-blur: 4px;
+  --liquid-glass-blur: 20px;
   --liquid-glass-saturation: 1.14;
   --liquid-glass-chrome-saturation: 1.2;
 
@@ -5993,7 +5993,7 @@ video {
     --liquid-glass-tint-center: rgb(46 68 90 / 0.16);
     --liquid-glass-tint-edge: rgb(7 15 27 / 0.12);
     --liquid-glass-sheen: rgb(207 231 250 / 0.06);
-    --liquid-glass-blur: 6px;
+    --liquid-glass-blur: 18px;
 
     background: transparent;
   }
