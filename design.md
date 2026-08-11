@@ -269,6 +269,9 @@ The prompt composer is the signature product surface. Use the installed beUI Age
   and visibility state. Hovering a tick never opens the full searchable history panel.
 - Clicking a tick or its preview scrolls the canvas to that already-rendered result, marks the tick
   active, and closes every history surface without inserting, removing, or reordering result items.
+  Treat this active extension as transient orientation feedback: clear it when the pointer or focus
+  leaves the complete history interaction area, while direct tick hover/focus and result-card
+  hover/focus continue to use their normal emphasized state.
   Open the full `320-360px` searchable panel only from the faint search icon above the rail. The
   search icon remains independently reachable on touch devices; while the panel is open, replace it
   with the panel-header close action and remove hidden ticks from pointer and keyboard navigation.
@@ -290,6 +293,18 @@ The prompt composer is the signature product surface. Use the installed beUI Age
 - With no records, show only `暂无生成记录，完成第一次创作后将在这里显示`. Respect
   keyboard focus, `Escape` close/focus return, touch selection, and `prefers-reduced-motion`
   by removing the pulse and spatial transitions while preserving the state change.
+- When results exist and the latest result batch is outside the usable window area above the fixed
+  Agent Composer, show one circular shared `Button` with a Lucide down arrow centered immediately
+  above the composer. Use a `42px` desktop target and a `40px` narrow-screen target so the action is
+  legible without competing with the composer submit control. Measure against the window scroll
+  container and the live composer boundary so
+  multiline prompts, references, errors, and mobile navigation cannot overlap it. Observe the full
+  feed as well as the latest batch and composer so upstream image or batch height changes trigger a
+  fresh measurement. Activating it computes a window scroll target from the current batch and
+  composer rectangles, placing the latest batch bottom about `24px` above the composer without
+  changing feed order; use smooth scrolling by default and immediate scrolling for
+  `prefers-reduced-motion`. Hide it only when the latest batch bottom is completely above that
+  boundary and a meaningful portion of the batch, not merely a narrow strip, is visible.
 
 ### Creation Sessions
 

@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const generation = vi.hoisted(() => ({
   generate: vi.fn(),
@@ -266,6 +266,10 @@ it('keeps earlier batches above a newly submitted generation', async () => {
   });
 });
 
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 it('starts generation once when discovery navigation requests it', async () => {
   render(
     <MemoryRouter
@@ -296,6 +300,18 @@ it('starts generation once when discovery navigation requests it', async () => {
 });
 
 it('opens the right history flyout, searches, and loads a selected batch', async () => {
+  const resizeObserve = vi.fn();
+  vi.stubGlobal(
+    'ResizeObserver',
+    class ResizeObserverMock {
+      constructor() {}
+      observe(target: Element): void {
+        resizeObserve(target);
+      }
+      unobserve(): void {}
+      disconnect(): void {}
+    },
+  );
   historyMocks.batches = [
     {
       batchId: 'history-batch',
@@ -366,6 +382,58 @@ it('opens the right history flyout, searches, and loads a selected batch', async
   expect(Array.from(document.querySelectorAll('[data-generation-batch]'))).toEqual(
     resultOrderBefore,
   );
+
+  fireEvent.mouseLeave(document.querySelector('.generation-history-dock')!);
+  expect(historyTick).not.toHaveClass('is-current');
+  fireEvent.mouseEnter(resultBatch!);
+  expect(historyTick).toHaveClass('is-hovered');
+  fireEvent.mouseLeave(resultBatch!);
+
+  const composer = document.querySelector<HTMLElement>('.studio-create-bar');
+  const sessionFeed = document.querySelector<HTMLElement>('.session-feed');
+  expect(resizeObserve).toHaveBeenCalledWith(sessionFeed);
+  vi.spyOn(window, 'scrollY', 'get').mockReturnValue(300);
+  const batchRect = vi
+    .spyOn(resultBatch!, 'getBoundingClientRect')
+    .mockReturnValue(new DOMRect(0, 700, 620, 320));
+  vi.spyOn(composer!, 'getBoundingClientRect').mockReturnValue(new DOMRect(100, 560, 1060, 160));
+  fireEvent.scroll(window);
+
+  const jumpToLatest = await screen.findByRole('button', { name: '回到最新图片' });
+  await user.click(jumpToLatest);
+  expect(window.scrollTo).toHaveBeenLastCalledWith({ behavior: 'smooth', top: 784 });
+  expect(Array.from(document.querySelectorAll('[data-generation-batch]'))).toEqual(
+    resultOrderBefore,
+  );
+
+  batchRect.mockReturnValue(new DOMRect(0, 240, 620, 320));
+  fireEvent.scroll(window);
+  expect(screen.getByRole('button', { name: '回到最新图片' })).toBeInTheDocument();
+
+  batchRect.mockReturnValue(new DOMRect(0, -240, 620, 320));
+  fireEvent.scroll(window);
+  expect(screen.getByRole('button', { name: '回到最新图片' })).toBeInTheDocument();
+
+  batchRect.mockReturnValue(new DOMRect(0, 180, 620, 320));
+  fireEvent.scroll(window);
+  await waitFor(() =>
+    expect(screen.queryByRole('button', { name: '回到最新图片' })).not.toBeInTheDocument(),
+  );
+
+  vi.mocked(window.matchMedia).mockImplementation((query) => ({
+    matches: query === '(prefers-reduced-motion: reduce)',
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+  batchRect.mockReturnValue(new DOMRect(0, 700, 620, 320));
+  fireEvent.scroll(window);
+  await user.click(await screen.findByRole('button', { name: '回到最新图片' }));
+  expect(window.scrollTo).toHaveBeenLastCalledWith({ behavior: 'auto', top: 784 });
 });
 
 it('matches pending skeleton count and aspect ratio to the requested results', async () => {

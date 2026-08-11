@@ -1,4 +1,5 @@
 import {
+  ArrowDown,
   ArrowDownToLine,
   CircleAlert,
   Copy,
@@ -118,6 +119,8 @@ interface GenerationErrorCopy {
   requestId: string | null;
 }
 
+const LATEST_BATCH_COMPOSER_GAP = 24;
+
 function splitGenerationError(message: string): GenerationErrorCopy {
   const requestSuffix = message.match(/[（(]\s*请求编号[:：]\s*([^）)]+)\s*[）)]\s*$/);
   if (!requestSuffix) return { message, requestId: null };
@@ -132,11 +135,18 @@ function scrollToGenerationBatch(batchId: string): boolean {
     document.querySelectorAll<HTMLElement>('[data-generation-batch]'),
   ).find((element) => element.dataset.generationBatch === batchId);
   if (!target || typeof target.scrollIntoView !== 'function') return false;
-  const reduceMotion =
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+  target.scrollIntoView({
+    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    block: 'center',
+  });
   return true;
+}
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
 }
 
 function readCount(searchParams: URLSearchParams): number {
@@ -386,10 +396,14 @@ export function GenerateView() {
   const feedSessionId = useRef<string | null>(null);
   const latestFeed = useRef(feed);
   const pendingScrollId = useRef<string | null>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
+  const sessionFeedRef = useRef<HTMLElement>(null);
+  const latestBatchRef = useRef<HTMLElement>(null);
   latestFeed.current = feed;
   const [selected, setSelected] = useState<HistoryEntry | null>(null);
   const [activeHistoryBatchId, setActiveHistoryBatchId] = useState<string | null>(null);
   const [hoveredBatchId, setHoveredBatchId] = useState<string | null>(null);
+  const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [mutatingId, setMutatingId] = useState<string | null>(null);
   const activeSessionId = searchParams.get('session');
@@ -495,6 +509,67 @@ export function GenerateView() {
     return history.batches.filter((batch) => batchIds.has(batch.batchId));
   }, [activeSessionId, history.batches, sessions]);
   const visibleHistoryBatchIds = useMemo(() => feed.map((item) => item.id), [feed]);
+  const latestBatch = feed[feed.length - 1];
+  const latestBatchVisibilityKey = latestBatch
+    ? `${latestBatch.id}:${latestBatch.entries.length}:${latestBatch.error ? 'error' : 'ready'}`
+    : null;
+
+  useEffect(() => {
+    if (!latestBatchVisibilityKey) {
+      setShowJumpToLatest(false);
+      return undefined;
+    }
+
+    const updateVisibility = () => {
+      const batchElement = latestBatchRef.current;
+      const composerElement = composerRef.current;
+      if (!batchElement || !composerElement) {
+        setShowJumpToLatest(false);
+        return;
+      }
+
+      const batchRect = batchElement.getBoundingClientRect();
+      const composerRect = composerElement.getBoundingClientRect();
+      if (batchRect.width === 0 && batchRect.height === 0) {
+        setShowJumpToLatest(false);
+        return;
+      }
+
+      const composerBoundary =
+        composerRect.height > 0 && composerRect.top > 0
+          ? Math.min(
+              window.innerHeight - LATEST_BATCH_COMPOSER_GAP,
+              composerRect.top - LATEST_BATCH_COMPOSER_GAP,
+            )
+          : window.innerHeight - LATEST_BATCH_COMPOSER_GAP;
+      const visibleHeight = Math.max(
+        0,
+        Math.min(batchRect.bottom, composerBoundary) - Math.max(batchRect.top, 0),
+      );
+      const requiredVisibleHeight = Math.min(
+        batchRect.height,
+        Math.max(0, composerBoundary),
+        Math.max(160, Math.min(280, composerBoundary * 0.4)),
+      );
+      const isFullyAboveComposer = batchRect.bottom <= composerBoundary;
+      setShowJumpToLatest(!isFullyAboveComposer || visibleHeight < requiredVisibleHeight);
+    };
+
+    updateVisibility();
+    window.addEventListener('scroll', updateVisibility, { passive: true });
+    window.addEventListener('resize', updateVisibility);
+    const resizeObserver =
+      typeof ResizeObserver === 'function' ? new ResizeObserver(updateVisibility) : null;
+    if (latestBatchRef.current) resizeObserver?.observe(latestBatchRef.current);
+    if (composerRef.current) resizeObserver?.observe(composerRef.current);
+    if (sessionFeedRef.current) resizeObserver?.observe(sessionFeedRef.current);
+
+    return () => {
+      window.removeEventListener('scroll', updateVisibility);
+      window.removeEventListener('resize', updateVisibility);
+      resizeObserver?.disconnect();
+    };
+  }, [latestBatchVisibilityKey]);
 
   const currentSettings = (promptValue = prompt): GenerationSettingsSnapshot => ({
     prompt: promptValue.trim(),
@@ -830,6 +905,22 @@ export function GenerateView() {
     setActiveHistoryBatchId(batch.batchId);
   };
 
+  const scrollToLatestBatch = (): void => {
+    const target = latestBatchRef.current;
+    const composer = composerRef.current;
+    if (!target || !composer) return;
+    const targetRect = target.getBoundingClientRect();
+    const composerRect = composer.getBoundingClientRect();
+    const top = Math.max(
+      0,
+      window.scrollY +
+        targetRect.bottom -
+        (composerRect.top - LATEST_BATCH_COMPOSER_GAP),
+    );
+    setActiveHistoryBatchId(null);
+    window.scrollTo({ top, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+  };
+
   return (
     <section
       className={`generation-console ${feed.length ? 'has-results' : 'is-empty'}`}
@@ -847,6 +938,7 @@ export function GenerateView() {
         pendingPrompt={prompt}
         onSelectBatch={loadHistoryBatch}
         onNavigateBatch={navigateToHistoryBatch}
+        onInteractionLeave={() => setActiveHistoryBatchId(null)}
       />
       {!feed.length ? (
         <div className="generation-empty-state" aria-label="开始你的创作">
@@ -859,7 +951,23 @@ export function GenerateView() {
           <p>在下方输入描述，或提供参考图，让 AI 帮你生成想象中的画面</p>
         </div>
       ) : null}
-      <div className="studio-create-bar" onPaste={paste}>
+      <div ref={composerRef} className="studio-create-bar" onPaste={paste}>
+        {showJumpToLatest ? (
+          <div className="generation-jump-latest">
+            <IconTooltip label="回到最新图片">
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon"
+                className="generation-jump-latest__button"
+                aria-label="回到最新图片"
+                onClick={scrollToLatestBatch}
+              >
+                <ArrowDown aria-hidden="true" />
+              </Button>
+            </IconTooltip>
+          </div>
+        ) : null}
         {reusedReferenceIds.length ? (
           <div className="reused-references">
             <span>沿用 {reusedReferenceIds.length} 张历史参考图</span>
@@ -1015,12 +1123,14 @@ export function GenerateView() {
 
       {feed.length ? (
         <section
+          ref={sessionFeedRef}
           className="session-feed"
           aria-label="本次创作结果"
           aria-busy={generation.isLoading}
         >
-          {feed.map((item) => (
+          {feed.map((item, index) => (
             <article
+              ref={index === feed.length - 1 ? latestBatchRef : undefined}
               className={`session-batch${!item.entries.length && !item.error ? ' is-generating' : ''}`}
               key={item.id}
               data-generation-batch={item.id}

@@ -363,6 +363,45 @@ No actionable P0, P1, or P2 findings remain.
 
 final result: passed
 
+## Generation History Transient State and Latest Return QA (2026-08-11)
+
+- Scope: transient active history-tick feedback and the circular `回到最新图片` action above the
+  fixed Agent Composer.
+- Interaction contract: activating a tick scrolls to the existing result without moving it, while
+  leaving the complete history interaction area clears only the persistent active extension. Tick
+  and result hover/focus emphasis remain available.
+- Visibility contract: the return action listens to the existing window scroll container and
+  compares the latest batch bounds with the live composer boundary. The feed, latest batch, and
+  composer are all resize-observed so upstream image loading cannot leave visibility state stale. It
+  is absent for empty feeds and hides only after the latest batch bottom fully clears the composer by
+  `24px` with a meaningful visible area; a narrow strip or composer-obscured bottom keeps it visible.
+- Component contract: the action uses the shared `Button`, `IconTooltip`, and Lucide `ArrowDown`, is
+  anchored above the composer instead of participating in feed layout, computes an exact window
+  scroll target from live rectangles, and uses immediate scrolling when reduced motion is requested.
+
+### Verification Status
+
+- Targeted component and Generate-view tests: passed, 22 tests. Coverage includes exact
+  smooth/reduced-motion window targets, composer obstruction, minimum visible area, feed resize
+  observation, transient active state, and stable result order.
+- `npm run typecheck`: passed.
+- `npm run check:components`: passed, with no visible native-control or component-source violations.
+- Full `npm run test`: passed, 13 files and 67 tests.
+- `npm run lint`: passed.
+- Source references:
+  `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-e4cdc449-8f57-4108-b0bc-1d1bfc9726b3.png`
+  and
+  `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-5f2a2442-56c5-482a-abf8-f724b3f0c18e.png`.
+- Final browser capture at `1280x720`:
+  `C:/Users/Administrator/.codex/visualizations/2026/07/27/019fa120-4eb7-7f41-aca4-df1f91b0a446/history-jump-latest-final.png`.
+- Fidelity surfaces: the history tick extends on direct activation, returns to its default length
+  after pointer departure, the `42px` circular action stays horizontally centered over the fixed
+  composer, the latest batch lands `24px` above the composer, and the result DOM order remains
+  unchanged. The measured desktop state has `0px` horizontal overflow; the button hides after the
+  successful return.
+
+final result: passed
+
 ## Generation Session Deletion QA (2026-08-04)
 
 - Source visual truth: `design-qa-assets/reference-gpt-recents.png` and the existing GPT-style

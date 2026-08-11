@@ -34,6 +34,7 @@ interface GenerationHistoryFlyoutProps {
   pendingPrompt?: string;
   onSelectBatch: (batch: GroupedBatch) => void;
   onNavigateBatch?: (batch: GroupedBatch) => void;
+  onInteractionLeave?: () => void;
 }
 
 function startOfDay(date: Date): number {
@@ -96,6 +97,7 @@ export function GenerationHistoryFlyout({
   pendingPrompt = '',
   onSelectBatch,
   onNavigateBatch = onSelectBatch,
+  onInteractionLeave,
 }: GenerationHistoryFlyoutProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [previewBatchId, setPreviewBatchId] = useState<string | null>(null);
@@ -259,11 +261,17 @@ export function GenerationHistoryFlyout({
       ref={rootRef}
       className={`generation-history-dock${isOpen ? ' is-open' : ''}${previewBatch ? ' has-preview' : ''}`}
       onMouseEnter={clearCloseTimer}
-      onMouseLeave={closeSoon}
+      onMouseLeave={() => {
+        onInteractionLeave?.();
+        closeSoon();
+      }}
       onFocusCapture={clearCloseTimer}
       onBlurCapture={(event) => {
         const nextTarget = event.relatedTarget as Node | null;
-        if (!rootRef.current?.contains(nextTarget)) closeSoon();
+        if (!rootRef.current?.contains(nextTarget)) {
+          onInteractionLeave?.();
+          closeSoon();
+        }
       }}
     >
       <div className="generation-history-track" style={{ height: trackHeight }}>

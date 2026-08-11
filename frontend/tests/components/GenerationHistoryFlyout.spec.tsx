@@ -83,12 +83,14 @@ describe('GenerationHistoryFlyout', () => {
   it('navigates to an existing batch when its tick or preview is clicked', () => {
     const onSelectBatch = vi.fn();
     const onNavigateBatch = vi.fn();
+    const onInteractionLeave = vi.fn();
     render(
       <GenerationHistoryFlyout
         batches={[batch]}
         trackBatchIds={[batch.batchId]}
         onSelectBatch={onSelectBatch}
         onNavigateBatch={onNavigateBatch}
+        onInteractionLeave={onInteractionLeave}
       />,
     );
 
@@ -112,6 +114,9 @@ describe('GenerationHistoryFlyout', () => {
       'aria-expanded',
       'false',
     );
+
+    fireEvent.mouseLeave(document.querySelector('.generation-history-dock')!);
+    expect(onInteractionLeave).toHaveBeenCalledOnce();
   });
 
   it('keeps the calculated rail height inside a short mobile viewport', () => {

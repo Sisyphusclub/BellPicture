@@ -128,7 +128,18 @@ const templates = [
   mark the tick group hidden, set every tick to `tabIndex={-1}`, and disable pointer hits.
   Preserve a pointer-safe corridor and delayed leave between the tick, preview, and overlay
   without expanding the main layout track; a focused preview or overlay must not close on
-  pointer leave.
+  pointer leave. Direct-navigation active emphasis is transient and clears when pointer or
+  focus leaves the complete history interaction region; hover/focus emphasis remains independent.
+- A fixed-composer result feed may expose one shared circular `Button` immediately above the
+  composer to return to its latest batch. Use a `42px` desktop target and a `40px` narrow-screen
+  target for this secondary action. Derive visibility from the actual window scroll container,
+  latest batch bounds, and live composer bounds; listen to window scroll/resize and observe the feed,
+  latest batch, and composer for element resize without changing feed order. Compute the window scroll
+  target from current rectangles so the latest batch bottom lands about `24px` above the composer;
+  do not delegate this clearance to `scrollIntoView` plus static scroll margins. Smooth-scroll by
+  default, switch to immediate scrolling for reduced motion, and keep the control attached to the
+  composer so dynamic composer height and mobile navigation cannot overlap it. Hide the control only
+  after the complete batch bottom clears the composer boundary and a meaningful batch area is visible.
 - Generate-result skeletons must preserve the requested count, aspect ratio, and
   final responsive grid tracks. Use the source-owned AICSS Image Generation dot
   field with separate square, landscape, and portrait masks, a quiet morph and

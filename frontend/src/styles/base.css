@@ -5009,6 +5009,67 @@ video {
   }
 }
 
+/* Keep the latest-result affordance attached to the fixed composer so dynamic
+   prompt, reference, and error content can never move the button over it. */
+.generation-jump-latest {
+  position: absolute;
+  top: -56px;
+  left: 50%;
+  z-index: 3;
+  transform: translateX(-50%);
+  animation: generation-jump-latest-in 180ms var(--ease-out-expo) both;
+}
+.generation-jump-latest .generation-jump-latest__button {
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  min-height: 42px;
+  border: 1px solid color-mix(in oklch, var(--border-strong) 72%, transparent);
+  border-radius: var(--radius-full);
+  background: color-mix(in oklch, var(--card) 90%, transparent);
+  box-shadow: 0 12px 28px -18px rgb(0 0 0 / 0.92);
+  color: color-mix(in oklch, var(--foreground) 86%, var(--background));
+  backdrop-filter: blur(14px) saturate(110%);
+}
+.generation-jump-latest .generation-jump-latest__button:hover {
+  border-color: color-mix(in oklch, var(--foreground) 34%, var(--border-strong));
+  background: color-mix(in oklch, var(--surface-hover) 88%, transparent);
+  color: var(--foreground);
+}
+.generation-jump-latest .generation-jump-latest__button:active {
+  background: color-mix(in oklch, var(--surface-hover) 74%, var(--background));
+}
+.generation-jump-latest .generation-jump-latest__button svg {
+  width: 17px;
+  height: 17px;
+}
+@keyframes generation-jump-latest-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+@media (max-width: 560px) {
+  .generation-jump-latest {
+    top: -52px;
+  }
+  .generation-jump-latest .generation-jump-latest__button {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .generation-jump-latest {
+    animation: none;
+  }
+}
+
 /* Keep the history ticks fixed inside the canvas. Each batch owns its own
    target; the searchable panel is a secondary action instead of a rail hover. */
 .generation-console {
