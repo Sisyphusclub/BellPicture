@@ -317,6 +317,43 @@ final result: passed
 
 final result: passed
 
+## Discovery Glass Composer QA (2026-08-11)
+
+- Source visual truth:
+  `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-a9c09a9c-0a13-43e4-8daf-c93523620b9f.png`.
+- Implementation screenshot:
+  `C:/Users/Administrator/.codex/visualizations/2026/07/27/019fa120-4eb7-7f41-aca4-df1f91b0a446/discovery-glass-composer.png`.
+- Scope: the existing beUI Pro Agent Chat Input on Discover only. Generate keeps its established
+  opaque graphite workbench treatment.
+
+### Findings
+
+- Material: the composer uses a `34%` cool graphite root fill, `14px` backdrop blur, `132%`
+  saturation, and `90%` backdrop brightness. A `3.5%` cool light tint and four low-contrast inset
+  edges keep the inner prompt and toolbar area reading as one continuous glass surface.
+- Focus hierarchy: the existing logo-aligned BorderGlow remains the only decorative focus effect.
+  Its translucent mesh fill is reduced to `0.13` so the orange, cyan, and blue light stays near the
+  edge instead of tinting the complete input surface.
+- Interaction: the beUI component hierarchy and root overflow remain unchanged. Browser inspection
+  confirms the aspect-ratio menu portals outside the composer and remains fully interactive instead
+  of being clipped by the glass surface.
+- Resilience: narrow screens use a quieter `13px` blur and a stronger `44%` dark fill. Browsers
+  without backdrop-filter receive a `90%` opaque graphite frame and `84%` surface, while
+  `prefers-contrast: more` increases border and fill contrast.
+- Layout: the measured browser state is `851 x 201px` with `0px` horizontal overflow. The streamed
+  prompt, model controls, generation controls, focus state, and video background remain visible and
+  aligned.
+
+### Verification
+
+- `npm run test`: passed, 13 files and 67 tests.
+- `npm run typecheck`: passed.
+- `npm run check:components`: passed with no component-source violations.
+- `npm run lint`: passed.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+
+final result: passed
+
 ## Generation History Scroll Navigation QA (2026-08-11)
 
 - Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-f86e16a5-01ee-4f7a-bff2-bbc28235852c.png`, `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-08746d5d-e387-4460-b540-57b5091fc900.png`, and `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-27d8dcc8-4a56-40f2-b329-44d5c282e1e2.png`.

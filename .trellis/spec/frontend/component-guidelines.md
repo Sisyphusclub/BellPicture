@@ -67,6 +67,9 @@ by this repository, not a runtime black box.
 - Landing-page measurements follow the prompt-first beUI composition in
   `design.md`. Do not apply home display typography or carousel spacing to admin
   and workbench screens.
+- Discover may apply a scoped cool-graphite glass material directly to the existing beUI Agent Chat
+  Input. Keep the root overflow and interaction hierarchy unchanged, preserve the focus-owned
+  `BorderGlow`, provide an opaque no-filter fallback, and do not carry this material into Generate.
 - Keep card radii at 8px or less unless a source primitive requires otherwise.
 - Do not add decorative gradients, orbs, fake artwork, or handcrafted SVG icons.
 - Grouped toolbar controls use a stable `40px` outer height. When a grid or

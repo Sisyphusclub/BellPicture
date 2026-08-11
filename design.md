@@ -222,7 +222,11 @@ Before merging a component change, verify:
 The prompt composer is the signature product surface. Use the installed beUI Agent Chat Input as its interaction model.
 
 - Place it at the center of the creation flow, up to `768px` wide on home and `1060px` in the generate workspace.
-- Use a `20px` outer radius, muted 3px frame, card-colored inner surface, and no permanent heavy shadow.
+- Use a `20px` outer radius and a quiet 3px frame. Generate keeps the card-colored inner surface and
+  no permanent heavy shadow. Discover may use one cool graphite glass material on this same beUI
+  surface: a translucent dark fill, `13-14px` background blur, restrained saturation, a low-contrast
+  cool border, and inset edge highlights. Keep the moving hero video perceptible but not identifiable
+  through the prompt text area, with opaque fallbacks for unsupported filters and higher contrast.
 - Use ReactBits `BorderGlow` as the composer's only decorative focus effect. Keep a restrained logo-aligned golden orange, cyan, and royal blue mesh while the prompt editor is focused, intensify and orient it as the pointer approaches an edge, and replace pointer tracking with a static focus treatment under `prefers-reduced-motion`.
 - On Discover/Home, stream concise image-prompt examples one character at a time from the shared prompt list. Use a low-saturation white, pale blue, and soft peach gradient (`#f3f5fa`, `#c5d9f2`, `#efc9ac`) for that shortcut prompt text; keep the logo-aligned orange, cyan, and royal-blue palette reserved for `BorderGlow`. The Generate workspace uses the quiet top-left composer placeholder `描述你想生成的画面…` instead of discovery or marketing copy.
 - Keep prompt text, placeholders, and streamed prompt examples at `16px` across Discover and Generate so both composers share the same reading scale.
