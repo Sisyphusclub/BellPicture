@@ -6671,6 +6671,7 @@ video {
   grid-template-columns: minmax(0, 1fr) 30px;
   align-items: center;
   border-radius: 8px;
+  padding-right: 8px;
   transition:
     background-color 140ms var(--ease-out-expo),
     color 140ms var(--ease-out-expo);
