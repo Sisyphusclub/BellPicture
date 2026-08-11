@@ -263,11 +263,16 @@ The prompt composer is the signature product surface. Use the installed beUI Age
   Older batches sit above newer batches, the current batch tick is slightly longer and
   brighter, and an empty history renders no ticks. The rail must not consume a main-canvas
   grid track or change the composer width.
-- Hovering the rail for `180ms` reveals a `320-360px` absolute overlay that translates
-  from right to left over `220ms` with opacity. Keep a transparent pointer-safe corridor
-  between rail and panel; hide the rail ticks while the panel is open so the rail becomes
-  the panel instead of leaving a second control behind it. Close only after `300ms` outside
-  the combined interaction area.
+- Each tick is an independent shared `Button`. Its idle line is short and low contrast;
+  hover or keyboard focus lengthens only that line and reveals a compact contextual preview
+  aligned to the tick. The preview contains the batch thumbnail, prompt summary, time, model,
+  aspect ratio, and count. Hovering a tick never opens the full searchable history panel.
+- Clicking a tick restores that batch immediately and closes every history surface. Open the
+  full `320-360px` searchable panel only from the faint search icon above the rail or
+  `查看全部历史` in the contextual preview. The search icon remains independently reachable on
+  touch devices; while the panel is open, replace it with the panel-header close action and remove
+  hidden ticks from pointer and keyboard navigation. Keep transparent pointer-safe travel between
+  tick, preview, and panel, and close after a short delay outside the combined interaction area.
 - Center the expanded panel in the available canvas above the fixed Agent Composer using
   viewport-relative sizing; do not pin it to the canvas top or make it participate in the
   main content grid.
@@ -277,12 +282,12 @@ The prompt composer is the signature product surface. Use the installed beUI Age
 - Search matches prompt/task fallback text, model, batch id, and localized date text.
   Results group as `今天`, `昨天`, `过去 7 天`, and `更早`; each item exposes thumbnail,
   prompt summary, time, model, aspect ratio, and count.
-- Selecting an item restores its complete batch into the current result feed, closes the
-  overlay immediately, and marks the rail as active. A pending generation may show a
-  low-frequency brand pulse, never a progress percentage.
+- Selecting a tick or panel item restores its complete batch into the current result feed,
+  closes the overlay immediately, and marks the matching tick as active. A pending generation
+  may show a low-frequency brand pulse, never a progress percentage.
 - With no records, show only `暂无生成记录，完成第一次创作后将在这里显示`. Respect
-  keyboard focus, `Escape` close/focus return, and `prefers-reduced-motion` by removing
-  the pulse and spatial transitions while preserving the state change.
+  keyboard focus, `Escape` close/focus return, touch selection, and `prefers-reduced-motion`
+  by removing the pulse and spatial transitions while preserving the state change.
 
 ### Creation Sessions
 

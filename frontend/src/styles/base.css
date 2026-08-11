@@ -4909,13 +4909,18 @@ video {
     height: 260px;
   }
   .generation-console.has-results .studio-create-bar {
-    width: calc(100vw - 36px);
+    right: 18px;
+    left: 18px;
+    width: auto;
+    transform: none;
   }
 }
 
 @media (max-width: 560px) {
   .generation-console.has-results .studio-create-bar {
-    width: calc(100vw - 28px);
+    right: 14px;
+    left: 14px;
+    width: auto;
   }
 }
 
@@ -5004,19 +5009,18 @@ video {
   }
 }
 
-/* Keep the history rail fixed to the viewport edge while its transparent
-   corridor lets hover travel into the panel without collapsing it. */
+/* Keep the history ticks fixed inside the canvas. Each batch owns its own
+   target; the searchable panel is a secondary action instead of a rail hover. */
 .generation-console {
   position: relative;
 }
 .generation-history-dock {
   position: fixed;
   z-index: 22;
-  top: 50%;
+  top: calc(50% - 96px);
   right: 32px;
-  height: min(560px, calc(100svh - 260px));
+  height: min(560px, calc(100svh - 320px));
   width: min(404px, calc(100% - 24px));
-  min-height: 260px;
   pointer-events: none;
   transform: translateY(-50%);
 }
@@ -5024,84 +5028,243 @@ video {
   position: absolute;
   top: 50%;
   right: 0;
-  display: grid;
   width: 32px;
   max-height: calc(100% - 32px);
-  place-items: center;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+.generation-history-track .generation-history-track__all {
+  position: absolute;
+  top: -32px;
+  right: 2px;
+  z-index: 0;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
   border: 0;
   border-radius: 8px;
   background: transparent;
-  padding: 6px 2px;
-  color: var(--muted-foreground);
-  cursor: pointer;
+  padding: 0;
+  color: color-mix(in oklch, var(--muted-foreground) 74%, transparent);
+  opacity: 0.48;
   pointer-events: auto;
-  transform: translateY(-50%);
+  transition:
+    background 180ms var(--ease-out-expo),
+    color 160ms var(--ease-out-expo),
+    opacity 160ms var(--ease-out-expo),
+    transform 160ms var(--ease-out-expo);
+}
+.generation-history-track .generation-history-track__all:hover,
+.generation-history-track .generation-history-track__all:focus-visible {
+  background: color-mix(in oklch, var(--surface-hover) 32%, transparent);
+  color: var(--foreground);
+  opacity: 0.92;
+}
+.generation-history-track .generation-history-track__all:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--ring) 38%, transparent);
+}
+.generation-history-track .generation-history-track__all svg {
+  width: 13px;
+  height: 13px;
+}
+.generation-history-dock.is-open .generation-history-track__all {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(8px);
 }
 .generation-history-track__marks {
+  position: relative;
+  z-index: 1;
   display: flex;
   width: 100%;
   height: 100%;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
+  padding: 6px 0;
+  pointer-events: none;
 }
 .generation-history-track__marks.is-single {
   justify-content: center;
 }
 .generation-history-track .generation-history-track__mark {
-  display: block;
-  width: 28px;
-  height: 3px;
+  position: relative;
+  display: grid;
+  width: 32px;
+  min-width: 32px;
+  height: 20px;
+  min-height: 20px;
   flex: 0 0 auto;
+  place-items: center end;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  padding: 0 2px;
+  pointer-events: auto;
+}
+.generation-history-track .generation-history-track__mark:focus-visible {
+  outline: 0;
+  box-shadow: none;
+}
+.generation-history-track .generation-history-track__mark::before {
+  width: 11px;
+  height: 2px;
   border-radius: var(--radius-full);
-  background: color-mix(in oklch, var(--foreground) 36%, var(--background));
-  opacity: 0.72;
-  transform: scaleX(0.96);
+  background: color-mix(in oklch, var(--foreground) 34%, var(--background));
+  content: '';
+  opacity: 0.68;
   transition:
-    transform 160ms var(--ease-out-expo),
+    width 180ms var(--ease-out-expo),
     background 160ms var(--ease-out-expo),
-    opacity 160ms var(--ease-out-expo);
+    box-shadow 160ms var(--ease-out-expo),
+    opacity 160ms var(--ease-out-expo),
+    transform 160ms var(--ease-out-expo);
 }
-.generation-history-track:hover .generation-history-track__mark,
-.generation-history-track:focus-visible .generation-history-track__mark,
-.generation-history-dock.is-open .generation-history-track__mark {
-  background: color-mix(in oklch, var(--foreground) 56%, var(--background));
-  opacity: 0.92;
-  transform: scaleX(1.08);
+.generation-history-track .generation-history-track__mark:hover::before,
+.generation-history-track .generation-history-track__mark:focus-visible::before,
+.generation-history-track .generation-history-track__mark.is-previewed::before {
+  width: 23px;
+  background: color-mix(in oklch, var(--foreground) 72%, var(--accent));
+  opacity: 0.98;
 }
-.generation-history-track .generation-history-track__mark.is-current,
-.generation-history-track:hover .generation-history-track__mark.is-current,
-.generation-history-track:focus-visible .generation-history-track__mark.is-current,
-.generation-history-dock.is-open .generation-history-track__mark.is-current {
-  background: color-mix(in oklch, var(--foreground) 92%, var(--accent));
+.generation-history-track .generation-history-track__mark.is-current::before {
+  width: 27px;
+  height: 3px;
+  background: color-mix(in oklch, var(--foreground) 90%, var(--accent));
   box-shadow: 0 0 8px color-mix(in oklch, var(--accent) 20%, transparent);
   opacity: 1;
-  transform: scaleX(1.18) scaleY(1.35);
 }
-.generation-history-track .generation-history-track__mark.is-hovered {
+.generation-history-track .generation-history-track__mark:focus-visible::before {
+  height: 3px;
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--ring) 28%, transparent);
+}
+.generation-history-track .generation-history-track__mark.is-current:focus-visible::before {
+  width: 28px;
+  background: var(--foreground);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--ring) 36%, transparent);
+}
+.generation-history-track .generation-history-track__mark.is-hovered::before {
+  width: 25px;
   background: color-mix(in oklch, var(--accent) 48%, var(--foreground));
   box-shadow: 0 0 10px color-mix(in oklch, var(--accent) 32%, transparent);
   opacity: 1;
-  transform: scaleX(1.32) scaleY(1.5);
 }
-.generation-history-dock.is-open .generation-history-track .generation-history-track__mark,
 .generation-history-dock.is-open
   .generation-history-track
-  .generation-history-track__mark.is-current {
+  .generation-history-track__mark::before,
+.generation-history-dock.is-open
+  .generation-history-track
+  .generation-history-track__mark.is-current::before {
   background: transparent;
   box-shadow: none;
   opacity: 0;
-  transform: scaleX(0.35);
+  transform: translateX(8px);
+}
+.generation-history-dock.is-open .generation-history-track__marks,
+.generation-history-dock.is-open .generation-history-track__mark {
+  pointer-events: none;
 }
 .generation-history-hover-safe {
   position: absolute;
   top: 0;
   right: 28px;
   bottom: 0;
-  /* Overlap both hit targets so the cursor never crosses a dead strip while
-     moving from the rail into the panel during its slide-in. */
   width: 52px;
+  pointer-events: none;
+}
+.generation-history-dock.is-open .generation-history-hover-safe {
   pointer-events: auto;
+}
+.generation-history-preview {
+  position: absolute;
+  right: 44px;
+  z-index: 2;
+  display: grid;
+  width: 284px;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  border: 1px solid color-mix(in oklch, var(--border-strong) 68%, transparent);
+  border-radius: 10px;
+  background: color-mix(in oklch, var(--card) 92%, transparent);
+  box-shadow: 0 16px 46px -28px rgb(0 0 0 / 0.9);
+  padding: 9px;
+  backdrop-filter: blur(16px) saturate(108%);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(12px, -50%);
+  transform-origin: right center;
+  transition:
+    transform 180ms var(--ease-out-expo),
+    opacity 180ms var(--ease-out-expo);
+}
+.generation-history-preview::after {
+  position: absolute;
+  top: -4px;
+  right: -20px;
+  bottom: -4px;
+  width: 20px;
+  content: '';
+}
+.generation-history-preview.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(0, -50%);
+}
+.generation-history-preview__thumb {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  grid-row: 1 / span 2;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklch, var(--border) 86%, transparent);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  color: var(--muted-foreground);
+}
+.generation-history-preview__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.generation-history-preview__thumb svg {
+  width: 16px;
+  height: 16px;
+}
+.generation-history-preview__content {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+.generation-history-preview__content strong,
+.generation-history-preview__content small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.generation-history-preview__content strong {
+  color: var(--foreground);
+  font-size: 12px;
+  font-weight: 560;
+  line-height: 1.3;
+}
+.generation-history-preview__content small {
+  color: var(--muted-foreground);
+  font-size: 10px;
+  line-height: 1.25;
+}
+.generation-history-preview .generation-history-preview__all {
+  width: max-content;
+  height: 24px;
+  min-height: 24px;
+  justify-self: start;
+  border-radius: 6px;
+  padding: 0 7px;
+  color: color-mix(in oklch, var(--foreground) 78%, var(--muted-foreground));
+  font-size: 10px;
 }
 .generation-history-panel {
   position: absolute;
@@ -5147,10 +5310,22 @@ video {
   font-weight: 560;
   line-height: 1.2;
 }
-.generation-history-panel__header > svg {
-  width: 17px;
-  height: 17px;
+.generation-history-panel__header .generation-history-panel__close {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  border-radius: 8px;
   color: var(--muted-foreground);
+}
+.generation-history-panel__header .generation-history-panel__close:hover,
+.generation-history-panel__header .generation-history-panel__close:focus-visible {
+  background: var(--surface-hover);
+  color: var(--foreground);
+}
+.generation-history-panel__header .generation-history-panel__close svg {
+  width: 15px;
+  height: 15px;
 }
 .generation-history-panel__eyebrow {
   color: color-mix(in oklch, var(--accent) 64%, var(--muted-foreground));
@@ -5354,10 +5529,10 @@ video {
 
 @media (max-width: 860px) {
   .generation-history-dock {
-    top: 50%;
-    right: 10px;
-    height: min(420px, calc(100svh - 300px));
-    width: min(360px, calc(100% - 20px));
+    top: calc(50% - 96px);
+    right: 16px;
+    height: min(420px, calc(100svh - 360px));
+    width: min(360px, calc(100% - 32px));
   }
   .generation-history-panel {
     right: 38px;
@@ -5367,20 +5542,25 @@ video {
 }
 @media (max-width: 560px) {
   .generation-history-dock {
-    top: 50%;
-    right: 4px;
-    height: min(360px, calc(100svh - 380px));
-    width: min(352px, calc(100% - 8px));
+    top: calc(50% - 162px);
+    right: 16px;
+    height: min(300px, calc(100svh - 520px));
+    width: min(352px, calc(100% - 32px));
   }
   .generation-history-panel {
     right: 36px;
-    width: min(316px, calc(100% - 42px));
-    min-height: 240px;
+    width: min(316px, calc(100% - 38px));
+    min-height: 0;
   }
   .generation-history-panel__header {
     padding: 15px 15px 12px;
   }
   .generation-history-item__date {
+    display: none;
+  }
+}
+@media (hover: none) {
+  .generation-history-preview {
     display: none;
   }
 }
@@ -5390,7 +5570,9 @@ video {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .generation-history-track span,
+  .generation-history-track__all,
+  .generation-history-track__mark::before,
+  .generation-history-preview,
   .generation-history-panel,
   .generation-history-item {
     transition: none;

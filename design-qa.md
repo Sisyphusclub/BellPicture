@@ -274,19 +274,46 @@ No actionable P0, P1, or P2 mismatches remain.
 
 final result: passed
 
-## Generation History Hover Corridor QA (2026-08-04)
+## Generation History Tick Navigation QA (2026-08-11)
 
-- Scope: the right-side history rail and its over-canvas flyout in the Generate workspace.
-- Interaction contract: hovering the rail opens after 180ms; the transparent corridor overlaps the
-  rail and panel hit areas; leaving the complete interaction surface closes after 560ms.
-- Motion contract: the panel continues to use the existing 220ms transform/opacity transition and
-  remains keyboard-dismissable with Escape.
+- Scope: the right-side history tick navigation, contextual batch preview, and secondary searchable
+  flyout in the Generate workspace.
+- Interaction contract: every persisted batch owns one independently focusable shared `Button` tick.
+  Hover or focus reveals only that batch's compact preview; clicking the tick loads the batch directly.
+- Secondary action contract: the full searchable panel opens only from the rail search action or
+  `查看全部历史`. Tick, preview, safety corridor, and panel share delayed-leave behavior, while Escape
+  closes the active surface and restores focus to its opener. The panel removes hidden ticks from
+  pointer and keyboard navigation and exposes a shared close action in its header.
+- Layout contract: one history item produces a compact rail rather than a tall invisible target; the
+  fixed overlay keeps the existing right-side breathing room and does not resize the canvas or composer.
+- Motion contract: tick length, preview, and panel transitions use restrained opacity/transform changes;
+  reduced-motion removes nonessential transitions and the pending pulse.
 
-### Verification
+### Visual Evidence
 
-- `npm test -- --run tests/components/GenerationHistoryFlyout.spec.tsx`: passed.
-- The regression test covers rail entry, crossing the safety corridor, entering the panel, and
-  delayed close after leaving the full surface.
+- Supplied reference: `design-qa-assets/generation-history-reference.png`.
+- Side-by-side comparison: `design-qa-assets/generation-history-comparison.png`.
+- Desktop captures: `design-qa-assets/generation-history-ticks-1440.png`,
+  `design-qa-assets/generation-history-tick-preview-1440.png`,
+  `design-qa-assets/generation-history-panel-1440.png`, and
+  `design-qa-assets/generation-history-panel-1366x768.png`.
+- Mobile capture: `design-qa-assets/generation-history-panel-390x844.png`.
+
+### Verification Status
+
+- `npm run check:components`: passed, with no visible native controls or forbidden component imports.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm test -- --run`: passed, 13 files and 67 tests.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+- Component and Generate-view regressions cover tick preview, direct selection, secondary panel access,
+  safe travel, focus-within retention, hidden-tick tab removal, compact single-item sizing,
+  current/hover state, and keyboard Escape behavior.
+- In-app Browser QA passed at 1366x768, 1440x900, 1920x1080, and 390x844. The searchable panel keeps
+  23px, 16px, 123px, and 20px of composer clearance respectively; desktop document width equals the
+  viewport, and the 390px composer remains fully inside the viewport after its late-cascade fix.
+- The final comparison preserves the reference interaction hierarchy: quiet ticks, one longer active
+  state, tick-aligned contextual detail, and an explicit secondary path to full search.
 
 final result: passed
 

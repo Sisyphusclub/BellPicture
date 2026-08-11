@@ -342,7 +342,7 @@ it('opens the right history flyout, searches, and loads a selected batch', async
 
   const rail = screen.getByRole('button', { name: '展开生成历史' });
   expect(document.querySelectorAll('.generation-history-track__mark')).toHaveLength(1);
-  await user.hover(rail);
+  await user.click(rail);
   const panel = await screen.findByRole('complementary', { name: '生成历史' });
   expect(panel).toBeVisible();
   await user.type(within(panel).getByRole('searchbox'), '灯塔');

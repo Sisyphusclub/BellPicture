@@ -116,6 +116,13 @@ const templates = [
 - Autoplay surfaces must pause on hover and keyboard focus.
 - Honor `prefers-reduced-motion`; disable autoplay video and remove nonessential
   transitions for reduced-motion users.
+- Dense history rails use one shared `Button` per persisted record. Hover or focus
+  may reveal a contextual preview, but must not trigger a large overlay; direct tick
+  activation selects the record, while a separate accessible secondary action opens
+  complete search or management. While the overlay is open, mark the tick group hidden,
+  set every tick to `tabIndex={-1}`, and disable pointer hits. Preserve a pointer-safe
+  corridor and delayed leave between the tick, preview, and overlay without expanding
+  the main layout track; a focused preview or overlay must not close on pointer leave.
 - Generate-result skeletons must preserve the requested count, aspect ratio, and
   final responsive grid tracks. Use the source-owned AICSS Image Generation dot
   field with separate square, landscape, and portrait masks, a quiet morph and
