@@ -224,7 +224,7 @@ The prompt composer is the signature product surface. Use the installed beUI Age
 - Place it at the center of the creation flow, up to `768px` wide on home and `1060px` in the generate workspace.
 - Use a `20px` outer radius and a quiet 3px frame. Generate keeps the card-colored inner surface and
   no permanent heavy shadow. Discover may use one cool graphite glass material on this same beUI
-  surface: a translucent dark fill, `13-14px` background blur, restrained saturation, no permanent
+  surface: a translucent dark fill, `7-9px` background blur, restrained saturation, no permanent
   shell stroke, and one faint top-edge highlight. Keep the moving hero video perceptible but not
   identifiable through the prompt text area, with opaque fallbacks for unsupported filters and
   higher contrast.

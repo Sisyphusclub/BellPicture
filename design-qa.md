@@ -331,7 +331,7 @@ No actionable P0, P1, or P2 findings remain.
 
 - The Discover-scoped `BorderGlow` `::before` layer is masked to a 1px ring, retaining the logo-aligned gradient without painting the padding box. The `::after` interior mesh computes to `display: none`, so color cannot bleed through the translucent surface.
 - The composer root border stays transparent in idle and focus states. The permanent inset shell strokes were removed; the masked gradient ring and pointer-owned `.edge-light` appear only in the active edge treatment.
-- The neutral graphite body uses a `0.2` alpha with a restrained `14px` backdrop blur. The overscanned hero video is shifted downward so its moving texture remains perceptible through the prompt area without exposing a blank edge.
+- The neutral graphite body uses a desktop `0.04` alpha with a restrained `7px` backdrop blur, slight backdrop brightening, and no extra inner-surface fill. Mobile uses a `0.12` alpha and `9px` blur for denser control readability. The overscanned hero video is shifted downward so its moving texture remains clearly perceptible through the prompt area without exposing a blank edge.
 - Desktop and mobile checks report zero horizontal document overflow. The shifted video extends beyond both hero edges, and the composer remains contained at the compact breakpoint.
 - Browser console inspection found no warnings or errors.
 
