@@ -417,6 +417,36 @@ No actionable P0, P1, or P2 findings remain.
 
 final result: passed
 
+## Discover Video Framing QA (2026-08-11)
+
+- Before reference: `design-qa-assets/discover-liquid-glass-1440.png`.
+- Desktop implementation: `design-qa-assets/discover-video-position-1440.png`.
+- Mobile implementation: `design-qa-assets/discover-video-position-390.png`.
+- Side-by-side evidence: `design-qa-assets/discover-video-position-comparison.png`.
+- Local implementation: `http://127.0.0.1:5173/`.
+- Viewport/state: Discover hero at 1440 x 813 and 390 x 844 with the live background video.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- The overscanned video framing moves down by exactly `30px` at every responsive interpolation point,
+  changing the translate range from `124-160px` to `154-190px` without resizing the video.
+- The brighter spiral now sits closer to the title and composer rather than reading top-heavy, while
+  the input, glass refraction, navigation, and gallery positions remain unchanged.
+- Desktop and mobile retain full hero coverage and report `0px` horizontal document overflow.
+- No typography, color token, copy, control, media asset, or interaction behavior changed.
+
+### Verification
+
+- Browser comparison: passed at the desktop and mobile viewports.
+- Browser console: no application warnings or errors.
+- `npm run typecheck`, `npm run lint`, and focused route tests: passed.
+- `npm run build`: passed; the existing non-blocking chunk-size warning remains.
+- Focused Prettier and `git diff --check`: passed.
+
+final result: passed
+
 ## Discovery Glass Composer QA (2026-08-11)
 
 - Source visual truth:

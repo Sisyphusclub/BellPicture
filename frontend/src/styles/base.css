@@ -416,7 +416,7 @@ video {
   object-fit: cover;
   opacity: 0.76;
   filter: saturate(0.94) contrast(1.06) brightness(0.96);
-  transform: translate3d(0, clamp(124px, 20vh, 160px), 0);
+  transform: translate3d(0, clamp(154px, calc(20vh + 30px), 190px), 0);
 }
 .landing-hero__overlay {
   position: absolute;
