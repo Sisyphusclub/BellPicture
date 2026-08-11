@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
@@ -20,6 +20,15 @@ import { DEFAULT_ASPECT_CHOICE, DEFAULT_COUNT } from '@/types/image';
 
 const HERO_VIDEO =
   'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260217_030345_246c0224-10a4-422c-b324-070b7c0eceda.mp4';
+const HERO_SHINY_GRADIENT_STYLE: CSSProperties = {
+  backgroundImage:
+    'linear-gradient(110deg, #3D81E3, 20%, #AE9AE6, 40%, #F8D8D5, 60%, #FEEFDB, 80%, #3D81E3)',
+  backgroundSize: '200% auto',
+  WebkitBackgroundClip: 'text',
+  backgroundClip: 'text',
+  color: 'transparent',
+  WebkitTextFillColor: 'transparent',
+};
 const LANDING_SCROLL_KEY = 'nebulens:landing-scroll';
 const LANDING_MODELS = [{ id: 'gpt-image-2', label: 'gpt-image-2' }] as const;
 const LANDING_REASONING = [
@@ -218,7 +227,9 @@ export function LandingView() {
         <div className="landing-hero__content">
           <h1 id="landing-title" aria-label="Turn your idea into images">
             <span className="landing-hero__headline-main">Turn your idea</span>
-            <em>into images</em>
+            <em className="animate-shiny" style={HERO_SHINY_GRADIENT_STYLE}>
+              into images
+            </em>
           </h1>
           <p>用 GPT-IMAGE-2 将你的创意变为精美图片，只需描述你脑海中的画面。</p>
           <AgentChatInput

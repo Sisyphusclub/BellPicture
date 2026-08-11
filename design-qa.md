@@ -317,6 +317,42 @@ final result: passed
 
 final result: passed
 
+## Shiny Headline Gradient QA (2026-08-11)
+
+- Source visual truth: the user-provided `Shiny Text Gradient Animation` React/Tailwind specification in the current request.
+- Implementation screenshots: `design-qa-assets/discover-shiny-headline-final-desktop.png` and `design-qa-assets/discover-shiny-headline-final-mobile.png`.
+- Local implementation: `http://127.0.0.1:5173/`.
+- Viewport/state: Discover page with the hero video playing and the headline rendered at requested desktop and mobile breakpoints. The in-app browser's effective CSS viewports were 1014 x 573 and 274 x 594 under Windows display scaling.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: `Turn your idea` remains the existing Geist Variable treatment; only the Instrument Serif Italic `into images` span receives the shiny gradient, preserving the shared baseline and existing title scale.
+- Colors and visual tokens: the inline gradient uses the requested 110deg stops `#3D81E3`, `#AE9AE6`, `#F8D8D5`, `#FEEFDB`, and `#3D81E3`. The effect is limited to the headline text and does not tint the video, composer, or navigation.
+- Motion: the browser reports `6s linear infinite shiny`, and sampled `background-position` values advance between captures. The reduced-motion media rule disables the loop and centers the gradient.
+- Responsive integrity: desktop and mobile screenshots retain the complete headline, with zero horizontal document overflow and no overlap with the subtitle or composer.
+- Copy and content: the accessible heading remains `Turn your idea into images` and the visible copy is unchanged.
+
+### Patches Made
+
+- Added the reusable `.animate-shiny` utility and `@keyframes shiny` to the existing global stylesheet.
+- Added the typed React gradient style object and applied it only to the `into images` headline span.
+- Added a regression test for the animation class, gradient stops, and inline sizing contract.
+- Added a static centered-gradient fallback for `prefers-reduced-motion` and documented the contract in `design.md` and the active Trellis PRD.
+
+### Verification
+
+- `npm run check:components`: passed.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm test -- --run tests/App.spec.tsx`: passed, 14 tests.
+- `npm run build`: passed; the existing non-blocking chunk-size warning remains.
+- Focused Prettier check for changed source/spec files: passed. Repository-wide format check still reports pre-existing baseline files outside this change.
+- `git diff --check`: passed.
+
+final result: passed
+
 ## Centered Hero Video and Wanxiang Glass QA (2026-08-11)
 
 - Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-b503d54e-a028-4023-9e9b-983a25d8ea36.png` and `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-99371377-520f-4f64-9b6a-b346c54e824a.png`.

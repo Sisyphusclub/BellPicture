@@ -32,6 +32,8 @@ Completely rebuild the Generate, Creation Templates, Assets, Sign In, and Sign U
   restrained directional inset rim, and a separate low chrome blur.
 - Reframe the overscanned desktop hero video around its visual focal point rather than its source-box
   midpoint so the vortex reads centered behind the title and composer.
+- Apply the supplied 6-second blue-lilac-blush-ivory shiny gradient only to the italic `into images`
+  headline accent, with a static centered gradient when reduced motion is requested.
 - Expose the material as a typed optional `AgentChatInput` capability and enable it only on Discover;
   Generate must keep its existing workbench surface.
 - Preserve root overflow for menus, clip only the glass layers, retain the focused gradient edge ring,

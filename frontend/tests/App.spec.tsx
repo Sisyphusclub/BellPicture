@@ -132,6 +132,11 @@ describe('React application routes', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Turn your idea into images' }),
     ).toBeInTheDocument();
+    const shinyHeadline = screen.getByText('into images');
+    expect(shinyHeadline).toHaveClass('animate-shiny');
+    expect(shinyHeadline.style.backgroundSize).toBe('200% auto');
+    expect(shinyHeadline.style.color).toBe('transparent');
+    expect(shinyHeadline.style.backgroundImage).toContain('linear-gradient(110deg');
     expect(screen.queryByRole('heading', { level: 2, name: '今日创作' })).not.toBeInTheDocument();
     expect(container.querySelector('video.landing-hero__video')).toBeInTheDocument();
     const creationCards = container.querySelectorAll('.image-gallery-vertical__image-button');
