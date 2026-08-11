@@ -166,6 +166,59 @@
   overflow: visible;
 }
 
+.border-glow-card[data-liquid-glass='true'] {
+  background: transparent;
+}
+
+.border-glow-liquid-glass__defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.border-glow-liquid-glass__effect,
+.border-glow-liquid-glass__chrome {
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  border-radius: calc(var(--border-radius) - 1px);
+  clip-path: inset(0 round calc(var(--border-radius) - 1px));
+  pointer-events: none;
+}
+
+.border-glow-liquid-glass__effect {
+  backdrop-filter: var(--liquid-glass-filter) saturate(var(--liquid-glass-saturation, 1.15));
+  -webkit-backdrop-filter: var(--liquid-glass-filter) saturate(var(--liquid-glass-saturation, 1.15));
+}
+
+.border-glow-liquid-glass__tint {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at 50% 42%,
+    var(--liquid-glass-tint-center, rgb(19 19 20 / 0.64)) 0%,
+    var(--liquid-glass-tint-edge, rgb(19 19 20 / 0.56)) 100%
+  );
+  box-shadow: inset 0 1px 0 var(--liquid-glass-highlight, rgb(255 255 255 / 0.08));
+}
+
+.border-glow-liquid-glass__chrome {
+  backdrop-filter: blur(var(--liquid-glass-blur, 2px))
+    saturate(var(--liquid-glass-chrome-saturation, 1.15));
+  -webkit-backdrop-filter: blur(var(--liquid-glass-blur, 2px))
+    saturate(var(--liquid-glass-chrome-saturation, 1.15));
+}
+
+.border-glow-card[data-liquid-glass='true'] > .border-glow-inner {
+  z-index: 1;
+}
+
+.border-glow-card[data-liquid-glass='true'] > .edge-light {
+  z-index: 3;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .border-glow-card::before,
   .border-glow-card::after,

@@ -99,6 +99,7 @@ export interface AgentChatInputProps {
   allowFileUpload?: boolean;
   acceptedFileTypes?: string;
   toolbarContent?: ReactNode;
+  liquidGlass?: boolean;
   className?: string;
   classNames?: AgentChatInputClassNames;
 }

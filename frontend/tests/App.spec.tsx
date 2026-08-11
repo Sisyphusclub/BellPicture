@@ -161,6 +161,10 @@ describe('React application routes', () => {
     expect(screen.queryByRole('button', { name: '上一张作品' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '下一张作品' })).not.toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: '首页创作提示词' })).toBeInTheDocument();
+    const landingComposer = container.querySelector('[data-slot="agent-chat-input"]');
+    expect(landingComposer).toHaveAttribute('data-liquid-glass', 'true');
+    expect(landingComposer?.querySelector('.border-glow-liquid-glass__effect')).toBeInTheDocument();
+    expect(landingComposer?.querySelector('.border-glow-liquid-glass__chrome')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /选择智能体/ })).not.toBeInTheDocument();
     expect(
       screen.getByRole('button', {

@@ -519,6 +519,7 @@ export function AgentChatInput({
   allowFileUpload = true,
   acceptedFileTypes = 'image/*',
   toolbarContent,
+  liquidGlass = false,
   className,
   classNames,
 }: AgentChatInputProps) {
@@ -657,6 +658,7 @@ export function AgentChatInput({
       glowColor="198 96 70"
       glowIntensity={0.9}
       glowRadius={34}
+      liquidGlass={liquidGlass}
       reducedMotion={reduce}
       onFocusCapture={handleFocusCapture}
       onBlurCapture={handleBlurCapture}

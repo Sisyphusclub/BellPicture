@@ -224,9 +224,10 @@ The prompt composer is the signature product surface. Use the installed beUI Age
 - Place it at the center of the creation flow, up to `768px` wide on home and `1060px` in the generate workspace.
 - Use a `20px` outer radius and a quiet 3px frame. Generate keeps the card-colored inner surface and
   no permanent heavy shadow. Discover may use one cool graphite glass material on this same beUI
-  surface: a translucent dark fill, `7-9px` background blur, restrained saturation, no permanent
-  shell stroke, and one faint top-edge highlight. Keep the moving hero video perceptible but not
-  identifiable through the prompt text area, with opaque fallbacks for unsupported filters and
+  surface: an SVG displacement-map refraction layer, a radial translucent dark tint, and a separate
+  `2-2.5px` chrome blur with restrained saturation. Keep the moving hero video perceptible through
+  the prompt area without reducing text contrast. Clip each material layer inside the radius, leave
+  the root overflow available for menus, and provide opaque fallbacks for unsupported filters and
   higher contrast.
 - Use ReactBits `BorderGlow` as the composer's only decorative focus effect. Keep a restrained logo-aligned golden orange, cyan, and royal blue mesh while the prompt editor is focused, intensify and orient it as the pointer approaches an edge, and replace pointer tracking with a static focus treatment under `prefers-reduced-motion`.
   On the translucent Discover composer, clip the colored `::before` mesh to a true 1px border ring,

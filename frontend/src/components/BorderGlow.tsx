@@ -1,5 +1,6 @@
 import {
   useRef,
+  useId,
   useCallback,
   useEffect,
   type CSSProperties,
@@ -20,8 +21,30 @@ interface BorderGlowProps extends Omit<HTMLAttributes<HTMLDivElement>, 'color'> 
   colors?: string[];
   fillOpacity?: number;
   active?: boolean;
+  liquidGlass?: boolean;
   reducedMotion?: boolean;
 }
+
+const LIQUID_GLASS_DISPLACEMENT_MAP = `data:image/svg+xml,${encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="x" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#ff0080" />
+        <stop offset="0.12" stop-color="#800080" />
+        <stop offset="0.88" stop-color="#800080" />
+        <stop offset="1" stop-color="#000080" />
+      </linearGradient>
+      <linearGradient id="y" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#00ff00" />
+        <stop offset="0.16" stop-color="#008000" />
+        <stop offset="0.84" stop-color="#008000" />
+        <stop offset="1" stop-color="#000000" />
+      </linearGradient>
+    </defs>
+    <rect width="100" height="100" fill="url(#x)" />
+    <rect width="100" height="100" fill="url(#y)" style="mix-blend-mode:screen" />
+  </svg>
+`)}`;
 
 function parseHSL(hslStr: string): { h: number; s: number; l: number } {
   const match = hslStr.match(/([\d.]+)\s*([\d.]+)%?\s*([\d.]+)%?/);
@@ -134,6 +157,7 @@ const BorderGlow = ({
   colors = ['#c084fc', '#f472b6', '#38bdf8'],
   fillOpacity = 0.5,
   active = false,
+  liquidGlass = false,
   reducedMotion = false,
   style,
   onPointerMove,
@@ -141,6 +165,7 @@ const BorderGlow = ({
   ...rootProps
 }: BorderGlowProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
+  const liquidGlassFilterId = `liquid-glass-${useId().replaceAll(':', '')}`;
 
   const getCenterOfElement = useCallback((el: HTMLElement): [number, number] => {
     const { width, height } = el.getBoundingClientRect();
@@ -263,6 +288,7 @@ const BorderGlow = ({
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
       data-glow-active={active ? 'true' : undefined}
+      data-liquid-glass={liquidGlass ? 'true' : undefined}
       data-reduced-motion={reducedMotion ? 'true' : undefined}
       className={`border-glow-card ${className}`}
       style={
@@ -273,6 +299,7 @@ const BorderGlow = ({
           '--glow-padding': `${glowRadius}px`,
           '--cone-spread': coneSpread,
           '--fill-opacity': fillOpacity,
+          '--liquid-glass-filter': `url("#${liquidGlassFilterId}")`,
           ...glowVars,
           ...buildGradientVars(colors),
           ...style,
@@ -280,6 +307,47 @@ const BorderGlow = ({
       }
     >
       <span className="edge-light" />
+      {liquidGlass ? (
+        <>
+          <svg
+            className="border-glow-liquid-glass__defs"
+            width="0"
+            height="0"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <filter
+              id={liquidGlassFilterId}
+              x="0"
+              y="0"
+              width="100%"
+              height="100%"
+              colorInterpolationFilters="sRGB"
+            >
+              <feImage
+                href={LIQUID_GLASS_DISPLACEMENT_MAP}
+                x="0"
+                y="0"
+                width="100%"
+                height="100%"
+                preserveAspectRatio="none"
+                result="map"
+              />
+              <feDisplacementMap
+                in="SourceGraphic"
+                in2="map"
+                scale="-92"
+                xChannelSelector="R"
+                yChannelSelector="G"
+              />
+            </filter>
+          </svg>
+          <span className="border-glow-liquid-glass__effect" aria-hidden="true">
+            <span className="border-glow-liquid-glass__tint" />
+          </span>
+          <span className="border-glow-liquid-glass__chrome" aria-hidden="true" />
+        </>
+      ) : null}
       <div className="border-glow-inner">{children}</div>
     </div>
   );

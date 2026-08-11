@@ -5214,9 +5214,7 @@ video {
   box-shadow: 0 0 10px color-mix(in oklch, var(--accent) 32%, transparent);
   opacity: 1;
 }
-.generation-history-dock.is-open
-  .generation-history-track
-  .generation-history-track__mark::before,
+.generation-history-dock.is-open .generation-history-track .generation-history-track__mark::before,
 .generation-history-dock.is-open
   .generation-history-track
   .generation-history-track__mark.is-current::before {
@@ -5888,16 +5886,22 @@ video {
 }
 
 /* Discover keeps the beUI composer interaction contract while using the hero
-   video as a restrained material layer. The surface stays translucent enough
-   to reveal motion without sacrificing prompt and toolbar contrast. */
+   video as a refracted material layer. The body follows Wanxiang's low-blur
+   glass stack while the existing Nebulens focus ring remains independent. */
 .agent-chat-input.landing-composer.border-glow-card {
-  --card-bg: rgb(7 15 27 / 0.04) !important;
+  --card-bg: transparent !important;
+  --liquid-glass-tint-center: rgb(7 15 27 / 0.38);
+  --liquid-glass-tint-edge: rgb(7 15 27 / 0.28);
+  --liquid-glass-highlight: rgb(226 241 255 / 0.12);
+  --liquid-glass-blur: 2px;
+  --liquid-glass-saturation: 1.05;
+  --liquid-glass-chrome-saturation: 1.15;
 
   border-color: transparent;
-  background: rgb(7 15 27 / 0.04);
-  box-shadow: 0 24px 64px -32px rgb(0 4 12 / 0.92);
-  backdrop-filter: blur(7px) saturate(122%) brightness(108%);
-  -webkit-backdrop-filter: blur(7px) saturate(122%) brightness(108%);
+  background: transparent;
+  box-shadow: 0 24px 64px -34px rgb(0 4 12 / 0.82);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 .agent-chat-input.landing-composer.border-glow-card::before {
   display: block;
@@ -5920,6 +5924,8 @@ video {
     linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
 }
 .agent-chat-input.landing-composer.border-glow-card::after {
   display: none;
@@ -5930,7 +5936,7 @@ video {
 }
 .landing-composer .agent-chat-input__surface {
   background: transparent;
-  box-shadow: inset 0 1px 0 rgb(226 241 255 / 0.1);
+  box-shadow: none;
 }
 .landing-composer .agent-chat-input__toolbar-content {
   border-top-color: rgb(214 232 250 / 0.09);
@@ -5947,11 +5953,12 @@ video {
 
 @media (max-width: 560px) {
   .agent-chat-input.landing-composer.border-glow-card {
-    --card-bg: rgb(7 15 27 / 0.12) !important;
+    --card-bg: transparent !important;
+    --liquid-glass-tint-center: rgb(7 15 27 / 0.46);
+    --liquid-glass-tint-edge: rgb(7 15 27 / 0.34);
+    --liquid-glass-blur: 2.5px;
 
-    background: rgb(7 15 27 / 0.12);
-    backdrop-filter: blur(9px) saturate(114%) brightness(101%);
-    -webkit-backdrop-filter: blur(9px) saturate(114%) brightness(101%);
+    background: transparent;
   }
   .landing-composer .agent-chat-input__surface {
     background: rgb(202 226 248 / 0.02);
@@ -5960,10 +5967,12 @@ video {
 
 @media (prefers-contrast: more) {
   .agent-chat-input.landing-composer.border-glow-card {
-    --card-bg: rgb(7 15 27 / 0.82) !important;
+    --card-bg: transparent !important;
+    --liquid-glass-tint-center: rgb(7 15 27 / 0.9);
+    --liquid-glass-tint-edge: rgb(7 15 27 / 0.84);
 
     border-color: transparent;
-    background: rgb(7 15 27 / 0.82);
+    background: transparent;
   }
   .landing-composer .agent-chat-input__surface {
     background: rgb(10 20 34 / 0.7);
@@ -5975,6 +5984,10 @@ video {
     --card-bg: rgb(7 15 27 / 0.9) !important;
 
     background: rgb(7 15 27 / 0.9);
+  }
+  .landing-composer .border-glow-liquid-glass__effect,
+  .landing-composer .border-glow-liquid-glass__chrome {
+    display: none;
   }
   .landing-composer .agent-chat-input__surface {
     background: rgb(10 20 34 / 0.84);

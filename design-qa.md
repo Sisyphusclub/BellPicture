@@ -317,6 +317,76 @@ final result: passed
 
 final result: passed
 
+## Discover Liquid-Glass Composer QA (2026-08-11)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-869a5446-8105-4137-8f00-9d51765802d6.png`.
+- Desktop implementation: `design-qa-assets/discover-liquid-glass-focused-1440.png`.
+- Mobile implementation: `design-qa-assets/discover-liquid-glass-390.png`.
+- Full-view comparison: `design-qa-assets/discover-liquid-glass-full-comparison.png`.
+- Focused material comparison: `design-qa-assets/discover-liquid-glass-focused-comparison.png`.
+- Local implementation: `http://127.0.0.1:5173/`.
+- Viewport/state: 1440 x 813 focused Discover composer over the live hero video; responsive check at
+  390 x 844. The supplied source is a wider full-browser capture, so the focused comparison normalizes
+  the two composer regions while the full comparison is retained for visual context only.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain for the requested material-only change.
+
+- Fonts and typography: existing Nebulens heading, subtitle, streamed prompt, and toolbar text remain
+  unchanged. The glass layers are non-content elements and do not alter wrapping, font weight, or
+  contrast.
+- Spacing and layout rhythm: the existing beUI composer geometry and toolbar grouping remain intact.
+  The glass layers are absolutely positioned inside a 1px inset, while the root keeps `overflow:
+  visible`; measured horizontal document overflow is `0px` on desktop and mobile.
+- Colors and visual tokens: the material uses a cool graphite radial tint over the hero video, a
+  `2px` desktop / `2.5px` mobile chrome blur, and restrained saturation. The existing orange, cyan,
+  and royal-blue BorderGlow remains a focused 1px ring with no warm interior fill.
+- Image quality and asset fidelity: the existing hero video, logo, and gallery assets are unchanged.
+  The directional displacement map refracts the live video backdrop instead of replacing it with a
+  fake image or decorative artwork.
+- Copy and content: no visible copy, controls, model values, generation settings, or route behavior
+  changed.
+- Scope isolation: browser inspection reports the Discover effect as
+  `url("#liquid-glass-...") saturate(1.05)` plus `blur(2px) saturate(1.15)`; Generate renders one
+  existing studio composer and zero `[data-liquid-glass="true"]` nodes.
+
+### Comparison Evidence
+
+- The focused side-by-side artifact shows the source and implementation using the same material
+  hierarchy: background detail remains perceptible through a neutral dark body, the edge carries a
+  restrained highlight, and content sits above the glass rather than inside another opaque card.
+- The full-view artifact confirms that the requested material was adapted to the existing Nebulens
+  hero without copying Wanxiang navigation, branding, layout, or controls.
+- The 390px capture preserves the stacked toolbar, readable prompt region, complete radius, and
+  horizontal containment.
+
+### Patches Made
+
+- Added a typed optional liquid-glass capability to the shared beUI `AgentChatInput` and
+  `BorderGlow` wrapper.
+- Added a directional red/green SVG displacement map, neutral radial tint, and independent chrome
+  blur layers behind the composer content.
+- Enabled the material only in `LandingView`, preserved the original focused mesh border, and added
+  no-filter and higher-contrast fallbacks.
+- Added route regression coverage and documented the material contract in `design.md`, the frontend
+  component specification, and the active Trellis PRD.
+
+### Verification
+
+- `npm run check:components`: passed, 79 TypeScript files scanned with no provenance violations.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm run test`: passed, 13 files and 67 tests.
+- `npm run build`: passed; the existing non-blocking chunk-size warning remains.
+- Changed frontend source/test files and the component specification pass the focused Prettier
+  check. Repository-wide `npm run format:check` still reports the 55 pre-existing baseline files
+  outside this change.
+- Browser console: no warnings or errors.
+- Browser layout: zero horizontal overflow at the checked desktop and mobile viewports.
+
+final result: passed
+
 ## Discover Glass Composer Shell QA (2026-08-11)
 
 - Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-e9f5ad62-3973-4fc5-86df-9a596c48ebc9.png`.

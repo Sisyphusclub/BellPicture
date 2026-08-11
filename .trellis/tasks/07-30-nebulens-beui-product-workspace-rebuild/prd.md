@@ -23,6 +23,17 @@ Completely rebuild the Generate, Creation Templates, Assets, Sign In, and Sign U
 - Use semantic tokens, stable control dimensions, Lucide icons, visible focus, and reduced-motion fallbacks.
 - Visible work surfaces use labels and state only; no page subtitles, tutorial paragraphs, feature narration, or keyboard shortcut prose.
 
+#### Discover liquid-glass follow-up (2026-08-11)
+
+- Keep the existing beUI `AgentChatInput`, Nebulens BorderGlow palette, video background, layout,
+  and generation handoff intact.
+- Replace only the Discover composer material with the Wanxiang-style layered glass technique:
+  directional SVG displacement refraction, neutral radial tint, and a separate low chrome blur.
+- Expose the material as a typed optional `AgentChatInput` capability and enable it only on Discover;
+  Generate must keep its existing workbench surface.
+- Preserve root overflow for menus, clip only the glass layers, retain the focused gradient edge ring,
+  and provide no-filter and higher-contrast fallbacks.
+
 ### Generate
 
 - Recompose the page around a persistent Agent Chat Input create bar and a continuous session result feed.
@@ -141,6 +152,9 @@ Completely rebuild the Generate, Creation Templates, Assets, Sign In, and Sign U
 - [x] All visible route and domain controls use shared beUI/ui contracts; the only native-control
       exception is the exact hidden reference file input required by the browser.
 - [x] `npm run check:components` passes and runs before frontend lint and build.
+- [x] Discover renders the optional liquid-glass layers over the hero video while Generate renders no
+      liquid-glass layer; the focused BorderGlow ring, menus, mobile layout, and zero-overflow behavior
+      remain intact.
 - [x] Result-state screenshots pass at 1366px, 1440px, and 1963px with no overlap, clipping, or
       horizontal overflow; route tests, lint, typecheck, formatting, and production build pass.
 

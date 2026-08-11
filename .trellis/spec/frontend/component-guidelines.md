@@ -67,8 +67,10 @@ by this repository, not a runtime black box.
 - Landing-page measurements follow the prompt-first beUI composition in
   `design.md`. Do not apply home display typography or carousel spacing to admin
   and workbench screens.
-- Discover may apply a scoped cool-graphite glass material directly to the existing beUI Agent Chat
-  Input. Keep the root overflow and interaction hierarchy unchanged, preserve the focus-owned
+- Discover may apply a scoped cool-graphite liquid-glass material directly to the existing beUI Agent
+  Chat Input. Implement it as a typed optional prop that composes an SVG directional displacement
+  map, radial neutral tint, and separate `2-2.5px` chrome blur behind the input content. Keep the root
+  overflow and interaction hierarchy unchanged, clip only the material layers, preserve the focus-owned
   `BorderGlow` gradient as a masked 1px edge ring plus its outer edge light, disable only the colored
   interior fill layer, keep the root shell stroke transparent in idle and focus states, provide an
   opaque no-filter fallback, and do not carry this material into Generate.

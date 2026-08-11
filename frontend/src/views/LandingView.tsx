@@ -240,6 +240,7 @@ export function LandingView() {
             minRows={1}
             maxRows={4}
             allowFileUpload={false}
+            liquidGlass
             toolbarContent={
               <LandingGenerationControls
                 aspect={aspect}
