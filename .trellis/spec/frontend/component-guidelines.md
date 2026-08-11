@@ -117,10 +117,12 @@ const templates = [
 - Honor `prefers-reduced-motion`; disable autoplay video and remove nonessential
   transitions for reduced-motion users.
 - Generate-result skeletons must preserve the requested count, aspect ratio, and
-  final responsive grid tracks. Use a low-contrast 1.8s opacity pulse with no
-  shimmer or fake percentage, disable its loop for reduced motion, reveal loaded
-  images with a roughly 220ms opacity/scale transition, and replace failures with
-  an equal-ratio retry card.
+  final responsive grid tracks. Use the source-owned AICSS Image Generation dot
+  field with separate square, landscape, and portrait masks, a quiet morph and
+  breathing state, and the requested ratio/resolution label. Do not show a fake
+  percentage. Disable every loop for reduced motion, reveal loaded images with a
+  roughly 220ms opacity/scale transition, and replace failures with an equal-ratio
+  retry card.
 - Keep carousel dimensions stable while slides move. The landing carousel uses
   five virtual slots, three visible positions, 5-second autoplay, and an 800ms
   transition.

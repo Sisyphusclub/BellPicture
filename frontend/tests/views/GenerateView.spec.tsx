@@ -375,7 +375,9 @@ it('matches pending skeleton count and aspect ratio to the requested results', a
   );
   container.querySelectorAll<HTMLElement>('.generation-skeleton__card').forEach((card) => {
     expect(card).toHaveStyle({ aspectRatio: '16 / 9' });
-    expect(card).toHaveTextContent('正在生成');
+    expect(card).toHaveAttribute('data-orientation', 'landscape');
+    expect(card).toHaveTextContent('16:9 · 标准');
+    expect(card).toHaveTextContent('正在生成图片');
   });
 
   await act(async () => {

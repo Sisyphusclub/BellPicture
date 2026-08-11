@@ -12,14 +12,15 @@ components with shared `Button`, `Input`, `Textarea`, `Switch`, `SelectMenu`, be
 control is a hidden `type="file"` input required by the browser file picker. Its visible trigger is
 the shared `Button`.
 
-The automated gate scans 78 TypeScript source files and currently reports:
+The automated gate scans 79 TypeScript source files and currently reports:
 
 - 0 visible native controls outside shared implementation roots.
 - 1 exact hidden browser-control exception.
 - 0 direct foundation imports outside approved roots.
 - 0 competing component-system imports.
 - 0 `window.confirm`, `window.alert`, or `window.prompt` calls.
-- 1 documented external visual exception: ReactBits `BorderGlow`, limited to Agent Chat Input.
+- 2 documented external visual exceptions: ReactBits `BorderGlow`, limited to Agent Chat Input,
+  and AICSS `Image Generation`, limited to Generate pending/loading results.
 
 ## Source Inventory
 
@@ -34,9 +35,10 @@ The automated gate scans 78 TypeScript source files and currently reports:
 | Button and form semantics | Nebulens beUI/shadcn adapters | `src/components/ui/` | Approved |
 | Authentication | beUI Auth interaction pattern + shared adapters | `src/components/auth/LoginModal.tsx` | Approved adaptation |
 | Composer focus effect | ReactBits Border Glow | `src/components/BorderGlow.tsx` | Documented exception |
+| Generation placeholder | AICSS Image Generation | `src/components/generation/ImageGenerationPlaceholder.tsx` | Documented exception |
 | File picker bridge | Browser hidden file input | `src/components/upload/ReferenceUploader.tsx` | Required exception |
 
-The source tree contains 25 beUI premium source files, 6 shared UI adapter files, and 11 product
+The source tree contains 25 beUI premium source files, 6 shared UI adapter files, and 12 product
 composition files. Radix is used only as a foundation inside `ui/button.tsx` and the beUI Animated
 Dropdown implementation; it is not a route-level component API.
 
@@ -54,8 +56,8 @@ Dropdown implementation; it is not a route-level component API.
 ### Anti-Patterns Verdict
 
 Pass for component provenance. The interface no longer mixes page-local native controls with the
-shared design system. `BorderGlow` is visibly distinctive but remains focus-only, documented, and
-does not replace semantic interaction behavior.
+shared design system. `BorderGlow` remains focus-only and the AICSS Image Generation visual remains
+generation-state-only. Both are documented and neither replaces semantic interaction behavior.
 
 ## Findings
 

@@ -186,15 +186,22 @@ contract above.
 | Auth                           | [auth](https://pro.beui.dev/components/auth)                             | `src/components/auth/*` and auth views                                                  | Existing Better Auth fields, validation, pending state, and provider limits                            |
 | Shared button primitive        | beUI Pro control language via the `@beui-pro` registry                   | `src/components/ui/button.tsx`                                                          | Semantic variants and Lucide icon slots; no new button family                                          |
 
-#### Explicit exception
+#### Explicit exceptions
 
-`BorderGlow` is the only intentional non-beUI Pro visual primitive. It follows the
+Two intentional non-beUI Pro visual primitives are approved. `BorderGlow` follows the
 previous product decision to use the [ReactBits Border Glow](https://reactbits.dev/components/border-glow)
 effect around the Agent Chat Input. It is limited to the focused composer boundary,
 uses Nebulens logo-aligned cyan/blue/orange tokens, has no content or layout responsibility,
 and must honor reduced motion. Do not use it on navigation, cards, tables, galleries,
-or generic page backgrounds. Any future third-party component requires the same explicit
-exception and a documented replacement/ownership boundary before use.
+or generic page backgrounds.
+
+`ImageGenerationPlaceholder` adapts the
+[AICSS Image Generation](https://www.aicss.dev/components/image-generation) visual for pending
+generation results. It is limited to `GenerateView`, preserves the selected output count and
+aspect ratio, maps the supported ratios to square, landscape, and portrait dot-mask motion, and
+uses the project's semantic dark-theme tokens. It may not replace completed media, error recovery,
+or semantic controls. Any future third-party component requires the same explicit exception and a
+documented replacement/ownership boundary before use.
 
 #### Component review checklist
 
@@ -366,7 +373,7 @@ The home page is a product-first creation screen, not a Squarespace clone.
 - The Agent Chat Input owns prompt, reference upload, model, ratio, count, private-mode switch, quota, and submit/stop behavior. Keep the toolbar in one row where space allows: upload, model, ratio, count, and private mode on the left; quota/status and generation on the right.
 - Advanced options open through one Animated Dropdown or responsive side sheet. Core settings stay visible and stable.
 - Reference thumbnails live inside the composer tray. Each thumbnail exposes preview and remove; reference roles or influence appear only when the generation API can honor them.
-- Generation status reserves the exact result geometry immediately: render one placeholder per requested image using the selected aspect ratio and the same responsive grid tracks as completed results. Use a low-contrast graphite pulse that moves only between `0.45` and `0.85` opacity over `1.8s`, with a small sparkle icon and `正在生成`; never use a shimmer sweep or invented percentage. Crossfade each loaded image over roughly `220ms` with only a slight scale correction, remove all looping motion under `prefers-reduced-motion`, and replace failed placeholders with an equal-ratio retry card.
+- Generation status reserves the exact result geometry immediately: render one AICSS Image Generation placeholder per requested image using the selected aspect ratio and the same responsive grid tracks as completed results. Adapt its low-contrast dot field and morphing highlight into three stable geometries: square (`1:1`), landscape (`3:2`, `16:9`), and portrait (`2:3`, `9:16`). Show the selected ratio/resolution and the quiet status `正在生成图片`; never use a shimmer sweep or invented percentage. Crossfade each loaded image over roughly `220ms` with only a slight scale correction, remove all looping motion under `prefers-reduced-motion`, and replace failed placeholders with an equal-ratio retry card.
 - During pending and completed batches, keep the prompt as a compact right-aligned conversation
   bubble. Pending results render as a larger centered work card with a restrained dot field;
   completed results replace that card in the same reading flow without becoming a detached
@@ -528,9 +535,11 @@ Foreign or nonexistent IDs are never mutated by bulk operations. The frontend va
 - Run `npm run check:components` from `frontend/` after adding or changing a component. The check
   rejects unapproved native controls, direct foundation imports outside shared roots, competing
   component systems, browser dialogs, and undocumented consumers of external visual exceptions.
-- `BorderGlow` remains the only non-beUI visual exception and may only wrap the beUI Agent Chat
-  Input focus surface. The hidden file input in `ReferenceUploader` is the only business-component
-  native-control exception; its visible trigger remains the shared `Button`.
+- `BorderGlow` and `ImageGenerationPlaceholder` are the only non-beUI visual exceptions.
+  `BorderGlow` may only wrap the beUI Agent Chat Input focus surface; the AICSS placeholder may only
+  render pending or image-loading states in `GenerateView`. The hidden file input in
+  `ReferenceUploader` is the only business-component native-control exception; its visible trigger
+  remains the shared `Button`.
 - Every route uses the semantic token layer in this document.
 - Homepage presents a usable prompt-first beUI experience followed by the beUI Pro six-image vertical gallery.
 - Generate, templates, assets, authentication, and image detail preserve existing behavior and satisfy their page-pattern requirements above.

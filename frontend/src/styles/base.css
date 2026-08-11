@@ -3819,45 +3819,11 @@ video {
 .session-result:focus-within .session-result__actions {
   opacity: 1;
 }
-.generation-skeleton__card,
 .generation-error-card,
 .asset-loading span {
   box-sizing: border-box;
   aspect-ratio: 1;
   border-radius: var(--radius-lg);
-}
-.generation-skeleton__card {
-  position: relative;
-  display: grid;
-  min-width: 0;
-  overflow: hidden;
-  place-items: center;
-  border: 1px solid color-mix(in oklch, var(--border) 38%, transparent);
-  background: color-mix(in oklch, var(--card) 52%, transparent);
-  isolation: isolate;
-}
-.generation-skeleton__card::before {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: color-mix(in oklch, var(--surface-raised) 88%, var(--card));
-  opacity: 0.45;
-  animation: generation-skeleton-pulse 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite alternate;
-  content: '';
-}
-.generation-skeleton__content {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: color-mix(in oklch, var(--muted-foreground) 82%, transparent);
-  font-size: 12px;
-  font-weight: 520;
-  line-height: 1;
-}
-.generation-skeleton__content svg {
-  width: 15px;
-  height: 15px;
-  stroke-width: 1.65;
 }
 .session-result__loading {
   position: absolute;
@@ -3922,20 +3888,6 @@ video {
 .generation-error-card__content button svg {
   width: 14px;
   height: 14px;
-}
-@keyframes generation-skeleton-pulse {
-  from {
-    opacity: 0.28;
-    transform: scale(0.96);
-  }
-  50% {
-    opacity: 0.58;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0.88;
-    transform: scale(1.04);
-  }
 }
 @keyframes asset-pulse {
   to {
@@ -4669,15 +4621,11 @@ video {
 
 @media (prefers-reduced-motion: reduce) {
   .spin,
-  .generation-skeleton__card::before,
   .asset-loading span,
   .asset-auth-loading__search,
   .asset-auth-loading__control,
   .asset-auth-loading__rail span {
     animation: none;
-  }
-  .generation-skeleton__card::before {
-    opacity: 0.68;
   }
   .session-result__preview img,
   .session-result__loading {
@@ -5008,21 +4956,6 @@ video {
 .generation-pending {
   width: 100%;
 }
-.generation-pending__label {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin: 0 0 14px 2px;
-  color: color-mix(in oklch, var(--foreground) 58%, var(--muted-foreground));
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1;
-}
-.generation-pending__label svg {
-  width: 14px;
-  height: 14px;
-  stroke-width: 1.6;
-}
 .session-batch.is-generating .generation-skeleton {
   grid-template-columns: minmax(0, min(100%, var(--result-media-max-height)));
   justify-content: start;
@@ -5033,41 +4966,6 @@ video {
 .session-batch.is-generating[data-count='3'] .generation-skeleton,
 .session-batch.is-generating[data-count='4'] .generation-skeleton {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-.session-batch.is-generating .generation-skeleton__card {
-  width: 100%;
-  border: 0;
-  border-radius: 16px;
-  background-color: color-mix(in oklch, var(--card) 42%, transparent);
-  box-shadow: none;
-}
-.session-batch.is-generating .generation-skeleton__card::before {
-  background: color-mix(in oklch, var(--surface-raised) 72%, var(--card));
-  opacity: 0.34;
-}
-.session-batch.is-generating .generation-skeleton__card::after {
-  position: absolute;
-  inset: 7%;
-  z-index: -1;
-  background-image: radial-gradient(
-    circle,
-    color-mix(in oklch, var(--muted-foreground) 48%, transparent) 1.1px,
-    transparent 1.45px
-  );
-  background-position: center;
-  background-size: 18px 18px;
-  content: '';
-  mask-image: radial-gradient(circle at center, #000 0%, rgb(0 0 0 / 0.84) 36%, transparent 76%);
-}
-.session-batch.is-generating .generation-skeleton__content {
-  position: relative;
-  z-index: 1;
-  color: color-mix(in oklch, var(--foreground) 68%, var(--muted-foreground));
-  font-size: 13px;
-}
-.session-batch.is-generating .generation-skeleton__content svg {
-  width: 16px;
-  height: 16px;
 }
 @media (max-width: 1180px) {
   .session-batch.is-generating {
@@ -6317,55 +6215,6 @@ video {
   color: var(--destructive);
 }
 
-/* Keep the subtle result placeholder alive while the request is pending. The
-   secondary dot field moves slowly so the loading state reads as active without
-   turning into a bright scan effect. */
-.session-batch.is-generating .generation-skeleton__card::after {
-  animation: generation-skeleton-drift 2.2s ease-in-out infinite alternate;
-  background-size: 20px 20px;
-  will-change: opacity, transform;
-}
-@keyframes generation-skeleton-drift {
-  from {
-    opacity: 0.14;
-    background-position: 12px 10px;
-    transform: scale(0.9) translate3d(-6%, -3%, 0);
-  }
-  to {
-    opacity: 0.78;
-    background-position: -12px -10px;
-    transform: scale(1.08) translate3d(6%, 3%, 0);
-  }
-}
-.session-batch.is-generating .generation-skeleton__content svg {
-  animation: generation-skeleton-sparkle 1.5s ease-in-out infinite alternate;
-  transform-origin: center;
-  will-change: opacity, transform;
-}
-@keyframes generation-skeleton-sparkle {
-  from {
-    opacity: 0.52;
-    transform: rotate(-8deg) scale(0.88);
-  }
-  to {
-    opacity: 1;
-    transform: rotate(8deg) scale(1.12);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .session-batch.is-generating .generation-skeleton__card::after {
-    animation: none;
-    opacity: 0.45;
-    transform: none;
-  }
-  .session-batch.is-generating .generation-skeleton__card::before,
-  .session-batch.is-generating .generation-skeleton__content svg {
-    animation: none;
-    opacity: 0.58;
-    transform: none;
-  }
-}
-
 /* Keep the GPT-style recent-session label, title, and row action in separate tracks. */
 .sidebar-sessions__heading {
   display: block;
@@ -7506,49 +7355,6 @@ video {
 }
 .generation-console.has-results .session-batch.is-generating {
   animation: generation-batch-enter 280ms var(--ease-out-expo) both;
-}
-.session-batch.is-generating .generation-pending__label {
-  margin-bottom: 12px;
-  border: 1px solid color-mix(in oklch, var(--border-strong) 62%, transparent);
-  border-radius: var(--radius-full);
-  background: color-mix(in oklch, var(--surface-raised) 58%, transparent);
-  padding: 7px 10px;
-  color: color-mix(in oklch, var(--foreground) 82%, var(--muted-foreground));
-  font-size: 13px;
-  font-weight: 600;
-}
-.session-batch.is-generating .generation-pending__label svg {
-  width: 15px;
-  height: 15px;
-  color: color-mix(in oklch, var(--accent) 70%, var(--foreground));
-}
-.session-batch.is-generating .generation-skeleton__card {
-  border: 1px solid color-mix(in oklch, var(--border-strong) 64%, transparent);
-  background: color-mix(in oklch, var(--surface-raised) 70%, var(--card));
-  box-shadow: inset 0 1px 0 color-mix(in oklch, var(--foreground) 5%, transparent);
-}
-.session-batch.is-generating .generation-skeleton__card::before {
-  background: color-mix(in oklch, var(--surface-raised) 86%, var(--card));
-  opacity: 0.52;
-}
-.session-batch.is-generating .generation-skeleton__card::after {
-  background-image: radial-gradient(
-    circle,
-    color-mix(in oklch, var(--muted-foreground) 64%, transparent) 1.1px,
-    transparent 1.5px
-  );
-  background-size: 17px 17px;
-}
-.session-batch.is-generating .generation-skeleton__content {
-  color: color-mix(in oklch, var(--foreground) 88%, var(--muted-foreground));
-  font-size: 14px;
-  font-weight: 600;
-  text-shadow: 0 1px 14px color-mix(in oklch, var(--background) 72%, transparent);
-}
-.session-batch.is-generating .generation-skeleton__content svg {
-  width: 18px;
-  height: 18px;
-  color: color-mix(in oklch, var(--accent) 68%, var(--foreground));
 }
 .studio-toolbar-status[data-active='true'] {
   color: color-mix(in oklch, var(--foreground) 92%, var(--accent));

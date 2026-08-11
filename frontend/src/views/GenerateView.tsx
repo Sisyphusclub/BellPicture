@@ -20,6 +20,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
 import { useToast } from '@/components/common/ToastProvider';
 import { GenerationHistoryFlyout } from '@/components/generation/GenerationHistoryFlyout';
+import { ImageGenerationPlaceholder } from '@/components/generation/ImageGenerationPlaceholder';
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
 import { AgentChatInput } from '@/components/premium/agent-chat-input/agent-chat-input';
 import type { AgentChatAttachment } from '@/components/premium/agent-chat-input/types';
@@ -158,26 +159,6 @@ function cssAspectRatio(aspectRatio: AspectRatio): string {
   return aspectRatio.replace(':', ' / ');
 }
 
-interface GenerationPlaceholderProps {
-  aspectRatio?: AspectRatio;
-  className?: string;
-}
-
-function GenerationPlaceholder({ aspectRatio, className }: GenerationPlaceholderProps) {
-  return (
-    <div
-      className={`generation-skeleton__card${className ? ` ${className}` : ''}`}
-      style={aspectRatio ? { aspectRatio: cssAspectRatio(aspectRatio) } : undefined}
-      aria-hidden="true"
-    >
-      <span className="generation-skeleton__content">
-        <Sparkles aria-hidden="true" />
-        <span>正在生成</span>
-      </span>
-    </div>
-  );
-}
-
 interface SessionResultPreviewProps {
   entry: HistoryEntry;
   onOpen: () => void;
@@ -198,7 +179,12 @@ function SessionResultPreview({ entry, onOpen }: SessionResultPreviewProps) {
         aria-label={`查看图片：${entry.record.prompt}`}
         onClick={onOpen}
       >
-        <GenerationPlaceholder className="session-result__loading" />
+        <ImageGenerationPlaceholder
+          aspectRatio={entry.record.aspectRatio ?? DEFAULT_ASPECT_RATIO}
+          resolution={entry.record.resolution ?? DEFAULT_IMAGE_RESOLUTION}
+          className="session-result__loading"
+          fill
+        />
         <img src={entry.imageUrl} alt={entry.record.prompt} onLoad={() => setImageLoaded(true)} />
       </Button>
     </MorphicCard>
@@ -1133,19 +1119,16 @@ export function GenerateView() {
                 </div>
               ) : (
                 <div className="generation-pending">
-                  <div className="generation-pending__label" aria-hidden="true">
-                    <Sparkles />
-                    <span>正在构思</span>
-                  </div>
                   <div
                     className="generation-skeleton"
                     role="status"
                     aria-label={generation.statusMessage}
                   >
                     {Array.from({ length: item.settings.count }, (_, index) => (
-                      <GenerationPlaceholder
+                      <ImageGenerationPlaceholder
                         key={`${item.id}-${index}`}
                         aspectRatio={item.settings.aspectRatio}
+                        resolution={item.settings.resolution}
                       />
                     ))}
                   </div>

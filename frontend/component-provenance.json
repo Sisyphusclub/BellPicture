@@ -53,10 +53,15 @@
       "module": "@/components/BorderGlow",
       "file": "src/components/BorderGlow.tsx",
       "source": "ReactBits Border Glow",
-      "allowedConsumers": [
-        "src/components/premium/agent-chat-input/agent-chat-input.tsx"
-      ],
+      "allowedConsumers": ["src/components/premium/agent-chat-input/agent-chat-input.tsx"],
       "rationale": "Documented focus-only composer effect; it does not replace a semantic beUI control."
+    },
+    {
+      "module": "@/components/generation/ImageGenerationPlaceholder",
+      "file": "src/components/generation/ImageGenerationPlaceholder.tsx",
+      "source": "AICSS Image Generation",
+      "allowedConsumers": ["src/views/GenerateView.tsx"],
+      "rationale": "Documented generation-state visual adapted to the product's square, landscape, and portrait output geometry; it does not replace a semantic beUI control."
     }
   ]
 }
