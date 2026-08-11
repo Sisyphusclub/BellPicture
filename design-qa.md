@@ -423,6 +423,9 @@ final result: passed
 - Desktop implementation: `design-qa-assets/discover-video-position-1440.png`.
 - Mobile implementation: `design-qa-assets/discover-video-position-390.png`.
 - Side-by-side evidence: `design-qa-assets/discover-video-position-comparison.png`.
+- Brightness follow-up: `design-qa-assets/discover-video-brighter-1440.png` and
+  `design-qa-assets/discover-video-brighter-390.png`.
+- Brightness comparison: `design-qa-assets/discover-video-brighter-comparison.png`.
 - Local implementation: `http://127.0.0.1:5173/`.
 - Viewport/state: Discover hero at 1440 x 813 and 390 x 844 with the live background video.
 
@@ -434,6 +437,8 @@ No actionable P0, P1, or P2 findings remain.
   changing the translate range from `124-160px` to `154-190px` without resizing the video.
 - The brighter spiral now sits closer to the title and composer rather than reading top-heavy, while
   the input, glass refraction, navigation, and gallery positions remain unchanged.
+- The video brightness increases from `0.96` to `1.08` while opacity, saturation, contrast, overlay,
+  and text colors remain unchanged. The video reads more clearly without washing out the heading.
 - Desktop and mobile retain full hero coverage and report `0px` horizontal document overflow.
 - No typography, color token, copy, control, media asset, or interaction behavior changed.
 
