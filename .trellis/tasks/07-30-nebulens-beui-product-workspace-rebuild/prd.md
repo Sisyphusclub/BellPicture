@@ -28,7 +28,10 @@ Completely rebuild the Generate, Creation Templates, Assets, Sign In, and Sign U
 - Keep the existing beUI `AgentChatInput`, Nebulens BorderGlow palette, video background, layout,
   and generation handoff intact.
 - Replace only the Discover composer material with the Wanxiang-style layered glass technique:
-  directional SVG displacement refraction, neutral radial tint, and a separate low chrome blur.
+  continuous full-surface directional SVG displacement refraction, a lightly tinted radial sheen, a
+  restrained directional inset rim, and a separate low chrome blur.
+- Reframe the overscanned desktop hero video around its visual focal point rather than its source-box
+  midpoint so the vortex reads centered behind the title and composer.
 - Expose the material as a typed optional `AgentChatInput` capability and enable it only on Discover;
   Generate must keep its existing workbench surface.
 - Preserve root overflow for menus, clip only the glass layers, retain the focused gradient edge ring,

@@ -650,7 +650,7 @@ export function AgentChatInput({
       active={glowActive}
       animated={false}
       backgroundColor="var(--muted)"
-      borderRadius={20}
+      borderRadius={liquidGlass ? 30 : 20}
       colors={['#ffb51b', '#12c8f4', '#1464ff']}
       coneSpread={22}
       edgeSensitivity={24}

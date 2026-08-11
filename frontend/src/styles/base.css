@@ -418,10 +418,20 @@ video {
   filter: saturate(0.94) contrast(1.06) brightness(1.08);
   transform: translate3d(0, clamp(154px, calc(20vh + 30px), 190px), 0);
 }
+@media (min-width: 861px) {
+  .landing-hero__video {
+    top: 50%;
+    left: 50%;
+    width: 140%;
+    height: 170%;
+    object-position: 35% center;
+    transform: translate3d(-50%, -35%, 0);
+  }
+}
 .landing-hero__overlay {
   position: absolute;
   inset: 0;
-  background: color-mix(in oklch, var(--background) 30%, transparent);
+  background: color-mix(in oklch, var(--background) 22%, transparent);
 }
 .landing-navbar {
   position: fixed;
@@ -5890,16 +5900,23 @@ video {
    glass stack while the existing Nebulens focus ring remains independent. */
 .agent-chat-input.landing-composer.border-glow-card {
   --card-bg: transparent !important;
-  --liquid-glass-tint-center: rgb(7 15 27 / 0.38);
-  --liquid-glass-tint-edge: rgb(7 15 27 / 0.28);
-  --liquid-glass-highlight: rgb(226 241 255 / 0.12);
-  --liquid-glass-blur: 2px;
-  --liquid-glass-saturation: 1.05;
-  --liquid-glass-chrome-saturation: 1.15;
+  --liquid-glass-tint-center: rgb(56 78 102 / 0.14);
+  --liquid-glass-tint-edge: rgb(7 17 29 / 0.08);
+  --liquid-glass-sheen: rgb(207 231 250 / 0.075);
+  --liquid-glass-highlight: rgb(235 247 255 / 0.3);
+  --liquid-glass-rim: rgb(205 231 251 / 0.18);
+  --liquid-glass-shadow-rim: rgb(94 163 219 / 0.14);
+  --liquid-glass-side-highlight: rgb(235 247 255 / 0.1);
+  --liquid-glass-side-shadow: rgb(94 163 219 / 0.08);
+  --liquid-glass-blur: 4px;
+  --liquid-glass-saturation: 1.14;
+  --liquid-glass-chrome-saturation: 1.2;
 
   border-color: transparent;
   background: transparent;
-  box-shadow: 0 24px 64px -34px rgb(0 4 12 / 0.82);
+  box-shadow:
+    0 28px 70px -34px rgb(0 3 10 / 0.9),
+    0 0 0 1px rgb(192 223 247 / 0.04);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
@@ -5954,9 +5971,10 @@ video {
 @media (max-width: 560px) {
   .agent-chat-input.landing-composer.border-glow-card {
     --card-bg: transparent !important;
-    --liquid-glass-tint-center: rgb(7 15 27 / 0.46);
-    --liquid-glass-tint-edge: rgb(7 15 27 / 0.34);
-    --liquid-glass-blur: 2.5px;
+    --liquid-glass-tint-center: rgb(46 68 90 / 0.16);
+    --liquid-glass-tint-edge: rgb(7 15 27 / 0.12);
+    --liquid-glass-sheen: rgb(207 231 250 / 0.06);
+    --liquid-glass-blur: 6px;
 
     background: transparent;
   }

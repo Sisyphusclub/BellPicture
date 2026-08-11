@@ -224,15 +224,16 @@ The prompt composer is the signature product surface. Use the installed beUI Age
 - Place it at the center of the creation flow, up to `768px` wide on home and `1060px` in the generate workspace.
 - Use a `20px` outer radius and a quiet 3px frame. Generate keeps the card-colored inner surface and
   no permanent heavy shadow. Discover may use one cool graphite glass material on this same beUI
-  surface: an SVG displacement-map refraction layer, a radial translucent dark tint, and a separate
-  `2-2.5px` chrome blur with restrained saturation. Keep the moving hero video perceptible through
-  the prompt area without reducing text contrast. Clip each material layer inside the radius, leave
-  the root overflow available for menus, and provide opaque fallbacks for unsupported filters and
-  higher contrast.
+  surface: a continuous full-surface SVG displacement-map refraction layer, a lightly tinted radial
+  sheen, and a separate `4-6px` chrome blur with restrained saturation. Discover uses a `30px`
+  material radius and a low-contrast directional inset rim so the lens remains legible when the
+  focus gradient is absent. Keep the moving hero video perceptible through the prompt area without
+  reducing text contrast. Clip each material layer inside the radius, leave the root overflow
+  available for menus, and provide opaque fallbacks for unsupported filters and higher contrast.
 - Use ReactBits `BorderGlow` as the composer's only decorative focus effect. Keep a restrained logo-aligned golden orange, cyan, and royal blue mesh while the prompt editor is focused, intensify and orient it as the pointer approaches an edge, and replace pointer tracking with a static focus treatment under `prefers-reduced-motion`.
   On the translucent Discover composer, clip the colored `::before` mesh to a true 1px border ring,
   disable the `::after` interior mesh fill, and retain the pointer-owned outer edge light. The glass
-  body must remain neutral and free of a second permanent outline when focused.
+  body must remain neutral; its inset glass rim stays subordinate to the focused gradient edge.
 - On Discover/Home, stream concise image-prompt examples one character at a time from the shared prompt list. Use a low-saturation white, pale blue, and soft peach gradient (`#f3f5fa`, `#c5d9f2`, `#efc9ac`) for that shortcut prompt text; keep the logo-aligned orange, cyan, and royal-blue palette reserved for `BorderGlow`. The Generate workspace uses the quiet top-left composer placeholder `描述你想生成的画面…` instead of discovery or marketing copy.
 - Keep prompt text, placeholders, and streamed prompt examples at `16px` across Discover and Generate so both composers share the same reading scale.
 - Attachments appear as compact thumbnail chips above the toolbar.

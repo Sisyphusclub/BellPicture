@@ -317,6 +317,46 @@ final result: passed
 
 final result: passed
 
+## Centered Hero Video and Wanxiang Glass QA (2026-08-11)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-b503d54e-a028-4023-9e9b-983a25d8ea36.png` and `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-99371377-520f-4f64-9b6a-b346c54e824a.png`.
+- Implementation screenshots: `design-qa-assets/discover-centered-video-wanxiang-glass-final-desktop.png` and `design-qa-assets/discover-wanxiang-glass-final-mobile.png`.
+- Focused comparison evidence: `design-qa-assets/discover-wanxiang-glass-focused-comparison.png`.
+- Local implementation: `http://127.0.0.1:5173/`.
+- Viewport/state: requested 1440 x 813 desktop and 390 x 844 mobile overrides; the in-app browser rendered effective CSS viewports of 1014 x 573 and 274 x 594 under Windows display scaling. Anonymous Discover page, hero video playing, composer checked in idle and focused states.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: the existing Geist and Instrument Serif title lockup, 16px streamed prompt, model label, quantity, privacy, and quota text remain unchanged and legible over the lighter material.
+- Spacing and layout rhythm: the desktop video overscan covers the full viewport while its vortex focal point is centered behind the title and composer. The composer keeps its established width and toolbar geometry with a reference-aligned 30px material radius. Desktop and mobile checks report zero horizontal overflow.
+- Colors and visual tokens: the composer uses a cool blue-graphite tint, translucent radial sheen, restrained directional rim, and separate 4-6px chrome blur. It no longer reads as a flat black panel. The focused orange, cyan, and blue BorderGlow remains the only colored edge treatment.
+- Image quality and asset fidelity: the existing source video is preserved, brightened by the established filter, and reframed without stretching or replacement. The focused comparison places the supplied Wanxiang crop and current composer in the same image; both show transparent source imagery, a soft cool material, large rounded corners, and differentiated top, side, and lower rim light.
+- Copy and content: the Discover title, subtitle, streaming image prompts, GPT Image 2 model label, settings, privacy, and quota copy remain unchanged.
+- Responsive and interaction states: mobile keeps a single contained composer with the same glass contract, 6px blur, readable controls, and no document overflow. Keyboard focus retains the existing brand gradient edge without adding a second white focus outline.
+
+### Patches Made
+
+- Reframed the desktop hero video around its visual focal point while keeping mobile framing unchanged.
+- Replaced the dark translucent composer fill with continuous displacement, a lightly tinted radial sheen, lower chrome blur, and directional inset highlights.
+- Increased the Discover-only material radius to 30px while leaving the Generate composer at 20px.
+- Added route regression assertions for the liquid-glass displacement scale and Discover radius.
+- Updated `design.md`, the frontend component guideline, and the active Trellis PRD with the final material contract.
+
+### Verification
+
+- `npm run check:components`: passed; 79 TypeScript files scanned and only the documented hidden browser-control exception remains.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm test -- --run tests/App.spec.tsx`: passed, 14 tests.
+- `npm run build`: passed; the existing non-blocking 708.42 kB chunk warning remains.
+- Focused Prettier check for every changed source/spec file: passed. Repository-wide `npm run format:check` still reports 56 pre-existing baseline files outside this focused change.
+- `git diff --check`: passed with only the repository LF-to-CRLF notices.
+- Browser console: no application errors or warnings; only Vite connection and React development messages were present.
+
+final result: passed
+
 ## Discover Liquid-Glass Composer QA (2026-08-11)
 
 - Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-869a5446-8105-4137-8f00-9d51765802d6.png`.

@@ -30,14 +30,16 @@ const LIQUID_GLASS_DISPLACEMENT_MAP = `data:image/svg+xml,${encodeURIComponent(`
     <defs>
       <linearGradient id="x" x1="0" y1="0" x2="1" y2="0">
         <stop offset="0" stop-color="#ff0080" />
-        <stop offset="0.12" stop-color="#800080" />
-        <stop offset="0.88" stop-color="#800080" />
+        <stop offset="0.18" stop-color="#d00080" />
+        <stop offset="0.5" stop-color="#800080" />
+        <stop offset="0.82" stop-color="#300080" />
         <stop offset="1" stop-color="#000080" />
       </linearGradient>
       <linearGradient id="y" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="#00ff00" />
-        <stop offset="0.16" stop-color="#008000" />
-        <stop offset="0.84" stop-color="#008000" />
+        <stop offset="0.18" stop-color="#00d000" />
+        <stop offset="0.5" stop-color="#008000" />
+        <stop offset="0.82" stop-color="#003000" />
         <stop offset="1" stop-color="#000000" />
       </linearGradient>
     </defs>
@@ -336,7 +338,7 @@ const BorderGlow = ({
               <feDisplacementMap
                 in="SourceGraphic"
                 in2="map"
-                scale="-92"
+                scale="-150"
                 xChannelSelector="R"
                 yChannelSelector="G"
               />
