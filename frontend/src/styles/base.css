@@ -5899,7 +5899,28 @@ video {
   backdrop-filter: blur(14px) saturate(132%) brightness(90%);
   -webkit-backdrop-filter: blur(14px) saturate(132%) brightness(90%);
 }
-.agent-chat-input.landing-composer.border-glow-card::before,
+.agent-chat-input.landing-composer.border-glow-card::before {
+  display: block;
+  border: 0;
+  padding: 1px;
+  background:
+    var(--gradient-one) border-box,
+    var(--gradient-two) border-box,
+    var(--gradient-three) border-box,
+    var(--gradient-four) border-box,
+    var(--gradient-five) border-box,
+    var(--gradient-six) border-box,
+    var(--gradient-seven) border-box,
+    var(--gradient-base) border-box;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
 .agent-chat-input.landing-composer.border-glow-card::after {
   display: none;
 }

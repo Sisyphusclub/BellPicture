@@ -133,7 +133,7 @@ No actionable P0, P1, or P2 findings remain.
 
 - Typography: the headline uses responsive sizes of 96px wide desktop, 72px base desktop, 52px tablet, and 38px mobile. `Turn your idea` uses Geist Variable at 460 weight with slightly tightened internal word spacing, while the smaller italic serif phrase remains the visual counterpoint with a deliberate natural-space gap. The Chinese supporting line is 17px at base sizes and 18px on wide desktop.
 - Spacing: the desktop hero content starts at 168px, with the composer 40px below the supporting line. The hero remains one focused viewport; the independent static creation feed begins below it without overlapping the composer.
-- Focus treatment: the Agent Composer uses the ReactBits `BorderGlow` component, but Discover disables both colored mesh pseudo-elements so their gradients cannot bleed through the translucent glass. Only the pointer-owned outer edge light remains while the prompt editor is focused, with no permanent shell stroke or second white outline.
+- Focus treatment: the Agent Composer uses the ReactBits `BorderGlow` component. Discover clips its colored `::before` mesh to a 1px border ring and disables only the `::after` interior fill, so the orange, cyan, and blue gradient remains visible without bleeding through the glass. The pointer-owned outer edge light remains active, with no permanent shell stroke or second white outline.
 - Responsive integrity: browser checks found no horizontal overflow, the video remained ready, and all six creation assets loaded. The mobile state retained the title, controls, focused glow, and a single-column feed below the hero.
 
 ### Verification
@@ -319,8 +319,8 @@ final result: passed
 
 ## Discover Glass Composer Shell QA (2026-08-11)
 
-- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-8b7d3828-b197-41e2-ac1b-c8e28efba58c.png`.
-- Desktop implementation screenshot: `C:/Users/Administrator/.codex/visualizations/2026/07/27/019fa120-4eb7-7f41-aca4-df1f91b0a446/discovery-glass-composer-no-shell.png`.
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-e9f5ad62-3973-4fc5-86df-9a596c48ebc9.png`.
+- Desktop implementation screenshot: `C:/Users/Administrator/.codex/visualizations/2026/07/27/019fa120-4eb7-7f41-aca4-df1f91b0a446/discovery-glass-gradient-border-restored.png`.
 - Mobile implementation screenshot: `C:/Users/Administrator/.codex/visualizations/2026/07/27/019fa120-4eb7-7f41-aca4-df1f91b0a446/discovery-glass-composer-mobile.png`.
 - Local implementation: `http://127.0.0.1:5173/`.
 - States checked: idle and focused Discover composer on desktop, plus the compact mobile composition.
@@ -329,8 +329,8 @@ final result: passed
 
 No actionable P0, P1, or P2 findings remain.
 
-- The Discover-scoped `BorderGlow` `::before` and `::after` layers both compute to `display: none`, so neither the border mesh nor interior mesh can bleed through the translucent surface.
-- The composer root border stays transparent in idle and focus states. The permanent inset shell strokes were removed; only the pointer-owned `.edge-light` appears near the active edge.
+- The Discover-scoped `BorderGlow` `::before` layer is masked to a 1px ring, retaining the logo-aligned gradient without painting the padding box. The `::after` interior mesh computes to `display: none`, so color cannot bleed through the translucent surface.
+- The composer root border stays transparent in idle and focus states. The permanent inset shell strokes were removed; the masked gradient ring and pointer-owned `.edge-light` appear only in the active edge treatment.
 - The neutral graphite body uses a `0.2` alpha with a restrained `14px` backdrop blur. The overscanned hero video is shifted downward so its moving texture remains perceptible through the prompt area without exposing a blank edge.
 - Desktop and mobile checks report zero horizontal document overflow. The shifted video extends beyond both hero edges, and the composer remains contained at the compact breakpoint.
 - Browser console inspection found no warnings or errors.

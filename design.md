@@ -229,9 +229,9 @@ The prompt composer is the signature product surface. Use the installed beUI Age
   identifiable through the prompt text area, with opaque fallbacks for unsupported filters and
   higher contrast.
 - Use ReactBits `BorderGlow` as the composer's only decorative focus effect. Keep a restrained logo-aligned golden orange, cyan, and royal blue mesh while the prompt editor is focused, intensify and orient it as the pointer approaches an edge, and replace pointer tracking with a static focus treatment under `prefers-reduced-motion`.
-  On the translucent Discover composer, disable both colored pseudo-element mesh layers and keep
-  only the pointer-owned outer edge light; the glass body must remain neutral and free of a second
-  outline when focused.
+  On the translucent Discover composer, clip the colored `::before` mesh to a true 1px border ring,
+  disable the `::after` interior mesh fill, and retain the pointer-owned outer edge light. The glass
+  body must remain neutral and free of a second permanent outline when focused.
 - On Discover/Home, stream concise image-prompt examples one character at a time from the shared prompt list. Use a low-saturation white, pale blue, and soft peach gradient (`#f3f5fa`, `#c5d9f2`, `#efc9ac`) for that shortcut prompt text; keep the logo-aligned orange, cyan, and royal-blue palette reserved for `BorderGlow`. The Generate workspace uses the quiet top-left composer placeholder `描述你想生成的画面…` instead of discovery or marketing copy.
 - Keep prompt text, placeholders, and streamed prompt examples at `16px` across Discover and Generate so both composers share the same reading scale.
 - Attachments appear as compact thumbnail chips above the toolbar.
