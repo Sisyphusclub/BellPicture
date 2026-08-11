@@ -1,4 +1,4 @@
-import { Search, Sparkles, X } from 'lucide-react';
+import { ChevronRight, Search, Sparkles, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ const HISTORY_GROUPS: readonly { key: HistoryGroupKey; label: string }[] = [
 
 interface GenerationHistoryFlyoutProps {
   batches: readonly GroupedBatch[];
+  trackBatchIds?: readonly string[];
   activeBatchId?: string | null;
   hoveredBatchId?: string | null;
   isHydrating?: boolean;
@@ -32,6 +33,7 @@ interface GenerationHistoryFlyoutProps {
   isGenerating?: boolean;
   pendingPrompt?: string;
   onSelectBatch: (batch: GroupedBatch) => void;
+  onNavigateBatch?: (batch: GroupedBatch) => void;
 }
 
 function startOfDay(date: Date): number {
@@ -85,6 +87,7 @@ function getMaxTrackHeight({ height, width }: ViewportSize): number {
 
 export function GenerationHistoryFlyout({
   batches,
+  trackBatchIds,
   activeBatchId,
   hoveredBatchId = null,
   isHydrating = false,
@@ -92,6 +95,7 @@ export function GenerationHistoryFlyout({
   isGenerating = false,
   pendingPrompt = '',
   onSelectBatch,
+  onNavigateBatch = onSelectBatch,
 }: GenerationHistoryFlyoutProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [previewBatchId, setPreviewBatchId] = useState<string | null>(null);
@@ -200,7 +204,13 @@ export function GenerationHistoryFlyout({
 
   const hasSearchResults = groupedBatches.length > 0;
   const hasHistory = batches.length > 0;
-  const trackBatches = [...batches].reverse();
+  const trackBatches = useMemo(() => {
+    if (!trackBatchIds) return [...batches].reverse();
+    const byId = new Map(batches.map((batch) => [batch.batchId, batch]));
+    return trackBatchIds
+      .map((batchId) => byId.get(batchId))
+      .filter((batch): batch is GroupedBatch => batch !== undefined);
+  }, [batches, trackBatchIds]);
   const trackHeight = Math.min(
     360,
     getMaxTrackHeight(viewportSize),
@@ -217,10 +227,19 @@ export function GenerationHistoryFlyout({
       ? trackHeight / 2
       : 8 + (previewIndex / (trackBatches.length - 1)) * (trackHeight - 16);
 
-  const handleSelect = (batch: GroupedBatch) => {
+  const closeTransientHistory = () => {
     clearCloseTimer();
     setPreviewBatchId(null);
     setIsOpen(false);
+  };
+
+  const handleNavigate = (batch: GroupedBatch) => {
+    closeTransientHistory();
+    onNavigateBatch(batch);
+  };
+
+  const handleSelect = (batch: GroupedBatch) => {
+    closeTransientHistory();
     onSelectBatch(batch);
   };
 
@@ -286,7 +305,7 @@ export function GenerationHistoryFlyout({
                 }
                 showPreview(batch.batchId);
               }}
-              onClick={() => handleSelect(batch)}
+              onClick={() => handleNavigate(batch)}
             />
           ))}
         </div>
@@ -301,35 +320,26 @@ export function GenerationHistoryFlyout({
         onMouseLeave={closeSoon}
       >
         {previewBatch ? (
-          <>
-            <span className="generation-history-preview__thumb" aria-hidden="true">
-              {previewBatch.entries[0] ? (
-                <img src={previewBatch.entries[0].imageUrl} alt="" loading="lazy" />
-              ) : (
-                <Sparkles />
-              )}
-            </span>
+          <Button
+            type="button"
+            variant="ghost"
+            className="generation-history-preview__jump"
+            aria-label={`定位到生成记录：${previewBatch.prompt.trim() || '未命名任务'}`}
+            tabIndex={previewBatch && !isOpen ? 0 : -1}
+            onClick={() => handleNavigate(previewBatch)}
+          >
             <span className="generation-history-preview__content">
               <strong>{previewBatch.prompt.trim() || '未命名任务'}</strong>
-              <small>
-                {formatClockTime(previewBatch.createdAt)} · {previewBatch.model}
-              </small>
-              <small>
+              <span className="generation-history-preview__summary">
+                {previewBatch.model} · {formatClockTime(previewBatch.createdAt)}
+                <br />
                 {ASPECT_RATIO_LABELS[previewBatch.settings.aspectRatio]} ·{' '}
-                {previewBatch.settings.count} 张
-              </small>
+                {previewBatch.settings.count} 张 ·
+                {previewBatch.settings.isPublic ? ' 公开' : ' 私有'}
+              </span>
             </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="compact"
-              className="generation-history-preview__all"
-              tabIndex={previewBatch && !isOpen ? 0 : -1}
-              onClick={() => openPanel(getTickButton(previewBatch.batchId) ?? getPanelTrigger())}
-            >
-              查看全部历史
-            </Button>
-          </>
+            <ChevronRight aria-hidden="true" />
+          </Button>
         ) : null}
       </section>
 

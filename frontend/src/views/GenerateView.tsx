@@ -127,6 +127,18 @@ function splitGenerationError(message: string): GenerationErrorCopy {
   };
 }
 
+function scrollToGenerationBatch(batchId: string): boolean {
+  const target = Array.from(
+    document.querySelectorAll<HTMLElement>('[data-generation-batch]'),
+  ).find((element) => element.dataset.generationBatch === batchId);
+  if (!target || typeof target.scrollIntoView !== 'function') return false;
+  const reduceMotion =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+  return true;
+}
+
 function readCount(searchParams: URLSearchParams): number {
   const value = Number(searchParams.get('count'));
   return Number.isInteger(value) && value >= MIN_COUNT && value <= MAX_COUNT
@@ -437,14 +449,7 @@ export function GenerateView() {
     const pendingId = pendingScrollId.current;
     if (!pendingId) return;
     pendingScrollId.current = null;
-    const target = document.querySelector<HTMLElement>(
-      `[data-generation-batch="${pendingId}"]`,
-    );
-    if (!target || typeof target.scrollIntoView !== 'function') return;
-    const reduceMotion =
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+    scrollToGenerationBatch(pendingId);
   }, [feed]);
 
   useEffect(() => {
@@ -489,6 +494,7 @@ export function GenerateView() {
     const batchIds = new Set(session.batchIds);
     return history.batches.filter((batch) => batchIds.has(batch.batchId));
   }, [activeSessionId, history.batches, sessions]);
+  const visibleHistoryBatchIds = useMemo(() => feed.map((item) => item.id), [feed]);
 
   const currentSettings = (promptValue = prompt): GenerationSettingsSnapshot => ({
     prompt: promptValue.trim(),
@@ -803,9 +809,23 @@ export function GenerateView() {
     else await deleteEntry(deleteTarget.entry);
   };
 
+  const navigateToHistoryBatch = (batch: GroupedBatch): void => {
+    setSelected(null);
+    setActiveHistoryBatchId(batch.batchId);
+    scrollToGenerationBatch(batch.batchId);
+  };
+
   const loadHistoryBatch = (batch: GroupedBatch): void => {
+    if (scrollToGenerationBatch(batch.batchId)) {
+      setSelected(null);
+      setActiveHistoryBatchId(batch.batchId);
+      return;
+    }
     const item = feedItemFromBatch(batch);
-    setFeed((current) => [item, ...current.filter((candidate) => candidate.id !== batch.batchId)]);
+    pendingScrollId.current = batch.batchId;
+    setFeed((current) =>
+      current.some((candidate) => candidate.id === batch.batchId) ? current : [...current, item],
+    );
     setSelected(null);
     setActiveHistoryBatchId(batch.batchId);
   };
@@ -818,6 +838,7 @@ export function GenerateView() {
     >
       <GenerationHistoryFlyout
         batches={sessionHistoryBatches}
+        trackBatchIds={visibleHistoryBatchIds}
         activeBatchId={activeHistoryBatchId}
         hoveredBatchId={hoveredBatchId}
         isHydrating={history.isHydrating}
@@ -825,6 +846,7 @@ export function GenerateView() {
         isGenerating={generation.isLoading}
         pendingPrompt={prompt}
         onSelectBatch={loadHistoryBatch}
+        onNavigateBatch={navigateToHistoryBatch}
       />
       {!feed.length ? (
         <div className="generation-empty-state" aria-label="开始你的创作">

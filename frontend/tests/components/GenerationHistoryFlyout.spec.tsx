@@ -80,17 +80,33 @@ describe('GenerationHistoryFlyout', () => {
     expect(preview).toHaveClass('is-visible');
   });
 
-  it('loads a batch immediately when its tick is clicked', () => {
+  it('navigates to an existing batch when its tick or preview is clicked', () => {
     const onSelectBatch = vi.fn();
-    render(<GenerationHistoryFlyout batches={[batch]} onSelectBatch={onSelectBatch} />);
+    const onNavigateBatch = vi.fn();
+    render(
+      <GenerationHistoryFlyout
+        batches={[batch]}
+        trackBatchIds={[batch.batchId]}
+        onSelectBatch={onSelectBatch}
+        onNavigateBatch={onNavigateBatch}
+      />,
+    );
 
     const tick = screen.getByRole('button', { name: '查看生成记录：雾港灯塔' });
     expect(document.querySelector('.generation-history-track')).toHaveStyle({ height: '36px' });
     fireEvent.mouseEnter(tick);
+    fireEvent.click(screen.getByRole('button', { name: '定位到生成记录：雾港灯塔' }));
+
+    expect(onNavigateBatch).toHaveBeenCalledOnce();
+    expect(onNavigateBatch).toHaveBeenCalledWith(batch);
+    expect(onSelectBatch).not.toHaveBeenCalled();
+    expect(document.querySelector('.generation-history-preview')).not.toHaveClass('is-visible');
+
+    fireEvent.mouseEnter(tick);
     fireEvent.click(tick);
 
-    expect(onSelectBatch).toHaveBeenCalledOnce();
-    expect(onSelectBatch).toHaveBeenCalledWith(batch);
+    expect(onNavigateBatch).toHaveBeenCalledTimes(2);
+    expect(onSelectBatch).not.toHaveBeenCalled();
     expect(document.querySelector('.generation-history-preview')).not.toHaveClass('is-visible');
     expect(screen.getByRole('button', { name: '展开生成历史' })).toHaveAttribute(
       'aria-expanded',
@@ -117,11 +133,10 @@ describe('GenerationHistoryFlyout', () => {
   });
 
   it('opens the complete searchable panel only through a secondary action', () => {
-    render(<GenerationHistoryFlyout batches={[batch]} onSelectBatch={vi.fn()} />);
+    const onSelectBatch = vi.fn();
+    render(<GenerationHistoryFlyout batches={[batch]} onSelectBatch={onSelectBatch} />);
 
-    const tick = screen.getByRole('button', { name: '查看生成记录：雾港灯塔' });
-    fireEvent.mouseEnter(tick);
-    fireEvent.click(screen.getByRole('button', { name: '查看全部历史' }));
+    fireEvent.click(screen.getByRole('button', { name: '展开生成历史' }));
 
     const panelTrigger = screen.getByRole('button', { name: '收起生成历史' });
     const panel = screen.getByRole('complementary', { name: '生成历史' });
@@ -137,6 +152,9 @@ describe('GenerationHistoryFlyout', () => {
     expect(screen.getByRole('searchbox', { name: '搜索生成历史' })).toHaveFocus();
     expect(hiddenTick).toHaveAttribute('tabindex', '-1');
     expect(hiddenTick?.parentElement).toHaveAttribute('aria-hidden', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: /雾港灯塔/ }));
+    expect(onSelectBatch).toHaveBeenCalledWith(batch);
   });
 
   it('keeps the complete panel open while crossing its safety corridor', () => {

@@ -341,7 +341,7 @@ it('opens the right history flyout, searches, and loads a selected batch', async
   );
 
   const rail = screen.getByRole('button', { name: '展开生成历史' });
-  expect(document.querySelectorAll('.generation-history-track__mark')).toHaveLength(1);
+  expect(document.querySelectorAll('.generation-history-track__mark')).toHaveLength(0);
   await user.click(rail);
   const panel = await screen.findByRole('complementary', { name: '生成历史' });
   expect(panel).toBeVisible();
@@ -351,8 +351,20 @@ it('opens the right history flyout, searches, and loads a selected batch', async
 
   expect(screen.queryByRole('complementary', { name: '生成历史' })).not.toBeInTheDocument();
   expect(screen.getByRole('region', { name: '本次创作结果' })).toHaveTextContent('海边灯塔');
-  expect(document.querySelector('.generation-history-track__mark:last-child')).toHaveClass(
-    'is-current',
+  const resultBatch = document.querySelector<HTMLElement>(
+    '[data-generation-batch="history-batch"]',
+  );
+  const resultOrderBefore = Array.from(document.querySelectorAll('[data-generation-batch]'));
+  const scrollIntoView = vi.fn();
+  Object.defineProperty(resultBatch, 'scrollIntoView', { configurable: true, value: scrollIntoView });
+  const historyTick = screen.getByRole('button', { name: '查看生成记录：海边灯塔' });
+  expect(historyTick).toHaveClass('is-current');
+
+  await user.click(historyTick);
+
+  expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+  expect(Array.from(document.querySelectorAll('[data-generation-batch]'))).toEqual(
+    resultOrderBefore,
   );
 });
 

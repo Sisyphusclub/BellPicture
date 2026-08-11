@@ -317,6 +317,52 @@ final result: passed
 
 final result: passed
 
+## Generation History Scroll Navigation QA (2026-08-11)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-f86e16a5-01ee-4f7a-bff2-bbc28235852c.png`, `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-08746d5d-e387-4460-b540-57b5091fc900.png`, and `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-27d8dcc8-4a56-40f2-b329-44d5c282e1e2.png`.
+- Implementation screenshot: `C:/Users/Administrator/.codex/visualizations/2026/07/27/019fa120-4eb7-7f41-aca4-df1f91b0a446/history-rail-implementation.png`.
+- Full-view and focused comparison evidence: `C:/Users/Administrator/.codex/visualizations/2026/07/27/019fa120-4eb7-7f41-aca4-df1f91b0a446/history-rail-comparison.png`.
+- Local implementation: `http://localhost:5173/generate`.
+- Viewport/state: 1280 x 720 authenticated Generate workspace with two completed 16:9 batches rendered in their persisted feed order; the lower batch tick is hovered and then activated.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: the contextual preview keeps the existing Geist UI stack, compact 13px prompt title, 11px metadata, and source-like two-level hierarchy without introducing reference-site branding.
+- Spacing and layout rhythm: each visible result maps to one vertically distributed tick; the preview is aligned to its tick and separated from the fixed composer. Tick activation scrolls to the existing result and leaves result DOM order unchanged.
+- Colors and visual tokens: the white reference surface is intentionally translated to Nebulens graphite tokens; idle, hover, current, focus, border, and shadow states retain equivalent contrast hierarchy.
+- Image quality and asset fidelity: generated images remain the original loaded assets at their existing positions and dimensions. The interaction adds no placeholder imagery, crop, duplication, or image movement.
+- Copy and content: the preview exposes the matching prompt, model, time, ratio, count, and visibility. The chevron communicates navigation while the accessible name states `定位到生成记录`.
+- Interaction and responsiveness: hover/focus reveals one compact preview; tick and preview activation use `scrollIntoView` with reduced-motion support. Only currently rendered batches receive ticks, while full history search can append a missing batch without moving existing results.
+
+### Patches Made
+
+- Limited rail ticks to batch IDs already present in the rendered result feed.
+- Separated tick navigation from searchable history selection.
+- Added scroll-only navigation for existing results and append-only loading for missing history.
+- Reworked the tick preview into the compact text summary shown by the supplied interaction references.
+- Added regression coverage for direct navigation, stable result order, empty feeds, and append-only history loading.
+
+### Verification
+
+- Targeted component and Generate-view tests: passed, 22 tests.
+- `npm run typecheck`: passed.
+- `npm run check:components`: passed.
+- `npm run lint`: passed.
+- `npm run test`: passed, 13 files and 67 tests.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+- Focused Prettier check for the new history component and its tests: passed. The repository-wide
+  `npm run format:check` remains blocked by the existing 60-file formatting baseline, which includes
+  unrelated application, premium-component, configuration, and generated lock files.
+- In-app Browser QA: two ticks map to two loaded results; activating either tick preserves the exact DOM order `[f20d79ae-8c38-4baf-9f1f-9230f644e81f, b8cc92d4-b082-4393-bc8b-f7e6946d7f29]`, updates the active tick, and introduces no horizontal overflow.
+- Mobile evidence at 390 x 844 confirms the searchable history panel remains inside the viewport,
+  the composer is not compressed or clipped, and the hover-only contextual preview stays absent on
+  touch media.
+- `git diff --check`: passed.
+
+final result: passed
+
 ## Generation Session Deletion QA (2026-08-04)
 
 - Source visual truth: `design-qa-assets/reference-gpt-recents.png` and the existing GPT-style

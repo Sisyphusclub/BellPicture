@@ -259,20 +259,21 @@ The prompt composer is the signature product surface. Use the installed beUI Age
 ### Generation History Flyout
 
 - Keep the history entry inside the right edge of the Generate canvas. The closed state is
-  only a `28-32px` GPT-style rail with one horizontal tick per persisted generation batch.
-  Older batches sit above newer batches, the current batch tick is slightly longer and
-  brighter, and an empty history renders no ticks. The rail must not consume a main-canvas
-  grid track or change the composer width.
+  only a `28-32px` GPT-style rail with one horizontal tick per generation batch currently
+  rendered in the result feed. Tick order mirrors the existing result order, the current batch
+  tick is slightly longer and brighter, and an empty result feed renders no ticks. The rail must
+  not consume a main-canvas grid track or change the composer width.
 - Each tick is an independent shared `Button`. Its idle line is short and low contrast;
   hover or keyboard focus lengthens only that line and reveals a compact contextual preview
-  aligned to the tick. The preview contains the batch thumbnail, prompt summary, time, model,
-  aspect ratio, and count. Hovering a tick never opens the full searchable history panel.
-- Clicking a tick restores that batch immediately and closes every history surface. Open the
-  full `320-360px` searchable panel only from the faint search icon above the rail or
-  `查看全部历史` in the contextual preview. The search icon remains independently reachable on
-  touch devices; while the panel is open, replace it with the panel-header close action and remove
-  hidden ticks from pointer and keyboard navigation. Keep transparent pointer-safe travel between
-  tick, preview, and panel, and close after a short delay outside the combined interaction area.
+  aligned to the tick. The preview contains the prompt summary, time, model, aspect ratio, count,
+  and visibility state. Hovering a tick never opens the full searchable history panel.
+- Clicking a tick or its preview scrolls the canvas to that already-rendered result, marks the tick
+  active, and closes every history surface without inserting, removing, or reordering result items.
+  Open the full `320-360px` searchable panel only from the faint search icon above the rail. The
+  search icon remains independently reachable on touch devices; while the panel is open, replace it
+  with the panel-header close action and remove hidden ticks from pointer and keyboard navigation.
+  Keep transparent pointer-safe travel between tick, preview, and panel, and close after a short
+  delay outside the combined interaction area.
 - Center the expanded panel in the available canvas above the fixed Agent Composer using
   viewport-relative sizing; do not pin it to the canvas top or make it participate in the
   main content grid.
@@ -282,9 +283,10 @@ The prompt composer is the signature product surface. Use the installed beUI Age
 - Search matches prompt/task fallback text, model, batch id, and localized date text.
   Results group as `今天`, `昨天`, `过去 7 天`, and `更早`; each item exposes thumbnail,
   prompt summary, time, model, aspect ratio, and count.
-- Selecting a tick or panel item restores its complete batch into the current result feed,
-  closes the overlay immediately, and marks the matching tick as active. A pending generation
-  may show a low-frequency brand pulse, never a progress percentage.
+- Selecting a searchable-panel item already present in the feed uses the same scroll-only behavior.
+  A missing historical item may be loaded at the end of the feed, but existing result positions and
+  order remain unchanged. A pending generation may show a low-frequency brand pulse, never a
+  progress percentage.
 - With no records, show only `暂无生成记录，完成第一次创作后将在这里显示`. Respect
   keyboard focus, `Escape` close/focus return, touch selection, and `prefers-reduced-motion`
   by removing the pulse and spatial transitions while preserving the state change.
