@@ -5890,7 +5890,7 @@ video {
    to reveal motion without sacrificing prompt and toolbar contrast. */
 .agent-chat-input.landing-composer.border-glow-card {
   --card-bg: rgb(7 15 27 / 0.34) !important;
-  --fill-opacity: 0.13 !important;
+  --fill-opacity: 0 !important;
 
   border-color: rgb(220 237 255 / 0.16);
   background: rgb(7 15 27 / 0.34);

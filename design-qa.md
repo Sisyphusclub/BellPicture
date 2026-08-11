@@ -323,6 +323,10 @@ final result: passed
   `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-a9c09a9c-0a13-43e4-8daf-c93523620b9f.png`.
 - Implementation screenshot:
   `C:/Users/Administrator/.codex/visualizations/2026/07/27/019fa120-4eb7-7f41-aca4-df1f91b0a446/discovery-glass-composer.png`.
+- Focus-state regression truth:
+  `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-4da3f35a-4e88-49e3-a0c0-213bd1aa3ed9.png`.
+- Corrected focus-state screenshot:
+  `C:/Users/Administrator/.codex/visualizations/2026/07/27/019fa120-4eb7-7f41-aca4-df1f91b0a446/discovery-glass-composer-edge-only.png`.
 - Scope: the existing beUI Pro Agent Chat Input on Discover only. Generate keeps its established
   opaque graphite workbench treatment.
 
@@ -332,8 +336,9 @@ final result: passed
   saturation, and `90%` backdrop brightness. A `3.5%` cool light tint and four low-contrast inset
   edges keep the inner prompt and toolbar area reading as one continuous glass surface.
 - Focus hierarchy: the existing logo-aligned BorderGlow remains the only decorative focus effect.
-  Its translucent mesh fill is reduced to `0.13` so the orange, cyan, and blue light stays near the
-  edge instead of tinting the complete input surface.
+  Its translucent mesh fill is disabled on Discover so the orange, cyan, and blue light stays on the
+  edge instead of tinting the complete input surface. Browser inspection confirms the focused
+  `::after` mesh opacity is exactly `0`, while the directional edge-light layer remains active.
 - Interaction: the beUI component hierarchy and root overflow remain unchanged. Browser inspection
   confirms the aspect-ratio menu portals outside the composer and remains fully interactive instead
   of being clipped by the glass surface.
