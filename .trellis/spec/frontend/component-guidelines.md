@@ -59,6 +59,9 @@ by this repository, not a runtime black box.
 - Global layout and application-specific selectors belong in `styles/base.css`.
 - Tailwind utilities are appropriate for small, local arrangements; repeated or
   stateful product surfaces should use a stable class contract.
+- Do not style generic descendants such as `.session-batch__header span` when a
+  container may host metadata and control groups. Target the semantic element
+  class so component-owned `display`, alignment, and gap rules remain authoritative.
 - Use the layered dark workbench canvas and restrained graphite surfaces defined
   by the project. Do not flatten operational pages into one full-black canvas.
 - Landing-page measurements follow the prompt-first beUI composition in

@@ -289,7 +289,11 @@ function EditablePromptBubble({ item, disabled, onRegenerate }: EditablePromptBu
           }}
         />
         <div className="session-batch__prompt-edit-footer">
-          <span className="session-batch__prompt-edit-actions">
+          <div
+            className="session-batch__prompt-edit-actions"
+            role="group"
+            aria-label="提示词编辑操作"
+          >
             <Button
               type="button"
               variant="secondary"
@@ -307,7 +311,7 @@ function EditablePromptBubble({ item, disabled, onRegenerate }: EditablePromptBu
             >
               修改
             </Button>
-          </span>
+          </div>
         </div>
       </form>
     );

@@ -498,6 +498,9 @@ it('edits a completed prompt and replaces the original generation batch', async 
     target: { value: '很长的提示词\n第二行\n第三行\n第四行\n第五行\n第六行\n第七行' },
   });
   expect(editor).toHaveStyle({ height: '120px', overflowY: 'auto' });
+  const editActions = screen.getByRole('group', { name: '提示词编辑操作' });
+  expect(editActions).toContainElement(screen.getByRole('button', { name: '取消' }));
+  expect(editActions).toContainElement(screen.getByRole('button', { name: '修改' }));
   expect(screen.getByRole('button', { name: '取消' })).toHaveClass(
     'button',
     'button--secondary',

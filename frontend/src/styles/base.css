@@ -3708,7 +3708,7 @@ video {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.session-batch__header span {
+.session-batch__header .session-batch__meta {
   display: block;
   margin-top: 5px;
   color: var(--muted-foreground);
@@ -4952,7 +4952,7 @@ video {
   overflow-wrap: anywhere;
   white-space: normal;
 }
-.session-batch.is-generating .session-batch__header span {
+.session-batch.is-generating .session-batch__header .session-batch__meta {
   display: none;
 }
 .session-batch.is-generating .session-batch__actions:empty {
