@@ -330,7 +330,7 @@ No actionable P0, P1, or P2 findings remain.
 
 - Fonts and typography: `Turn your idea` remains the existing Geist Variable treatment; only the Instrument Serif Italic `into images` span receives the shiny gradient, preserving the shared baseline and existing title scale.
 - Colors and visual tokens: the inline gradient uses the requested 110deg stops `#3D81E3`, `#AE9AE6`, `#F8D8D5`, `#FEEFDB`, and `#3D81E3`. The effect is limited to the headline text and does not tint the video, composer, or navigation.
-- Motion: the browser reports `6s linear infinite shiny`, and sampled `background-position` values advance between captures. The reduced-motion media rule disables the loop and centers the gradient.
+- Motion: the browser reports `6s linear infinite shiny`, and sampled `background-position` values decrease from the positive side toward the negative side so the visible sheen travels left to right. The reduced-motion media rule disables the loop and centers the gradient.
 - Responsive integrity: desktop and mobile screenshots retain the complete headline, with zero horizontal document overflow and no overlap with the subtitle or composer.
 - Copy and content: the accessible heading remains `Turn your idea into images` and the visible copy is unchanged.
 
@@ -338,6 +338,7 @@ No actionable P0, P1, or P2 findings remain.
 
 - Added the reusable `.animate-shiny` utility and `@keyframes shiny` to the existing global stylesheet.
 - Added the typed React gradient style object and applied it only to the `into images` headline span.
+- Added compensated lower padding and negative margin to keep the italic `g` descender painted without moving the subtitle or composer, and reversed the keyframe direction for left-to-right travel.
 - Added a regression test for the animation class, gradient stops, and inline sizing contract.
 - Added a static centered-gradient fallback for `prefers-reduced-motion` and documented the contract in `design.md` and the active Trellis PRD.
 
