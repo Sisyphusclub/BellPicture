@@ -1,3 +1,4 @@
+import { Compass, FolderOpen, ImagePlus, LayoutTemplate } from 'lucide-react';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -37,10 +38,10 @@ const LANDING_REASONING = [
 ] as const;
 const LANDING_SPEED = [{ id: 'balanced', label: '均衡' }] as const;
 const LANDING_NAV_ITEMS = [
-  { label: '发现', to: '/' },
-  { label: '生图', to: '/generate' },
-  { label: '创作模板', to: '/templates' },
-  { label: '资产', to: '/history' },
+  { label: '发现', to: '/', icon: Compass },
+  { label: '生图', to: '/generate', icon: ImagePlus },
+  { label: '创作模板', to: '/templates', icon: LayoutTemplate },
+  { label: '资产', to: '/history', icon: FolderOpen },
 ] as const;
 const HERO_ENTRIES: HistoryEntry[] = [
   {

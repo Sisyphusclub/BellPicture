@@ -317,6 +317,16 @@ final result: passed
 
 final result: passed
 
+## Wanxiang Navigation Hierarchy QA (2026-08-12)
+
+- Scope: Discover navigation layout and account/points placement.
+- Desktop uses a full-height left rail with icon-plus-label routes for 发现、生图、创作模板、资产;
+  the current route has a persistent raised graphite row with visible focus treatment.
+- The upper-right account cluster separates 登录/账户 from 个人积分. Guest points remain an auth
+  action, while authenticated points render the live remaining quota.
+- Mobile restores the compact top brand bar and menu overlay, preserving all route links and the
+  create action without horizontal overflow.
+
 ## Shiny Headline Gradient QA (2026-08-11)
 
 - Source visual truth: the user-provided `Shiny Text Gradient Animation` React/Tailwind specification in the current request.
