@@ -14,7 +14,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarSeparator,
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
@@ -124,7 +123,6 @@ function LandingSidebarContent({
             <SidebarGroup>
               <SidebarGroupContent>{renderItems(primaryItems)}</SidebarGroupContent>
             </SidebarGroup>
-            <SidebarSeparator />
             <SidebarGroup>
               <SidebarGroupContent>{renderItems(utilityItems)}</SidebarGroupContent>
             </SidebarGroup>

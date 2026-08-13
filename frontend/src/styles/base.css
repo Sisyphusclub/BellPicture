@@ -563,11 +563,6 @@ video {
     inset 0 -1px 0 rgb(0 0 0 / 0.24),
     0 10px 24px -18px rgb(0 0 0 / 0.9);
 }
-.landing-sidebar [data-sidebar='separator'] {
-  width: 48px;
-  margin: 4px auto;
-  background: rgb(255 255 255 / 0.08);
-}
 .landing-sidebar__mobile-footer {
   display: none;
 }
@@ -1363,10 +1358,6 @@ video {
   .group[data-state='collapsed'] .landing-sidebar [data-sidebar='menu-button'] svg {
     width: 21px;
     height: 21px;
-  }
-  .landing-sidebar [data-sidebar='separator'] {
-    width: 64px;
-    margin: 4px auto;
   }
 }
 .landing-creations > div > header {

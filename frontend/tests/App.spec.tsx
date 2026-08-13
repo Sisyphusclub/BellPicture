@@ -202,6 +202,7 @@ describe('React application routes', () => {
     expect(container.querySelector('.landing-navigation-shell')).toHaveStyle({
       '--sidebar-width-icon': '6.875rem',
     });
+    expect(container.querySelector(".landing-sidebar [data-sidebar='separator']")).toBeNull();
   });
 
   it('changes the homepage reasoning setting', async () => {
