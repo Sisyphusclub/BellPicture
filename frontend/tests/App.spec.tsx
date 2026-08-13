@@ -187,7 +187,7 @@ describe('React application routes', () => {
   });
 
   it('places creation templates between generation and assets in the landing navigation', () => {
-    renderRoute('/');
+    const { container } = renderRoute('/');
     const navigation = within(screen.getByRole('navigation', { name: '首页导航' }));
     const productLinks = navigation
       .getAllByRole('link')
@@ -199,6 +199,9 @@ describe('React application routes', () => {
       'href',
       '/templates',
     );
+    expect(container.querySelector('.landing-navigation-shell')).toHaveStyle({
+      '--sidebar-width-icon': '6.875rem',
+    });
   });
 
   it('changes the homepage reasoning setting', async () => {

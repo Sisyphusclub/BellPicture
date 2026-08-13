@@ -653,7 +653,7 @@ video {
 .landing-hero__content {
   position: absolute;
   top: clamp(136px, 15svh, 164px);
-  left: calc(50% + 45px);
+  left: calc(50% + 64px);
   z-index: 9;
   display: flex;
   width: min(940px, calc(100% - 144px));
@@ -1322,11 +1322,52 @@ video {
 .landing-creations {
   position: relative;
   z-index: 8;
-  left: 45px;
-  width: calc(100% - 110px);
+  left: 64px;
+  width: calc(100% - 148px);
   margin: calc(-100svh + clamp(654px, 68svh, 718px) - 80px) auto 0;
   padding: 0 0 96px;
   background: transparent;
+}
+
+@media (min-width: 861px) {
+  .landing-sidebar [data-sidebar='header'] {
+    padding: 14px 14px 12px;
+  }
+  .group[data-state='collapsed'] .landing-sidebar .landing-sidebar__brand {
+    width: 80px;
+    min-height: 56px;
+  }
+  .group[data-state='collapsed'] .landing-sidebar .landing-sidebar__brand img {
+    width: 36px;
+    height: 36px;
+  }
+  .landing-sidebar [data-sidebar='group'] {
+    padding: 8px 14px;
+  }
+  .landing-sidebar [data-sidebar='menu'] {
+    gap: 12px;
+  }
+  .group[data-state='collapsed'] .landing-sidebar [data-sidebar='menu-button'] {
+    width: 80px !important;
+    height: 64px !important;
+    min-width: 80px;
+    min-height: 64px;
+    gap: 6px;
+    padding: 7px 4px 6px !important;
+  }
+  .group[data-state='collapsed'] .landing-sidebar [data-sidebar='menu-button'] > span {
+    max-width: 76px;
+    font-size: 11px;
+    line-height: 1;
+  }
+  .group[data-state='collapsed'] .landing-sidebar [data-sidebar='menu-button'] svg {
+    width: 21px;
+    height: 21px;
+  }
+  .landing-sidebar [data-sidebar='separator'] {
+    width: 64px;
+    margin: 14px auto;
+  }
 }
 .landing-creations > div > header {
   display: block;
