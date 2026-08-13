@@ -219,6 +219,12 @@ Completely rebuild the Generate, Creation Templates, Assets, Sign In, and Sign U
 - Frontend code must follow `.trellis/spec/frontend/index.md` and its linked guides.
 - Worktree contains an in-progress Vue-to-React migration and user changes. Do not revert unrelated files.
 
+### Static discovery gallery refinement (2026-08-13)
+
+- Keep the existing beUI Pro four-column desktop and two-column compact waterfall composition.
+- Render each of the six bundled works once per responsive gallery without automatic vertical movement, duplicated loop copies, or animation timing styles.
+- Preserve the existing edge fade, image aspect ratios, responsive behavior, and image-detail interaction.
+
 ## Discovery Account Actions Follow-up (2026-08-13)
 
 - Replace the discovery page's previous account/points cluster with the supplied

@@ -143,6 +143,48 @@ No actionable P0, P1, or P2 findings remain.
 
 final result: passed
 
+## Discovery Static Gallery QA (2026-08-13)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-22ce644e-69e2-4bdc-99dc-8e1b3864f9ff.png`.
+- Implementation screenshots: `design-qa-assets/discovery-static-gallery-2048x750.png`, `design-qa-assets/discovery-static-gallery-1440x813.png`, `design-qa-assets/discovery-static-gallery-1366x768.png`, and `design-qa-assets/discovery-static-gallery-390x844.png`.
+- Full-view comparison evidence: `design-qa-assets/discovery-static-gallery-comparison.png`.
+- Local implementation: `http://localhost:5173/`.
+- Viewport/state: unauthenticated Discover page at 2048 x 750 for source comparison, with responsive checks at 1440 x 813, 1366 x 768, and 390 x 844.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: the existing Nebulens navigation, hero title, subtitle, and composer typography remain unchanged; the requested edit introduces no gallery text.
+- Spacing and layout rhythm: the existing four-column desktop and two-column compact waterfall tracks remain stable, retain their 6px landing-page gutters, and continue to rise into the first viewport beneath the composer. The symmetric edge mask still blends the gallery into the hero.
+- Colors and visual tokens: the existing dark graphite canvas, subdued image treatment, hover scale, and mask opacity remain unchanged. No new borders, surfaces, or accent colors were introduced.
+- Image quality and asset fidelity: all six product-owned raster works remain sharp and preserve their source aspect ratios and crop. The static layout renders each work once in the active responsive gallery rather than duplicating images for an animation loop.
+- Copy and content: navigation, hero copy, composer content, and image accessibility labels remain unchanged.
+- Interaction and responsiveness: a 3.2-second before/after measurement returned identical rectangles for every visible image and zero gallery animation names. Image-detail activation still opens the shared dialog. Browser checks found no horizontal overflow at 2048px, 1440px, 1366px, or 390px; the compact view retains two columns.
+
+### Comparison Evidence
+
+- The side-by-side 2048 x 750 comparison shows the requested static waterfall composition while preserving the existing Nebulens shell and long top fade into the images.
+- A focused crop was not needed because the requested behavior concerns the complete waterfall and its position relative to the hero; the full-view comparison and measured DOM rectangles cover the relevant surface.
+
+### Patches Made
+
+- Removed the duplicate loop copies, alternating up/down keyframes, timing styles, transform hints, and obsolete speed prop from the beUI Pro vertical gallery adaptation.
+- Kept one stable image node per work in each responsive gallery while preserving ratios, hover treatment, and detail actions.
+- Updated the landing selector depth, regression test, `design.md`, frontend component guideline, and active Trellis PRD to make static behavior the documented contract.
+
+### Verification
+
+- `npm run typecheck`: passed.
+- `npm test -- --run`: passed, 70 tests.
+- `npm run lint`: passed with one pre-existing Fast Refresh warning in `src/components/ui/sidebar.tsx`.
+- `npm run check:components`: passed.
+- Focused Prettier check: passed. The all-repository format check still reports 50 pre-existing files outside this change.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+- `git diff --check`: passed with only repository LF-to-CRLF notices.
+
+final result: passed
+
 ## Discovery Account Actions and Daily Check-in QA (2026-08-13)
 
 - Source visual truth: `design-qa-assets/landing-account-actions-reference.png`.

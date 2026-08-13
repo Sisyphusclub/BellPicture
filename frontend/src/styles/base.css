@@ -1547,7 +1547,7 @@ video {
 .landing-creations .image-gallery-vertical__columns {
   gap: 6px;
 }
-.landing-creations .image-gallery-vertical__columns > div > div > div {
+.landing-creations .image-gallery-vertical__columns > div > div {
   gap: 6px;
   padding-bottom: 6px;
 }

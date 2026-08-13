@@ -152,6 +152,12 @@ describe('React application routes', () => {
     expect(container.querySelector('video.landing-hero__video')).toBeInTheDocument();
     expect(container.querySelector('.landing-hero')).toHaveAttribute('data-layout', 'media-stage');
     const creationCards = container.querySelectorAll('.image-gallery-vertical__image-button');
+    const creationImages = container.querySelectorAll(
+      '.landing-creations .image-gallery-vertical__columns img',
+    );
+    const animatedGalleryTracks = container.querySelectorAll(
+      '.landing-creations [style*="animation-name"]',
+    );
     const desktopGallery = container.querySelector<HTMLElement>(
       '.landing-creations [style*="--gallery-columns"]',
     );
@@ -160,6 +166,8 @@ describe('React application routes', () => {
       Array.from(creationCards).map((card) => card.querySelector('img')?.getAttribute('src')),
     );
     expect(creationSources).toHaveLength(6);
+    expect(creationImages).toHaveLength(12);
+    expect(animatedGalleryTracks).toHaveLength(0);
     expect(Array.from(creationSources)).toEqual(
       expect.arrayContaining([
         '/media/hero-card-left.jpg',

@@ -14,12 +14,10 @@ export type ImageGalleryVerticalProps = {
   description?: string;
   images?: GalleryImage[];
   columnCount?: number;
-  speed?: number;
   className?: string;
   onImageClick?: (image: GalleryImage) => void;
 };
 
-const COPIES = ['primary', 'duplicate'] as const;
 const DEFAULT_TITLE = (
   <>
     <span className="block">A living archive</span>
@@ -34,10 +32,9 @@ type GalleryStyle = CSSProperties & {
 export function ImageGalleryVertical({
   eyebrow = 'Selected spaces',
   title = DEFAULT_TITLE,
-  description = 'An image-led collection moving with a quiet, continuous rhythm',
+  description = 'An image-led collection arranged with a quiet, considered rhythm',
   images = IMAGE_GALLERY_IMAGES,
   columnCount = 4,
-  speed = 34,
   className,
   onImageClick,
 }: ImageGalleryVerticalProps) {
@@ -92,16 +89,12 @@ export function ImageGalleryVertical({
 
         <GalleryColumns
           columns={distribute(galleryImages, Math.min(2, galleryImages.length))}
-          reduceMotion={reduceMotion}
-          speed={speed}
           onImageClick={onImageClick}
           hasHeader={hasHeader}
           className="grid lg:hidden"
         />
         <GalleryColumns
           columns={columns}
-          reduceMotion={reduceMotion}
-          speed={speed}
           onImageClick={onImageClick}
           hasHeader={hasHeader}
           className="hidden lg:grid lg:[grid-template-columns:repeat(var(--gallery-columns),minmax(0,1fr))]"
@@ -146,14 +139,6 @@ export function ImageGalleryVertical({
             transparent 100%
           );
         }
-        @keyframes image-gallery-up {
-          from { transform: translate3d(0, 0, 0); }
-          to { transform: translate3d(0, -50%, 0); }
-        }
-        @keyframes image-gallery-down {
-          from { transform: translate3d(0, -50%, 0); }
-          to { transform: translate3d(0, 0, 0); }
-        }
       `}</style>
     </section>
   );
@@ -161,16 +146,12 @@ export function ImageGalleryVertical({
 
 function GalleryColumns({
   columns,
-  reduceMotion,
-  speed,
   onImageClick,
   hasHeader,
   className,
   style,
 }: {
   columns: GalleryImage[][];
-  reduceMotion: boolean | null;
-  speed: number;
   onImageClick: ((image: GalleryImage) => void) | undefined;
   hasHeader: boolean;
   className?: string;
@@ -185,71 +166,46 @@ function GalleryColumns({
       )}
       style={style}
     >
-      {columns.map((column, columnIndex) => {
-        const direction = columnIndex % 2 === 0 ? 'up' : 'down';
-        const duration = Math.max(12, speed + columnIndex * 3);
-
-        return (
-          <div key={column.map((image) => image.id).join('-')} className="overflow-hidden">
-            <div
-              className="flex will-change-transform flex-col"
-              style={{
-                animationName: reduceMotion
-                  ? 'none'
-                  : direction === 'up'
-                    ? 'image-gallery-up'
-                    : 'image-gallery-down',
-                animationDuration: `${duration}s`,
-                animationTimingFunction: 'linear',
-                animationIterationCount: 'infinite',
-              }}
-            >
-              {COPIES.map((copy) => (
-                <div
-                  key={copy}
-                  aria-hidden={copy === 'duplicate'}
-                  className="flex flex-col gap-2 pb-2 sm:gap-3 sm:pb-3"
-                >
-                  {column.map((image) => (
-                    <figure
-                      key={`${copy}-${image.id}`}
-                      className="relative overflow-hidden bg-muted"
-                      style={{ aspectRatio: image.aspectRatio ?? 0.8 }}
-                    >
-                      {copy === 'primary' && onImageClick ? (
-                        <button
-                          type="button"
-                          className="image-gallery-vertical__image-button"
-                          onClick={() => onImageClick(image)}
-                          aria-label={`查看${image.alt}`}
-                        >
-                          <img
-                            src={image.src}
-                            alt={image.alt}
-                            width={900}
-                            height={1200}
-                            loading="lazy"
-                            className="h-full w-full object-cover"
-                          />
-                        </button>
-                      ) : (
-                        <img
-                          src={image.src}
-                          alt={copy === 'primary' ? image.alt : ''}
-                          width={900}
-                          height={1200}
-                          loading="lazy"
-                          className="h-full w-full object-cover"
-                        />
-                      )}
-                    </figure>
-                  ))}
-                </div>
-              ))}
-            </div>
+      {columns.map((column) => (
+        <div key={column.map((image) => image.id).join('-')} className="overflow-hidden">
+          <div className="flex flex-col gap-2 pb-2 sm:gap-3 sm:pb-3">
+            {column.map((image) => (
+              <figure
+                key={image.id}
+                className="relative overflow-hidden bg-muted"
+                style={{ aspectRatio: image.aspectRatio ?? 0.8 }}
+              >
+                {onImageClick ? (
+                  <button
+                    type="button"
+                    className="image-gallery-vertical__image-button"
+                    onClick={() => onImageClick(image)}
+                    aria-label={`查看${image.alt}`}
+                  >
+                    <img
+                      src={image.src}
+                      alt={image.alt}
+                      width={900}
+                      height={1200}
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
+                ) : (
+                  <img
+                    src={image.src}
+                    alt={image.alt}
+                    width={900}
+                    height={1200}
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                  />
+                )}
+              </figure>
+            ))}
           </div>
-        );
-      })}
+        </div>
+      ))}
     </div>
   );
 }
