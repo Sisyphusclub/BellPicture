@@ -338,6 +338,18 @@ final result: passed
 - The hero and gallery are centered in the canvas remaining beside the rail. Mobile retains the
   compact top navigation surface and resets all desktop rail offsets.
 
+## Discovery Sidebar Component Normalization QA (2026-08-13)
+
+- beUI Pro Navbar was audited at `https://pro.beui.dev/components/navbar`; all four registry
+  variants are top navigation patterns and none provides a left application sidebar.
+- Per the project fallback rule, discovery navigation now uses the registry-copied shadcn Sidebar
+  primitives: Provider, Sidebar, Header, Content, Group, Menu, MenuButton, Separator, Footer,
+  Tooltip, and mobile Sheet.
+- `LandingSidebar` is only a product composition boundary for routes, the Nebulens brand, login,
+  and points. It does not reproduce Sidebar state, focus, mobile sheet, or tooltip behavior.
+- The previously adapted `NavbarExpand` implementation was removed to avoid representing modified
+  product code as an unchanged beUI Pro registry component.
+
 ## Shiny Headline Gradient QA (2026-08-11)
 
 - Source visual truth: the user-provided `Shiny Text Gradient Animation` React/Tailwind specification in the current request.
@@ -436,7 +448,7 @@ No actionable P0, P1, or P2 findings remain for the requested material-only chan
   contrast.
 - Spacing and layout rhythm: the existing beUI composer geometry and toolbar grouping remain intact.
   The glass layers are absolutely positioned inside a 1px inset, while the root keeps `overflow:
-  visible`; measured horizontal document overflow is `0px` on desktop and mobile.
+visible`; measured horizontal document overflow is `0px` on desktop and mobile.
 - Colors and visual tokens: the material uses a cool graphite radial tint over the hero video, a
   `2px` desktop / `2.5px` mobile chrome blur, and restrained saturation. The existing orange, cyan,
   and royal-blue BorderGlow remains a focused 1px ring with no warm interior fill.

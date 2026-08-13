@@ -260,23 +260,23 @@ describe('React application routes', () => {
     expect(screen.getByRole('switch', { name: '私有模式' })).not.toBeChecked();
   });
 
-  it('opens and closes the expanding pill mobile navigation', async () => {
+  it('opens and closes the shadcn mobile sidebar', async () => {
+    const originalWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
     const user = userEvent.setup();
     renderRoute('/');
 
     const openMenu = screen.getByRole('button', { name: '打开首页菜单' });
     await user.click(openMenu);
 
-    expect(screen.getByRole('navigation', { name: '移动端首页导航' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '关闭首页菜单' })).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    );
+    expect(screen.getByRole('navigation', { name: '首页导航' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '关闭首页菜单' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '关闭首页菜单' }));
     await waitFor(() => {
-      expect(screen.queryByRole('navigation', { name: '移动端首页导航' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('navigation', { name: '首页导航' })).not.toBeInTheDocument();
     });
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
   });
 
   it('opens a vertical gallery image without entering a modal state loop', async () => {

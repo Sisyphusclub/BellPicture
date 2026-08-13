@@ -3,6 +3,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
+import { LandingSidebar } from '@/components/landing/LandingSidebar';
 import { LandingGenerationControls } from '@/components/landing/LandingGenerationControls';
 import { useToast } from '@/components/common/ToastProvider';
 import { AgentChatInput } from '@/components/premium/agent-chat-input/agent-chat-input';
@@ -10,7 +11,6 @@ import {
   ImageGalleryVertical,
   type GalleryImage,
 } from '@/components/premium/image-galleries/image-gallery-vertical';
-import { NavbarExpand } from '@/components/premium/navbar-expand/navbar-expand';
 import { IMAGE_PROMPT_EXAMPLES } from '@/data/imagePromptExamples';
 import { useAuth } from '@/hooks/useAuth';
 import { openAuthModal } from '@/hooks/useAuthModal';
@@ -214,7 +214,7 @@ export function LandingView() {
           />
         ) : null}
         <div className="landing-hero__overlay" aria-hidden="true" />
-        <NavbarExpand
+        <LandingSidebar
           accountName={accountName}
           brandLabel="Nebulens"
           creditsRemaining={quota?.remaining ?? '—'}

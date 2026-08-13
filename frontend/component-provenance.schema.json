@@ -7,6 +7,8 @@
   "required": [
     "version",
     "authoritativeSource",
+    "registryFallbacks",
+    "protectedRegistryFiles",
     "nativeImplementationRoots",
     "nativeControlExceptions",
     "foundationImports",
@@ -17,6 +19,23 @@
     "$schema": { "type": "string" },
     "version": { "const": 1 },
     "authoritativeSource": { "$ref": "#/$defs/source" },
+    "registryFallbacks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/source" }
+    },
+    "protectedRegistryFiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["file", "source", "sha256"],
+        "properties": {
+          "file": { "type": "string" },
+          "source": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        }
+      }
+    },
     "nativeImplementationRoots": {
       "type": "array",
       "items": {

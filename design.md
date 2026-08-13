@@ -3,7 +3,7 @@
 > A dark-first AI image studio built from layered graphite surfaces, compact controls, and continuous morphing interactions.
 
 **Visual source:** [beUI Pro](https://pro.beui.dev/components)<br>
-**Primary references:** Agent Chat Input, Expanding Pill, Animated Dropdown, Morphic Card Modal, Morphic Tooltip, Image Gallery Vertical, Data Table, Empty States, Auth<br>
+**Primary references:** Agent Chat Input, shadcn Sidebar, Animated Dropdown, Morphic Card Modal, Morphic Tooltip, Image Gallery Vertical, Data Table, Empty States, Auth<br>
 **Product:** Nebulens AI image creation workspace<br>
 **Updated:** 2026-08-04
 
@@ -173,18 +173,18 @@ contract above.
 
 #### Source-to-code mapping
 
-| beUI Pro source                | Canonical reference                                                      | Local implementation                                                                    | Allowed adaptation                                                                                     |
-| ------------------------------ | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Agent Chat Input               | [agent-chat-input](https://pro.beui.dev/components/agent-chat-input)     | `src/components/premium/agent-chat-input/*` and `AgentChatInput`                        | Prompt, attachments, model, ratio, count, private mode, quota, submit/stop, and product callbacks      |
-| Expanding Pill / Navbar Expand | [navbar](https://pro.beui.dev/components/navbar)                         | `src/components/premium/navbar-expand/navbar-expand.tsx` and `NavbarExpand`             | Route items, current state, mobile collapse, and Nebulens logo                                         |
-| Animated Dropdown              | [animated-dropdown](https://pro.beui.dev/components/animated-dropdown)   | `src/components/premium/animated-dropdown/*` and `src/components/ui/select-menu.tsx`    | Typed option data, labels, collision padding, and route-specific values                                |
-| Morphic Card Modal             | [morphic-card-modal](https://pro.beui.dev/components/morphic-card-modal) | `src/components/premium/morphic-card-modal/*`, `ImageDetailModal`, `ConfirmActionModal` | Image metadata, destructive confirmation, download/reuse actions, and focus return                     |
-| Morphic Tooltip                | [morphic-tooltip](https://pro.beui.dev/components/morphic-tooltip)       | `src/components/premium/morphic-tooltip/*` and `src/components/ui/icon-tooltip.tsx`     | Accessible labels and placement only                                                                   |
-| Image Gallery Vertical         | [image-galleries](https://pro.beui.dev/components/image-galleries)       | `src/components/premium/image-galleries/image-gallery-vertical.tsx`                     | Six product-owned images, vertical looping columns, responsive column count, and reduced-motion freeze |
-| Data Table                     | [data-table](https://pro.beui.dev/components/data-table)                 | Admin users table in `src/views/AdminUsersView.tsx`                                     | User rows, inline quota editing, pagination, and mobile record layout                                  |
-| Empty States                   | [empty-states](https://pro.beui.dev/components/empty-states)             | Empty/loading/error patterns in route views                                             | Concise Chinese recovery copy and product actions                                                      |
-| Auth                           | [auth](https://pro.beui.dev/components/auth)                             | `src/components/auth/*` and auth views                                                  | Existing Better Auth fields, validation, pending state, and provider limits                            |
-| Shared button primitive        | beUI Pro control language via the `@beui-pro` registry                   | `src/components/ui/button.tsx`                                                          | Semantic variants and Lucide icon slots; no new button family                                          |
+| beUI Pro source         | Canonical reference                                                      | Local implementation                                                                    | Allowed adaptation                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Agent Chat Input        | [agent-chat-input](https://pro.beui.dev/components/agent-chat-input)     | `src/components/premium/agent-chat-input/*` and `AgentChatInput`                        | Prompt, attachments, model, ratio, count, private mode, quota, submit/stop, and product callbacks      |
+| Discovery Sidebar       | [shadcn Sidebar](https://ui.shadcn.com/docs/components/sidebar)          | `src/components/ui/sidebar.tsx` and `LandingSidebar`                                    | Route items, current state, tooltips, mobile sheet, Nebulens logo, account and points                  |
+| Animated Dropdown       | [animated-dropdown](https://pro.beui.dev/components/animated-dropdown)   | `src/components/premium/animated-dropdown/*` and `src/components/ui/select-menu.tsx`    | Typed option data, labels, collision padding, and route-specific values                                |
+| Morphic Card Modal      | [morphic-card-modal](https://pro.beui.dev/components/morphic-card-modal) | `src/components/premium/morphic-card-modal/*`, `ImageDetailModal`, `ConfirmActionModal` | Image metadata, destructive confirmation, download/reuse actions, and focus return                     |
+| Morphic Tooltip         | [morphic-tooltip](https://pro.beui.dev/components/morphic-tooltip)       | `src/components/premium/morphic-tooltip/*` and `src/components/ui/icon-tooltip.tsx`     | Accessible labels and placement only                                                                   |
+| Image Gallery Vertical  | [image-galleries](https://pro.beui.dev/components/image-galleries)       | `src/components/premium/image-galleries/image-gallery-vertical.tsx`                     | Six product-owned images, vertical looping columns, responsive column count, and reduced-motion freeze |
+| Data Table              | [data-table](https://pro.beui.dev/components/data-table)                 | Admin users table in `src/views/AdminUsersView.tsx`                                     | User rows, inline quota editing, pagination, and mobile record layout                                  |
+| Empty States            | [empty-states](https://pro.beui.dev/components/empty-states)             | Empty/loading/error patterns in route views                                             | Concise Chinese recovery copy and product actions                                                      |
+| Auth                    | [auth](https://pro.beui.dev/components/auth)                             | `src/components/auth/*` and auth views                                                  | Existing Better Auth fields, validation, pending state, and provider limits                            |
+| Shared button primitive | beUI Pro control language via the `@beui-pro` registry                   | `src/components/ui/button.tsx`                                                          | Semantic variants and Lucide icon slots; no new button family                                          |
 
 #### Explicit exceptions
 
@@ -389,9 +389,9 @@ The prompt composer is the signature product surface. Use the installed beUI Age
 
 The home page is a product-first creation screen, not a Squarespace clone.
 
-- Use a full dark first viewport with a beUI-aligned fixed left rail, a centered product statement in the remaining canvas, and a functional Agent Composer. The hero video is a true viewport layer (`inset: 0`, `100% x 100%`, `object-fit: cover`) rather than an enlarged content asset, so it continues behind all lightweight navigation chrome. The desktop rail occupies an approximately 88px visual lane with no opaque sidebar panel: keep the Nebulens mark at the top, stack icon-over-label routes in compact 60px targets, separate the asset route from creation routes, and render glass only for the current or hovered item.
+- Use a full dark first viewport with the registry-copied shadcn Sidebar, a centered product statement in the remaining canvas, and a functional beUI Pro Agent Composer. The hero video is a true viewport layer (`inset: 0`, `100% x 100%`, `object-fit: cover`) rather than an enlarged content asset. Keep the desktop Sidebar in its standard icon-collapsed state, use `SidebarMenuButton` for every route, `SidebarSeparator` between creation and asset groups, and component-owned tooltips for collapsed labels. Product code may compose route data and account actions but must not rewrite Sidebar state, Sheet, Tooltip, or menu-button internals.
 - Keep login and personal points as a separate compact account cluster in the upper-right corner. Guest points open the auth modal; authenticated users see their account name and live remaining points.
-- On mobile, reduce the rail to the existing brand-plus-menu control and open navigation/actions in a rounded graphite overlay below it. Preserve Escape closing, route-current semantics, and zero horizontal overflow.
+- On mobile, use the same Sidebar component's Sheet behavior behind a compact brand-plus-trigger header. Preserve escape/outside-click closing, route-current semantics, focus management, and zero horizontal overflow.
 - Keep the copy short: brand/product name, one concrete creation promise, and the composer placeholder. Set `Turn your idea` in Geist Variable at 460 weight with slightly tightened word spacing, and `into images` in same-scale Instrument Serif Italic. Align both on one baseline with a deliberate natural-space gap between the font treatments. Apply the Apple-inspired `110deg` blue-lilac-blush-ivory shiny gradient only to `into images`, pan its `200%` background from `200%` to `-200%` so the visible sheen travels left to right over a quiet 6-second linear loop, and hold a static centered gradient under reduced motion. Give the italic accent compensated lower padding so the `g` descender stays fully painted without moving the following content. Retain the restrained upward fade on entry.
 - Keep the video, navigation, headline, and Agent Composer within a full `100svh` first viewport. Preserve the video across that complete viewport; pull the creation feed upward into the open space below the composer so the first image row appears within the first viewport rather than starting near the bottom.
 - Present the six bundled works with beUI Pro `image-gallery-vertical`: four alternating motion columns on wide screens and the component's compact two-column layout below the large breakpoint. The gallery loops its local images vertically, never horizontally, and has no pagination or previous/next controls. Respect `prefers-reduced-motion` by freezing the columns.
@@ -546,17 +546,17 @@ Foreign or nonexistent IDs are never mutated by bulk operations. The frontend va
 
 ## Implementation Mapping
 
-| Product need                               | Preferred implementation                                                |
-| ------------------------------------------ | ----------------------------------------------------------------------- |
-| Prompt, attachments, quota, and generation | `AgentChatInput` Studio Composer                                        |
+| Product need                                   | Preferred implementation                                                |
+| ---------------------------------------------- | ----------------------------------------------------------------------- |
+| Prompt, attachments, quota, and generation     | `AgentChatInput` Studio Composer                                        |
 | Model, ratio, sort, filters, contextual action | `AnimatedDropdown` through shared select/menu wrappers                  |
-| Icon guidance                              | `MorphicTooltip` through `IconTooltip`                                  |
-| Image/template inspection and continuation | `MorphicCard` + `MorphicCardModal`                                      |
-| Asset list mode and bulk selection         | beUI `Data Table` adapted to image metadata                             |
-| Asset and template browsing                | beUI `Image Galleries` patterns with product-owned actions              |
-| Authentication                             | beUI `Auth` pattern with existing Better Auth behavior                  |
-| Empty and disconnected states              | beUI `Empty States` adapted to concise product recovery                 |
-| User list                                  | Local responsive table using shared tokens and animated pagination menu |
+| Icon guidance                                  | `MorphicTooltip` through `IconTooltip`                                  |
+| Image/template inspection and continuation     | `MorphicCard` + `MorphicCardModal`                                      |
+| Asset list mode and bulk selection             | beUI `Data Table` adapted to image metadata                             |
+| Asset and template browsing                    | beUI `Image Galleries` patterns with product-owned actions              |
+| Authentication                                 | beUI `Auth` pattern with existing Better Auth behavior                  |
+| Empty and disconnected states                  | beUI `Empty States` adapted to concise product recovery                 |
+| User list                                      | Local responsive table using shared tokens and animated pagination menu |
 | Buttons                                        | Shared `Button` primitive and icon-button contract                      |
 | Navigation                                     | Existing React Router shell restyled with semantic tokens               |
 

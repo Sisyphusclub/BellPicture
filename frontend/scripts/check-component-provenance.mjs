@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -57,6 +58,20 @@ function literalAttribute(opening, name) {
 function importMatchesPackage(moduleName, packageName) {
   if (packageName.endsWith('/')) return moduleName.startsWith(packageName);
   return moduleName === packageName || moduleName.startsWith(`${packageName}/`);
+}
+
+for (const protectedFile of manifest.protectedRegistryFiles ?? []) {
+  const absolutePath = join(frontendRoot, protectedFile.file);
+  if (!existsSync(absolutePath)) {
+    failures.push(`Protected registry component is missing: ${protectedFile.file}.`);
+    continue;
+  }
+  const actualHash = createHash('sha256').update(readFileSync(absolutePath)).digest('hex');
+  if (actualHash !== protectedFile.sha256) {
+    failures.push(
+      `${protectedFile.file} no longer matches its protected ${protectedFile.source} source. Reinstall the registry component or update provenance only after an explicit source audit.`,
+    );
+  }
 }
 
 for (const absolutePath of sourceFiles(sourceRoot)) {
@@ -190,7 +205,9 @@ for (const exception of manifest.externalVisualExceptions) {
 if (failures.length > 0) {
   console.error('Component provenance check failed:\n');
   failures.forEach((failure) => console.error(`- ${failure}`));
-  console.error('\nUpdate the implementation or document a narrowly scoped exception with rationale.');
+  console.error(
+    '\nUpdate the implementation or document a narrowly scoped exception with rationale.',
+  );
   process.exitCode = 1;
 } else {
   const approvedNativeCount = manifest.nativeControlExceptions.reduce(
@@ -201,5 +218,8 @@ if (failures.length > 0) {
   console.log(`- ${scannedFileCount} TypeScript source files scanned`);
   console.log('- 0 visible native controls outside shared component roots');
   console.log(`- ${approvedNativeCount} hidden browser-control exception(s) verified`);
+  console.log(
+    `- ${(manifest.protectedRegistryFiles ?? []).length} protected registry file checksum(s) verified`,
+  );
   console.log('- 0 forbidden component imports or browser dialogs');
 }

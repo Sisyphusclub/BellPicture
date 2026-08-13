@@ -6,6 +6,40 @@
     "catalog": "https://pro.beui.dev/components",
     "registry": "@beui-pro"
   },
+  "registryFallbacks": [
+    {
+      "name": "shadcn/ui",
+      "catalog": "https://ui.shadcn.com/docs/components",
+      "registry": "shadcn"
+    }
+  ],
+  "protectedRegistryFiles": [
+    {
+      "file": "src/components/ui/separator.tsx",
+      "source": "shadcn Sidebar dependency",
+      "sha256": "c58bb55104a53d838c9fd07e45003bd85c8052a9515eb339a390645fb723a697"
+    },
+    {
+      "file": "src/components/ui/sheet.tsx",
+      "source": "shadcn Sidebar dependency",
+      "sha256": "478cd9250a66d4c55fbbe0503eaa2751a1beb9f7ba1a93e5174f8c2322c6eae1"
+    },
+    {
+      "file": "src/components/ui/sidebar.tsx",
+      "source": "shadcn Sidebar registry",
+      "sha256": "e4ec68f5ffd8e18c0f272d477b8d7acf856a1c7e6c0521a7c9e3b4f398fcc8eb"
+    },
+    {
+      "file": "src/components/ui/skeleton.tsx",
+      "source": "shadcn Sidebar dependency",
+      "sha256": "a65d56bf03874fd8d53b7f9f902d6f88dbed445828f064d0b121f62e7ad2bb5f"
+    },
+    {
+      "file": "src/components/ui/tooltip.tsx",
+      "source": "shadcn Sidebar dependency",
+      "sha256": "7344991bfa353050715ced259b96d024400b252df04d49e6a3a67cde22ada172"
+    }
+  ],
   "nativeImplementationRoots": [
     {
       "root": "src/components/premium",
@@ -14,8 +48,8 @@
     },
     {
       "root": "src/components/ui",
-      "source": "Nebulens semantic adapters",
-      "rationale": "Shared primitives are the only local boundary allowed to implement native controls."
+      "source": "shadcn registry primitives and Nebulens semantic adapters",
+      "rationale": "Shared primitives are the only local boundary allowed to implement native controls; protected registry files must retain their recorded hashes."
     }
   ],
   "nativeControlExceptions": [
