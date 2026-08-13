@@ -480,6 +480,7 @@ export function AgentChatInput({
   streamingPlaceholders = [],
   ariaLabel = 'Agent prompt',
   submitLabel = 'Send message',
+  submitContent,
   disabled = false,
   autoFocus = false,
   minRows = 2,
@@ -772,12 +773,20 @@ export function AgentChatInput({
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span
                   key={busy ? 'stop' : 'send'}
+                  className={cn(
+                    'agent-chat-input__submit-content',
+                    !busy && submitContent && 'agent-chat-input__submit-content--custom',
+                  )}
                   initial={reduce ? false : { opacity: 0, scale: 0.72 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={reduce ? {} : { opacity: 0, scale: 0.72 }}
                   transition={reduce ? { duration: 0 } : SPRING_SWAP}
                 >
-                  {busy ? <Square aria-hidden="true" /> : <ArrowUp aria-hidden="true" />}
+                  {busy ? (
+                    <Square aria-hidden="true" />
+                  ) : (
+                    (submitContent ?? <ArrowUp aria-hidden="true" />)
+                  )}
                 </motion.span>
               </AnimatePresence>
             </motion.button>

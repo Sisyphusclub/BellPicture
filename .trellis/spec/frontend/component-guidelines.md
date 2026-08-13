@@ -77,6 +77,11 @@ by this repository, not a runtime black box.
   opaque no-filter fallback, and do not carry this material into Generate.
 - Keep card radii at 8px or less unless a source primitive requires otherwise.
 - Do not add decorative gradients, orbs, fake artwork, or handcrafted SVG icons.
+- Route-specific Agent Chat Input submit content must use the typed `submitContent` composition prop
+  instead of forking the beUI control. Discover shows a `40px` glass credit pill with a Lucide sparkle
+  and `15 * requestedImageCount`; Generate retains the default circular arrow/stop treatment. Custom
+  idle content must never replace the shared pending stop state, accessible action label, disabled
+  semantics, focus treatment, or reduced-motion behavior.
 - Grouped toolbar controls use a stable `40px` outer height. When a grid or
   segmented control contains smaller icon buttons, set `align-items: center`
   on the container and `place-items: center` on each item explicitly; CSS Grid's

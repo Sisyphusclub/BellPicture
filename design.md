@@ -262,7 +262,12 @@ The prompt composer is the signature product surface. Use the installed beUI Age
 - Keep prompt text, placeholders, and streamed prompt examples at `16px` across Discover and Generate so both composers share the same reading scale.
 - Attachments appear as compact thumbnail chips above the toolbar.
 - Model, ratio, count, and secondary controls sit in the lower toolbar or a morphing top layer.
-- Use a circular primary submit button. Disabled, submitting, streaming, and stop states must be visible.
+- Keep the Generate workspace submit action circular. On Discover, use the same beUI submit action
+  with a compact `68-76px` refractive pill containing a Lucide sparkle and the current request cost.
+  The Discover cost is `15` credits per requested image and updates with the count control; the
+  accessible button name remains the action, not the number. Empty prompts use a clearly subdued
+  disabled glass state, valid prompts raise contrast without becoming opaque, and pending generation
+  replaces the cost with the standard stop icon. Preserve a `40px` target and reduced-motion behavior.
 - Keep generation shortcuts out of visible instructional copy; expose them through tooltips or accessible descriptions.
 
 ### Animated Dropdown

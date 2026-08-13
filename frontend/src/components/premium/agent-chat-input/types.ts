@@ -60,6 +60,7 @@ export interface AgentChatInputProps {
   streamingPlaceholders?: readonly string[];
   ariaLabel?: string;
   submitLabel?: string;
+  submitContent?: ReactNode;
   disabled?: boolean;
   autoFocus?: boolean;
   minRows?: number;

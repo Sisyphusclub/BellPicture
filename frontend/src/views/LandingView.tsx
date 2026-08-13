@@ -1,4 +1,4 @@
-import { Compass, FolderOpen, ImagePlus, LayoutTemplate } from 'lucide-react';
+import { Compass, FolderOpen, ImagePlus, LayoutTemplate, Sparkles } from 'lucide-react';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -31,6 +31,7 @@ const HERO_SHINY_GRADIENT_STYLE: CSSProperties = {
   WebkitTextFillColor: 'transparent',
 };
 const LANDING_SCROLL_KEY = 'nebulens:landing-scroll';
+const LANDING_IMAGE_CREDIT_COST = 15;
 const LANDING_MODELS = [{ id: 'gpt-image-2', label: 'gpt-image-2' }] as const;
 const LANDING_REASONING = [
   { id: 'standard', label: '标准', description: '快速完成日常创作' },
@@ -249,6 +250,12 @@ export function LandingView() {
             placeholder="描述你想生成的画面..."
             ariaLabel="首页创作提示词"
             submitLabel="带着提示词开始创作"
+            submitContent={
+              <span className="landing-submit-cost" aria-hidden="true">
+                <Sparkles />
+                <span>{count * LANDING_IMAGE_CREDIT_COST}</span>
+              </span>
+            }
             minRows={1}
             maxRows={4}
             allowFileUpload={false}
