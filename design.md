@@ -1,17 +1,40 @@
-# Nebulens - beUI Pro Design System
+# Nebulens - Media-First beUI Pro Design System
 
-> A dark-first AI image studio built from layered graphite surfaces, compact controls, and continuous morphing interactions.
+> A dark-first AI image studio where generated media is the canvas and beUI controls remain quiet, refractive, and operational.
 
-**Visual source:** [beUI Pro](https://pro.beui.dev/components)<br>
+**Visual sources:** [beUI Pro](https://pro.beui.dev/components) component language + [Wanxiang Explore](https://tongyi.aliyun.com/wan/explore) media-stage hierarchy<br>
 **Primary references:** Agent Chat Input, shadcn Sidebar, Animated Dropdown, Morphic Card Modal, Morphic Tooltip, Image Gallery Vertical, Data Table, Empty States, Auth<br>
 **Product:** Nebulens AI image creation workspace<br>
-**Updated:** 2026-08-04
+**Reference extraction:** [`themes/wanxiang/DESIGN.md`](themes/wanxiang/DESIGN.md) and [`themes/wanxiang/preview.html`](themes/wanxiang/preview.html)<br>
+**Updated:** 2026-08-13
 
 ## Product Direction
 
 Nebulens is a working image studio, not a marketing template. The interface should make it fast to describe an image, add references, tune generation settings, compare results, revisit assets, and manage accounts. Generated imagery provides most of the color. The application chrome stays quiet, responsive, and consistent with beUI Pro.
 
 The default theme is dark, matching beUI Pro's primary presentation. Use layered near-black and graphite surfaces rather than one flat black canvas so creators can scan controls and inspect image detail without losing hierarchy. Light surfaces are reserved for inverse actions, focused media metadata, and an optional light theme. The experience should feel precise and modern, with the distinctive character coming from morphing continuity between controls, menus, cards, and detail views.
+
+## Wanxiang-Inspired Discovery Direction
+
+The discovery route adopts Wanxiang's media-first hierarchy without copying its product chrome or brand assets. The existing Nebulens video remains the full-bleed first-screen canvas; the logo, English headline, beUI Agent Chat Input, navigation routes, account state, and image content remain Nebulens-owned. The reusable lesson is structural: persistent narrow navigation, one centered refractive composer, a small row of creation shortcuts, and the discovery masonry entering before the first viewport ends. Generated media supplies nearly all saturation while interface layers use graphite tint, white typography, and local Nebulens cyan/blue/orange focus energy.
+
+Measured reference values are adapted as follows:
+
+| Reference observation | Nebulens rule |
+| --- | --- |
+| Wanxiang desktop rail is approximately `83px` | Use the current shadcn Sidebar at `90px` visible width with `48px` targets; do not shrink it back to a 32px icon rail. |
+| Wanxiang composer is `940px x 145px` at 1366px and 1952px | Discovery composer max width is `940px`; height stays within `128-145px` and becomes fluid below 860px. |
+| Composer uses `24px` radius and dark radial glass tint | Keep the beUI Agent Chat Input and BorderGlow structure; use the existing Nebulens liquid-glass layer at `20-24px` radius without a second outer card. |
+| Glass tint is `rgba(19,19,20,0.56-0.64)` with `2px` chrome blur | Use cool graphite transparency over the video. Never replace it with an opaque warm or purple panel. |
+| Gallery starts inside the first viewport with `4px` gutters | Keep the discovery gallery close to the composer and use `4-8px` gutters with small media radii; do not insert a marketing section between them. |
+| Source mobile layout retains a fixed 940px surface and clips | Do not copy this behavior. Below 860px use the existing Sheet navigation and `width: min(100% - 32px, 940px)` composer. |
+
+### Visual Ownership Boundary
+
+- **Adopt:** media-as-canvas composition, local header fades, refractive graphite controls, narrow persistent navigation, compact shortcut pills, immediate masonry handoff, and native-ratio media.
+- **Keep from Nebulens:** logo, video asset, `Turn your idea into images` title treatment, cyan/blue/orange BorderGlow, GPT-IMAGE-2 model language, account/credits content, and beUI/shadcn interaction contracts.
+- **Do not copy:** Wanxiang logo, purple membership gradient, Chinese slogan, avatars, generated media, proprietary icons, API/CLI entries, or its narrow-screen clipping.
+- **Component rule:** Wanxiang is a visual reference, not a component source. Visible controls must still come from beUI Pro first and shadcn/ui only where the beUI registry has no equivalent.
 
 ## Design Principles
 
