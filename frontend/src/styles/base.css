@@ -1366,7 +1366,7 @@ video {
   }
   .landing-sidebar [data-sidebar='separator'] {
     width: 64px;
-    margin: 14px auto;
+    margin: 4px auto;
   }
 }
 .landing-creations > div > header {
