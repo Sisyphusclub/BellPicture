@@ -139,6 +139,7 @@ describe('React application routes', () => {
     expect(shinyHeadline.style.backgroundImage).toContain('linear-gradient(110deg');
     expect(screen.queryByRole('heading', { level: 2, name: '今日创作' })).not.toBeInTheDocument();
     expect(container.querySelector('video.landing-hero__video')).toBeInTheDocument();
+    expect(container.querySelector('.landing-hero')).toHaveAttribute('data-layout', 'media-stage');
     const creationCards = container.querySelectorAll('.image-gallery-vertical__image-button');
     const desktopGallery = container.querySelector<HTMLElement>(
       '.landing-creations [style*="--gallery-columns"]',

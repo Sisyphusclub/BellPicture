@@ -198,7 +198,7 @@ export function LandingView() {
 
   return (
     <div className="landing-page">
-      <section className="landing-hero" aria-labelledby="landing-title">
+      <section className="landing-hero" data-layout="media-stage" aria-labelledby="landing-title">
         {!videoFailed ? (
           <video
             className="landing-hero__video"
