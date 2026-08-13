@@ -143,6 +143,46 @@ No actionable P0, P1, or P2 findings remain.
 
 final result: passed
 
+## Discovery Gallery Fade Removal QA (2026-08-13)
+
+- Source visual truth: the user-requested removal of the fade from the previously approved static gallery at `design-qa-assets/discovery-static-gallery-1440x813.png`.
+- Implementation screenshots: `design-qa-assets/discovery-static-gallery-no-fade-1440x813.png` and `design-qa-assets/discovery-static-gallery-no-fade-390x844.png`.
+- Full-view comparison evidence: `design-qa-assets/discovery-static-gallery-no-fade-comparison.png`.
+- Local implementation: `http://localhost:5173/`.
+- Viewport/state: unauthenticated Discover page at 1440 x 813 and 390 x 844.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: navigation, hero, subtitle, composer, and control typography remain unchanged.
+- Spacing and layout rhythm: the four-column desktop and two-column compact tracks retain their positions, widths, aspect ratios, and 6px landing-page gutters. Only the optical fade was removed.
+- Colors and visual tokens: every gallery image now starts at full source opacity with no top or bottom gradient masking; the graphite canvas and existing image hover treatment remain unchanged.
+- Image quality and asset fidelity: all six product-owned raster works remain sharp and preserve the established crop and aspect ratio.
+- Copy and content: all visible copy and image accessibility labels remain unchanged.
+- Interaction and responsiveness: computed `mask-image` is `none` in both desktop and compact galleries, image-detail controls remain present, and neither viewport has horizontal overflow.
+
+### Comparison Evidence
+
+- The 1440px side-by-side comparison shows the previous masked gallery on the left and the full-opacity gallery on the right. The first image row is now immediately legible without adding a replacement overlay or transition.
+- A separate focused crop was unnecessary because the complete first image row clearly exposes the only requested change at full-view scale.
+
+### Patches Made
+
+- Removed the component-owned `mask-image` and `-webkit-mask-image` gradient block.
+- Added a regression assertion that the landing gallery no longer injects a scoped style element.
+- Updated `design.md`, the frontend component guideline, and the active Trellis PRD to forbid edge-fade masks on the Discover gallery.
+
+### Verification
+
+- `npm run typecheck`: passed.
+- `npm test -- --run tests/App.spec.tsx`: passed, 16 tests.
+- `npm run lint`: passed with one pre-existing Fast Refresh warning in `src/components/ui/sidebar.tsx`.
+- Focused Prettier check: passed.
+- Browser checks at 1440 x 813 and 390 x 844: passed, no mask and no horizontal overflow.
+
+final result: passed
+
 ## Discovery Static Gallery QA (2026-08-13)
 
 - Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-22ce644e-69e2-4bdc-99dc-8e1b3864f9ff.png`.

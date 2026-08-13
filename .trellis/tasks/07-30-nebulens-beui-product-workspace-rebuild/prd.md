@@ -223,7 +223,7 @@ Completely rebuild the Generate, Creation Templates, Assets, Sign In, and Sign U
 
 - Keep the existing beUI Pro four-column desktop and two-column compact waterfall composition.
 - Render each of the six bundled works once per responsive gallery without automatic vertical movement, duplicated loop copies, or animation timing styles.
-- Preserve the existing edge fade, image aspect ratios, responsive behavior, and image-detail interaction.
+- Remove the top and bottom edge fade so every image renders at full opacity while preserving image aspect ratios, responsive behavior, and image-detail interaction.
 
 ## Discovery Account Actions Follow-up (2026-08-13)
 

@@ -168,6 +168,7 @@ describe('React application routes', () => {
     expect(creationSources).toHaveLength(6);
     expect(creationImages).toHaveLength(12);
     expect(animatedGalleryTracks).toHaveLength(0);
+    expect(container.querySelector('.landing-creations style')).not.toBeInTheDocument();
     expect(Array.from(creationSources)).toEqual(
       expect.arrayContaining([
         '/media/hero-card-left.jpg',

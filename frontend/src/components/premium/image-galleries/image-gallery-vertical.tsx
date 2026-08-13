@@ -101,45 +101,6 @@ export function ImageGalleryVertical({
           style={galleryStyle}
         />
       </div>
-
-      <style>{`
-        .image-gallery-vertical__columns {
-          -webkit-mask-image: linear-gradient(
-            to bottom,
-            transparent 0%,
-            rgb(0 0 0 / 0.08) 3%,
-            rgb(0 0 0 / 0.28) 7%,
-            rgb(0 0 0 / 0.58) 11%,
-            rgb(0 0 0 / 0.82) 15%,
-            rgb(0 0 0 / 0.96) 19%,
-            rgb(0 0 0) 23%,
-            rgb(0 0 0) 77%,
-            rgb(0 0 0 / 0.96) 81%,
-            rgb(0 0 0 / 0.82) 85%,
-            rgb(0 0 0 / 0.58) 89%,
-            rgb(0 0 0 / 0.28) 93%,
-            rgb(0 0 0 / 0.08) 97%,
-            transparent 100%
-          );
-          mask-image: linear-gradient(
-            to bottom,
-            transparent 0%,
-            rgb(0 0 0 / 0.08) 3%,
-            rgb(0 0 0 / 0.28) 7%,
-            rgb(0 0 0 / 0.58) 11%,
-            rgb(0 0 0 / 0.82) 15%,
-            rgb(0 0 0 / 0.96) 19%,
-            rgb(0 0 0) 23%,
-            rgb(0 0 0) 77%,
-            rgb(0 0 0 / 0.96) 81%,
-            rgb(0 0 0 / 0.82) 85%,
-            rgb(0 0 0 / 0.58) 89%,
-            rgb(0 0 0 / 0.28) 93%,
-            rgb(0 0 0 / 0.08) 97%,
-            transparent 100%
-          );
-        }
-      `}</style>
     </section>
   );
 }

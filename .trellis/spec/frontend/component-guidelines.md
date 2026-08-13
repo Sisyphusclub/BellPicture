@@ -129,7 +129,7 @@ const templates = [
 - Buttons use `<button type="button">` unless they submit a form.
 - Links use React Router `Link`/`NavLink` for in-app navigation.
 - Use Motion or CSS transitions only when motion explains state or continuity.
-- Autoplay surfaces must pause on hover and keyboard focus. The Discover image gallery is intentionally static: render each work once per responsive gallery and do not add vertical loop tracks or animation timing styles.
+- Autoplay surfaces must pause on hover and keyboard focus. The Discover image gallery is intentionally static and unmasked: render each work once per responsive gallery at full opacity, without vertical loop tracks, animation timing styles, or top/bottom edge fades.
 - Honor `prefers-reduced-motion`; disable autoplay video and remove nonessential
   transitions for reduced-motion users.
 - Dense history rails use one shared `Button` for each result batch currently rendered in
