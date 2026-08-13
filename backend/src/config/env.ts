@@ -23,6 +23,7 @@ export interface Env {
   FRONTEND_ORIGIN: string;
   SQLITE_PATH: string;
   DAILY_USER_QUOTA: number;
+  DAILY_CHECK_IN_REWARD: number;
   SEED_DEFAULT_ADMIN: boolean;
   DEMO_PROMPTS: string[];
   DEMO_PROMPT_CACHE_DELAY_MS: number;
@@ -119,6 +120,7 @@ function loadEnv(): Env {
     FRONTEND_ORIGIN: readString('FRONTEND_ORIGIN', 'http://localhost:5173'),
     SQLITE_PATH: readString('SQLITE_PATH', './data/app.sqlite'),
     DAILY_USER_QUOTA: readInt('DAILY_USER_QUOTA', 20),
+    DAILY_CHECK_IN_REWARD: readInt('DAILY_CHECK_IN_REWARD', 5),
     SEED_DEFAULT_ADMIN: readBool('SEED_DEFAULT_ADMIN', false),
     DEMO_PROMPTS: readDelimitedStrings('DEMO_PROMPTS', '|||'),
     DEMO_PROMPT_CACHE_DELAY_MS: readNonNegativeInt('DEMO_PROMPT_CACHE_DELAY_MS', 4_000),

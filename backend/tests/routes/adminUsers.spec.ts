@@ -11,6 +11,7 @@ import { user, userQuota } from '../../src/db/schema.js';
 import { AppError } from '../../src/errors/AppError.js';
 import { isUserAdmin } from '../../src/services/adminUser.service.js';
 import type { ImageGenerationProvider } from '../../src/services/providers/ImageGenerationProvider.js';
+import { productDateKey } from '../../src/utils/date.js';
 
 const fakeProvider: ImageGenerationProvider = {
   generate: vi.fn(async () => ({
@@ -90,7 +91,7 @@ describe('/api/admin/users', () => {
     const adminId = createAdminUser();
     const memberId = createDbUser({ username: `member_${randomUUID().slice(0, 8)}` });
     db.insert(userQuota)
-      .values({ userId: memberId, usedToday: 3, quotaDate: todayISO(), dailyTotal: 7 })
+      .values({ userId: memberId, usedToday: 3, quotaDate: productDateKey(), dailyTotal: 7 })
       .run();
     const app = createApp({ provider: fakeProvider, authMiddleware: stubAuth(adminId) });
 
@@ -154,14 +155,19 @@ describe('/api/admin/users', () => {
     expect(updated.body.user.quota).toMatchObject({ total: 3, usedToday: 0, remainingToday: 3 });
 
     db.update(userQuota)
-      .set({ usedToday: 2, quotaDate: todayISO() })
+      .set({ usedToday: 2, quotaDate: productDateKey() })
       .where(eq(userQuota.userId, memberId))
       .run();
     const memberApp = createApp({ provider: fakeProvider, authMiddleware: stubAuth(memberId), adminMiddleware: allowAdmin() });
     const quota = await request(memberApp).get('/api/images/quota');
 
     expect(quota.status).toBe(200);
-    expect(quota.body).toEqual({ total: 3, remaining: 1 });
+    expect(quota.body).toEqual({
+      total: 3,
+      remaining: 1,
+      checkedInToday: false,
+      dailyCheckInReward: 5,
+    });
   });
 
   it('returns 401 before admin authorization when auth is missing', async () => {
@@ -176,11 +182,3 @@ describe('/api/admin/users', () => {
     expect(res.body.error.code).toBe('UNAUTHORIZED');
   });
 });
-
-function todayISO(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}

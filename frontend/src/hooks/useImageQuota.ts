@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
 import { createExternalStore } from '@/lib/externalStore';
-import { fetchImageQuota } from '@/services/api/imagesApi';
+import { claimDailyCheckIn, fetchImageQuota } from '@/services/api/imagesApi';
 import type { QuotaResponse } from '@/types/image';
 
 import { useAuth } from './useAuth';
@@ -26,7 +26,9 @@ async function loadQuota(authenticated: boolean): Promise<void> {
   } catch {
     if (requestId === currentId) {
       store.set({
-        quota: authenticated ? { total: 20, remaining: 20 } : null,
+        quota: authenticated
+          ? { total: 20, remaining: 20, checkedInToday: false, dailyCheckInReward: 5 }
+          : null,
         isLoading: false,
         error: new Error('无法读取剩余额度。'),
       });
@@ -52,7 +54,12 @@ export function useImageQuota() {
   }, [isAuthenticated, isAuthLoading, state.quota]);
 
   const refresh = useCallback(() => loadQuota(isAuthenticated), [isAuthenticated]);
-  return { ...state, refresh };
+  const checkIn = useCallback(async () => {
+    const result = await claimDailyCheckIn();
+    store.set({ quota: result, isLoading: false, error: null });
+    return result;
+  }, []);
+  return { ...state, refresh, checkIn };
 }
 
 export function resetImageQuotaForTests(): void {

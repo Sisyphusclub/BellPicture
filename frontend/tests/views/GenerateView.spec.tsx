@@ -58,9 +58,10 @@ vi.mock('@/hooks/useAuth', () => ({
 
 vi.mock('@/hooks/useImageQuota', () => ({
   useImageQuota: () => ({
-    quota: { total: 20, remaining: 18 },
+    quota: { total: 20, remaining: 18, checkedInToday: false, dailyCheckInReward: 5 },
     isLoading: false,
     refresh: vi.fn(),
+    checkIn: vi.fn(),
   }),
 }));
 
@@ -372,7 +373,10 @@ it('opens the right history flyout, searches, and loads a selected batch', async
   );
   const resultOrderBefore = Array.from(document.querySelectorAll('[data-generation-batch]'));
   const scrollIntoView = vi.fn();
-  Object.defineProperty(resultBatch, 'scrollIntoView', { configurable: true, value: scrollIntoView });
+  Object.defineProperty(resultBatch, 'scrollIntoView', {
+    configurable: true,
+    value: scrollIntoView,
+  });
   const historyTick = screen.getByRole('button', { name: '查看生成记录：海边灯塔' });
   expect(historyTick).toHaveClass('is-current');
 

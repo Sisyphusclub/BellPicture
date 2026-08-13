@@ -145,6 +145,33 @@ describe('POST /api/images/upload', () => {
   });
 });
 
+describe('POST /api/images/quota/check-in', () => {
+  it('grants the daily reward once and returns an idempotent result afterwards', async () => {
+    const { provider } = fakeProvider();
+    const userId = `check-in-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId));
+
+    const first = await request(app).post('/api/images/quota/check-in');
+    const second = await request(app).post('/api/images/quota/check-in');
+
+    expect(first.status).toBe(200);
+    expect(first.body).toMatchObject({
+      total: 25,
+      remaining: 25,
+      checkedInToday: true,
+      dailyCheckInReward: 5,
+      claimed: true,
+    });
+    expect(second.status).toBe(200);
+    expect(second.body).toMatchObject({
+      total: 25,
+      remaining: 25,
+      checkedInToday: true,
+      claimed: false,
+    });
+  });
+});
+
 describe('POST /api/images/generate', () => {
   it('text-to-image happy path: returns 200 with batch + images array', async () => {
     const { provider } = fakeProvider();
@@ -544,7 +571,7 @@ describe('POST /api/images/generate', () => {
     expect(afterB.body.remaining).toBe(20);
   });
 
-  it('resets stale daily quota rows on the next server-local day', async () => {
+  it('resets stale daily quota rows on the next Asia/Shanghai product day', async () => {
     const { provider } = fakeProvider();
     const userId = `quota-reset-${randomUUID()}`;
     const app = buildApp(provider, stubAuth(userId));

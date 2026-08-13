@@ -15,7 +15,7 @@ import { isUserAdmin } from '../services/adminUser.service.js';
 import { insertImageRecords, type NewImageRecord } from '../services/history.service.js';
 import { generateImage, type GenerateImageOutput } from '../services/imageGeneration.service.js';
 import type { ImageGenerationProvider } from '../services/providers/ImageGenerationProvider.js';
-import type { QuotaSnapshot } from '../services/quota.service.js';
+import type { DailyCheckInResult, QuotaSnapshot } from '../services/quota.service.js';
 import type { UserQuotaService } from '../services/userQuota.service.js';
 import { saveUpload } from '../storage/localStorage.js';
 import {
@@ -103,6 +103,7 @@ export function buildImagesController(deps: ImagesControllerDeps): {
   generate: (req: Request, res: Response, next: NextFunction) => Promise<void>;
   generateHighRes: (req: Request, res: Response, next: NextFunction) => Promise<void>;
   quota: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+  checkIn: (req: Request, res: Response, next: NextFunction) => Promise<void>;
 } {
   return {
     async quota(req, res, next) {
@@ -110,6 +111,16 @@ export function buildImagesController(deps: ImagesControllerDeps): {
         const user = requireUser(req);
         const pool = deps.userQuota.forUser(user.id);
         const body: QuotaResponse = pool.snapshot();
+        res.status(200).json(body);
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async checkIn(req, res, next) {
+      try {
+        const user = requireUser(req);
+        const body: DailyCheckInResult = deps.userQuota.forUser(user.id).checkIn();
         res.status(200).json(body);
       } catch (err) {
         next(err);

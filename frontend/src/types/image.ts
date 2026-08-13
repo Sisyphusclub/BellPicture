@@ -126,6 +126,12 @@ export interface ApiErrorEnvelope {
 export interface QuotaResponse {
   total: number;
   remaining: number;
+  checkedInToday: boolean;
+  dailyCheckInReward: number;
+}
+
+export interface DailyCheckInResponse extends QuotaResponse {
+  claimed: boolean;
 }
 
 export interface HistoryEntry {

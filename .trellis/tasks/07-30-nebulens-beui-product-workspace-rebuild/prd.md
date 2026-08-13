@@ -218,3 +218,19 @@ Completely rebuild the Generate, Creation Templates, Assets, Sign In, and Sign U
 - Shared design system: `design.md`, `.impeccable.md`, `frontend/src/styles/tokens.css`, `frontend/src/components/premium/`.
 - Frontend code must follow `.trellis/spec/frontend/index.md` and its linked guides.
 - Worktree contains an in-progress Vue-to-React migration and user changes. Do not revert unrelated files.
+
+## Discovery Account Actions Follow-up (2026-08-13)
+
+- Replace the discovery page's previous account/points cluster with the supplied
+  compact upper-right reference hierarchy: Templates, Notifications, Personal
+  Credits, and Account.
+- Personal Credits opens a functional daily check-in popover. Authenticated
+  users receive the configured generation-credit reward once per
+  `Asia/Shanghai` calendar day; repeated claims are idempotent and the returned
+  quota snapshot updates both the header and composer.
+- Persist check-in date and same-day bonus without overwriting the
+  administrator-defined base quota. Keep the operation accessible from the
+  mobile Sidebar while hiding the desktop cluster below 860px.
+- Acceptance evidence: 1440 x 813, 1366 x 768, and 390 x 844 browser checks;
+  successful 20 -> 25 credit claim; backend/frontend typecheck, lint, tests,
+  component provenance, and production builds all pass.

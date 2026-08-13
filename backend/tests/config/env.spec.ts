@@ -34,6 +34,7 @@ describe('config/env', () => {
     delete process.env.FRONTEND_ORIGIN;
     delete process.env.SQLITE_PATH;
     delete process.env.DAILY_USER_QUOTA;
+    delete process.env.DAILY_CHECK_IN_REWARD;
     delete process.env.SEED_DEFAULT_ADMIN;
     delete process.env.DEMO_PROMPTS;
     delete process.env.DEMO_PROMPT_CACHE_DELAY_MS;
@@ -58,6 +59,7 @@ describe('config/env', () => {
     expect(env.FRONTEND_ORIGIN).toBe('http://localhost:5173');
     expect(env.SQLITE_PATH).toBe('./data/app.sqlite');
     expect(env.DAILY_USER_QUOTA).toBe(20);
+    expect(env.DAILY_CHECK_IN_REWARD).toBe(5);
     expect(env.SEED_DEFAULT_ADMIN).toBe(false);
     expect(env.DEMO_PROMPTS).toEqual([]);
     expect(env.DEMO_PROMPT_CACHE_DELAY_MS).toBe(4_000);

@@ -143,6 +143,81 @@ No actionable P0, P1, or P2 findings remain.
 
 final result: passed
 
+## Discovery Account Actions and Daily Check-in QA (2026-08-13)
+
+- Source visual truth: `design-qa-assets/landing-account-actions-reference.png`.
+- Implementation screenshot: `design-qa-assets/landing-account-actions-1440.jpg`.
+- Focused region: `design-qa-assets/landing-account-actions-crop.jpg`.
+- Side-by-side comparison: `design-qa-assets/landing-account-actions-comparison.jpg`.
+- Mobile verification: `design-qa-assets/landing-account-actions-mobile.jpg`.
+- Local implementation: `http://localhost:5173/`.
+- Viewports: 1440 x 813 and 1366 x 768 desktop; 390 x 844 mobile.
+- States: authenticated discovery page before check-in, check-in popover open,
+  successfully claimed state, notifications/account triggers, and mobile fallback.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: the compact 13-16px Geist UI hierarchy matches the
+  reference density; credits use a tabular 14px value and the popover keeps one
+  strong headline with an 11px explanatory line. Copy stays legible without
+  clipping or negative letter spacing.
+- Spacing and layout rhythm: the desktop cluster uses two 40px quiet icon
+  targets, one 44px credits pill, a separated 40px circular account trigger,
+  and a 12px-offset popover. The group remains 18px from the right edge at
+  1440px and 1366px. Browser metrics report no horizontal overflow. At 390px,
+  the desktop cluster is hidden and the same action remains available in the
+  mobile Sidebar.
+- Colors and visual tokens: the graphite pill, low-contrast borders, pale
+  blue/lilac check-in action, and cool account avatar preserve the existing
+  Nebulens dark system. The source's purple membership label was intentionally
+  replaced by the product's real personal-credit state.
+- Image quality and asset fidelity: the existing Nebulens raster logo and video
+  remain unchanged. The new actions use Lucide icons and a typographic account
+  initial through shared controls; no source avatar, code-drawn SVG, or
+  placeholder asset was introduced.
+- Copy and content: the cluster exposes Templates, Notifications, Personal
+  Credits, and Account. The open state reads `赢取每日灵感值！` and
+  `每日签到可得 5 积分`; after the claim it reads `今日灵感已领取` and
+  `已签到`.
+
+### Comparison Evidence
+
+- The focused side-by-side comparison places the supplied upper-right reference
+  next to the rendered Nebulens cluster. Control density, pill division,
+  circular account entry, and below-trigger popover hierarchy align closely.
+- Browser interaction changed the authenticated account from 20 to 25 credits,
+  changed the composer quota from 20/20 to 25/25, disabled the repeated claim,
+  and rendered the success toast. This confirms the visible state is driven by
+  the persisted quota mutation rather than local decoration.
+- DOM checks verified the notification and account popovers, accessible trigger
+  names, and a 390px layout with the desktop cluster hidden and no document
+  overflow.
+
+### Patches Made
+
+- Rebuilt the desktop upper-right account actions around shared `Button`,
+  `IconTooltip`, and `MorphPopover` components.
+- Added server-persisted, idempotent daily check-in credits using the
+  `Asia/Shanghai` product date and a configurable reward.
+- Synchronized returned quota state across the discovery header, mobile
+  Sidebar, and image composer.
+- Added migration, route/service/API/UI regression coverage and updated the
+  product and Trellis component/database contracts.
+
+### Verification
+
+- Backend typecheck, lint, 168 tests, and production build passed.
+- Frontend typecheck, lint, component provenance audit, 70 tests, and production
+  build passed.
+- Component provenance reported 0 visible native controls outside shared roots
+  and 0 forbidden imports or browser dialogs.
+- Browser QA passed at 1440 x 813, 1366 x 768, and 390 x 844 with no horizontal
+  overflow. The existing non-blocking Vite chunk-size warning remains.
+
+final result: passed
+
 ## GPT-style Recent Sessions QA (2026-08-04)
 
 - Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-1705e9ec-83e8-4a75-89d3-a20c139eec34.png`.

@@ -2,6 +2,7 @@ import {
   ASPECT_RATIOS,
   DEFAULT_IMAGE_RESOLUTION,
   type AspectRatio,
+  type DailyCheckInResponse,
   type GenerateRequest,
   type GenerateResponse,
   type GenerateResponseItem,
@@ -30,6 +31,18 @@ export async function fetchImageQuota(): Promise<QuotaResponse> {
   if (!response.ok) throw buildApiError(response.status, payload);
   if (!isQuotaResponse(payload)) {
     throw new ImageApiError(response.status, 'INVALID_RESPONSE', '额度接口返回了无法识别的响应。');
+  }
+  return payload;
+}
+
+export async function claimDailyCheckIn(): Promise<DailyCheckInResponse> {
+  const response = await authedFetch(buildApiUrl('/api/images/quota/check-in'), {
+    method: 'POST',
+  });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw buildApiError(response.status, payload);
+  if (!isDailyCheckInResponse(payload)) {
+    throw new ImageApiError(response.status, 'INVALID_RESPONSE', '签到接口返回了无法识别的响应。');
   }
   return payload;
 }
@@ -118,7 +131,16 @@ export async function fetchOutputBlob(outputUrl: string, signal?: AbortSignal): 
 
 function isQuotaResponse(value: unknown): value is QuotaResponse {
   if (!isRecord(value)) return false;
-  return isNumber(readNumber(value, 'total')) && isNumber(readNumber(value, 'remaining'));
+  return (
+    isNumber(readNumber(value, 'total')) &&
+    isNumber(readNumber(value, 'remaining')) &&
+    typeof value.checkedInToday === 'boolean' &&
+    isNumber(readNumber(value, 'dailyCheckInReward'))
+  );
+}
+
+function isDailyCheckInResponse(value: unknown): value is DailyCheckInResponse {
+  return isQuotaResponse(value) && 'claimed' in value && typeof value.claimed === 'boolean';
 }
 
 function isUploadResponse(value: unknown): value is UploadResponse {

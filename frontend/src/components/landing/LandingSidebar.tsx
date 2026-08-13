@@ -1,8 +1,9 @@
-import { Gem, UserRound, X, type LucideIcon } from 'lucide-react';
-import { useEffect, type CSSProperties } from 'react';
+import { Check, Sparkles, UserRound, X, type LucideIcon } from 'lucide-react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
+import type { DailyCheckInResponse } from '@/types/image';
 import {
   Sidebar,
   SidebarContent,
@@ -31,10 +32,14 @@ interface LandingSidebarProps {
   creditsRemaining: number | string;
   ctaLabel: string;
   ctaTo: string;
+  checkedInToday: boolean;
+  dailyCheckInReward: number;
   isAuthenticated: boolean;
   items: readonly LandingSidebarItem[];
   logoSrc: string;
+  onCheckIn: () => Promise<DailyCheckInResponse>;
   onLogin: () => void;
+  onNotify: (message: string, tone?: 'success' | 'error') => void;
 }
 
 type SidebarVariables = CSSProperties & {
@@ -53,13 +58,18 @@ function LandingSidebarContent({
   creditsRemaining,
   ctaLabel,
   ctaTo,
+  checkedInToday,
+  dailyCheckInReward,
   isAuthenticated,
   items,
   logoSrc,
+  onCheckIn,
   onLogin,
+  onNotify,
 }: LandingSidebarProps) {
   const location = useLocation();
   const { setOpenMobile } = useSidebar();
+  const [checkingIn, setCheckingIn] = useState(false);
 
   useEffect(() => {
     setOpenMobile(false);
@@ -71,6 +81,20 @@ function LandingSidebarContent({
   const handleLogin = (): void => {
     closeMobile();
     onLogin();
+  };
+  const handleCheckIn = async (): Promise<void> => {
+    if (checkedInToday || checkingIn) return;
+    setCheckingIn(true);
+    try {
+      const result = await onCheckIn();
+      onNotify(
+        result.claimed ? `签到成功，获得 ${result.dailyCheckInReward} 积分。` : '今日已签到。',
+      );
+    } catch {
+      onNotify('签到失败，请稍后重试。', 'error');
+    } finally {
+      setCheckingIn(false);
+    }
   };
 
   const renderItems = (entries: readonly LandingSidebarItem[]) => (
@@ -135,11 +159,26 @@ function LandingSidebarContent({
               登录
             </Button>
           ) : (
-            <span className="landing-sidebar__mobile-account">
-              <b>{accountName.slice(0, 1).toUpperCase()}</b>
-              <span>{accountName}</span>
-              <strong>{creditsRemaining} 积分</strong>
-            </span>
+            <>
+              <span className="landing-sidebar__mobile-account">
+                <b>{accountName.slice(0, 1).toUpperCase()}</b>
+                <span>{accountName}</span>
+                <strong>{creditsRemaining} 积分</strong>
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={checkedInToday || checkingIn}
+                onClick={() => void handleCheckIn()}
+              >
+                {checkedInToday ? <Check aria-hidden="true" /> : <Sparkles aria-hidden="true" />}
+                {checkedInToday
+                  ? '今日已签到'
+                  : checkingIn
+                    ? '签到中'
+                    : `签到领 ${dailyCheckInReward} 积分`}
+              </Button>
+            </>
           )}
           <Button asChild>
             <Link to={ctaTo} onClick={closeMobile}>
@@ -160,44 +199,6 @@ function LandingSidebarContent({
         </Link>
         <SidebarTrigger aria-label="打开首页菜单" />
       </header>
-
-      <aside className="landing-account-actions" aria-label="账户与个人积分">
-        {!isAuthenticated ? (
-          <Button type="button" variant="ghost" onClick={handleLogin}>
-            <UserRound aria-hidden="true" />
-            <span>登录</span>
-          </Button>
-        ) : (
-          <span
-            className="landing-account-actions__account"
-            aria-label={`当前账户：${accountName}`}
-          >
-            <b>{accountName.slice(0, 1).toUpperCase()}</b>
-            <span>{accountName}</span>
-          </span>
-        )}
-        {isAuthenticated ? (
-          <span
-            className="landing-account-actions__credits"
-            aria-label={`个人积分：${creditsRemaining}`}
-          >
-            <Gem aria-hidden="true" />
-            <span>个人积分</span>
-            <strong>{creditsRemaining}</strong>
-          </span>
-        ) : (
-          <Button
-            className="landing-account-actions__credits"
-            type="button"
-            variant="ghost"
-            aria-label="个人积分，登录后查看"
-            onClick={handleLogin}
-          >
-            <Gem aria-hidden="true" />
-            <span>个人积分</span>
-          </Button>
-        )}
-      </aside>
     </>
   );
 }

@@ -571,74 +571,232 @@ video {
 }
 .landing-account-actions {
   position: fixed;
-  top: 18px;
-  right: 20px;
+  top: 16px;
+  right: 18px;
   z-index: 41;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
+  gap: 6px;
+  font-size: 13px;
 }
-.landing-account-actions > .button {
-  min-height: 40px;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  border-radius: var(--radius-pill);
-  background: rgb(19 19 20 / 0.56);
-  padding: 0 14px;
-  color: rgb(242 244 247 / 0.78);
-  font-size: 12px;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
-  backdrop-filter: blur(14px) saturate(1.12);
-}
-.landing-account-actions__account {
-  display: flex;
-  min-height: 40px;
-  align-items: center;
-  gap: 7px;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  border-radius: var(--radius-pill);
-  background: rgb(19 19 20 / 0.56);
-  padding: 0 12px 0 6px;
-  color: rgb(242 244 247 / 0.78);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
-  backdrop-filter: blur(14px) saturate(1.12);
-}
-.landing-account-actions__account b {
+.landing-account-actions .landing-account-actions__icon,
+.landing-account-actions .landing-account-actions__avatar {
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
   place-items: center;
   border-radius: 50%;
-  background: var(--background);
-  color: var(--foreground);
-  box-shadow: inset 0 0 0 1px var(--border);
-  font-size: 11px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgb(242 244 247 / 0.86);
+  padding: 0;
+  transition:
+    border-color 160ms var(--ease-out-expo),
+    background 160ms var(--ease-out-expo),
+    color 160ms var(--ease-out-expo),
+    transform 160ms var(--ease-out-expo);
 }
-.landing-account-actions__account span,
-.landing-account-actions__credits span {
-  white-space: nowrap;
+.landing-account-actions .landing-account-actions__icon:hover,
+.landing-account-actions .landing-account-actions__avatar:hover {
+  border-color: rgb(255 255 255 / 0.1);
+  background: rgb(19 19 20 / 0.62);
+  color: var(--foreground);
+}
+.landing-account-actions .landing-account-actions__icon svg {
+  width: 20px;
+  height: 20px;
 }
 .landing-account-actions .landing-account-actions__credits {
   display: inline-flex;
-  min-height: 40px;
+  height: 44px;
+  min-height: 44px;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   border: 1px solid rgb(255 255 255 / 0.1);
   border-radius: var(--radius-pill);
-  background: rgb(19 19 20 / 0.56);
-  color: rgb(242 244 247 / 0.78);
-  padding: 0 13px;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
-  backdrop-filter: blur(14px) saturate(1.12);
+  background: rgb(19 19 22 / 0.72);
+  color: rgb(238 240 247 / 0.88);
+  padding: 0 14px 0 16px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.055),
+    0 12px 28px -20px rgb(0 0 0 / 0.95);
+  backdrop-filter: blur(18px) saturate(1.14);
+  -webkit-backdrop-filter: blur(18px) saturate(1.14);
+  font-size: 13px;
+  font-weight: 560;
+}
+.landing-account-actions .landing-account-actions__credits:hover {
+  border-color: rgb(215 228 255 / 0.18);
+  background: rgb(28 28 34 / 0.82);
+  color: var(--foreground);
+}
+.landing-account-actions__credits i {
+  width: 1px;
+  height: 18px;
+  background: rgb(255 255 255 / 0.12);
 }
 .landing-account-actions__credits svg {
-  width: 16px;
-  height: 16px;
-  color: var(--accent);
+  width: 17px;
+  height: 17px;
+  fill: currentcolor;
+  color: rgb(237 242 255 / 0.96);
+  stroke-width: 1.45;
 }
 .landing-account-actions__credits strong {
   color: var(--foreground);
+  font-size: 14px;
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+}
+.landing-account-actions .landing-account-actions__avatar {
+  margin-left: 8px;
+  border-color: rgb(255 255 255 / 0.22);
+  background: linear-gradient(145deg, rgb(225 239 255 / 0.98), rgb(173 200 244 / 0.9));
+  color: rgb(18 28 44 / 0.9);
+  box-shadow:
+    0 0 0 2px rgb(5 8 14 / 0.58),
+    0 8px 22px -14px rgb(69 142 225 / 0.8);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+}
+.landing-account-actions .landing-account-actions__avatar:hover {
+  border-color: rgb(255 255 255 / 0.42);
+  background: linear-gradient(145deg, rgb(238 247 255 / 1), rgb(188 211 249 / 0.96));
+  color: rgb(12 22 38 / 1);
+}
+.landing-account-popover {
+  width: 302px;
+  border-color: rgb(255 255 255 / 0.12) !important;
+  background: rgb(17 18 24 / 0.94) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    0 24px 60px -28px rgb(0 0 0 / 0.96);
+  backdrop-filter: blur(24px) saturate(1.14);
+  -webkit-backdrop-filter: blur(24px) saturate(1.14);
+}
+.landing-account-popover::before {
+  position: absolute;
+  top: -6px;
+  right: 28px;
+  width: 12px;
+  height: 12px;
+  rotate: 45deg;
+  border-top: 1px solid rgb(255 255 255 / 0.1);
+  border-left: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(17 18 24 / 0.94);
+  content: '';
+}
+.landing-check-in-popover {
+  display: flex;
+  min-height: 84px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 17px 16px 20px;
+}
+.landing-check-in-popover > div {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+.landing-check-in-popover strong,
+.landing-notification-popover strong {
+  color: var(--foreground);
+  font-size: 16px;
   font-weight: 650;
+  letter-spacing: 0;
+}
+.landing-check-in-popover small,
+.landing-profile-popover small {
+  color: rgb(220 226 238 / 0.62);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.landing-check-in-popover > .button {
+  min-width: 86px;
+  height: 48px;
+  flex: 0 0 auto;
+  gap: 6px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(110deg, rgb(215 232 255), rgb(224 210 255));
+  color: rgb(27 26 47);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.78),
+    0 10px 24px -15px rgb(129 151 255 / 0.9);
+  font-size: 14px;
+  font-weight: 680;
+}
+.landing-check-in-popover > .button:hover:not(:disabled) {
+  background: linear-gradient(110deg, rgb(230 241 255), rgb(235 224 255));
+}
+.landing-check-in-popover > .button:disabled {
+  background: rgb(255 255 255 / 0.08);
+  color: rgb(235 239 248 / 0.5);
+  box-shadow: none;
+  opacity: 1;
+}
+.landing-check-in-popover > .button svg {
+  width: 16px;
+  height: 16px;
+}
+.landing-notification-popover {
+  display: grid;
+  width: 220px;
+  gap: 6px;
+  padding: 18px;
+}
+.landing-notification-popover p {
+  margin: 0;
+  color: rgb(220 226 238 / 0.62);
+  font-size: 12px;
+}
+.landing-profile-popover {
+  display: grid;
+  width: 230px;
+  gap: 12px;
+  padding: 12px;
+}
+.landing-profile-popover > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px;
+}
+.landing-profile-popover > div > b {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: rgb(225 239 255 / 0.92);
+  color: rgb(19 30 47);
+  font-family: var(--font-display);
+  font-size: 13px;
+}
+.landing-profile-popover > div > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.landing-profile-popover > div strong {
+  overflow: hidden;
+  color: var(--foreground);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.landing-profile-popover > .button {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 8px;
+}
+.landing-profile-popover > .button svg {
+  width: 16px;
+  height: 16px;
 }
 @media (min-width: 861px) and (max-width: 1100px) {
   .landing-hero__content h1 {

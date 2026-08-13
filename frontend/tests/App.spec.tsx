@@ -8,6 +8,16 @@ const generation = vi.hoisted(() => ({
   cancel: vi.fn(),
 }));
 
+const quotaMocks = vi.hoisted(() => ({
+  checkIn: vi.fn().mockResolvedValue({
+    total: 25,
+    remaining: 21,
+    checkedInToday: true,
+    dailyCheckInReward: 5,
+    claimed: true,
+  }),
+}));
+
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
     user: { id: 'admin', email: 'admin@example.com', username: 'admin', isAdmin: true },
@@ -24,10 +34,11 @@ vi.mock('@/hooks/useAuth', () => ({
 
 vi.mock('@/hooks/useImageQuota', () => ({
   useImageQuota: () => ({
-    quota: { total: 20, remaining: 16 },
+    quota: { total: 20, remaining: 16, checkedInToday: false, dailyCheckInReward: 5 },
     isLoading: false,
     error: null,
     refresh: vi.fn(),
+    checkIn: quotaMocks.checkIn,
   }),
 }));
 
@@ -235,6 +246,20 @@ describe('React application routes', () => {
 
     await user.type(screen.getByRole('textbox', { name: '首页创作提示词' }), '玻璃城市');
     expect(submit).toBeEnabled();
+  });
+
+  it('opens the daily check-in surface and claims the reward', async () => {
+    const user = userEvent.setup();
+    renderRoute('/');
+
+    await user.click(screen.getByRole('button', { name: '个人积分 16，可签到' }));
+    expect(screen.getByText('赢取每日灵感值！')).toBeInTheDocument();
+    expect(screen.getByText('每日签到可得 5 积分')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '签到' }));
+
+    await waitFor(() => expect(quotaMocks.checkIn).toHaveBeenCalledTimes(1));
+    expect(quotaMocks.checkIn).toHaveReturned();
   });
 
   it('activates the ReactBits border glow while the homepage prompt is focused', async () => {

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
 import { LandingSidebar } from '@/components/landing/LandingSidebar';
 import { LandingGenerationControls } from '@/components/landing/LandingGenerationControls';
+import { LandingAccountActions } from '@/components/landing/LandingAccountActions';
 import { useToast } from '@/components/common/ToastProvider';
 import { AgentChatInput } from '@/components/premium/agent-chat-input/agent-chat-input';
 import {
@@ -135,8 +136,8 @@ const TODAY_GALLERY_IMAGES: GalleryImage[] = TODAY_CREATIONS.map((entry) => ({
 }));
 export function LandingView() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { quota, isLoading: quotaLoading } = useImageQuota();
+  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
+  const { quota, isLoading: quotaLoading, checkIn } = useImageQuota();
   const { notify } = useToast();
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const [videoFailed, setVideoFailed] = useState(false);
@@ -221,10 +222,25 @@ export function LandingView() {
           creditsRemaining={quota?.remaining ?? '—'}
           ctaLabel={isAuthenticated ? '进入工作台' : '开始创作'}
           ctaTo="/generate"
+          checkedInToday={quota?.checkedInToday ?? false}
+          dailyCheckInReward={quota?.dailyCheckInReward ?? 5}
           isAuthenticated={isAuthenticated}
           items={LANDING_NAV_ITEMS}
           logoSrc="/brand/logo.png"
+          onCheckIn={checkIn}
           onLogin={openAuthModal}
+          onNotify={notify}
+        />
+        <LandingAccountActions
+          accountName={accountName}
+          checkedInToday={quota?.checkedInToday ?? false}
+          creditsRemaining={quota?.remaining ?? '—'}
+          dailyCheckInReward={quota?.dailyCheckInReward ?? 5}
+          isAuthenticated={isAuthenticated}
+          onCheckIn={checkIn}
+          onLogin={openAuthModal}
+          onLogout={logout}
+          onNotify={notify}
         />
         <div className="landing-hero__content">
           <h1 id="landing-title" aria-label="Turn your idea into images">

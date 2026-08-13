@@ -213,7 +213,8 @@ outside `config/env.ts`.**
 | `GOOGLE_CLIENT_SECRET`        | no       | `<google secret>`               | Optional, paired with `GOOGLE_CLIENT_ID`. Server-side only. Never log.                                                                                                                                                                                                                                                   |
 | `FRONTEND_ORIGIN`             | no       | `http://localhost:5173`         | Allowed CORS origin for cookie-authenticated requests.                                                                                                                                                                                                                                                                   |
 | `SQLITE_PATH`                 | no       | `./data/app.sqlite`             | Persistent location for the SQLite file. Directory is auto-created on boot.                                                                                                                                                                                                                                              |
-| `DAILY_USER_QUOTA`            | no       | `20`                            | Per-user generations allowed per server-local day.                                                                                                                                                                                                                                                                       |
+| `DAILY_USER_QUOTA`            | no       | `20`                            | Base per-user generations allowed per `Asia/Shanghai` product day.                                                                                                                                                                                                                                                        |
+| `DAILY_CHECK_IN_REWARD`       | no       | `5`                             | Extra generation credits granted once per authenticated user and `Asia/Shanghai` product day.                                                                                                                                                                                                                           |
 | `DEMO_PROMPTS`                | no       | `prompt A                       |                                                                                                                                                                                                                                                                                                                          |     | prompt B` | Exact prompt texts that should be cached after their first normal generation. Empty disables the feature. Split on ` |     |     | `, trim entries, drop empties, and de-duplicate. |
 | `DEMO_PROMPT_CACHE_DELAY_MS`  | no       | `4000`                          | Delay before returning an already-prepared demo prompt image. Default 4000. Must be a non-negative integer; negative or non-numeric values throw on `config/env.ts` import.                                                                                                                                              |
 
@@ -756,18 +757,20 @@ const records: NewImageRecord[] = result.images.map((image) => ({
 ### 2. Signatures
 
 - Env: `DAILY_USER_QUOTA` optional positive integer, default `20`.
+- Env: `DAILY_CHECK_IN_REWARD` optional positive integer, default `5`.
 - API response: `GET /api/images/quota -> 200 { total: number, remaining: number }`.
 - Service contract: `createUserQuotaService().forUser(userId)` returns a
   `QuotaPool` with `snapshot()`, `ensureAvailable(count)`, and `consume(count)`.
 - DB row: `user_quota(user_id TEXT PRIMARY KEY, used_today INTEGER,
-quota_date TEXT)` where `quota_date` is server-local `YYYY-MM-DD`.
+quota_date TEXT, check_in_date TEXT NULL, bonus_today INTEGER DEFAULT 0)` where
+both dates are `Asia/Shanghai` `YYYY-MM-DD` product dates.
 
 ### 3. Contracts
 
 - Backend is the source of truth for quota exhaustion; frontend labels are UX
   only.
 - `snapshot()` treats a missing row or stale `quota_date` as `used_today = 0`
-  for today's server-local date.
+  for today's `Asia/Shanghai` product date.
 - `consume(count)` runs in a transaction, validates the requested count against
   today's effective usage, then upserts today's `used_today` and `quota_date`.
 - Successful generation decrements by the requested image count. Failed provider
@@ -785,7 +788,7 @@ quota_date TEXT)` where `quota_date` is server-local `YYYY-MM-DD`.
 
 ### 5. Good/Base/Bad Cases
 
-- Good: quota resets automatically when the server-local date changes, without a
+- Good: quota resets automatically when the `Asia/Shanghai` date changes, without a
   cron job or client-side clock.
 - Base: `DAILY_USER_QUOTA=20` means every authenticated user starts each day at
   20 available generated images.
@@ -814,7 +817,7 @@ const remaining = row
 #### Correct
 
 ```ts
-const used = !row || row.quotaDate !== todayISO() ? 0 : row.usedToday;
+const used = !row || row.quotaDate !== productDateKey() ? 0 : row.usedToday;
 const remaining = Math.max(0, env.DAILY_USER_QUOTA - used);
 ```
 

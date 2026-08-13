@@ -414,6 +414,77 @@ if (env.SEED_DEFAULT_ADMIN) {
 
 ---
 
+## Scenario: daily check-in generation credits
+
+### 1. Scope / Trigger
+- Trigger: a signed-in user may claim additional image-generation credits once
+  per product day. This changes the quota database row, API response, env
+  configuration, admin quota reporting, and frontend quota state.
+
+### 2. Signatures
+- `POST /api/images/quota/check-in` requires the existing authenticated session.
+- `GET /api/images/quota` returns the effective quota snapshot.
+- `QuotaPool.checkIn(): DailyCheckInResult` owns the atomic mutation.
+- `productDateKey(date?: Date): string` returns `YYYY-MM-DD` in
+  `Asia/Shanghai`.
+- `user_quota.check_in_date TEXT NULL` records the last claimed product date.
+- `user_quota.bonus_today INTEGER NOT NULL DEFAULT 0` records that date's bonus.
+
+### 3. Contracts
+- `QuotaSnapshot` is `{ total, remaining, checkedInToday,
+  dailyCheckInReward }`; `DailyCheckInResult` adds `claimed`.
+- `total = base dailyTotal + bonusToday` only when `checkInDate` equals the
+  current `Asia/Shanghai` date. `remaining = max(0, total - usedToday)`.
+- First successful claim writes the current date and
+  `DAILY_CHECK_IN_REWARD`, then returns `claimed: true`. Repeated claims on the
+  same date return the same effective quota with `claimed: false` and no write
+  that increases the bonus.
+- `DAILY_CHECK_IN_REWARD` is an optional positive-integer env key with default
+  `5`. Administrator-configured `dailyTotal` remains the base quota and is not
+  overwritten by check-in.
+
+### 4. Validation & Error Matrix
+| Condition | Result |
+| --- | --- |
+| No authenticated user | `401 UNAUTHORIZED`; no quota row mutation |
+| First claim today | `200`, configured bonus applied, `claimed: true` |
+| Repeated claim today | `200`, no extra bonus, `claimed: false` |
+| Invalid/non-positive reward env value | Backend fails env validation on boot |
+| New Shanghai product day | Previous bonus excluded until the next claim |
+
+### 5. Good/Base/Bad Cases
+- Good: base quota `20`, no usage, reward `5` -> first claim returns total and
+  remaining `25`; a second claim stays at `25`.
+- Base: a user who does not claim keeps the administrator-defined base quota.
+- Bad: adding the reward directly to `dailyTotal` would permanently change an
+  administrator setting and compound on future claims.
+
+### 6. Tests Required
+- Route integration tests assert the first and repeated claim payloads and
+  confirm the reward is idempotent.
+- Date unit tests straddle the UTC instant where Shanghai advances to a new day.
+- Quota generation tests continue to assert exhaustion against the effective
+  base-plus-current-bonus total.
+- Admin route tests assert quota reporting uses the same effective total.
+- Frontend API and route tests assert authenticated POST transport, returned
+  quota-store replacement, popover copy, and claim invocation.
+
+### 7. Wrong vs Correct
+#### Wrong
+```ts
+await db.update(userQuota).set({ dailyTotal: sql`${userQuota.dailyTotal} + 5` });
+```
+
+#### Correct
+```ts
+db.transaction((tx) => {
+  if (row?.checkInDate === productDateKey()) return { ...snapshot, claimed: false };
+  tx.insert(userQuota).values({ checkInDate: productDateKey(), bonusToday: reward });
+});
+```
+
+---
+
 ## Local filesystem storage rules (unchanged)
 
 The backend still writes two kinds of files (PR3 will introduce per-user

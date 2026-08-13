@@ -25,6 +25,9 @@ export function buildImagesRouter(deps: ImagesRouterDeps): Router {
   router.get('/quota', (req, res, next) => {
     void controller.quota(req, res, next);
   });
+  router.post('/quota/check-in', (req, res, next) => {
+    void controller.checkIn(req, res, next);
+  });
   router.post('/upload', uploadImageMiddleware, (req, res, next) => {
     void controller.upload(req, res, next);
   });

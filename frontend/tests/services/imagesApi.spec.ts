@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  claimDailyCheckIn,
   fetchImageQuota,
   generateImage,
   registerUnauthorizedHandler,
@@ -11,10 +12,18 @@ import type { ImageApiError } from '@/services/api/imagesApi';
 describe('imagesApi', () => {
   it('reads GPT pool quota through the backend quota endpoint', async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
-      new Response(JSON.stringify({ total: 100, remaining: 98 }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }),
+      new Response(
+        JSON.stringify({
+          total: 100,
+          remaining: 98,
+          checkedInToday: false,
+          dailyCheckInReward: 5,
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
     );
     vi.stubGlobal('fetch', fetchMock);
 
@@ -24,6 +33,30 @@ describe('imagesApi', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:3000/api/images/quota',
       expect.objectContaining({ credentials: 'include' }),
+    );
+  });
+
+  it('claims daily check-in credits through the authenticated endpoint', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          total: 105,
+          remaining: 103,
+          checkedInToday: true,
+          dailyCheckInReward: 5,
+          claimed: true,
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await claimDailyCheckIn();
+
+    expect(result).toMatchObject({ claimed: true, remaining: 103, checkedInToday: true });
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3000/api/images/quota/check-in',
+      expect.objectContaining({ method: 'POST', credentials: 'include' }),
     );
   });
 

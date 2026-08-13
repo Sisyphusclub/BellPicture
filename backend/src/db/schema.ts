@@ -93,8 +93,10 @@ export const userQuota = sqliteTable('user_quota', {
     .primaryKey()
     .references(() => user.id, { onDelete: 'cascade' }),
   usedToday: integer('used_today').notNull().default(0),
-  quotaDate: text('quota_date').notNull(), // ISO 'YYYY-MM-DD' (server local)
+  quotaDate: text('quota_date').notNull(), // ISO 'YYYY-MM-DD' (Asia/Shanghai)
   dailyTotal: integer('daily_total'),
+  checkInDate: text('check_in_date'),
+  bonusToday: integer('bonus_today').notNull().default(0),
 });
 
 export const imageRecords = sqliteTable(

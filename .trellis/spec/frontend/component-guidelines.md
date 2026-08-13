@@ -178,6 +178,26 @@ const templates = [
 - Loading, empty, error, unauthorized, and forbidden states are first-class UI
   states, not blank containers.
 
+### Landing Account and Daily Check-in
+
+- Compose the discovery header from the shared `Button`, `IconTooltip`, and
+  `MorphPopover` primitives. Desktop order is Templates, Notifications,
+  Personal Credits, Account; do not replace this with raw controls or a
+  page-local popover implementation.
+- The credits trigger reads `QuotaResponse.remaining` and exposes the current
+  check-in state in its accessible name. Its popover must render pending,
+  available, claimed, guest, and error behavior without optimistic fake points.
+- `POST /api/images/quota/check-in` is the only mutation path. On success,
+  replace the quota store with the returned snapshot so the header and every
+  composer show the same `total`, `remaining`, `checkedInToday`, and
+  `dailyCheckInReward` values.
+- Keep the desktop cluster fixed inside the discovery viewport without causing
+  horizontal overflow. Below `860px`, hide it and surface the same account,
+  credits, and check-in operation through `LandingSidebar`.
+- Popovers close on outside pointer interaction and Escape, preserve their
+  trigger relationship through ARIA attributes, and reduce spatial motion to a
+  short opacity transition under `prefers-reduced-motion`.
+
 ## Forms and Uploads
 
 - Every field has a visible label or a programmatic accessible name.

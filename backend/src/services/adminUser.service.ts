@@ -5,6 +5,7 @@ import { env } from '../config/env.js';
 import { db } from '../db/drizzle.js';
 import { user, userQuota } from '../db/schema.js';
 import { AppError } from '../errors/AppError.js';
+import { productDateKey } from '../utils/date.js';
 import { internalEmailForUsername, isValidUsername, normalizeUsername } from '../utils/username.js';
 
 const USERNAME_REQUIREMENTS_MESSAGE = '用户名需为 3-32 位小写字母、数字或下划线。';
@@ -40,14 +41,6 @@ interface EffectiveQuotaState {
   remainingToday: number;
 }
 
-function todayISO(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
 function normalizeAndValidateUsername(raw: string): string {
   const username = normalizeUsername(raw.trim());
   if (!isValidUsername(username)) {
@@ -66,9 +59,18 @@ function assertValidDailyTotal(dailyTotal: number): void {
   }
 }
 
-function quotaState(row: { usedToday: number | null; quotaDate: string | null; dailyTotal: number | null }): EffectiveQuotaState {
-  const total = row.dailyTotal ?? env.DAILY_USER_QUOTA;
-  const usedToday = row.quotaDate === todayISO() ? (row.usedToday ?? 0) : 0;
+function quotaState(row: {
+  usedToday: number | null;
+  quotaDate: string | null;
+  dailyTotal: number | null;
+  checkInDate: string | null;
+  bonusToday: number | null;
+}): EffectiveQuotaState {
+  const today = productDateKey();
+  const total =
+    (row.dailyTotal ?? env.DAILY_USER_QUOTA) +
+    (row.checkInDate === today ? (row.bonusToday ?? 0) : 0);
+  const usedToday = row.quotaDate === today ? (row.usedToday ?? 0) : 0;
   return {
     total,
     usedToday,
@@ -86,6 +88,8 @@ function toAdminUserDTO(row: {
   usedToday: number | null;
   quotaDate: string | null;
   dailyTotal: number | null;
+  checkInDate: string | null;
+  bonusToday: number | null;
 }): AdminUserDTO {
   return {
     id: row.id,
@@ -119,6 +123,8 @@ export function listAdminUsers(): AdminUserDTO[] {
       usedToday: userQuota.usedToday,
       quotaDate: userQuota.quotaDate,
       dailyTotal: userQuota.dailyTotal,
+      checkInDate: userQuota.checkInDate,
+      bonusToday: userQuota.bonusToday,
     })
     .from(user)
     .leftJoin(userQuota, eq(user.id, userQuota.userId))
@@ -188,6 +194,8 @@ export function getAdminUser(userId: string): AdminUserDTO {
       usedToday: userQuota.usedToday,
       quotaDate: userQuota.quotaDate,
       dailyTotal: userQuota.dailyTotal,
+      checkInDate: userQuota.checkInDate,
+      bonusToday: userQuota.bonusToday,
     })
     .from(user)
     .leftJoin(userQuota, eq(user.id, userQuota.userId))
@@ -212,7 +220,7 @@ export function setUserDailyQuota(userId: string, dailyTotal: number): AdminUser
     .from(userQuota)
     .where(eq(userQuota.userId, userId))
     .get();
-  const today = todayISO();
+  const today = productDateKey();
   const usedToday = existingQuota?.quotaDate === today ? existingQuota.usedToday : 0;
 
   db.insert(userQuota)
