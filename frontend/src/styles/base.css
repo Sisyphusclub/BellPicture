@@ -455,7 +455,7 @@ video {
   backdrop-filter: none;
 }
 .landing-sidebar [data-sidebar='header'] {
-  padding: 8px;
+  padding: 10px;
 }
 .landing-sidebar__header-row {
   display: flex;
@@ -465,7 +465,7 @@ video {
 }
 .landing-sidebar__brand {
   display: flex;
-  min-height: 44px;
+  min-height: 50px;
   align-items: center;
   gap: 10px;
   overflow: hidden;
@@ -479,8 +479,8 @@ video {
   white-space: nowrap;
 }
 .landing-sidebar__brand img {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   flex: 0 0 auto;
   object-fit: contain;
 }
@@ -491,21 +491,43 @@ video {
   display: none;
 }
 .landing-sidebar [data-sidebar='group'] {
-  padding: 6px 8px;
+  padding: 8px 10px;
 }
 .landing-sidebar [data-sidebar='menu'] {
-  gap: 4px;
+  gap: 6px;
 }
 .landing-sidebar [data-sidebar='menu-button'] {
-  height: 42px;
+  height: 48px;
   border-radius: var(--radius-control);
   padding: 0 12px;
   color: var(--muted-foreground);
   font-size: 13px;
 }
 .landing-sidebar [data-sidebar='menu-button'] svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
+}
+.group[data-state='collapsed'] .landing-sidebar [data-sidebar='header'],
+.group[data-state='collapsed'] .landing-sidebar [data-sidebar='group'] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.group[data-state='collapsed'] .landing-sidebar [data-sidebar='menu'] {
+  align-items: center;
+}
+.group[data-state='collapsed'] .landing-sidebar .landing-sidebar__brand {
+  width: 50px;
+  justify-content: center;
+  padding: 0;
+}
+.group[data-state='collapsed'] .landing-sidebar [data-sidebar='menu-button'] {
+  min-width: 48px;
+  min-height: 48px;
+  justify-content: center;
+}
+.group[data-state='collapsed'] .landing-sidebar [data-sidebar='menu-button'] > span {
+  display: none;
 }
 .landing-sidebar [data-sidebar='menu-button']:hover,
 .landing-sidebar [data-sidebar='menu-button']:focus-visible {
@@ -601,7 +623,7 @@ video {
 .landing-hero__content {
   position: absolute;
   top: 168px;
-  left: calc(50% + 52px);
+  left: calc(50% + 60px);
   z-index: 9;
   display: flex;
   width: min(900px, calc(100% - 144px));

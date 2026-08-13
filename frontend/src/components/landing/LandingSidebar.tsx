@@ -207,7 +207,7 @@ function LandingSidebarContent({
 export function LandingSidebar(props: LandingSidebarProps) {
   const sidebarStyle: SidebarVariables = {
     '--sidebar-width': '14rem',
-    '--sidebar-width-icon': '4.5rem',
+    '--sidebar-width-icon': '5.5rem',
   };
 
   return (
