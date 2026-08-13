@@ -327,6 +327,17 @@ final result: passed
 - Mobile restores the compact top brand bar and menu overlay, preserving all route links and the
   create action without horizontal overflow.
 
+## Wanxiang Full-Viewport Hero QA (2026-08-13)
+
+- Source inspected: `https://tongyi.aliyun.com/wan/explore` at a 1952 x 1098 desktop viewport.
+- Wanxiang renders its hero video as a 1952 x 1098 absolute layer with `object-fit: cover`; Nebulens
+  now follows the same viewport-layer geometry and removes the previous 140% x 170% enlargement.
+- The desktop navigation is a transparent approximately 88px visual rail over the video rather than
+  an opaque application sidebar. Routes use compact icon-over-label targets, with the asset route
+  separated from creation routes and glass reserved for selection/interaction feedback.
+- The hero and gallery are centered in the canvas remaining beside the rail. Mobile retains the
+  compact top navigation surface and resets all desktop rail offsets.
+
 ## Shiny Headline Gradient QA (2026-08-11)
 
 - Source visual truth: the user-provided `Shiny Text Gradient Animation` React/Tailwind specification in the current request.

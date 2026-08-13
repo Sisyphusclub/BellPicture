@@ -409,29 +409,32 @@ video {
 }
 .landing-hero__video {
   position: absolute;
-  top: -22%;
-  left: -8%;
-  width: 116%;
-  height: 144%;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  opacity: 0.76;
-  filter: saturate(0.94) contrast(1.06) brightness(1.08);
-  transform: translate3d(0, clamp(154px, calc(20vh + 30px), 190px), 0);
+  object-position: 50% 54%;
+  opacity: 0.88;
+  filter: saturate(0.96) contrast(1.04) brightness(1.06);
 }
 @media (min-width: 861px) {
   .landing-hero__video {
-    top: 50%;
-    left: 50%;
-    width: 140%;
-    height: 170%;
-    object-position: 35% center;
-    transform: translate3d(-50%, -35%, 0);
+    object-position: 50% 56%;
   }
 }
 .landing-hero__overlay {
   position: absolute;
   inset: 0;
-  background: color-mix(in oklch, var(--background) 22%, transparent);
+  background:
+    linear-gradient(90deg, rgb(3 5 10 / 0.42) 0, transparent 18%, transparent 82%),
+    linear-gradient(
+      180deg,
+      rgb(3 5 10 / 0.28) 0,
+      transparent 24%,
+      transparent 62%,
+      rgb(3 5 10 / 0.82) 100%
+    ),
+    color-mix(in oklch, var(--background) 10%, transparent);
 }
 .landing-navbar {
   position: fixed;
@@ -439,7 +442,7 @@ video {
   bottom: 0;
   left: 0;
   z-index: 40;
-  width: 168px;
+  width: 124px;
   max-width: none;
 }
 .landing-navbar__surface {
@@ -449,54 +452,60 @@ video {
   display: flex;
   min-height: 100svh;
   flex-direction: column;
-  align-items: stretch;
-  gap: 14px;
+  width: 88px;
+  align-items: center;
+  gap: 10px;
   border: 0;
-  border-right: 1px solid var(--border-strong);
   border-radius: 0;
-  background: color-mix(in oklch, var(--background) 96%, transparent);
-  padding: 16px 10px;
-  box-shadow: 18px 0 42px -34px rgb(0 0 0 / 0.96);
-  backdrop-filter: blur(18px) saturate(1.08);
+  background: transparent;
+  padding: 14px 10px 16px;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 .landing-brand {
   display: inline-flex;
-  width: 100%;
+  width: max-content;
   min-width: 0;
-  min-height: 46px;
+  min-height: 48px;
+  align-self: flex-start;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
+  margin-left: 4px;
   border-radius: var(--radius-control);
-  padding: 0 8px;
-  font-size: 15px;
+  padding: 0 6px;
+  font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
 }
 .landing-brand span {
   font-family: var(--font-display);
   font-variation-settings: 'wght' 650;
 }
 .landing-brand img {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   flex: 0 0 auto;
   object-fit: contain;
 }
 .landing-nav {
   display: grid;
-  width: 100%;
+  width: 60px;
   align-items: center;
   gap: 4px;
   color: var(--muted-foreground);
-  font-size: 12px;
+  font-size: 11px;
 }
 .landing-nav a {
   position: relative;
   display: flex;
-  min-height: 44px;
+  width: 60px;
+  min-height: 52px;
+  flex-direction: column;
   align-items: center;
-  gap: 11px;
-  border-radius: var(--radius-control);
-  padding: 0 12px;
+  justify-content: center;
+  gap: 5px;
+  border-radius: 10px;
+  padding: 5px 2px;
   outline: none;
 }
 .landing-nav a > svg,
@@ -505,10 +514,14 @@ video {
   z-index: 1;
 }
 .landing-nav a > svg {
-  width: 17px;
-  height: 17px;
+  width: 18px;
+  height: 18px;
   flex: 0 0 auto;
   stroke-width: 1.8;
+}
+.landing-nav a > span:last-child {
+  line-height: 1.1;
+  white-space: nowrap;
 }
 .landing-nav a[aria-current='page'],
 .landing-nav a:hover,
@@ -518,10 +531,25 @@ video {
 .landing-nav__pill {
   position: absolute;
   inset: 0;
-  border: 1px solid var(--color-hairline-light);
-  border-radius: var(--radius-control);
-  background: var(--surface-raised);
-  box-shadow: inset 0 1px rgb(255 255 255 / 0.035);
+  border: 1px solid rgb(232 242 255 / 0.12);
+  border-radius: 10px;
+  background: rgb(33 36 43 / 0.68);
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 0.055),
+    0 10px 28px -18px rgb(0 0 0 / 0.92);
+  backdrop-filter: blur(16px) saturate(1.08);
+}
+.landing-nav a:nth-child(4) {
+  margin-top: 16px;
+}
+.landing-nav a:nth-child(4)::before {
+  position: absolute;
+  top: -10px;
+  right: 12px;
+  left: 12px;
+  height: 1px;
+  background: rgb(235 243 255 / 0.13);
+  content: '';
 }
 .landing-actions > .button,
 .landing-mobile-menu__footer > button {
@@ -629,10 +657,10 @@ video {
 .landing-hero__content {
   position: absolute;
   top: 168px;
-  left: calc(50% + 92px);
+  left: calc(50% + 52px);
   z-index: 9;
   display: flex;
-  width: min(900px, calc(100% - 236px));
+  width: min(900px, calc(100% - 144px));
   flex-direction: column;
   align-items: center;
   justify-items: center;
@@ -643,7 +671,7 @@ video {
 .landing-hero__content h1 {
   display: flex;
   width: max-content;
-  max-width: calc(100vw - 48px);
+  max-width: calc(100vw - 144px);
   align-items: baseline;
   justify-content: center;
   gap: 0.14em;
@@ -1298,9 +1326,11 @@ video {
 .landing-creations {
   position: relative;
   z-index: 8;
-  width: min(1160px, calc(100% - 236px));
-  margin: calc(-100svh + clamp(654px, 68svh, 718px) - 80px) 20px 0 auto;
+  left: 52px;
+  width: min(1160px, calc(100% - 144px));
+  margin: calc(-100svh + clamp(654px, 68svh, 718px) - 80px) auto 0;
   padding: 0 0 112px;
+  background: transparent;
 }
 .landing-creations > div > header {
   display: block;
@@ -2586,12 +2616,17 @@ video {
   }
   .landing-navbar__surface {
     display: grid;
+    width: 100%;
     height: 56px;
     min-height: 56px;
     grid-template-columns: 1fr auto;
     gap: 6px;
+    border: 1px solid var(--border-strong);
     border-radius: var(--radius-pill);
+    background: color-mix(in oklch, var(--card) 94%, transparent);
     padding: 4px;
+    box-shadow: 0 18px 42px -28px rgb(0 0 0 / 0.92);
+    backdrop-filter: blur(18px) saturate(1.08);
   }
   .landing-nav,
   .landing-actions {
@@ -2600,6 +2635,8 @@ video {
   .landing-brand {
     width: auto;
     min-height: 46px;
+    align-self: center;
+    margin-left: 0;
     padding: 0 9px;
     font-size: 14px;
   }
@@ -2716,6 +2753,7 @@ video {
     font-size: 16px;
   }
   .landing-creations {
+    left: 0;
     width: calc(100% - 32px);
     margin: calc(-100svh + clamp(620px, 62svh, 690px) - 80px) auto 0;
     padding: 0 0 88px;
