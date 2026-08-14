@@ -224,6 +224,7 @@ Completely rebuild the Generate, Creation Templates, Assets, Sign In, and Sign U
 - Keep the existing beUI Pro four-column desktop and two-column compact waterfall composition.
 - Render each of the six bundled works once per responsive gallery without automatic vertical movement, duplicated loop copies, or animation timing styles.
 - Remove the top and bottom edge fade so every image renders at full opacity while preserving image aspect ratios, responsive behavior, and image-detail interaction.
+- While the user scrolls through the Discover gallery, dock the existing composer at the viewport bottom in a compact single-line state. Clicking or focusing its prompt expands the complete controls without moving gallery content; a non-interactive black-to-transparent bottom gradient maintains contrast over the images.
 
 ## Discovery Account Actions Follow-up (2026-08-13)
 

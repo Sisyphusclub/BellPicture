@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -204,6 +204,24 @@ describe('React application routes', () => {
     expect(screen.getByRole('switch', { name: '公开作品' })).toBeInTheDocument();
     expect(screen.getByRole('status', { name: '剩余额度 16，总额度 20' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: '正在发生的想象' })).not.toBeInTheDocument();
+  });
+
+  it('docks the landing composer while browsing the gallery and expands it on focus', async () => {
+    const user = userEvent.setup();
+    const { container } = renderRoute('/');
+    const anchor = container.querySelector<HTMLElement>('.landing-composer-anchor');
+    expect(anchor).toHaveAttribute('data-docked', 'false');
+    expect(anchor).toHaveAttribute('data-expanded', 'false');
+
+    vi.spyOn(window, 'scrollY', 'get').mockReturnValue(520);
+    vi.spyOn(anchor!, 'getBoundingClientRect').mockReturnValue(new DOMRect(250, -220, 940, 137));
+    act(() => window.dispatchEvent(new Event('scroll')));
+
+    await waitFor(() => expect(anchor).toHaveAttribute('data-docked', 'true'));
+    expect(anchor).toHaveAttribute('data-expanded', 'false');
+
+    await user.click(screen.getByRole('textbox', { name: '首页创作提示词' }));
+    expect(anchor).toHaveAttribute('data-expanded', 'true');
   });
 
   it('places creation templates between generation and assets in the landing navigation', () => {

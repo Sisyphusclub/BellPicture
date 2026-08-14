@@ -1,5 +1,5 @@
 import { Compass, FolderOpen, ImagePlus, LayoutTemplate, Sparkles } from 'lucide-react';
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
@@ -140,12 +140,15 @@ export function LandingView() {
   const { quota, isLoading: quotaLoading, checkIn } = useImageQuota();
   const { notify } = useToast();
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+  const composerAnchorRef = useRef<HTMLDivElement>(null);
   const [videoFailed, setVideoFailed] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [aspect, setAspect] = useState<AspectChoice>(DEFAULT_ASPECT_CHOICE);
   const [count, setCount] = useState(DEFAULT_COUNT);
   const [isPublic, setIsPublic] = useState(false);
   const [selected, setSelected] = useState<HistoryEntry | null>(null);
+  const [composerDocked, setComposerDocked] = useState(false);
+  const [composerExpanded, setComposerExpanded] = useState(false);
 
   useEffect(() => {
     const savedScroll = Number(sessionStorage.getItem(LANDING_SCROLL_KEY));
@@ -160,6 +163,25 @@ export function LandingView() {
     return () => {
       saveScroll();
       window.removeEventListener('pagehide', saveScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    const updateComposerDock = () => {
+      const anchor = composerAnchorRef.current;
+      if (!anchor) return;
+
+      const shouldDock = window.scrollY > 120 && anchor.getBoundingClientRect().bottom <= 96;
+      setComposerDocked(shouldDock);
+      if (!shouldDock) setComposerExpanded(false);
+    };
+
+    updateComposerDock();
+    window.addEventListener('scroll', updateComposerDock, { passive: true });
+    window.addEventListener('resize', updateComposerDock);
+    return () => {
+      window.removeEventListener('scroll', updateComposerDock);
+      window.removeEventListener('resize', updateComposerDock);
     };
   }, []);
 
@@ -250,48 +272,67 @@ export function LandingView() {
             </em>
           </h1>
           <p>用 GPT-IMAGE-2 将你的创意变为精美图片，只需描述你脑海中的画面。</p>
-          <AgentChatInput
-            value={prompt}
-            onValueChange={setPrompt}
-            onSubmit={({ text }) => submitPrompt(text)}
-            skills={[]}
-            models={LANDING_MODELS}
-            defaultModel="gpt-image-2"
-            agents={[]}
-            reasoningLevels={LANDING_REASONING}
-            defaultReasoning="standard"
-            speedModes={LANDING_SPEED}
-            defaultSpeed="balanced"
-            streamingPlaceholders={IMAGE_PROMPT_EXAMPLES}
-            placeholder="描述你想生成的画面..."
-            ariaLabel="首页创作提示词"
-            submitLabel="带着提示词开始创作"
-            submitContent={
-              <span className="landing-submit-cost" aria-hidden="true">
-                <Sparkles />
-                <span>{count * LANDING_IMAGE_CREDIT_COST}</span>
-              </span>
-            }
-            minRows={1}
-            maxRows={4}
-            allowFileUpload={false}
-            liquidGlass
-            toolbarContent={
-              <LandingGenerationControls
-                aspect={aspect}
-                count={count}
-                isPublic={isPublic}
-                quotaLabel={quotaLabel}
-                quotaAriaLabel={quotaAriaLabel}
-                quotaIsAction={!authLoading && !isAuthenticated}
-                onAspectChange={setAspect}
-                onCountChange={setCount}
-                onPublicChange={setIsPublic}
-                onQuotaClick={openAuthModal}
-              />
-            }
-            className="landing-composer"
-          />
+          <div
+            ref={composerAnchorRef}
+            className={`landing-composer-anchor${composerDocked ? ' is-docked' : ''}${composerExpanded ? ' is-expanded' : ''}`}
+            data-docked={composerDocked}
+            data-expanded={composerExpanded}
+            onPointerDownCapture={(event) => {
+              const target = event.target as HTMLElement;
+              if (composerDocked && target.closest('.agent-chat-input__textarea')) {
+                setComposerExpanded(true);
+              }
+            }}
+            onFocusCapture={(event) => {
+              const target = event.target as HTMLElement;
+              if (composerDocked && target.closest('.agent-chat-input__textarea')) {
+                setComposerExpanded(true);
+              }
+            }}
+          >
+            <AgentChatInput
+              value={prompt}
+              onValueChange={setPrompt}
+              onSubmit={({ text }) => submitPrompt(text)}
+              skills={[]}
+              models={LANDING_MODELS}
+              defaultModel="gpt-image-2"
+              agents={[]}
+              reasoningLevels={LANDING_REASONING}
+              defaultReasoning="standard"
+              speedModes={LANDING_SPEED}
+              defaultSpeed="balanced"
+              streamingPlaceholders={IMAGE_PROMPT_EXAMPLES}
+              placeholder="描述你想生成的画面..."
+              ariaLabel="首页创作提示词"
+              submitLabel="带着提示词开始创作"
+              submitContent={
+                <span className="landing-submit-cost" aria-hidden="true">
+                  <Sparkles />
+                  <span>{count * LANDING_IMAGE_CREDIT_COST}</span>
+                </span>
+              }
+              minRows={1}
+              maxRows={4}
+              allowFileUpload={false}
+              liquidGlass
+              toolbarContent={
+                <LandingGenerationControls
+                  aspect={aspect}
+                  count={count}
+                  isPublic={isPublic}
+                  quotaLabel={quotaLabel}
+                  quotaAriaLabel={quotaAriaLabel}
+                  quotaIsAction={!authLoading && !isAuthenticated}
+                  onAspectChange={setAspect}
+                  onCountChange={setCount}
+                  onPublicChange={setIsPublic}
+                  onQuotaClick={openAuthModal}
+                />
+              }
+              className="landing-composer"
+            />
+          </div>
         </div>
       </section>
       <ImageGalleryVertical

@@ -130,6 +130,7 @@ const templates = [
 - Links use React Router `Link`/`NavLink` for in-app navigation.
 - Use Motion or CSS transitions only when motion explains state or continuity.
 - Autoplay surfaces must pause on hover and keyboard focus. The Discover image gallery is intentionally static and unmasked: render each work once per responsive gallery at full opacity, without vertical loop tracks, animation timing styles, or top/bottom edge fades.
+- Discover uses one Agent Chat Input instance across hero and gallery browsing. When its reserved anchor leaves the viewport, the same component becomes a bottom-fixed compact prompt bar; prompt pointer or keyboard focus expands the full toolbar in place. Keep a pointer-transparent black-to-transparent backdrop behind the dock, preserve the anchor's document height so gallery results do not shift, and undock when scrolling back to the hero.
 - Honor `prefers-reduced-motion`; disable autoplay video and remove nonessential
   transitions for reduced-motion users.
 - Dense history rails use one shared `Button` for each result batch currently rendered in
