@@ -58,6 +58,7 @@ export function LiquidGlassSurface({
 }: LiquidGlassSurfaceProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -101,6 +102,42 @@ export function LiquidGlassSurface({
     };
   }, [reducedMotion]);
 
+  useEffect(() => {
+    const root = rootRef.current;
+    const backdrop = backdropRef.current;
+    if (!root || !backdrop || !backdropVideoSrc) return undefined;
+
+    // The hero already owns the visible video. Keep the sampling copy aligned
+    // to that same hero rectangle so LiquidGlass does not create a second,
+    // differently cropped version of the background inside the composer.
+    const syncBackdropBounds = () => {
+      const hero = root.closest<HTMLElement>('.landing-hero');
+      if (!hero) return;
+
+      const rootRect = root.getBoundingClientRect();
+      const heroRect = hero.getBoundingClientRect();
+      backdrop.style.left = `${heroRect.left - rootRect.left}px`;
+      backdrop.style.top = `${heroRect.top - rootRect.top}px`;
+      backdrop.style.width = `${heroRect.width}px`;
+      backdrop.style.height = `${heroRect.height}px`;
+    };
+
+    syncBackdropBounds();
+    const hero = root.closest<HTMLElement>('.landing-hero');
+    const observer =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(syncBackdropBounds) : null;
+    observer?.observe(root);
+    if (hero) observer?.observe(hero);
+    window.addEventListener('resize', syncBackdropBounds);
+    backdrop.addEventListener('loadedmetadata', syncBackdropBounds);
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', syncBackdropBounds);
+      backdrop.removeEventListener('loadedmetadata', syncBackdropBounds);
+    };
+  }, [backdropVideoSrc]);
+
   return (
     <div
       {...rootProps}
@@ -115,6 +152,7 @@ export function LiquidGlassSurface({
     >
       {backdropVideoSrc ? (
         <video
+          ref={backdropRef}
           className="landing-liquidglass-backdrop landing-liquidglass-backdrop--video"
           src={backdropVideoSrc}
           autoPlay={!reducedMotion}
