@@ -73,10 +73,13 @@
   display: block !important;
 }
 
-.landing-liquidglass-target .agent-chat-input.border-glow-card::after,
-.landing-liquidglass-target .agent-chat-input.border-glow-card > .edge-light {
+.landing-liquidglass-target .agent-chat-input.border-glow-card::after {
   display: none !important;
   opacity: 0 !important;
+}
+
+.landing-liquidglass-target .agent-chat-input.border-glow-card > .edge-light {
+  display: block !important;
 }
 
 .landing-liquidglass-target > canvas {
