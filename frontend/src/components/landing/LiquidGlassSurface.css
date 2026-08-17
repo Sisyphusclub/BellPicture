@@ -24,6 +24,13 @@
   pointer-events: none;
 }
 
+.landing-liquidglass-backdrop--video {
+  background: none;
+  object-fit: cover;
+  object-position: 50% 60%;
+  opacity: 0;
+}
+
 .landing-liquidglass-target {
   position: relative;
   z-index: 1;
@@ -73,6 +80,19 @@
 .landing-liquidglass-root[data-liquidglass-ready='true'] .landing-liquidglass-target > canvas {
   opacity: 0.16;
   visibility: visible;
+}
+
+.landing-liquidglass-root[data-liquidglass-video='true'] .landing-liquidglass-target {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+.landing-liquidglass-root[data-liquidglass-video='true'][data-liquidglass-ready='true']
+  .landing-liquidglass-target
+  > canvas {
+  opacity: 1;
 }
 
 .landing-liquidglass-target > .agent-chat-input {

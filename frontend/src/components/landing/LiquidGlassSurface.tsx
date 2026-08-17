@@ -6,6 +6,7 @@ import './LiquidGlassSurface.css';
 interface LiquidGlassSurfaceProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   reducedMotion?: boolean;
+  backdropVideoSrc?: string;
   anchorRef?: Ref<HTMLDivElement>;
 }
 
@@ -50,6 +51,7 @@ function canUseLiquidGlass(): boolean {
 export function LiquidGlassSurface({
   children,
   reducedMotion = false,
+  backdropVideoSrc,
   anchorRef,
   className = '',
   ...rootProps
@@ -109,8 +111,24 @@ export function LiquidGlassSurface({
       }}
       className={`landing-liquidglass-root ${className}`.trim()}
       data-liquidglass-root="true"
+      data-liquidglass-video={backdropVideoSrc ? 'true' : undefined}
     >
-      <div className="landing-liquidglass-backdrop" aria-hidden="true" />
+      {backdropVideoSrc ? (
+        <video
+          className="landing-liquidglass-backdrop landing-liquidglass-backdrop--video"
+          src={backdropVideoSrc}
+          autoPlay={!reducedMotion}
+          muted
+          loop={!reducedMotion}
+          playsInline
+          preload="metadata"
+          crossOrigin="anonymous"
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+      ) : (
+        <div className="landing-liquidglass-backdrop" aria-hidden="true" />
+      )}
       <div
         ref={targetRef}
         className="landing-liquidglass-target"

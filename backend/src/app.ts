@@ -11,6 +11,7 @@ import { buildUsernameAuthRouter } from './routes/auth.js';
 import { healthRouter } from './routes/health.js';
 import { buildHistoryRouter } from './routes/history.js';
 import { buildImagesRouter } from './routes/images.js';
+import { mediaRouter } from './routes/media.js';
 import { buildOpenAICompatRouter } from './routes/openaiCompat.js';
 import { outputsRouter } from './routes/outputs.js';
 import type { DemoPromptCacheConfig } from './services/demoPromptCache.service.js';
@@ -57,6 +58,7 @@ export function createApp(deps: AppDeps): Express {
   app.use('/v1', buildOpenAICompatRouter({ provider: deps.provider }));
 
   app.use('/api', healthRouter);
+  app.use('/api/media', mediaRouter);
   app.use(
     '/api/admin',
     buildAdminUsersRouter({

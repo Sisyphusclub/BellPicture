@@ -19,11 +19,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { openAuthModal } from '@/hooks/useAuthModal';
 import { useImageQuota } from '@/hooks/useImageQuota';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { buildApiUrl } from '@/services/api/imagesApi';
 import type { AspectChoice, HistoryEntry } from '@/types/image';
 import { DEFAULT_ASPECT_CHOICE, DEFAULT_COUNT, MAX_REFERENCE_IMAGES } from '@/types/image';
 
-const HERO_VIDEO =
-  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260217_030345_246c0224-10a4-422c-b324-070b7c0eceda.mp4';
+const HERO_VIDEO = buildApiUrl('/api/media/liquid-glass.mp4');
 const HERO_SHINY_GRADIENT_STYLE: CSSProperties = {
   backgroundImage:
     'linear-gradient(110deg, #3D81E3, 20%, #AE9AE6, 40%, #F8D8D5, 60%, #FEEFDB, 80%, #3D81E3)',
@@ -299,6 +299,7 @@ export function LandingView() {
           </h1>
           <p>用 GPT-IMAGE-2 将你的创意变为精美图片，只需描述你脑海中的画面。</p>
           <LiquidGlassSurface
+            backdropVideoSrc={HERO_VIDEO}
             anchorRef={composerAnchorRef}
             className={`landing-composer-anchor${composerDocked ? ' is-docked' : ''}${composerExpanded ? ' is-expanded' : ''}`}
             data-docked={composerDocked}
