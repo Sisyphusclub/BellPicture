@@ -306,7 +306,21 @@ describe('React application routes', () => {
 
   it('carries a homepage prompt into the generation workspace and starts generation', async () => {
     const user = userEvent.setup();
-    renderRoute('/');
+    const { container } = renderRoute('/');
+    const referenceFiles = Array.from(
+      { length: 5 },
+      (_, index) =>
+        new File([`reference-${index + 1}`], `reference-${index + 1}.png`, { type: 'image/png' }),
+    );
+
+    await user.click(screen.getByRole('button', { name: '添加参考图或技能' }));
+    await user.click(screen.getByRole('menuitem', { name: '添加参考图' }));
+    const fileInput = container.querySelector<HTMLInputElement>('input[type="file"]');
+    expect(fileInput).toHaveAttribute('accept', 'image/png,image/jpeg,image/webp');
+    await user.upload(fileInput!, referenceFiles);
+    expect(screen.getByText('参考图最多支持 4 张，已保留前 4 张。')).toBeInTheDocument();
+    expect(screen.getByText('reference-4.png')).toBeInTheDocument();
+    expect(screen.queryByText('reference-5.png')).not.toBeInTheDocument();
 
     await user.type(screen.getByRole('textbox', { name: '首页创作提示词' }), '雨夜的未来城市');
     await user.click(screen.getByRole('button', { name: '选择首页画面尺寸' }));
@@ -323,6 +337,7 @@ describe('React application routes', () => {
         aspectRatio: '16:9',
         count: 2,
         isPublic: true,
+        referenceFiles: referenceFiles.slice(0, 4),
       }),
     );
     expect(screen.getByRole('region', { name: '本次创作结果' })).toHaveTextContent(

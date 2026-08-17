@@ -56,6 +56,7 @@ import {
   IMAGE_RESOLUTION_LABELS,
   IMAGE_RESOLUTIONS,
   MAX_COUNT,
+  MAX_REFERENCE_IMAGES,
   MIN_COUNT,
   type AspectRatio,
   type GenerationSettingsSnapshot,
@@ -131,9 +132,9 @@ function splitGenerationError(message: string): GenerationErrorCopy {
 }
 
 function scrollToGenerationBatch(batchId: string): boolean {
-  const target = Array.from(
-    document.querySelectorAll<HTMLElement>('[data-generation-batch]'),
-  ).find((element) => element.dataset.generationBatch === batchId);
+  const target = Array.from(document.querySelectorAll<HTMLElement>('[data-generation-batch]')).find(
+    (element) => element.dataset.generationBatch === batchId,
+  );
   if (!target || typeof target.scrollIntoView !== 'function') return false;
   target.scrollIntoView({
     behavior: prefersReducedMotion() ? 'auto' : 'smooth',
@@ -175,6 +176,20 @@ function requestsAutoGeneration(state: unknown): boolean {
     'autoGenerate' in state &&
     state.autoGenerate === true
   );
+}
+
+function readInitialReferenceFiles(state: unknown): File[] {
+  if (typeof File === 'undefined' || typeof state !== 'object' || state === null) return [];
+  const candidateAttachments: unknown = (state as Record<string, unknown>)['attachments'];
+  if (!Array.isArray(candidateAttachments)) return [];
+
+  const files: File[] = [];
+  for (const attachment of candidateAttachments as unknown[]) {
+    if (typeof attachment !== 'object' || attachment === null) continue;
+    const file: unknown = (attachment as Record<string, unknown>)['file'];
+    if (file instanceof File) files.push(file);
+  }
+  return files.slice(0, MAX_REFERENCE_IMAGES);
 }
 
 function cssAspectRatio(aspectRatio: AspectRatio): string {
@@ -373,9 +388,11 @@ export function GenerateView() {
   const { sessions, create: createSession } = useGenerationSessions();
   const { quota, isLoading: quotaLoading, refresh: refreshQuota } = useImageQuota();
   const upload = useFileUpload();
-  const clearUpload = upload.clear;
+  const { clear: clearUpload, selectFiles: selectUploadFiles } = upload;
   const generation = useImageGeneration();
-  const generationErrorCopy = generation.error ? splitGenerationError(generation.error.message) : null;
+  const generationErrorCopy = generation.error
+    ? splitGenerationError(generation.error.message)
+    : null;
   const autoGenerationHandled = useRef(false);
   const [prompt, setPrompt] = useState(searchParams.get('prompt') ?? '');
   const [count, setCount] = useState(() => readCount(searchParams));
@@ -729,9 +746,9 @@ export function GenerateView() {
     void performGeneration(settings, [], false, item);
   };
 
-  const submitCurrent = (promptValue = prompt): void => {
+  const submitCurrent = (promptValue = prompt, initialReferenceFiles?: readonly File[]): void => {
     const settings = currentSettings(promptValue);
-    const files = upload.selectedFiles.map((item) => item.file);
+    const files = initialReferenceFiles ?? upload.selectedFiles.map((item) => item.file);
     if (authLoading) return;
     if (!isAuthenticated) {
       openAuthModal({ onSuccess: () => performGeneration(settings, files, true) });
@@ -747,10 +764,19 @@ export function GenerateView() {
       return;
     }
 
+    const initialReferenceFiles = readInitialReferenceFiles(location.state);
+    if (initialReferenceFiles.length) selectUploadFiles(initialReferenceFiles);
     autoGenerationHandled.current = true;
     void navigate(`${location.pathname}${location.search}`, { replace: true, state: null });
-    submitCurrentRef.current();
-  }, [authLoading, location.pathname, location.search, location.state, navigate]);
+    submitCurrentRef.current(undefined, initialReferenceFiles);
+  }, [
+    authLoading,
+    location.pathname,
+    location.search,
+    location.state,
+    navigate,
+    selectUploadFiles,
+  ]);
 
   const handleAttachments = (next: AgentChatAttachment[]): void => {
     const nextIds = new Set(next.map((item) => item.id));
@@ -913,9 +939,7 @@ export function GenerateView() {
     const composerRect = composer.getBoundingClientRect();
     const top = Math.max(
       0,
-      window.scrollY +
-        targetRect.bottom -
-        (composerRect.top - LATEST_BATCH_COMPOSER_GAP),
+      window.scrollY + targetRect.bottom - (composerRect.top - LATEST_BATCH_COMPOSER_GAP),
     );
     setActiveHistoryBatchId(null);
     window.scrollTo({ top, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });

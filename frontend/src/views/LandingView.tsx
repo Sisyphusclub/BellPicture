@@ -8,6 +8,7 @@ import { LandingGenerationControls } from '@/components/landing/LandingGeneratio
 import { LandingAccountActions } from '@/components/landing/LandingAccountActions';
 import { useToast } from '@/components/common/ToastProvider';
 import { AgentChatInput } from '@/components/premium/agent-chat-input/agent-chat-input';
+import type { AgentChatAttachment } from '@/components/premium/agent-chat-input/types';
 import {
   ImageGalleryVertical,
   type GalleryImage,
@@ -18,7 +19,7 @@ import { openAuthModal } from '@/hooks/useAuthModal';
 import { useImageQuota } from '@/hooks/useImageQuota';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { AspectChoice, HistoryEntry } from '@/types/image';
-import { DEFAULT_ASPECT_CHOICE, DEFAULT_COUNT } from '@/types/image';
+import { DEFAULT_ASPECT_CHOICE, DEFAULT_COUNT, MAX_REFERENCE_IMAGES } from '@/types/image';
 
 const HERO_VIDEO =
   'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260217_030345_246c0224-10a4-422c-b324-070b7c0eceda.mp4';
@@ -143,6 +144,7 @@ export function LandingView() {
   const composerAnchorRef = useRef<HTMLDivElement>(null);
   const [videoFailed, setVideoFailed] = useState(false);
   const [prompt, setPrompt] = useState('');
+  const [attachments, setAttachments] = useState<AgentChatAttachment[]>([]);
   const [aspect, setAspect] = useState<AspectChoice>(DEFAULT_ASPECT_CHOICE);
   const [count, setCount] = useState(DEFAULT_COUNT);
   const [isPublic, setIsPublic] = useState(false);
@@ -205,7 +207,19 @@ export function LandingView() {
     : isAuthenticated
       ? `剩余额度 ${quota?.remaining ?? '未知'}，总额度 ${quota?.total ?? '未知'}`
       : '登录后查看生成额度';
-  const submitPrompt = (value: string): void => {
+  const updateAttachments = (next: AgentChatAttachment[]): void => {
+    if (next.length > MAX_REFERENCE_IMAGES) {
+      notify(
+        `参考图最多支持 ${MAX_REFERENCE_IMAGES} 张，已保留前 ${MAX_REFERENCE_IMAGES} 张。`,
+        'error',
+      );
+    }
+    setAttachments(next.slice(0, MAX_REFERENCE_IMAGES));
+  };
+  const submitPrompt = (
+    value: string,
+    selectedAttachments: readonly AgentChatAttachment[],
+  ): void => {
     const trimmed = value.trim();
     if (!trimmed) return;
     sessionStorage.setItem(LANDING_SCROLL_KEY, String(window.scrollY));
@@ -216,7 +230,12 @@ export function LandingView() {
         count: String(count),
         isPublic: String(isPublic),
       }).toString()}`,
-      { state: { autoGenerate: true } },
+      {
+        state: {
+          autoGenerate: true,
+          attachments: selectedAttachments.slice(0, MAX_REFERENCE_IMAGES),
+        },
+      },
     );
   };
 
@@ -293,7 +312,9 @@ export function LandingView() {
             <AgentChatInput
               value={prompt}
               onValueChange={setPrompt}
-              onSubmit={({ text }) => submitPrompt(text)}
+              onSubmit={({ text, attachments: selectedAttachments }) =>
+                submitPrompt(text, selectedAttachments)
+              }
               skills={[]}
               models={LANDING_MODELS}
               defaultModel="gpt-image-2"
@@ -315,6 +336,9 @@ export function LandingView() {
               minRows={1}
               maxRows={4}
               allowFileUpload
+              attachments={attachments}
+              onAttachmentsChange={updateAttachments}
+              acceptedFileTypes="image/png,image/jpeg,image/webp"
               liquidGlass
               toolbarContent={
                 <LandingGenerationControls
