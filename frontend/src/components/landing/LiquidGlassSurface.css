@@ -71,7 +71,6 @@
 
 .landing-liquidglass-target .agent-chat-input.border-glow-card::before {
   display: block !important;
-  opacity: 0.62 !important;
 }
 
 .landing-liquidglass-target .agent-chat-input.border-glow-card::after,
