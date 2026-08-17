@@ -257,11 +257,11 @@ describe('React application routes', () => {
     renderRoute('/');
 
     const submit = screen.getByRole('button', { name: '带着提示词开始创作' });
-    expect(submit).toHaveTextContent('15');
+    expect(submit).toHaveTextContent('1');
     expect(submit).toBeDisabled();
 
     await user.click(screen.getByRole('button', { name: '增加生成张数' }));
-    expect(submit).toHaveTextContent('30');
+    expect(submit).toHaveTextContent('2');
 
     await user.type(screen.getByRole('textbox', { name: '首页创作提示词' }), '玻璃城市');
     expect(submit).toBeEnabled();

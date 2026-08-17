@@ -35,7 +35,7 @@ const HERO_SHINY_GRADIENT_STYLE: CSSProperties = {
 };
 const LANDING_SCROLL_KEY = 'nebulens:landing-scroll';
 const LANDING_SCROLL_RESTORE_KEY = 'nebulens:landing-scroll-restore';
-const LANDING_IMAGE_CREDIT_COST = 15;
+const LANDING_IMAGE_CREDIT_COST = 1;
 const LANDING_NAV_ITEMS = [
   { label: '发现', to: '/', icon: Compass },
   { label: '生图', to: '/generate', icon: ImagePlus },
