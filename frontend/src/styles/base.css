@@ -6431,9 +6431,9 @@ video {
   }
 }
 
-/* Discover keeps the beUI composer interaction contract while using the hero
-   video as a refracted material layer. The body follows Wanxiang's softened
-   glass stack while the existing Nebulens focus ring remains independent. */
+/* ReactBits Fluid Glass is a Three.js transmission material. Discover adapts
+   its refraction, chromatic edge and pointer specular response to DOM layers so
+   the existing interactive beUI composer can remain fully usable. */
 .agent-chat-input.landing-composer.border-glow-card {
   --card-bg: transparent !important;
   --liquid-glass-tint-center: rgb(56 78 102 / 0.14);
@@ -6445,14 +6445,15 @@ video {
   --liquid-glass-side-highlight: rgb(235 247 255 / 0.1);
   --liquid-glass-side-shadow: rgb(94 163 219 / 0.08);
   --liquid-glass-blur: 20px;
-  --liquid-glass-saturation: 1.14;
-  --liquid-glass-chrome-saturation: 1.2;
+  --liquid-glass-saturation: 1.28;
+  --liquid-glass-contrast: 1.08;
+  --liquid-glass-chrome-saturation: 1.32;
 
   border-color: transparent;
   background: transparent;
   box-shadow:
     0 28px 70px -34px rgb(0 3 10 / 0.9),
-    0 0 0 1px rgb(192 223 247 / 0.04);
+    inset 0 1px 0 rgb(235 248 255 / 0.04);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
@@ -6491,11 +6492,62 @@ video {
   background: transparent;
   box-shadow: none;
 }
-/* Give the hero composer a visible refractive glass plane instead of a flat
-   translucent fill while keeping the existing BorderGlow edge treatment. */
+/* Transmission: overscan the displaced backdrop slightly to avoid a hard seam
+   where the SVG refraction samples the video at the rounded edge. */
 .landing-composer .border-glow-liquid-glass__effect {
-  backdrop-filter: var(--liquid-glass-filter) blur(12px) saturate(1.42) contrast(1.08);
-  -webkit-backdrop-filter: var(--liquid-glass-filter) blur(12px) saturate(1.42) contrast(1.08);
+  inset: -2px;
+  border-radius: calc(var(--border-radius) + 2px);
+  clip-path: inset(2px round calc(var(--border-radius) - 1px));
+  backdrop-filter: var(--liquid-glass-filter) blur(9px) saturate(1.48) contrast(1.1)
+    brightness(1.06);
+  -webkit-backdrop-filter: var(--liquid-glass-filter) blur(9px) saturate(1.48) contrast(1.1)
+    brightness(1.06);
+}
+.landing-composer .border-glow-liquid-glass__tint {
+  background:
+    radial-gradient(
+      86% 110% at var(--fluid-pointer-x) var(--fluid-pointer-y),
+      rgb(213 238 255 / 0.12) 0%,
+      rgb(123 186 238 / 0.04) 30%,
+      transparent 64%
+    ),
+    linear-gradient(112deg, rgb(26 59 90 / 0.1), rgb(5 18 34 / 0.06) 46%, rgb(27 38 70 / 0.1));
+  box-shadow:
+    inset 0 1px 0 rgb(235 248 255 / 0.2),
+    inset 0 -1px 0 rgb(73 139 200 / 0.13),
+    inset 1px 0 0 rgb(199 231 255 / 0.07),
+    inset -1px 0 0 rgb(119 103 221 / 0.06);
+}
+/* Prism: cool cyan/violet channel separation is restricted to the curved rim,
+   echoing MeshTransmissionMaterial chromatic aberration without tinting copy. */
+.landing-composer .border-glow-liquid-glass__prism {
+  z-index: 0;
+  padding: 1px;
+  background:
+    radial-gradient(
+        72% 110% at var(--fluid-pointer-x) var(--fluid-pointer-y),
+        rgb(197 238 255 / 0.36),
+        transparent 62%
+      )
+      border-box,
+    linear-gradient(
+        112deg,
+        rgb(90 211 255 / 0.2),
+        transparent 26%,
+        transparent 70%,
+        rgb(160 127 255 / 0.18)
+      )
+      border-box;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  mix-blend-mode: screen;
+  opacity: 0.68;
 }
 .landing-composer .border-glow-liquid-glass__chrome {
   background: linear-gradient(
@@ -6509,6 +6561,24 @@ video {
     inset 0 1px 0 rgb(236 248 255 / 0.18),
     inset 0 -1px 0 rgb(76 151 207 / 0.2);
   opacity: 0.86;
+}
+.landing-composer .border-glow-liquid-glass__specular {
+  z-index: 0;
+  background:
+    radial-gradient(
+      34% 90% at var(--fluid-pointer-x) var(--fluid-pointer-y),
+      rgb(226 246 255 / 0.2),
+      rgb(115 190 245 / 0.06) 42%,
+      transparent 72%
+    ),
+    linear-gradient(165deg, rgb(255 255 255 / 0.055), transparent 38% 72%, rgb(91 131 202 / 0.045));
+  mix-blend-mode: screen;
+  opacity: 0.72;
+  transition: opacity 180ms ease-out;
+}
+.landing-composer:hover .border-glow-liquid-glass__specular,
+.landing-composer:focus-within .border-glow-liquid-glass__specular {
+  opacity: 1;
 }
 .landing-composer .agent-chat-input__toolbar-content {
   border-top-color: rgb(214 232 250 / 0.09);
@@ -6536,6 +6606,13 @@ video {
   .landing-composer .agent-chat-input__surface {
     background: rgb(202 226 248 / 0.02);
   }
+  .landing-composer .border-glow-liquid-glass__effect {
+    backdrop-filter: blur(18px) saturate(1.24) contrast(1.06);
+    -webkit-backdrop-filter: blur(18px) saturate(1.24) contrast(1.06);
+  }
+  .landing-composer .border-glow-liquid-glass__prism {
+    opacity: 0.48;
+  }
 }
 
 @media (prefers-contrast: more) {
@@ -6550,6 +6627,10 @@ video {
   .landing-composer .agent-chat-input__surface {
     background: rgb(10 20 34 / 0.7);
   }
+  .landing-composer .border-glow-liquid-glass__prism,
+  .landing-composer .border-glow-liquid-glass__specular {
+    opacity: 0.2;
+  }
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -6559,11 +6640,23 @@ video {
     background: rgb(7 15 27 / 0.9);
   }
   .landing-composer .border-glow-liquid-glass__effect,
-  .landing-composer .border-glow-liquid-glass__chrome {
+  .landing-composer .border-glow-liquid-glass__prism,
+  .landing-composer .border-glow-liquid-glass__chrome,
+  .landing-composer .border-glow-liquid-glass__specular {
     display: none;
   }
   .landing-composer .agent-chat-input__surface {
     background: rgb(10 20 34 / 0.84);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-composer .border-glow-liquid-glass__specular {
+    background:
+      radial-gradient(38% 90% at 50% 18%, rgb(226 246 255 / 0.14), transparent 70%),
+      linear-gradient(165deg, rgb(255 255 255 / 0.05), transparent 40% 72%, rgb(91 131 202 / 0.04));
+    opacity: 0.72;
+    transition: none;
   }
 }
 

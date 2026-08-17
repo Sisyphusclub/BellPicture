@@ -255,6 +255,10 @@ The prompt composer is the signature product surface. Use the installed beUI Age
   focus gradient is absent. Keep the moving hero video perceptible through the prompt area without
   reducing text contrast. Clip each material layer inside the radius, leave the root overflow
   available for menus, and provide opaque fallbacks for unsupported filters and higher contrast.
+  The ReactBits Fluid Glass adaptation keeps this material in DOM layers around the interactive
+  beUI surface: a pointer-following specular sheen and a restrained cyan/violet prism rim echo
+  transmission, thickness, and chromatic aberration without replacing the input with a WebGL canvas.
+  Reset the pointer variables on leave and reduce both layers to a static treatment for reduced motion.
 - Use ReactBits `BorderGlow` as the composer's only decorative focus effect. Keep a restrained logo-aligned golden orange, cyan, and royal blue mesh while the prompt editor is focused, intensify and orient it as the pointer approaches an edge, and replace pointer tracking with a static focus treatment under `prefers-reduced-motion`.
   On the translucent Discover composer, clip the colored `::before` mesh to a true 1px border ring,
   disable the `::after` interior mesh fill, and retain the pointer-owned outer edge light. The glass

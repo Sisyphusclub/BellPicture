@@ -211,6 +211,11 @@ const BorderGlow = ({
       const rect = card.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
+      const pointerX = rect.width > 0 ? (x / rect.width) * 100 : 50;
+      const pointerY = rect.height > 0 ? (y / rect.height) * 100 : 18;
+
+      card.style.setProperty('--fluid-pointer-x', `${pointerX.toFixed(3)}%`);
+      card.style.setProperty('--fluid-pointer-y', `${pointerY.toFixed(3)}%`);
 
       const edge = getEdgeProximity(card, x, y) * 100;
       const angle = getCursorAngle(card, x, y);
@@ -225,7 +230,10 @@ const BorderGlow = ({
   const handlePointerLeave = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
       onPointerLeave?.(event);
-      cardRef.current?.style.setProperty('--edge-proximity', active ? '68' : '0');
+      const card = cardRef.current;
+      card?.style.setProperty('--edge-proximity', active ? '68' : '0');
+      card?.style.setProperty('--fluid-pointer-x', '50%');
+      card?.style.setProperty('--fluid-pointer-y', '18%');
     },
     [active, onPointerLeave],
   );
@@ -291,6 +299,7 @@ const BorderGlow = ({
       onPointerLeave={handlePointerLeave}
       data-glow-active={active ? 'true' : undefined}
       data-liquid-glass={liquidGlass ? 'true' : undefined}
+      data-fluid-glass={liquidGlass ? 'true' : undefined}
       data-reduced-motion={reducedMotion ? 'true' : undefined}
       className={`border-glow-card ${className}`}
       style={
@@ -347,7 +356,9 @@ const BorderGlow = ({
           <span className="border-glow-liquid-glass__effect" aria-hidden="true">
             <span className="border-glow-liquid-glass__tint" />
           </span>
+          <span className="border-glow-liquid-glass__prism" aria-hidden="true" />
           <span className="border-glow-liquid-glass__chrome" aria-hidden="true" />
+          <span className="border-glow-liquid-glass__specular" aria-hidden="true" />
         </>
       ) : null}
       <div className="border-glow-inner">{children}</div>

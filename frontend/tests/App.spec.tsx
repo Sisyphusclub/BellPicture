@@ -189,9 +189,14 @@ describe('React application routes', () => {
     expect(screen.getByRole('textbox', { name: '首页创作提示词' })).toBeInTheDocument();
     const landingComposer = container.querySelector('[data-slot="agent-chat-input"]');
     expect(landingComposer).toHaveAttribute('data-liquid-glass', 'true');
+    expect(landingComposer).toHaveAttribute('data-fluid-glass', 'true');
     expect(landingComposer).toHaveStyle({ '--border-radius': '30px' });
     expect(landingComposer?.querySelector('.border-glow-liquid-glass__effect')).toBeInTheDocument();
+    expect(landingComposer?.querySelector('.border-glow-liquid-glass__prism')).toBeInTheDocument();
     expect(landingComposer?.querySelector('.border-glow-liquid-glass__chrome')).toBeInTheDocument();
+    expect(
+      landingComposer?.querySelector('.border-glow-liquid-glass__specular'),
+    ).toBeInTheDocument();
     expect(landingComposer?.querySelector('feDisplacementMap')).toHaveAttribute('scale', '-150');
     expect(screen.queryByRole('button', { name: /选择智能体/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '添加参考图或技能' })).toBeInTheDocument();
@@ -370,7 +375,7 @@ describe('React application routes', () => {
   });
 
   it('keeps the generation route and its operational controls', () => {
-    renderRoute('/generate');
+    const { container } = renderRoute('/generate');
     const workspace = screen.getByRole('region', { name: '图像生成工作区' });
     const generate = within(workspace);
     expect(generate.getByLabelText('当前模型 gpt-image-2')).toHaveTextContent('gpt-image-2');
@@ -379,6 +384,7 @@ describe('React application routes', () => {
     expect(generate.getByRole('button', { name: /生成图片/ })).toBeInTheDocument();
     expect(workspace).toHaveClass('is-empty');
     expect(generate.queryByRole('region', { name: '本次创作结果' })).not.toBeInTheDocument();
+    expect(container.querySelector('[data-fluid-glass="true"]')).not.toBeInTheDocument();
   });
 
   it('creates a generation session and supports inline renaming from the sidebar', async () => {
