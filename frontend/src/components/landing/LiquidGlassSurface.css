@@ -33,12 +33,12 @@
   border: 1px solid rgb(205 231 251 / 0.14);
   background: linear-gradient(
     145deg,
-    rgb(232 245 255 / 0.1) 0%,
-    rgb(54 98 129 / 0.13) 48%,
-    rgb(4 14 25 / 0.18) 100%
+    rgb(84 171 224 / 0.38) 0%,
+    rgb(25 104 168 / 0.42) 46%,
+    rgb(6 46 83 / 0.44) 100%
   );
-  backdrop-filter: blur(20px) saturate(1.22) brightness(1.04);
-  -webkit-backdrop-filter: blur(20px) saturate(1.22) brightness(1.04);
+  backdrop-filter: blur(20px) saturate(1.38) brightness(1.06);
+  -webkit-backdrop-filter: blur(20px) saturate(1.38) brightness(1.06);
   box-shadow:
     inset 0 1px 0 rgb(240 249 255 / 0.2),
     inset 0 -1px 0 rgb(91 159 205 / 0.14),
@@ -71,7 +71,7 @@
 }
 
 .landing-liquidglass-root[data-liquidglass-ready='true'] .landing-liquidglass-target > canvas {
-  opacity: 0.28;
+  opacity: 0.16;
   visibility: visible;
 }
 
