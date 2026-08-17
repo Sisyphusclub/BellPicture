@@ -79,6 +79,10 @@
 .landing-liquidglass-target > canvas {
   z-index: 0 !important;
   border-radius: inherit;
+  /* LiquidGlass reserves a 20px canvas halo for its drop shadow. The
+     Discover composer already has its own controlled outer edge, so clip the
+     reserved pixels back to the panel and avoid a second visible top layer. */
+  clip-path: inset(20px round 30px);
   opacity: 0;
   pointer-events: none;
   visibility: hidden;
@@ -116,6 +120,10 @@
   .landing-liquidglass-backdrop,
   .landing-liquidglass-target {
     border-radius: 24px;
+  }
+
+  .landing-liquidglass-target > canvas {
+    clip-path: inset(20px round 24px);
   }
 }
 
