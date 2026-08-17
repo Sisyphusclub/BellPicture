@@ -69,7 +69,11 @@
   box-shadow: none !important;
 }
 
-.landing-liquidglass-target .agent-chat-input.border-glow-card::before,
+.landing-liquidglass-target .agent-chat-input.border-glow-card::before {
+  display: block !important;
+  opacity: 0.62 !important;
+}
+
 .landing-liquidglass-target .agent-chat-input.border-glow-card::after,
 .landing-liquidglass-target .agent-chat-input.border-glow-card > .edge-light {
   display: none !important;
