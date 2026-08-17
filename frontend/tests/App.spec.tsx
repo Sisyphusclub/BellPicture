@@ -361,7 +361,11 @@ describe('React application routes', () => {
     expect(creationCard).not.toBeNull();
     await user.click(creationCard!);
 
-    expect(screen.getByRole('dialog', { name: '图片详情' })).toBeInTheDocument();
+    const dialog = screen.getByRole('dialog', { name: '图片详情' });
+    expect(dialog).toBeInTheDocument();
+    expect(dialog.querySelector(':scope > .image-detail__close')).toBeInTheDocument();
+    expect(dialog.querySelector(':scope > .image-detail__media')).toBeInTheDocument();
+    expect(dialog.querySelector(':scope > .image-detail__body')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '关闭图片详情' })).toBeInTheDocument();
   });
 
