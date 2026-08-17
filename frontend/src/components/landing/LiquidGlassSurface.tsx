@@ -33,6 +33,20 @@ const GLASS_DEFAULTS = {
 
 const GLASS_CONFIG = JSON.stringify(GLASS_DEFAULTS);
 
+function canUseLiquidGlass(): boolean {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return false;
+  if (navigator.userAgent.toLowerCase().includes('jsdom')) return false;
+
+  try {
+    const probe = document.createElement('canvas');
+    const context =
+      probe.getContext('webgl', { alpha: true }) ?? probe.getContext('experimental-webgl');
+    return Boolean(context);
+  } catch {
+    return false;
+  }
+}
+
 export function LiquidGlassSurface({
   children,
   reducedMotion = false,
@@ -47,18 +61,19 @@ export function LiquidGlassSurface({
     const root = rootRef.current;
     const target = targetRef.current;
     if (!root || !target) return undefined;
-    if (typeof WebGLRenderingContext === 'undefined') return undefined;
-    if (navigator.userAgent.toLowerCase().includes('jsdom')) return undefined;
+    root.dataset.liquidglassReady = 'false';
+    if (!canUseLiquidGlass()) return undefined;
 
     let disposed = false;
     let instance: LiquidGlass | null = null;
 
-    void LiquidGlass.init({
-      root,
-      glassElements: [target],
-      defaults: GLASS_DEFAULTS,
-    })
-      .then((nextInstance) => {
+    const initialize = async (): Promise<void> => {
+      try {
+        const nextInstance = await LiquidGlass.init({
+          root,
+          glassElements: [target],
+          defaults: GLASS_DEFAULTS,
+        });
         if (disposed) {
           nextInstance.destroy();
           return;
@@ -68,14 +83,19 @@ export function LiquidGlassSurface({
         // surface is decorative, so restore normal text selection for the input.
         root.style.userSelect = 'auto';
         root.style.webkitUserSelect = 'auto';
-      })
-      .catch(() => {
-        // The CSS surface remains usable when WebGL or foreignObject capture is unavailable.
-      });
+        root.dataset.liquidglassReady = 'true';
+      } catch {
+        // Keep the CSS surface visible when WebGL or foreignObject capture is unavailable.
+        root.dataset.liquidglassReady = 'false';
+      }
+    };
+
+    void initialize();
 
     return () => {
       disposed = true;
       instance?.destroy();
+      delete root.dataset.liquidglassReady;
     };
   }, [reducedMotion]);
 

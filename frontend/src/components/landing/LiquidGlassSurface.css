@@ -31,7 +31,15 @@
 .landing-liquidglass-target > canvas {
   z-index: 0 !important;
   border-radius: inherit;
+  opacity: 0;
   pointer-events: none;
+  visibility: hidden;
+  transition: opacity 180ms ease;
+}
+
+.landing-liquidglass-root[data-liquidglass-ready='true'] .landing-liquidglass-target > canvas {
+  opacity: 1;
+  visibility: visible;
 }
 
 .landing-liquidglass-target > .agent-chat-input {
@@ -53,6 +61,10 @@
 @media (prefers-reduced-motion: reduce) {
   .landing-liquidglass-backdrop {
     opacity: 0.42;
+  }
+
+  .landing-liquidglass-target > canvas {
+    transition: none;
   }
 }
 
