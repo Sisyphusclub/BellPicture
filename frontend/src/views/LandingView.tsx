@@ -34,12 +34,6 @@ const HERO_SHINY_GRADIENT_STYLE: CSSProperties = {
 };
 const LANDING_SCROLL_KEY = 'nebulens:landing-scroll';
 const LANDING_IMAGE_CREDIT_COST = 15;
-const LANDING_MODELS = [{ id: 'gpt-image-2', label: 'gpt-image-2' }] as const;
-const LANDING_REASONING = [
-  { id: 'standard', label: '标准', description: '快速完成日常创作' },
-  { id: 'precise', label: '精细', description: '投入更多推理完善画面细节' },
-] as const;
-const LANDING_SPEED = [{ id: 'balanced', label: '均衡' }] as const;
 const LANDING_NAV_ITEMS = [
   { label: '发现', to: '/', icon: Compass },
   { label: '生图', to: '/generate', icon: ImagePlus },
@@ -316,13 +310,11 @@ export function LandingView() {
                 submitPrompt(text, selectedAttachments)
               }
               skills={[]}
-              models={LANDING_MODELS}
+              models={[]}
               defaultModel="gpt-image-2"
               agents={[]}
-              reasoningLevels={LANDING_REASONING}
-              defaultReasoning="standard"
-              speedModes={LANDING_SPEED}
-              defaultSpeed="balanced"
+              reasoningLevels={[]}
+              speedModes={[]}
               streamingPlaceholders={IMAGE_PROMPT_EXAMPLES}
               placeholder="描述你想生成的画面..."
               ariaLabel="首页创作提示词"

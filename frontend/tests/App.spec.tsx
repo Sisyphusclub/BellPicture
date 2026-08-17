@@ -195,11 +195,7 @@ describe('React application routes', () => {
     expect(landingComposer?.querySelector('feDisplacementMap')).toHaveAttribute('scale', '-150');
     expect(screen.queryByRole('button', { name: /选择智能体/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '添加参考图或技能' })).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', {
-        name: '选择模型和推理强度，当前：gpt-image-2，标准',
-      }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /选择模型和推理强度/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '选择首页画面尺寸' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: '生成张数' })).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: '公开作品' })).toBeInTheDocument();
@@ -244,21 +240,9 @@ describe('React application routes', () => {
     expect(container.querySelector(".landing-sidebar [data-sidebar='separator']")).toBeNull();
   });
 
-  it('changes the homepage reasoning setting', async () => {
-    const user = userEvent.setup();
+  it('hides non-functional homepage model settings', () => {
     renderRoute('/');
-
-    await user.click(
-      screen.getByRole('button', {
-        name: '选择模型和推理强度，当前：gpt-image-2，标准',
-      }),
-    );
-    await user.click(screen.getByRole('menuitemradio', { name: '推理强度：精细' }));
-    expect(
-      screen.getByRole('button', {
-        name: '选择模型和推理强度，当前：gpt-image-2，精细',
-      }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /选择模型和推理强度/ })).not.toBeInTheDocument();
   });
 
   it('shows the current generation credit cost in the homepage submit action', async () => {
