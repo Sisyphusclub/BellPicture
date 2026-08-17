@@ -34,6 +34,7 @@ const HERO_SHINY_GRADIENT_STYLE: CSSProperties = {
   WebkitTextFillColor: 'transparent',
 };
 const LANDING_SCROLL_KEY = 'nebulens:landing-scroll';
+const LANDING_SCROLL_RESTORE_KEY = 'nebulens:landing-scroll-restore';
 const LANDING_IMAGE_CREDIT_COST = 15;
 const LANDING_NAV_ITEMS = [
   { label: '发现', to: '/', icon: Compass },
@@ -149,12 +150,22 @@ export function LandingView() {
 
   useEffect(() => {
     const savedScroll = Number(sessionStorage.getItem(LANDING_SCROLL_KEY));
-    if (Number.isFinite(savedScroll) && savedScroll > 0) {
+    const shouldRestoreScroll = sessionStorage.getItem(LANDING_SCROLL_RESTORE_KEY) === 'true';
+    sessionStorage.removeItem(LANDING_SCROLL_KEY);
+    sessionStorage.removeItem(LANDING_SCROLL_RESTORE_KEY);
+    if (shouldRestoreScroll && Number.isFinite(savedScroll) && savedScroll > 0) {
       window.setTimeout(() => window.scrollTo({ top: savedScroll, behavior: 'auto' }), 0);
+    } else if (window.scrollY > 0) {
+      // Browsers can restore the previous scroll offset during a hard reload.
+      // A direct visit to Discover should always start at the hero, while the
+      // explicit return marker above still preserves the workspace handoff.
+      window.setTimeout(() => window.scrollTo({ top: 0, behavior: 'auto' }), 0);
     }
 
     const saveScroll = () => {
-      sessionStorage.setItem(LANDING_SCROLL_KEY, String(window.scrollY));
+      if (sessionStorage.getItem(LANDING_SCROLL_RESTORE_KEY) === 'true') {
+        sessionStorage.setItem(LANDING_SCROLL_KEY, String(window.scrollY));
+      }
     };
     window.addEventListener('pagehide', saveScroll);
     return () => {
@@ -218,6 +229,7 @@ export function LandingView() {
     const trimmed = value.trim();
     if (!trimmed) return;
     sessionStorage.setItem(LANDING_SCROLL_KEY, String(window.scrollY));
+    sessionStorage.setItem(LANDING_SCROLL_RESTORE_KEY, 'true');
     void navigate(
       `/generate?${new URLSearchParams({
         prompt: trimmed,

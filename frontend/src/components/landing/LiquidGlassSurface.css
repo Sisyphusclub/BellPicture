@@ -25,7 +25,24 @@
   width: 100%;
   min-height: inherit;
   border-radius: 30px;
+  border: 1px solid rgb(205 231 251 / 0.14);
   background: transparent;
+}
+
+/* The beUI composer already owns a BorderGlow shell. Once LiquidGlass is
+   active, keeping both shells produces the uneven cyan/amber rings visible
+   on focused inputs. The target keeps one quiet fallback rim instead. */
+.landing-liquidglass-target .agent-chat-input.border-glow-card {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.landing-liquidglass-target .agent-chat-input.border-glow-card::before,
+.landing-liquidglass-target .agent-chat-input.border-glow-card::after,
+.landing-liquidglass-target .agent-chat-input.border-glow-card > .edge-light {
+  display: none !important;
+  opacity: 0 !important;
 }
 
 .landing-liquidglass-target > canvas {
