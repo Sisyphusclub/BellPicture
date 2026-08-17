@@ -1081,6 +1081,12 @@ video {
   box-shadow: var(--shadow-float);
   padding: 6px;
 }
+/* Keep an open beUI menu above the composer's gradient edge layers. */
+.agent-chat-input.border-glow-card:has(.agent-chat-input__agent-menu) > .border-glow-inner,
+.agent-chat-input.border-glow-card:has(.agent-chat-input__settings-menu) > .border-glow-inner,
+.agent-chat-input.border-glow-card:has(.agent-chat-input__actions-menu) > .border-glow-inner {
+  z-index: 4;
+}
 .agent-chat-input__agent-menu {
   width: 230px;
 }
@@ -1341,14 +1347,12 @@ video {
   padding: 0;
   transform: translateY(-50%);
 }
-.landing-composer-anchor.is-docked:not(.is-expanded)
-  .agent-chat-input__toolbar-group:first-child,
+.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__toolbar-group:first-child,
 .landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__toolbar-content,
 .landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__model-trigger {
   display: none;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded)
-  .agent-chat-input__toolbar-group--end {
+.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__toolbar-group--end {
   display: flex;
   margin: 0;
 }
