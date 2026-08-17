@@ -43,7 +43,7 @@ export function ImageGalleryVertical({
   const hasHeader = Boolean(eyebrow || title || description);
   const resolvedColumnCount = Math.min(
     Math.max(2, Math.round(columnCount)),
-    5,
+    6,
     galleryImages.length,
   );
   const columns = distribute(galleryImages, resolvedColumnCount);

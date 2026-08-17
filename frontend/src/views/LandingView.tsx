@@ -370,7 +370,7 @@ export function LandingView() {
         title=""
         description=""
         images={TODAY_GALLERY_IMAGES}
-        columnCount={4}
+        columnCount={6}
         onImageClick={(image) => {
           const entry = TODAY_CREATIONS.find((candidate) => candidate.record.id === image.id);
           if (entry) setSelected(entry);

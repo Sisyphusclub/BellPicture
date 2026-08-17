@@ -161,7 +161,7 @@ describe('React application routes', () => {
     const desktopGallery = container.querySelector<HTMLElement>(
       '.landing-creations [style*="--gallery-columns"]',
     );
-    expect(desktopGallery?.style.getPropertyValue('--gallery-columns')).toBe('4');
+    expect(desktopGallery?.style.getPropertyValue('--gallery-columns')).toBe('6');
     const creationSources = new Set(
       Array.from(creationCards).map((card) => card.querySelector('img')?.getAttribute('src')),
     );
