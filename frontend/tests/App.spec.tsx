@@ -197,7 +197,6 @@ describe('React application routes', () => {
     expect(landingTarget?.getAttribute('data-config')).toContain('"opacity":0.76');
     expect(landingTarget?.getAttribute('data-config')).toContain('"brightness":0.1');
     expect(landingComposer).not.toHaveAttribute('data-liquid-glass');
-    expect(landingComposer).toHaveStyle({ '--border-radius': '20px' });
     expect(
       landingComposer?.querySelector('.border-glow-liquid-glass__effect'),
     ).not.toBeInTheDocument();

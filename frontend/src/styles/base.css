@@ -6464,8 +6464,10 @@ video {
   -webkit-backdrop-filter: none;
 }
 .agent-chat-input.landing-composer.border-glow-card::before {
+  inset: -1px;
   display: block;
   border: 0;
+  border-radius: calc(var(--border-radius) + 1px);
   padding: 1px;
   background:
     var(--gradient-one) border-box,

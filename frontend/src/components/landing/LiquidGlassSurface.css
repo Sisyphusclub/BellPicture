@@ -4,13 +4,14 @@
   width: 100%;
   min-height: 137px;
   overflow: visible;
+  --landing-composer-radius: 30px;
 }
 
 .landing-liquidglass-backdrop {
   position: absolute;
   z-index: 0;
   inset: 0;
-  border-radius: 30px;
+  border-radius: var(--landing-composer-radius);
   background:
     radial-gradient(90% 130% at 74% 18%, rgb(84 177 217 / 0.08), transparent 58%),
     radial-gradient(65% 120% at 18% 82%, rgb(36 91 151 / 0.12), transparent 62%),
@@ -41,7 +42,7 @@
   z-index: 1;
   width: 100%;
   min-height: inherit;
-  border-radius: 30px;
+  border-radius: var(--landing-composer-radius);
   border: 0;
   background: transparent;
   backdrop-filter: blur(20px) saturate(1.38) brightness(1.06);
@@ -66,9 +67,16 @@
    active, keeping both shells produces the uneven cyan/amber rings visible
    on focused inputs. The target keeps one quiet fallback rim instead. */
 .landing-liquidglass-target .agent-chat-input.border-glow-card {
+  --border-radius: var(--landing-composer-radius) !important;
   border-color: transparent !important;
+  border-radius: var(--landing-composer-radius);
   background: transparent !important;
   box-shadow: none !important;
+}
+
+.landing-liquidglass-target .agent-chat-input.border-glow-card > .border-glow-inner,
+.landing-liquidglass-target .agent-chat-input__surface {
+  border-radius: var(--landing-composer-radius);
 }
 
 .landing-liquidglass-target .agent-chat-input.border-glow-card::before {
@@ -126,9 +134,13 @@
 }
 
 @media (max-width: 560px) {
+  .landing-liquidglass-root {
+    --landing-composer-radius: 24px;
+  }
+
   .landing-liquidglass-backdrop,
   .landing-liquidglass-target {
-    border-radius: 24px;
+    border-radius: var(--landing-composer-radius);
   }
 
   .landing-liquidglass-target > canvas {
