@@ -248,13 +248,11 @@ The prompt composer is the signature product surface. Use the installed beUI Age
 - Place it at the center of the creation flow, up to `768px` wide on home and `1060px` in the generate workspace.
 - Use a `20px` outer radius and a quiet 3px frame. Generate keeps the card-colored inner surface and
   no permanent heavy shadow. Discover may use one cool graphite glass material on this same beUI
-  surface: a continuous full-surface SVG displacement-map refraction layer, a lightly tinted radial
-  sheen, and a separate `20px` desktop / `18px` mobile chrome blur with restrained saturation.
-  Discover uses a `30px`
-  material radius and a low-contrast directional inset rim so the lens remains legible when the
-  focus gradient is absent. Keep the moving hero video perceptible through the prompt area without
-  reducing text contrast. Clip each material layer inside the radius, leave the root overflow
-  available for menus, and provide opaque fallbacks for unsupported filters and higher contrast.
+  surface through the approved `@ybouane/liquidglass` adapter: a WebGL shader samples a direct
+  video backdrop child and applies refraction, blur, chromatic aberration, Fresnel reflection,
+  specular lighting, and a beveled `30px` material radius. Keep the moving hero video perceptible
+  through the prompt area without reducing text contrast. Keep the root overflow available for
+  menus, and provide a CSS opaque fallback when WebGL or foreignObject capture is unavailable.
 - Use ReactBits `BorderGlow` as the composer's only decorative focus effect. Keep a restrained logo-aligned golden orange, cyan, and royal blue mesh while the prompt editor is focused, intensify and orient it as the pointer approaches an edge, and replace pointer tracking with a static focus treatment under `prefers-reduced-motion`.
   On the translucent Discover composer, clip the colored `::before` mesh to a true 1px border ring,
   disable the `::after` interior mesh fill, and retain the pointer-owned outer edge light. The glass
@@ -602,9 +600,10 @@ Foreign or nonexistent IDs are never mutated by bulk operations. The frontend va
 - Run `npm run check:components` from `frontend/` after adding or changing a component. The check
   rejects unapproved native controls, direct foundation imports outside shared roots, competing
   component systems, browser dialogs, and undocumented consumers of external visual exceptions.
-- `BorderGlow` and `ImageGenerationPlaceholder` are the only non-beUI visual exceptions.
+- `BorderGlow`, `LiquidGlassSurface`, and `ImageGenerationPlaceholder` are the only non-beUI visual exceptions.
   `BorderGlow` may only wrap the beUI Agent Chat Input focus surface; the AICSS placeholder may only
-  render pending or image-loading states in `GenerateView`. The hidden file input in
+  render pending or image-loading states in `GenerateView`. `LiquidGlassSurface` may only provide
+  a composer-only material behind the existing beUI Agent Chat Input. The hidden file input in
   `ReferenceUploader` is the only business-component native-control exception; its visible trigger
   remains the shared `Button`.
 - Every route uses the semantic token layer in this document.

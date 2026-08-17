@@ -1,0 +1,63 @@
+.landing-liquidglass-root {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-height: 137px;
+  overflow: visible;
+}
+
+.landing-liquidglass-backdrop {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: 30px;
+  background:
+    radial-gradient(90% 130% at 74% 18%, rgb(84 177 217 / 0.28), transparent 58%),
+    radial-gradient(65% 120% at 18% 82%, rgb(36 91 151 / 0.38), transparent 62%),
+    linear-gradient(112deg, #071522 0%, #102c43 48%, #091521 100%);
+  opacity: 0.82;
+  pointer-events: none;
+}
+
+.landing-liquidglass-target {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: inherit;
+  border-radius: 30px;
+  background: transparent;
+}
+
+.landing-liquidglass-target > canvas {
+  z-index: 0 !important;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.landing-liquidglass-target > .agent-chat-input {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-liquidglass-target .agent-chat-input__surface {
+  background: transparent;
+}
+
+@media (max-width: 560px) {
+  .landing-liquidglass-backdrop,
+  .landing-liquidglass-target {
+    border-radius: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-liquidglass-backdrop {
+    opacity: 0.42;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .landing-liquidglass-target {
+    background: rgb(13 24 38 / 0.82);
+  }
+}

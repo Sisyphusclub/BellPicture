@@ -6,6 +6,7 @@ import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
 import { LandingSidebar } from '@/components/landing/LandingSidebar';
 import { LandingGenerationControls } from '@/components/landing/LandingGenerationControls';
 import { LandingAccountActions } from '@/components/landing/LandingAccountActions';
+import { LiquidGlassSurface } from '@/components/landing/LiquidGlassSurface';
 import { useToast } from '@/components/common/ToastProvider';
 import { AgentChatInput } from '@/components/premium/agent-chat-input/agent-chat-input';
 import type { AgentChatAttachment } from '@/components/premium/agent-chat-input/types';
@@ -285,8 +286,8 @@ export function LandingView() {
             </em>
           </h1>
           <p>用 GPT-IMAGE-2 将你的创意变为精美图片，只需描述你脑海中的画面。</p>
-          <div
-            ref={composerAnchorRef}
+          <LiquidGlassSurface
+            anchorRef={composerAnchorRef}
             className={`landing-composer-anchor${composerDocked ? ' is-docked' : ''}${composerExpanded ? ' is-expanded' : ''}`}
             data-docked={composerDocked}
             data-expanded={composerExpanded}
@@ -331,7 +332,6 @@ export function LandingView() {
               attachments={attachments}
               onAttachmentsChange={updateAttachments}
               acceptedFileTypes="image/png,image/jpeg,image/webp"
-              liquidGlass
               toolbarContent={
                 <LandingGenerationControls
                   aspect={aspect}
@@ -348,7 +348,7 @@ export function LandingView() {
               }
               className="landing-composer"
             />
-          </div>
+          </LiquidGlassSurface>
         </div>
       </section>
       <ImageGalleryVertical

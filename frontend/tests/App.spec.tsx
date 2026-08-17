@@ -187,12 +187,19 @@ describe('React application routes', () => {
     expect(screen.queryByRole('button', { name: '上一张作品' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '下一张作品' })).not.toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: '首页创作提示词' })).toBeInTheDocument();
+    const landingRoot = container.querySelector('[data-liquidglass-root="true"]');
+    const landingTarget = landingRoot?.querySelector('[data-liquidglass-target="true"]');
     const landingComposer = container.querySelector('[data-slot="agent-chat-input"]');
-    expect(landingComposer).toHaveAttribute('data-liquid-glass', 'true');
-    expect(landingComposer).toHaveStyle({ '--border-radius': '30px' });
-    expect(landingComposer?.querySelector('.border-glow-liquid-glass__effect')).toBeInTheDocument();
-    expect(landingComposer?.querySelector('.border-glow-liquid-glass__chrome')).toBeInTheDocument();
-    expect(landingComposer?.querySelector('feDisplacementMap')).toHaveAttribute('scale', '-150');
+    expect(landingRoot).toBeInTheDocument();
+    expect(landingTarget).toBeInTheDocument();
+    expect(landingRoot?.querySelector('.landing-liquidglass-backdrop')).toBeInTheDocument();
+    expect(landingTarget?.getAttribute('data-config')).toContain('"refraction":0.78');
+    expect(landingComposer).not.toHaveAttribute('data-liquid-glass');
+    expect(landingComposer).toHaveStyle({ '--border-radius': '20px' });
+    expect(
+      landingComposer?.querySelector('.border-glow-liquid-glass__effect'),
+    ).not.toBeInTheDocument();
+    expect(landingComposer?.querySelector('feDisplacementMap')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /选择智能体/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '添加参考图或技能' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /选择模型和推理强度/ })).not.toBeInTheDocument();
