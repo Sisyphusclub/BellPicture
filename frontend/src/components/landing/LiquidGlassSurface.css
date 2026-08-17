@@ -32,6 +32,8 @@
   object-fit: cover;
   object-position: 50% 60%;
   opacity: 0;
+  transform: translate3d(var(--landing-video-x-shift, 0px), 0, 0) scale(1.04);
+  transform-origin: center center;
 }
 
 .landing-liquidglass-target {

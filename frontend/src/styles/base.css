@@ -408,6 +408,7 @@ video {
   min-height: 760px;
   overflow: hidden;
   background: var(--background);
+  --landing-video-x-shift: 64px;
 }
 .landing-hero__video {
   position: absolute;
@@ -418,6 +419,8 @@ video {
   object-position: 50% 58%;
   opacity: 0.94;
   filter: saturate(1.02) contrast(1.03) brightness(1.08);
+  transform: translate3d(var(--landing-video-x-shift), 0, 0) scale(1.04);
+  transform-origin: center center;
 }
 @media (min-width: 861px) {
   .landing-hero__video {
@@ -2903,6 +2906,9 @@ video {
 }
 
 @media (max-width: 860px) {
+  .landing-hero {
+    --landing-video-x-shift: 0px;
+  }
   .landing-navigation-shell {
     position: static;
     min-height: 0;
