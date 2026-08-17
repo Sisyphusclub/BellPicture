@@ -6,8 +6,6 @@
   --border-radius: 28px;
   --glow-padding: 40px;
   --cone-spread: 25;
-  --fluid-pointer-x: 50%;
-  --fluid-pointer-y: 18%;
 
   position: relative;
   border-radius: var(--border-radius);
@@ -180,9 +178,7 @@
 }
 
 .border-glow-liquid-glass__effect,
-.border-glow-liquid-glass__prism,
-.border-glow-liquid-glass__chrome,
-.border-glow-liquid-glass__specular {
+.border-glow-liquid-glass__chrome {
   position: absolute;
   inset: 1px;
   z-index: 0;
@@ -192,10 +188,8 @@
 }
 
 .border-glow-liquid-glass__effect {
-  backdrop-filter: var(--liquid-glass-filter) saturate(var(--liquid-glass-saturation, 1.15))
-    contrast(var(--liquid-glass-contrast, 1.04));
-  -webkit-backdrop-filter: var(--liquid-glass-filter) saturate(var(--liquid-glass-saturation, 1.15))
-    contrast(var(--liquid-glass-contrast, 1.04));
+  backdrop-filter: var(--liquid-glass-filter) saturate(var(--liquid-glass-saturation, 1.15));
+  -webkit-backdrop-filter: var(--liquid-glass-filter) saturate(var(--liquid-glass-saturation, 1.15));
 }
 
 .border-glow-liquid-glass__tint {
@@ -222,11 +216,6 @@
     saturate(var(--liquid-glass-chrome-saturation, 1.15));
   -webkit-backdrop-filter: blur(var(--liquid-glass-blur, 2px))
     saturate(var(--liquid-glass-chrome-saturation, 1.15));
-}
-
-.border-glow-liquid-glass__prism,
-.border-glow-liquid-glass__specular {
-  opacity: 0;
 }
 
 .border-glow-card[data-liquid-glass='true'] > .border-glow-inner {
