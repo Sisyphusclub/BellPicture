@@ -314,7 +314,7 @@ export function LandingView() {
               }
               minRows={1}
               maxRows={4}
-              allowFileUpload={false}
+              allowFileUpload
               liquidGlass
               toolbarContent={
                 <LandingGenerationControls

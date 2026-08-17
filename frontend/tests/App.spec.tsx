@@ -194,6 +194,7 @@ describe('React application routes', () => {
     expect(landingComposer?.querySelector('.border-glow-liquid-glass__chrome')).toBeInTheDocument();
     expect(landingComposer?.querySelector('feDisplacementMap')).toHaveAttribute('scale', '-150');
     expect(screen.queryByRole('button', { name: /选择智能体/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '添加参考图或技能' })).toBeInTheDocument();
     expect(
       screen.getByRole('button', {
         name: '选择模型和推理强度，当前：gpt-image-2，标准',
@@ -215,7 +216,7 @@ describe('React application routes', () => {
 
     vi.spyOn(window, 'scrollY', 'get').mockReturnValue(520);
     vi.spyOn(anchor!, 'getBoundingClientRect').mockReturnValue(new DOMRect(250, -220, 940, 137));
-    act(() => window.dispatchEvent(new Event('scroll')));
+    void act(() => window.dispatchEvent(new Event('scroll')));
 
     await waitFor(() => expect(anchor).toHaveAttribute('data-docked', 'true'));
     expect(anchor).toHaveAttribute('data-expanded', 'false');
