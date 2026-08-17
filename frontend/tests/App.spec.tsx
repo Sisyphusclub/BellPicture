@@ -194,6 +194,8 @@ describe('React application routes', () => {
     expect(landingTarget).toBeInTheDocument();
     expect(landingRoot?.querySelector('.landing-liquidglass-backdrop')).toBeInTheDocument();
     expect(landingTarget?.getAttribute('data-config')).toContain('"refraction":0.58');
+    expect(landingTarget?.getAttribute('data-config')).toContain('"opacity":0.76');
+    expect(landingTarget?.getAttribute('data-config')).toContain('"brightness":0.1');
     expect(landingComposer).not.toHaveAttribute('data-liquid-glass');
     expect(landingComposer).toHaveStyle({ '--border-radius': '20px' });
     expect(

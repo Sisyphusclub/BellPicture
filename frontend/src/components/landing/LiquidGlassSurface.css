@@ -104,7 +104,7 @@
 
 .landing-liquidglass-root[data-liquidglass-video='true'] .landing-liquidglass-target {
   border: 1px solid rgb(205 231 251 / 0.16);
-  background: rgb(7 17 29 / 0.26);
+  background: linear-gradient(180deg, rgb(73 87 95 / 0.64) 0%, rgb(42 54 62 / 0.7) 100%);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow: 0 20px 54px -36px rgb(0 3 10 / 0.9);
@@ -113,7 +113,7 @@
 .landing-liquidglass-root[data-liquidglass-video='true'][data-liquidglass-ready='true']
   .landing-liquidglass-target
   > canvas {
-  opacity: 0.88;
+  opacity: 0.54;
 }
 
 .landing-liquidglass-target > .agent-chat-input {
