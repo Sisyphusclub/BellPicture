@@ -8596,14 +8596,22 @@ video {
   color: var(--muted-foreground) !important;
 }
 .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer .agent-chat-input__submit {
-  width: 36px;
-  min-width: 36px;
+  width: 68px;
+  min-width: 68px;
+  flex: 0 0 68px;
   height: 36px;
   border: 0;
   border-radius: var(--radius-full);
   background: var(--primary);
   color: var(--primary-foreground);
+  padding: 0 10px;
   box-shadow: none;
+}
+.landing-composer-anchor.is-docked:not(.is-expanded)
+  .landing-composer
+  .landing-submit-cost {
+  gap: 6px;
+  white-space: nowrap;
 }
 .landing-composer-anchor.is-docked:not(.is-expanded)
   .landing-composer
