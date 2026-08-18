@@ -165,8 +165,8 @@ describe('React application routes', () => {
     const creationSources = new Set(
       Array.from(creationCards).map((card) => card.querySelector('img')?.getAttribute('src')),
     );
-    expect(creationSources).toHaveLength(6);
-    expect(creationImages).toHaveLength(12);
+    expect(creationSources).toHaveLength(18);
+    expect(creationImages).toHaveLength(36);
     expect(animatedGalleryTracks).toHaveLength(0);
     expect(container.querySelector('.landing-creations style')).not.toBeInTheDocument();
     expect(Array.from(creationSources)).toEqual(

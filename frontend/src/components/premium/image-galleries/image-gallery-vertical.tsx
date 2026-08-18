@@ -122,7 +122,7 @@ function GalleryColumns({
     <div
       className={cn(
         hasHeader ? 'mt-5' : 'mt-0',
-        'image-gallery-vertical__columns h-[36rem] grid-cols-2 gap-2 overflow-hidden sm:h-[42rem] sm:gap-3',
+        'image-gallery-vertical__columns grid-cols-2 gap-2 sm:gap-3',
         className,
       )}
       style={style}

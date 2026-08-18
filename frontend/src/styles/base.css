@@ -817,7 +817,9 @@ video {
   align-items: center;
   justify-items: center;
   gap: 0;
-  transform: translateX(-50%);
+  /* Use a margin offset instead of transform so docked composers can escape
+     this content container and remain fixed to the viewport while scrolling. */
+  margin-left: calc(-1 * min(470px, (100vw - 144px) / 2));
   text-align: center;
 }
 .landing-hero__content h1 {
@@ -3022,6 +3024,7 @@ video {
     left: 50%;
     width: min(900px, calc(100% - 40px));
     top: 132px;
+    margin-left: calc(-1 * min(450px, (100vw - 40px) / 2));
   }
   .landing-hero__content h1 {
     font-size: 3.5rem;
@@ -8405,4 +8408,101 @@ video {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* Keep the two creation surfaces on the same rounded geometry while allowing
+   the discover page to retain its refractive material treatment. */
+.studio-agent-input.border-glow-card {
+  --border-radius: 30px !important;
+  border-radius: 30px;
+}
+.studio-agent-input.border-glow-card > .border-glow-inner,
+.studio-agent-input .agent-chat-input__surface {
+  border-radius: 30px;
+}
+
+/* Discover composer: the compact dock is a single, quiet pill. A prompt or
+   reference image promotes it back to the full two-row composer. */
+.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer {
+  width: min(560px, calc(100vw - var(--sidebar-width) - 64px));
+  border-radius: 999px;
+  --border-radius: 999px !important;
+  border-color: rgb(205 231 251 / 0.16) !important;
+  background: rgb(10 19 31 / 0.78) !important;
+  box-shadow:
+    0 18px 46px -28px rgb(0 0 0 / 0.96),
+    inset 0 1px 0 rgb(235 247 255 / 0.1) !important;
+  backdrop-filter: blur(18px) saturate(1.16);
+  -webkit-backdrop-filter: blur(18px) saturate(1.16);
+}
+.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer > .border-glow-inner,
+.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer__surface,
+.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__surface {
+  border-radius: 999px;
+}
+.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__textarea {
+  min-height: 54px !important;
+  max-height: 54px !important;
+  padding: 15px 92px 10px 58px !important;
+  white-space: nowrap;
+}
+.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__streaming-placeholder {
+  top: 19px;
+  right: 96px;
+  left: 64px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__toolbar {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  left: 8px;
+  z-index: 3;
+  width: auto;
+  min-height: 40px;
+  padding: 0;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__toolbar-group:first-child {
+  display: flex;
+  margin: 0;
+  pointer-events: auto;
+}
+.landing-composer-anchor.is-docked:not(.is-expanded)
+  .agent-chat-input__toolbar-group:first-child
+  .agent-chat-input__agent-trigger,
+.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__toolbar-content {
+  display: none;
+}
+.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__toolbar-group--end {
+  display: flex;
+  margin: 0 0 0 auto;
+  pointer-events: auto;
+}
+.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__submit {
+  width: 52px;
+  min-width: 52px;
+  height: 40px;
+  border-radius: 999px;
+  border-color: rgb(232 242 255 / 0.14);
+  background: rgb(210 226 244 / 0.14);
+  color: rgb(230 240 251 / 0.78);
+}
+.landing-composer-anchor.is-docked.is-expanded .landing-composer {
+  border-color: rgb(205 231 251 / 0.16) !important;
+  background: linear-gradient(180deg, rgb(73 87 95 / 0.64) 0%, rgb(42 54 62 / 0.7) 100%) !important;
+  box-shadow: 0 20px 54px -36px rgb(0 3 10 / 0.9);
+  backdrop-filter: blur(20px) saturate(1.18);
+  -webkit-backdrop-filter: blur(20px) saturate(1.18);
+}
+.landing-composer-anchor.is-docked.is-expanded .landing-composer .agent-chat-input__surface {
+  background: transparent;
+}
+@media (max-width: 860px) {
+  .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer {
+    width: calc(100vw - 32px);
+  }
 }

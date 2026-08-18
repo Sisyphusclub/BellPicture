@@ -116,6 +116,152 @@ const HERO_ENTRIES: HistoryEntry[] = [
     imageUrl: '/media/hero-card-plants-detail.jpg',
   },
 ];
+const TEMPLATE_ENTRIES: HistoryEntry[] = [
+  {
+    record: {
+      id: 'nebulens-template-01',
+      createdAt: '2026-07-28T00:00:00.000Z',
+      prompt: '复古编辑风格的城市生活方式海报，柔和颗粒与留白排版',
+      model: 'gpt-image-2',
+      width: 1024,
+      height: 1280,
+      isPublic: true,
+    },
+    imageUrl: '/media/templates/template-01.webp',
+  },
+  {
+    record: {
+      id: 'nebulens-template-02',
+      createdAt: '2026-07-28T00:00:00.000Z',
+      prompt: '现代建筑与自然材质组成的品牌视觉，克制蓝灰色调',
+      model: 'gpt-image-2',
+      width: 1280,
+      height: 1024,
+      isPublic: true,
+    },
+    imageUrl: '/media/templates/template-02.webp',
+  },
+  {
+    record: {
+      id: 'nebulens-template-03',
+      createdAt: '2026-07-28T00:00:00.000Z',
+      prompt: '柔光人像与抽象色块结合的杂志封面，轻盈且有层次',
+      model: 'gpt-image-2',
+      width: 1024,
+      height: 1280,
+      isPublic: true,
+    },
+    imageUrl: '/media/templates/template-03.webp',
+  },
+  {
+    record: {
+      id: 'nebulens-template-04',
+      createdAt: '2026-07-28T00:00:00.000Z',
+      prompt: '明亮室内空间的产品静物摄影，玻璃、金属与柔和阴影',
+      model: 'gpt-image-2',
+      width: 1280,
+      height: 1024,
+      isPublic: true,
+    },
+    imageUrl: '/media/templates/template-04.webp',
+  },
+  {
+    record: {
+      id: 'nebulens-template-05',
+      createdAt: '2026-07-28T00:00:00.000Z',
+      prompt: '电影感夜景中的人物剪影，深蓝天空与橙色灯光平衡',
+      model: 'gpt-image-2',
+      width: 1024,
+      height: 1280,
+      isPublic: true,
+    },
+    imageUrl: '/media/templates/template-05.webp',
+  },
+  {
+    record: {
+      id: 'nebulens-template-06',
+      createdAt: '2026-07-28T00:00:00.000Z',
+      prompt: '清透自然风格的植物与器物组合，适合社交媒体视觉',
+      model: 'gpt-image-2',
+      width: 1280,
+      height: 1024,
+      isPublic: true,
+    },
+    imageUrl: '/media/templates/template-06.webp',
+  },
+  {
+    record: {
+      id: 'nebulens-template-07',
+      createdAt: '2026-07-28T00:00:00.000Z',
+      prompt: '实验性字体与霓虹灯影交错的音乐活动海报，强烈但保持秩序',
+      model: 'gpt-image-2',
+      width: 1024,
+      height: 1280,
+      isPublic: true,
+    },
+    imageUrl: '/media/templates/template-07.webp',
+  },
+  {
+    record: {
+      id: 'nebulens-template-08',
+      createdAt: '2026-07-28T00:00:00.000Z',
+      prompt: '自然光下的旅行纪念册页面，手写标注与照片拼贴',
+      model: 'gpt-image-2',
+      width: 1280,
+      height: 1024,
+      isPublic: true,
+    },
+    imageUrl: '/media/templates/template-08.webp',
+  },
+  {
+    record: {
+      id: 'nebulens-template-09',
+      createdAt: '2026-07-28T00:00:00.000Z',
+      prompt: '柔和暖色的咖啡品牌包装静物，纸张纹理与细致阴影',
+      model: 'gpt-image-2',
+      width: 1024,
+      height: 1280,
+      isPublic: true,
+    },
+    imageUrl: '/media/templates/template-09.webp',
+  },
+  {
+    record: {
+      id: 'nebulens-template-10',
+      createdAt: '2026-07-28T00:00:00.000Z',
+      prompt: '未来实验室中的透明材质与冷光设备，电影感产品概念图',
+      model: 'gpt-image-2',
+      width: 1280,
+      height: 1024,
+      isPublic: true,
+    },
+    imageUrl: '/media/templates/template-10.webp',
+  },
+  {
+    record: {
+      id: 'nebulens-template-11',
+      createdAt: '2026-07-28T00:00:00.000Z',
+      prompt: '极简家居与植物构成的生活方式广告，干净背景与自然色彩',
+      model: 'gpt-image-2',
+      width: 1024,
+      height: 1280,
+      isPublic: true,
+    },
+    imageUrl: '/media/templates/template-11.webp',
+  },
+  {
+    record: {
+      id: 'nebulens-template-12',
+      createdAt: '2026-07-28T00:00:00.000Z',
+      prompt: '复古旅行海报与现代几何图形融合的视觉，低饱和撞色',
+      model: 'gpt-image-2',
+      width: 1280,
+      height: 1024,
+      isPublic: true,
+    },
+    imageUrl: '/media/templates/template-12.webp',
+  },
+];
 // Interleave portrait, landscape, and square assets so CSS columns balance naturally.
 const TODAY_CREATIONS = [
   HERO_ENTRIES[3]!,
@@ -124,6 +270,18 @@ const TODAY_CREATIONS = [
   HERO_ENTRIES[0]!,
   HERO_ENTRIES[5]!,
   HERO_ENTRIES[2]!,
+  TEMPLATE_ENTRIES[0]!,
+  TEMPLATE_ENTRIES[1]!,
+  TEMPLATE_ENTRIES[2]!,
+  TEMPLATE_ENTRIES[3]!,
+  TEMPLATE_ENTRIES[4]!,
+  TEMPLATE_ENTRIES[5]!,
+  TEMPLATE_ENTRIES[6]!,
+  TEMPLATE_ENTRIES[7]!,
+  TEMPLATE_ENTRIES[8]!,
+  TEMPLATE_ENTRIES[9]!,
+  TEMPLATE_ENTRIES[10]!,
+  TEMPLATE_ENTRIES[11]!,
 ] as const;
 const TODAY_GALLERY_IMAGES: GalleryImage[] = TODAY_CREATIONS.map((entry) => ({
   id: entry.record.id,
@@ -147,6 +305,8 @@ export function LandingView() {
   const [selected, setSelected] = useState<HistoryEntry | null>(null);
   const [composerDocked, setComposerDocked] = useState(false);
   const [composerExpanded, setComposerExpanded] = useState(false);
+  const composerHasContent = prompt.trim().length > 0 || attachments.length > 0;
+  const composerIsExpanded = composerDocked && (composerExpanded || composerHasContent);
 
   useEffect(() => {
     const savedScroll = Number(sessionStorage.getItem(LANDING_SCROLL_KEY));
@@ -179,7 +339,7 @@ export function LandingView() {
       const anchor = composerAnchorRef.current;
       if (!anchor) return;
 
-      const shouldDock = window.scrollY > 120 && anchor.getBoundingClientRect().bottom <= 96;
+      const shouldDock = window.scrollY > 120 && anchor.getBoundingClientRect().bottom <= 180;
       setComposerDocked(shouldDock);
       if (!shouldDock) setComposerExpanded(false);
     };
@@ -220,7 +380,13 @@ export function LandingView() {
         'error',
       );
     }
-    setAttachments(next.slice(0, MAX_REFERENCE_IMAGES));
+    const limited = next.slice(0, MAX_REFERENCE_IMAGES);
+    setAttachments(limited);
+    if (composerDocked && limited.length === 0 && !prompt.trim()) setComposerExpanded(false);
+  };
+  const updatePrompt = (value: string): void => {
+    setPrompt(value);
+    if (composerDocked && !value.trim() && attachments.length === 0) setComposerExpanded(false);
   };
   const submitPrompt = (
     value: string,
@@ -301,9 +467,9 @@ export function LandingView() {
           <LiquidGlassSurface
             backdropVideoSrc={HERO_VIDEO}
             anchorRef={composerAnchorRef}
-            className={`landing-composer-anchor${composerDocked ? ' is-docked' : ''}${composerExpanded ? ' is-expanded' : ''}`}
+            className={`landing-composer-anchor${composerDocked ? ' is-docked' : ''}${composerIsExpanded ? ' is-expanded' : ''}`}
             data-docked={composerDocked}
-            data-expanded={composerExpanded}
+            data-expanded={composerIsExpanded}
             onPointerDownCapture={(event) => {
               const target = event.target as HTMLElement;
               if (composerDocked && target.closest('.agent-chat-input__textarea')) {
@@ -316,10 +482,19 @@ export function LandingView() {
                 setComposerExpanded(true);
               }
             }}
+            onBlurCapture={(event) => {
+              if (
+                composerDocked &&
+                !event.currentTarget.contains(event.relatedTarget as Node | null) &&
+                !composerHasContent
+              ) {
+                setComposerExpanded(false);
+              }
+            }}
           >
             <AgentChatInput
               value={prompt}
-              onValueChange={setPrompt}
+              onValueChange={updatePrompt}
               onSubmit={({ text, attachments: selectedAttachments }) =>
                 submitPrompt(text, selectedAttachments)
               }
