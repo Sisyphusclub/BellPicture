@@ -48,6 +48,36 @@ function canUseLiquidGlass(): boolean {
   }
 }
 
+function waitForVideoFrame(video: HTMLVideoElement, signal: AbortSignal): Promise<boolean> {
+  if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) return Promise.resolve(true);
+
+  return new Promise((resolve) => {
+    const finish = (ready: boolean) => {
+      video.removeEventListener('loadeddata', handleReady);
+      video.removeEventListener('canplay', handleReady);
+      video.removeEventListener('error', handleFailure);
+      signal.removeEventListener('abort', handleAbort);
+      resolve(ready);
+    };
+    const handleReady = () => finish(true);
+    const handleFailure = () => finish(false);
+    const handleAbort = () => finish(false);
+
+    video.addEventListener('loadeddata', handleReady, { once: true });
+    video.addEventListener('canplay', handleReady, { once: true });
+    video.addEventListener('error', handleFailure, { once: true });
+    signal.addEventListener('abort', handleAbort, { once: true });
+  });
+}
+
+function waitForRenderedFrame(signal: AbortSignal): Promise<boolean> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve(!signal.aborted));
+    });
+  });
+}
+
 export function LiquidGlassSurface({
   children,
   reducedMotion = false,
@@ -69,9 +99,16 @@ export function LiquidGlassSurface({
 
     let disposed = false;
     let instance: LiquidGlass | null = null;
+    const controller = new AbortController();
 
     const initialize = async (): Promise<void> => {
       try {
+        const backdrop = backdropRef.current;
+        if (backdropVideoSrc && backdrop) {
+          const hasVideoFrame = await waitForVideoFrame(backdrop, controller.signal);
+          if (!hasVideoFrame || disposed) return;
+        }
+
         const nextInstance = await LiquidGlass.init({
           root,
           glassElements: [target],
@@ -86,6 +123,8 @@ export function LiquidGlassSurface({
         // surface is decorative, so restore normal text selection for the input.
         root.style.userSelect = 'auto';
         root.style.webkitUserSelect = 'auto';
+        const hasRenderedFrame = await waitForRenderedFrame(controller.signal);
+        if (!hasRenderedFrame || disposed) return;
         root.dataset.liquidglassReady = 'true';
       } catch {
         // Keep the CSS surface visible when WebGL or foreignObject capture is unavailable.
@@ -97,10 +136,11 @@ export function LiquidGlassSurface({
 
     return () => {
       disposed = true;
+      controller.abort();
       instance?.destroy();
       delete root.dataset.liquidglassReady;
     };
-  }, [reducedMotion]);
+  }, [backdropVideoSrc, reducedMotion]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -148,6 +188,7 @@ export function LiquidGlassSurface({
       }}
       className={`landing-liquidglass-root ${className}`.trim()}
       data-liquidglass-root="true"
+      data-liquidglass-ready="false"
       data-liquidglass-video={backdropVideoSrc ? 'true' : undefined}
     >
       {backdropVideoSrc ? (
@@ -159,7 +200,7 @@ export function LiquidGlassSurface({
           muted
           loop={!reducedMotion}
           playsInline
-          preload="metadata"
+          preload="auto"
           crossOrigin="anonymous"
           aria-hidden="true"
           tabIndex={-1}

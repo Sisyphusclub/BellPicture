@@ -191,6 +191,7 @@ describe('React application routes', () => {
     const landingTarget = landingRoot?.querySelector('[data-liquidglass-target="true"]');
     const landingComposer = container.querySelector('[data-slot="agent-chat-input"]');
     expect(landingRoot).toBeInTheDocument();
+    expect(landingRoot).toHaveAttribute('data-liquidglass-ready', 'false');
     expect(landingTarget).toBeInTheDocument();
     expect(landingRoot?.querySelector('.landing-liquidglass-backdrop')).toBeInTheDocument();
     expect(landingTarget?.getAttribute('data-config')).toContain('"refraction":0.58');
