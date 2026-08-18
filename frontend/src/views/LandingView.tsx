@@ -296,6 +296,7 @@ export function LandingView() {
   const { notify } = useToast();
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const composerAnchorRef = useRef<HTMLDivElement>(null);
+  const composerDockedRef = useRef(false);
   const [videoFailed, setVideoFailed] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<AgentChatAttachment[]>([]);
@@ -339,7 +340,10 @@ export function LandingView() {
       const anchor = composerAnchorRef.current;
       if (!anchor) return;
 
-      const shouldDock = window.scrollY > 120 && anchor.getBoundingClientRect().bottom <= 180;
+      const shouldDock =
+        window.scrollY > 120 &&
+        (composerDockedRef.current || anchor.getBoundingClientRect().bottom <= 240);
+      composerDockedRef.current = shouldDock;
       setComposerDocked(shouldDock);
       if (!shouldDock) setComposerExpanded(false);
     };

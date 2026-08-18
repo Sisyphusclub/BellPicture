@@ -8442,14 +8442,32 @@ video {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
+.landing-composer-anchor.is-docked {
+  position: fixed !important;
+  z-index: 48;
+  top: auto !important;
+  right: auto !important;
+  bottom: 16px !important;
+  left: calc(50% + 32px);
+  width: min(940px, calc(100vw - 210px));
+  min-height: 0;
+  margin: 0 !important;
+  transform: translateX(-50%);
+}
+.landing-composer-anchor.is-docked .landing-composer {
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  max-width: none;
+  margin: 0;
+  transform: none !important;
+}
+.landing-composer-anchor.is-docked:not(.is-expanded) {
+  width: min(560px, calc(100vw - var(--sidebar-width) - 64px));
+}
 .landing-composer-anchor.is-docked > .landing-liquidglass-target > canvas {
   opacity: 0;
   visibility: hidden;
-}
-.landing-composer-anchor.is-docked .landing-composer {
-  position: fixed !important;
-  top: auto !important;
-  bottom: 16px !important;
 }
 .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer > .border-glow-inner,
 .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer__surface,
@@ -8518,6 +8536,11 @@ video {
   background: transparent;
 }
 @media (max-width: 860px) {
+  .landing-composer-anchor.is-docked,
+  .landing-composer-anchor.is-docked:not(.is-expanded) {
+    left: 50%;
+    width: calc(100vw - 32px);
+  }
   .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer {
     width: calc(100vw - 32px);
   }
