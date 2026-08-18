@@ -8545,3 +8545,57 @@ video {
     width: calc(100vw - 32px);
   }
 }
+
+/* The compact dock must remain legible over the nearly-black gallery. Keep a
+   quiet glass treatment, but give the surface and its empty-state copy enough
+   contrast to read without hover or focus. */
+.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer {
+  --card-bg: rgb(30 42 57 / 0.96) !important;
+  border: 1px solid rgb(222 235 249 / 0.34) !important;
+  background: linear-gradient(
+    180deg,
+    rgb(43 57 74 / 0.96) 0%,
+    rgb(24 34 48 / 0.98) 100%
+  ) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.16),
+    inset 0 -1px 0 rgb(123 169 211 / 0.18),
+    0 18px 46px -28px rgb(0 0 0 / 0.98),
+    0 0 0 1px rgb(195 224 249 / 0.08) !important;
+  backdrop-filter: blur(20px) saturate(1.18);
+  -webkit-backdrop-filter: blur(20px) saturate(1.18);
+}
+.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer > .border-glow-inner,
+.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer .agent-chat-input__surface {
+  background: transparent !important;
+}
+.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer .agent-chat-input__textarea {
+  color: rgb(242 244 247 / 0.96);
+  caret-color: rgb(232 243 255 / 0.96);
+}
+.landing-composer-anchor.is-docked:not(.is-expanded)
+  .landing-composer
+  .agent-chat-input__textarea[data-empty='true']::before {
+  color: rgb(222 232 243 / 0.82) !important;
+}
+.landing-composer-anchor.is-docked:not(.is-expanded)
+  .landing-composer
+  .agent-chat-input__streaming-placeholder-text {
+  background-image: linear-gradient(90deg, #f2f4f7 0%, #d8e9ff 54%, #ece4ff 100%);
+}
+.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer .agent-chat-input__submit {
+  border-color: rgb(244 248 255 / 0.36);
+  background: rgb(238 245 255 / 0.22);
+  color: rgb(247 250 255 / 0.96);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    0 4px 14px -10px rgb(184 215 247 / 0.9);
+}
+.landing-composer-anchor.is-docked:not(.is-expanded)
+  .landing-composer
+  .agent-chat-input__submit:hover {
+  background: rgb(245 249 255 / 0.32);
+}
+.landing-composer-anchor.is-docked::before {
+  display: none;
+}
