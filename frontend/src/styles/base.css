@@ -8344,14 +8344,19 @@ video {
 .app-shell--generate .app-main--generate::before {
   display: none;
 }
+.app-main--generate {
+  padding-left: 0;
+}
 .app-shell--generate .generation-console {
   width: 100%;
   max-width: none;
   min-height: 100svh;
+  padding-left: calc(var(--sidebar-width) + 40px);
+  padding-right: 40px;
   background-color: var(--background);
   background-image: radial-gradient(
     circle,
-    color-mix(in oklch, var(--border-strong) 48%, transparent) 0.9px,
+    color-mix(in oklch, var(--foreground) 12%, transparent) 1px,
     transparent 1px
   );
   background-position: 4px 4px;
@@ -8367,7 +8372,12 @@ video {
   left: var(--sidebar-width);
 }
 @media (max-width: 860px) {
+  .app-main--generate {
+    padding-left: 0;
+  }
   .app-shell--generate .generation-console {
+    padding-right: 18px;
+    padding-left: 18px;
     background-size: 16px 16px;
   }
   .app-shell--generate .generation-console.has-results::after {
