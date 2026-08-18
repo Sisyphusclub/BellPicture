@@ -8435,6 +8435,22 @@ video {
   backdrop-filter: blur(18px) saturate(1.16);
   -webkit-backdrop-filter: blur(18px) saturate(1.16);
 }
+.landing-composer-anchor.is-docked > .landing-liquidglass-target {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.landing-composer-anchor.is-docked > .landing-liquidglass-target > canvas {
+  opacity: 0;
+  visibility: hidden;
+}
+.landing-composer-anchor.is-docked .landing-composer {
+  position: fixed !important;
+  top: auto !important;
+  bottom: 16px !important;
+}
 .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer > .border-glow-inner,
 .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer__surface,
 .landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__surface {
