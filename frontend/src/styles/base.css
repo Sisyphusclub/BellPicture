@@ -1312,7 +1312,8 @@ video {
   content: '';
   pointer-events: none;
 }
-.landing-composer-anchor.is-docked .landing-composer {
+.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer,
+.landing-composer-anchor.is-docked.is-expanded .landing-composer {
   position: fixed;
   z-index: 48;
   bottom: 22px;
@@ -8546,55 +8547,69 @@ video {
   }
 }
 
-/* The compact dock must remain legible over the nearly-black gallery. Keep a
-   quiet glass treatment, but give the surface and its empty-state copy enough
-   contrast to read without hover or focus. */
-.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer {
-  --card-bg: rgb(30 42 57 / 0.96) !important;
-  border: 1px solid rgb(222 235 249 / 0.34) !important;
-  background: linear-gradient(
-    180deg,
-    rgb(43 57 74 / 0.96) 0%,
-    rgb(24 34 48 / 0.98) 100%
-  ) !important;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.16),
-    inset 0 -1px 0 rgb(123 169 211 / 0.18),
-    0 18px 46px -28px rgb(0 0 0 / 0.98),
-    0 0 0 1px rgb(195 224 249 / 0.08) !important;
-  backdrop-filter: blur(20px) saturate(1.18);
-  -webkit-backdrop-filter: blur(20px) saturate(1.18);
+/* Keep the fixed discover composer on the beUI Agent Chat Input contract. The
+   dock only changes its footprint; the surface, tokens, and control sizes stay
+   aligned with the source component. */
+.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer,
+.landing-composer-anchor.is-docked.is-expanded .landing-composer {
+  --card-bg: var(--card) !important;
+  --border-radius: 20px !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 20px;
+  background: var(--card) !important;
+  box-shadow: 0 16px 36px -26px rgb(0 0 0 / 0.9);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer > .border-glow-inner,
-.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer .agent-chat-input__surface {
-  background: transparent !important;
+.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer .agent-chat-input__surface,
+.landing-composer-anchor.is-docked.is-expanded .landing-composer > .border-glow-inner,
+.landing-composer-anchor.is-docked.is-expanded .landing-composer .agent-chat-input__surface {
+  border-radius: 17px;
+  background: var(--card) !important;
 }
 .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer .agent-chat-input__textarea {
-  color: rgb(242 244 247 / 0.96);
-  caret-color: rgb(232 243 255 / 0.96);
+  min-height: 52px !important;
+  max-height: 52px !important;
+  padding: 12px 78px 8px 52px !important;
+  color: var(--foreground);
+  caret-color: var(--foreground);
 }
 .landing-composer-anchor.is-docked:not(.is-expanded)
   .landing-composer
-  .agent-chat-input__textarea[data-empty='true']::before {
-  color: rgb(222 232 243 / 0.82) !important;
+  .agent-chat-input__streaming-placeholder {
+  top: 17px;
+  right: 82px;
+  left: 58px;
+  font-size: 15px;
 }
 .landing-composer-anchor.is-docked:not(.is-expanded)
   .landing-composer
   .agent-chat-input__streaming-placeholder-text {
-  background-image: linear-gradient(90deg, #f2f4f7 0%, #d8e9ff 54%, #ece4ff 100%);
-}
-.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer .agent-chat-input__submit {
-  border-color: rgb(244 248 255 / 0.36);
-  background: rgb(238 245 255 / 0.22);
-  color: rgb(247 250 255 / 0.96);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.22),
-    0 4px 14px -10px rgb(184 215 247 / 0.9);
+  color: var(--muted-foreground);
+  background: none;
+  -webkit-text-fill-color: currentcolor;
 }
 .landing-composer-anchor.is-docked:not(.is-expanded)
   .landing-composer
-  .agent-chat-input__submit:hover {
-  background: rgb(245 249 255 / 0.32);
+  .agent-chat-input__textarea[data-empty='true']::before {
+  color: var(--muted-foreground) !important;
+}
+.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer .agent-chat-input__submit {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: none;
+}
+.landing-composer-anchor.is-docked:not(.is-expanded)
+  .landing-composer
+  .agent-chat-input__submit:disabled {
+  background: var(--muted);
+  color: var(--muted-foreground);
 }
 .landing-composer-anchor.is-docked::before {
   display: none;
