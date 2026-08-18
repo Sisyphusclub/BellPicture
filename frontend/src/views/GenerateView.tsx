@@ -2,10 +2,13 @@ import {
   ArrowDown,
   ArrowDownToLine,
   CircleAlert,
+  Compass,
   Copy,
   Download,
+  FolderOpen,
   Globe2,
   ImagePlus,
+  LayoutTemplate,
   Lock,
   Minus,
   Pencil,
@@ -24,6 +27,7 @@ import { GenerationHistoryFlyout } from '@/components/generation/GenerationHisto
 import { ImageGenerationPlaceholder } from '@/components/generation/ImageGenerationPlaceholder';
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
 import { LandingAccountActions } from '@/components/landing/LandingAccountActions';
+import { LandingSidebar } from '@/components/landing/LandingSidebar';
 import { AgentChatInput } from '@/components/premium/agent-chat-input/agent-chat-input';
 import type { AgentChatAttachment } from '@/components/premium/agent-chat-input/types';
 import { MorphicCard } from '@/components/premium/morphic-card-modal';
@@ -107,6 +111,13 @@ const ASPECT_MENU_OPTIONS = ASPECT_RATIOS.map((value) => ({
   value,
   label: ASPECT_RATIO_LABELS[value],
 }));
+
+const GENERATE_NAV_ITEMS = [
+  { label: '发现', to: '/', icon: Compass },
+  { label: '生图', to: '/generate', icon: ImagePlus },
+  { label: '创作模板', to: '/templates', icon: LayoutTemplate },
+  { label: '资产', to: '/history', icon: FolderOpen },
+] as const;
 
 function isAspectRatio(value: string | null): value is AspectRatio {
   return value !== null && (ASPECT_RATIOS as readonly string[]).includes(value);
@@ -953,6 +964,21 @@ export function GenerateView() {
       data-view="generate"
       aria-label="图像生成工作区"
     >
+      <LandingSidebar
+        accountName={accountName}
+        brandLabel="Nebulens"
+        creditsRemaining={quota?.remaining ?? '—'}
+        ctaLabel="返回发现"
+        ctaTo="/"
+        checkedInToday={quota?.checkedInToday ?? false}
+        dailyCheckInReward={quota?.dailyCheckInReward ?? 5}
+        isAuthenticated={isAuthenticated}
+        items={GENERATE_NAV_ITEMS}
+        logoSrc="/brand/logo.png"
+        onCheckIn={checkIn}
+        onLogin={openAuthModal}
+        onNotify={notify}
+      />
       <LandingAccountActions
         accountName={accountName}
         checkedInToday={quota?.checkedInToday ?? false}

@@ -389,33 +389,19 @@ describe('React application routes', () => {
     expect(generate.queryByRole('region', { name: '本次创作结果' })).not.toBeInTheDocument();
   });
 
-  it('creates a generation session and supports inline renaming from the sidebar', async () => {
-    const user = userEvent.setup();
-    const { container } = renderRoute('/generate');
+  it('uses the discovery navigation state without the workspace session controls', () => {
+    renderRoute('/generate');
 
-    expect(screen.getByRole('region', { name: '最近会话' })).toHaveTextContent(
-      '生成后会自动记录在这里',
+    const navigation = screen.getByRole('navigation', { name: '首页导航' });
+    expect(within(navigation).getByRole('link', { name: '生图' })).toHaveAttribute(
+      'aria-current',
+      'page',
     );
-    await user.click(screen.getByRole('link', { name: '新建生成' }));
-
-    const untitledSession = screen.getByRole('link', { name: '未命名会话' });
-    expect(untitledSession).toHaveAttribute('href', expect.stringMatching(/^\/generate\?session=/));
-    expect(container.querySelector('.sidebar-session')).toHaveClass('is-active');
-
-    await user.click(screen.getByRole('button', { name: '会话选项：未命名会话' }));
-    await user.click(screen.getByRole('menuitem', { name: '重命名' }));
-    await user.type(screen.getByRole('textbox', { name: '会话名称' }), '霓虹城市方案');
-    await user.keyboard('{Enter}');
-
-    expect(screen.getByRole('link', { name: '霓虹城市方案' })).toBeInTheDocument();
-    expect(screen.queryByRole('textbox', { name: '会话名称' })).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole('link', { name: '新建生成' }));
-    expect(screen.getByRole('link', { name: '霓虹城市方案' })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /会话选项/ })).toHaveLength(2);
+    expect(screen.queryByRole('region', { name: '最近会话' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '新建生成' })).not.toBeInTheDocument();
   });
 
-  it('keeps generated results when switching between recent sessions repeatedly', async () => {
+  it('keeps generated results when submitting multiple prompts in the active session', async () => {
     generation.generate
       .mockResolvedValueOnce({
         batchId: 'session-a-batch',
@@ -468,49 +454,24 @@ describe('React application routes', () => {
     const user = userEvent.setup();
     renderRoute('/generate');
 
-    await user.click(screen.getByRole('link', { name: '新建生成' }));
     await user.type(screen.getByRole('textbox', { name: '图像提示词' }), '橙色机械城市');
     await user.click(screen.getByRole('button', { name: '生成图片' }));
     expect(await screen.findByRole('button', { name: '查看图片：橙色机械城市' })).toBeVisible();
 
-    await user.click(screen.getByRole('link', { name: '新建生成' }));
-    await user.type(screen.getByRole('textbox', { name: '图像提示词' }), '蓝色玻璃森林');
+    const promptInput = screen.getByRole('textbox', { name: '图像提示词' });
+    await user.clear(promptInput);
+    await user.type(promptInput, '蓝色玻璃森林');
     await user.click(screen.getByRole('button', { name: '生成图片' }));
     expect(await screen.findByRole('button', { name: '查看图片：蓝色玻璃森林' })).toBeVisible();
-
-    await user.click(screen.getByRole('link', { name: '橙色机械城市' }));
-    expect(await screen.findByRole('button', { name: '查看图片：橙色机械城市' })).toBeVisible();
-    expect(
-      screen.queryByRole('button', { name: '查看图片：蓝色玻璃森林' }),
-    ).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole('link', { name: '蓝色玻璃森林' }));
-    expect(await screen.findByRole('button', { name: '查看图片：蓝色玻璃森林' })).toBeVisible();
-    expect(
-      screen.queryByRole('button', { name: '查看图片：橙色机械城市' }),
-    ).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole('link', { name: '橙色机械城市' }));
-    expect(await screen.findByRole('button', { name: '查看图片：橙色机械城市' })).toBeVisible();
+    expect(screen.getByRole('button', { name: '查看图片：橙色机械城市' })).toBeVisible();
   });
 
-  it('confirms deleting the active generation session without deleting image assets', async () => {
-    const user = userEvent.setup();
+  it('keeps session management hidden while preserving the generation workspace', () => {
     renderRoute('/generate');
 
-    await user.click(screen.getByRole('link', { name: '新建生成' }));
-    await user.click(screen.getByRole('button', { name: '会话选项：未命名会话' }));
-    await user.click(screen.getByRole('menuitem', { name: '删除' }));
-
-    expect(screen.getByRole('alertdialog', { name: '删除历史会话' })).toHaveTextContent(
-      '已生成的图片资产会保留',
-    );
-    await clickDuringMotionHandoff(screen.getByRole('button', { name: '删除会话' }));
-
-    expect(screen.getByRole('region', { name: '最近会话' })).toHaveTextContent(
-      '生成后会自动记录在这里',
-    );
-    expect(screen.queryByRole('link', { name: '未命名会话' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog', { name: '删除历史会话' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: '最近会话' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '新建生成' })).not.toBeInTheDocument();
     expect(screen.getByRole('region', { name: '图像生成工作区' })).toHaveClass('is-empty');
   });
 
@@ -518,13 +479,10 @@ describe('React application routes', () => {
     const user = userEvent.setup();
     renderRoute('/generate');
 
-    await user.click(screen.getByRole('link', { name: '新建生成' }));
     await user.type(screen.getByRole('textbox', { name: '图像提示词' }), '薄雾中的未来海港');
     await user.click(screen.getByRole('button', { name: '生成图片' }));
 
-    await waitFor(() =>
-      expect(screen.getByRole('link', { name: '薄雾中的未来海港' })).toBeInTheDocument(),
-    );
+    await screen.findByRole('button', { name: '生成图片' });
     expect(generation.generate).toHaveBeenCalledTimes(1);
   });
 

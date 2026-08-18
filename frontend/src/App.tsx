@@ -19,7 +19,7 @@ export function App() {
         isGenerate && 'app-shell--generate',
       )}
     >
-      {!isLanding && !isImageDetailModalOpen ? <AppHeader /> : null}
+      {!isLanding && !isGenerate && !isImageDetailModalOpen ? <AppHeader /> : null}
       <main
         className={cn(
           'app-main',
