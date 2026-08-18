@@ -23,6 +23,7 @@ import { useToast } from '@/components/common/ToastProvider';
 import { GenerationHistoryFlyout } from '@/components/generation/GenerationHistoryFlyout';
 import { ImageGenerationPlaceholder } from '@/components/generation/ImageGenerationPlaceholder';
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
+import { LandingAccountActions } from '@/components/landing/LandingAccountActions';
 import { AgentChatInput } from '@/components/premium/agent-chat-input/agent-chat-input';
 import type { AgentChatAttachment } from '@/components/premium/agent-chat-input/types';
 import { MorphicCard } from '@/components/premium/morphic-card-modal';
@@ -383,10 +384,10 @@ export function GenerateView() {
   const location = useLocation();
   const navigate = useNavigate();
   const { notify } = useToast();
-  const { isAuthenticated, isLoading: authLoading, isAdmin } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, isAdmin, logout } = useAuth();
   const history = useImageHistory();
   const { sessions, create: createSession } = useGenerationSessions();
-  const { quota, isLoading: quotaLoading, refresh: refreshQuota } = useImageQuota();
+  const { quota, isLoading: quotaLoading, refresh: refreshQuota, checkIn } = useImageQuota();
   const upload = useFileUpload();
   const { clear: clearUpload, selectFiles: selectUploadFiles } = upload;
   const generation = useImageGeneration();
@@ -425,6 +426,7 @@ export function GenerateView() {
   const [mutatingId, setMutatingId] = useState<string | null>(null);
   const activeSessionId = searchParams.get('session');
   const previousSessionId = useRef<string | null>(activeSessionId);
+  const accountName = user?.username ?? user?.name ?? '账户';
 
   useEffect(() => {
     if (!activeSessionId || previousSessionId.current === activeSessionId) return;
@@ -951,6 +953,17 @@ export function GenerateView() {
       data-view="generate"
       aria-label="图像生成工作区"
     >
+      <LandingAccountActions
+        accountName={accountName}
+        checkedInToday={quota?.checkedInToday ?? false}
+        creditsRemaining={quota?.remaining ?? '—'}
+        dailyCheckInReward={quota?.dailyCheckInReward ?? 5}
+        isAuthenticated={isAuthenticated}
+        onCheckIn={checkIn}
+        onLogin={openAuthModal}
+        onLogout={logout}
+        onNotify={notify}
+      />
       <GenerationHistoryFlyout
         batches={sessionHistoryBatches}
         trackBatchIds={visibleHistoryBatchIds}

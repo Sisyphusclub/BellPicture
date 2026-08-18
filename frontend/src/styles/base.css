@@ -8336,6 +8336,45 @@ video {
   }
 }
 
+/* Keep the generate route aligned with the discovery shell at the final
+   cascade layer, after the workspace defaults have been defined. */
+.app-shell--generate .app-main--generate {
+  background: var(--background);
+}
+.app-shell--generate .app-main--generate::before {
+  display: none;
+}
+.app-shell--generate .generation-console {
+  width: 100%;
+  max-width: none;
+  min-height: 100svh;
+  background-color: var(--background);
+  background-image: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--border-strong) 48%, transparent) 0.9px,
+    transparent 1px
+  );
+  background-position: 4px 4px;
+  background-size: 20px 20px;
+}
+.app-shell--generate .generation-console::before {
+  display: none;
+}
+.app-shell--generate .sidebar-account-area {
+  display: none;
+}
+.app-shell--generate .generation-console.has-results::after {
+  left: var(--sidebar-width);
+}
+@media (max-width: 860px) {
+  .app-shell--generate .generation-console {
+    background-size: 16px 16px;
+  }
+  .app-shell--generate .generation-console.has-results::after {
+    left: 0;
+  }
+}
+
 :root {
   --sidebar: var(--background);
   --sidebar-foreground: var(--foreground);
