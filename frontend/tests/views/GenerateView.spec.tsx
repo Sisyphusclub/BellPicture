@@ -162,7 +162,7 @@ it('keeps the generation workspace prompt plain and focused', () => {
   expect(document.querySelectorAll('.generation-history-track__mark')).toHaveLength(0);
 });
 
-it('keeps generation errors concise and separates the request id', () => {
+it('keeps the composer neutral when a retryable result error is present', () => {
   generation.error = new Error('请求内容无效，请检查提示词和参考图。（请求编号：req-123）');
   const { container } = render(
     <MemoryRouter initialEntries={['/generate']}>
@@ -172,11 +172,11 @@ it('keeps generation errors concise and separates the request id', () => {
     </MemoryRouter>,
   );
 
-  const error = container.querySelector<HTMLElement>('.studio-create-bar__error');
-  expect(error).toBeInTheDocument();
-  expect(error).toHaveTextContent('请求内容无效，请检查提示词和参考图。');
-  expect(error).toHaveTextContent('请求编号 req-123');
-  expect(error).not.toHaveTextContent('（请求编号：req-123）');
+  expect(container.querySelector('.studio-create-bar__error')).not.toBeInTheDocument();
+  expect(container.querySelector('[data-slot="agent-chat-input"]')).toHaveAttribute(
+    'data-status',
+    'ready',
+  );
 });
 
 it('supports up to four images per generation', async () => {

@@ -402,9 +402,6 @@ export function GenerateView() {
   const upload = useFileUpload();
   const { clear: clearUpload, selectFiles: selectUploadFiles } = upload;
   const generation = useImageGeneration();
-  const generationErrorCopy = generation.error
-    ? splitGenerationError(generation.error.message)
-    : null;
   const autoGenerationHandled = useRef(false);
   const [prompt, setPrompt] = useState(searchParams.get('prompt') ?? '');
   const [count, setCount] = useState(() => readCount(searchParams));
@@ -1049,7 +1046,7 @@ export function GenerateView() {
           onValueChange={setPrompt}
           onSubmit={(payload) => submitCurrent(payload.text)}
           onStop={generation.cancel}
-          status={generation.isLoading ? 'streaming' : generation.error ? 'error' : 'ready'}
+          status={generation.isLoading ? 'streaming' : 'ready'}
           placeholder="描述你想生成的画面…"
           ariaLabel="图像提示词"
           submitLabel="生成图片"
@@ -1168,20 +1165,6 @@ export function GenerateView() {
           }
           className="studio-agent-input"
         />
-        {generationErrorCopy ? (
-          <div className="studio-create-bar__error" role="alert">
-            <CircleAlert aria-hidden="true" />
-            <span className="studio-create-bar__error-message">{generationErrorCopy.message}</span>
-            {generationErrorCopy.requestId ? (
-              <small
-                className="studio-create-bar__error-request"
-                title={`请求编号：${generationErrorCopy.requestId}`}
-              >
-                请求编号 {generationErrorCopy.requestId}
-              </small>
-            ) : null}
-          </div>
-        ) : null}
       </div>
 
       {feed.length ? (

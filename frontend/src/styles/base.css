@@ -8182,38 +8182,6 @@ video {
   opacity: 0.48;
 }
 
-.studio-create-bar__error {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: 5px 8px;
-  margin: 8px 12px 0;
-  border-top: 1px solid color-mix(in oklch, var(--destructive) 20%, transparent);
-  padding: 8px 2px 0;
-  color: color-mix(in oklch, var(--destructive) 68%, var(--muted-foreground));
-  font-size: 12px;
-  line-height: 1.45;
-}
-.studio-create-bar__error > svg {
-  width: 14px;
-  height: 14px;
-  margin-top: 1px;
-  color: color-mix(in oklch, var(--destructive) 72%, var(--muted-foreground));
-}
-.studio-create-bar__error-message {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.studio-create-bar__error-request {
-  grid-column: 2;
-  min-width: 0;
-  overflow: hidden;
-  color: color-mix(in oklch, var(--muted-foreground) 82%, transparent);
-  font-size: 10px;
-  line-height: 1.35;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .generation-error-card__request {
   max-width: 100%;
   overflow: hidden;
@@ -8221,12 +8189,6 @@ video {
   font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-@media (max-width: 560px) {
-  .studio-create-bar__error {
-    margin-inline: 8px;
-  }
 }
 
 /* Keep the sidebar account footer compact and anchored to the same left edge
