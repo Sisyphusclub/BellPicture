@@ -848,8 +848,8 @@ video {
   word-spacing: -0.03em;
 }
 .landing-hero__content h1 em {
-  margin-bottom: -0.12em;
-  padding-bottom: 0.12em;
+  margin-bottom: -0.24em;
+  padding-bottom: 0.24em;
   font-family: var(--font-hero-serif);
   font-size: 1.05em;
   font-style: italic;
