@@ -8628,9 +8628,6 @@ video {
    inner spacing come from the shared component tokens. */
 .landing-liquidglass-root.landing-composer-anchor:not(.is-docked) .landing-composer {
   --card-bg: color-mix(in oklch, var(--card) 76%, transparent) !important;
-  --border-radius: 20px !important;
-  border: 1px solid var(--border-strong) !important;
-  border-radius: 20px !important;
   background: color-mix(in oklch, var(--card) 76%, transparent) !important;
   box-shadow: 0 20px 54px -36px rgb(0 0 0 / 0.9);
 }
@@ -8640,7 +8637,6 @@ video {
 .landing-liquidglass-root.landing-composer-anchor:not(.is-docked)
   .landing-composer
   .agent-chat-input__surface {
-  border-radius: 17px !important;
   background: color-mix(in oklch, var(--card) 64%, transparent) !important;
 }
 .landing-liquidglass-root.landing-composer-anchor:not(.is-docked)

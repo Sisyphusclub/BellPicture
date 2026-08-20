@@ -4,7 +4,7 @@
   width: 100%;
   min-height: 137px;
   overflow: visible;
-  --landing-composer-radius: 30px;
+  --landing-composer-radius: 20px;
 }
 
 .landing-liquidglass-backdrop {
@@ -67,16 +67,18 @@
    active, keeping both shells produces the uneven cyan/amber rings visible
    on focused inputs. The target keeps one quiet fallback rim instead. */
 .landing-liquidglass-target .agent-chat-input.border-glow-card {
-  --border-radius: var(--landing-composer-radius) !important;
+  /* The target owns the 1px static rim; the nested glow card sits on its
+     inside edge so its focus ring can expand back to the same 20px outline. */
+  --border-radius: calc(var(--landing-composer-radius) - 1px) !important;
   border-color: transparent !important;
-  border-radius: var(--landing-composer-radius);
+  border-radius: calc(var(--landing-composer-radius) - 1px);
   background: transparent !important;
   box-shadow: none !important;
 }
 
 .landing-liquidglass-target .agent-chat-input.border-glow-card > .border-glow-inner,
 .landing-liquidglass-target .agent-chat-input__surface {
-  border-radius: var(--landing-composer-radius);
+  border-radius: calc(var(--landing-composer-radius) - 4px);
 }
 
 .landing-liquidglass-target .agent-chat-input.border-glow-card::before {
@@ -98,7 +100,7 @@
   /* LiquidGlass reserves a 20px canvas halo for its drop shadow. The
      Discover composer already has its own controlled outer edge, so clip the
      reserved pixels back to the panel and avoid a second visible top layer. */
-  clip-path: inset(20px round 30px);
+  clip-path: inset(20px round var(--landing-composer-radius));
   opacity: 0;
   pointer-events: none;
   visibility: hidden;
@@ -131,21 +133,6 @@
 
 .landing-liquidglass-target .agent-chat-input__surface {
   background: transparent;
-}
-
-@media (max-width: 560px) {
-  .landing-liquidglass-root {
-    --landing-composer-radius: 24px;
-  }
-
-  .landing-liquidglass-backdrop,
-  .landing-liquidglass-target {
-    border-radius: var(--landing-composer-radius);
-  }
-
-  .landing-liquidglass-target > canvas {
-    clip-path: inset(20px round 24px);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

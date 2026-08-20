@@ -18,7 +18,7 @@ const GLASS_DEFAULTS = {
   specular: 0,
   fresnel: 0,
   distortion: 0.012,
-  cornerRadius: 30,
+  cornerRadius: 20,
   zRadius: 10,
   opacity: 0.76,
   saturation: 0.03,

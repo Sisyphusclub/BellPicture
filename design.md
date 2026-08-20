@@ -250,9 +250,11 @@ The prompt composer is the signature product surface. Use the installed beUI Age
   no permanent heavy shadow. Discover may use one cool graphite glass material on this same beUI
   surface through the approved `@ybouane/liquidglass` adapter: a WebGL shader samples a direct
   video backdrop child and applies refraction, blur, chromatic aberration, Fresnel reflection,
-  specular lighting, and a beveled `30px` material radius. Keep the moving hero video perceptible
-  through the prompt area without reducing text contrast. Keep the root overflow available for
-  menus, and provide a CSS opaque fallback when WebGL or foreignObject capture is unavailable.
+  specular lighting, and a beveled `20px` material radius. The inset BorderGlow and content surface
+  use concentric `19px` and `16px` radii so the default rim remains a single uniform outline. Keep
+  the moving hero video perceptible through the prompt area without reducing text contrast. Keep the
+  root overflow available for menus, and provide a CSS opaque fallback when WebGL or foreignObject
+  capture is unavailable.
 - Use ReactBits `BorderGlow` as the composer's only decorative focus effect. Keep a restrained logo-aligned golden orange, cyan, and royal blue mesh while the prompt editor is focused, intensify and orient it as the pointer approaches an edge, and replace pointer tracking with a static focus treatment under `prefers-reduced-motion`.
   On the translucent Discover composer, clip the colored `::before` mesh to a true 1px border ring,
   disable the `::after` interior mesh fill, and retain the pointer-owned outer edge light. The glass
