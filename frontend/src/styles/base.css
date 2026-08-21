@@ -8549,9 +8549,11 @@ video {
 .landing-composer-anchor.is-docked:not(.is-expanded)
   .landing-composer
   .agent-chat-input__streaming-placeholder-text {
-  color: var(--muted-foreground);
-  background: none;
-  -webkit-text-fill-color: currentcolor;
+  color: transparent;
+  background: linear-gradient(90deg, #f3f5fa 0%, #c5d9f2 52%, #efc9ac 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 .landing-composer-anchor.is-docked:not(.is-expanded)
   .landing-composer
@@ -8620,9 +8622,11 @@ video {
 .landing-liquidglass-root.landing-composer-anchor:not(.is-docked)
   .landing-composer
   .agent-chat-input__streaming-placeholder-text {
-  color: var(--muted-foreground);
-  background: none;
-  -webkit-text-fill-color: currentcolor;
+  color: transparent;
+  background: linear-gradient(90deg, #f3f5fa 0%, #c5d9f2 52%, #efc9ac 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Composer parity: Generate keeps its workbench canvas, but the input follows
