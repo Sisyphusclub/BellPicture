@@ -298,6 +298,17 @@ export function HistoryView() {
         </div>
       ) : (
         <>
+          <header className="workspace-heading workspace-heading--compact">
+            <div>
+              <p className="eyebrow">NEBULENS / LIBRARY</p>
+              <h1>资产</h1>
+              <p>集中查看、筛选和复用你的生成结果。</p>
+            </div>
+            <div className="page-count" aria-live="polite">
+              <strong>{filtered.length}</strong>
+              <span>项资产</span>
+            </div>
+          </header>
           <div className="workspace-toolbar asset-toolbar">
             <label className="search-field asset-search">
               <Search aria-hidden="true" />
@@ -309,9 +320,6 @@ export function HistoryView() {
                 placeholder="搜索资产"
               />
             </label>
-            <span className="toolbar-count" aria-live="polite">
-              {filtered.length} 项
-            </span>
             <SelectMenu
               label="日期筛选"
               value={date}

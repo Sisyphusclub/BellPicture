@@ -3529,6 +3529,39 @@ video {
   }
 }
 
+/* Shared workspace headings keep library and account-management routes on the
+   same quiet beUI rhythm without turning operational pages into hero layouts. */
+.workspace-heading--compact {
+  align-items: center;
+  margin-bottom: 18px;
+  gap: 20px;
+}
+.workspace-heading--compact > div:first-child {
+  gap: 6px;
+}
+.workspace-heading--compact h1 {
+  font-size: 28px;
+  letter-spacing: 0;
+}
+.workspace-heading--compact .page-count strong {
+  font-size: 26px;
+}
+.workspace-heading--compact .page-count span {
+  font-size: 12px;
+}
+
+@media (max-width: 680px) {
+  .workspace-heading--compact {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .workspace-heading--compact .page-count {
+    align-self: flex-end;
+  }
+}
+
 /* Shared studio surface
    The product workspace needs a visible working plane so controls and media do not
    collapse into one black canvas. This is intentionally a quiet graphite layer,

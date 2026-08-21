@@ -2,13 +2,10 @@ import {
   ArrowDown,
   ArrowDownToLine,
   CircleAlert,
-  Compass,
   Copy,
   Download,
-  FolderOpen,
   Globe2,
   ImagePlus,
-  LayoutTemplate,
   Lock,
   Minus,
   Pencil,
@@ -40,6 +37,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
 import { openAuthModal } from '@/hooks/useAuthModal';
+import { getAppNavigation } from '@/config/navigation';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import {
   attachGenerationBatch,
@@ -108,13 +106,6 @@ const ASPECT_MENU_OPTIONS = ASPECT_RATIOS.map((value) => ({
   value,
   label: ASPECT_RATIO_LABELS[value],
 }));
-
-const GENERATE_NAV_ITEMS = [
-  { label: '发现', to: '/', icon: Compass },
-  { label: '生图', to: '/generate', icon: ImagePlus },
-  { label: '创作模板', to: '/templates', icon: LayoutTemplate },
-  { label: '资产', to: '/history', icon: FolderOpen },
-] as const;
 
 function isAspectRatio(value: string | null): value is AspectRatio {
   return value !== null && (ASPECT_RATIOS as readonly string[]).includes(value);
@@ -388,7 +379,7 @@ export function GenerateView() {
   const location = useLocation();
   const navigate = useNavigate();
   const { notify } = useToast();
-  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, isAdmin, logout } = useAuth();
   const history = useImageHistory();
   const { sessions, create: createSession } = useGenerationSessions();
   const { quota, isLoading: quotaLoading, refresh: refreshQuota, checkIn } = useImageQuota();
@@ -957,7 +948,7 @@ export function GenerateView() {
         checkedInToday={quota?.checkedInToday ?? false}
         dailyCheckInReward={quota?.dailyCheckInReward ?? 5}
         isAuthenticated={isAuthenticated}
-        items={GENERATE_NAV_ITEMS}
+        items={getAppNavigation(isAdmin)}
         logoSrc="/brand/logo.png"
         onCheckIn={checkIn}
         onLogin={openAuthModal}

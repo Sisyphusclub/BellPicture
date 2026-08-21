@@ -85,6 +85,17 @@ export function TemplatesView() {
 
   return (
     <section className="workspace-page templates-page" data-view="templates" aria-label="创作模板">
+      <header className="workspace-heading workspace-heading--compact">
+        <div>
+          <p className="eyebrow">NEBULENS / LIBRARY</p>
+          <h1>创作模板</h1>
+          <p>从经过整理的提示词和参数组合开始，快速进入生图工作台。</p>
+        </div>
+        <div className="page-count" aria-live="polite">
+          <strong>{filtered.length}</strong>
+          <span>个模板</span>
+        </div>
+      </header>
       <div className="workspace-toolbar template-toolbar">
         <label className="search-field template-search">
           <Search aria-hidden="true" />
@@ -96,9 +107,6 @@ export function TemplatesView() {
             placeholder="搜索模板"
           />
         </label>
-        <span className="toolbar-count" aria-live="polite">
-          {filtered.length} 个模板
-        </span>
         <SelectMenu
           label="模板分类"
           value={category}

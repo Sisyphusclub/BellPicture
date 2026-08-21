@@ -1,4 +1,3 @@
-import { Compass, FolderOpen, ImagePlus, LayoutTemplate } from 'lucide-react';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -20,6 +19,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { openAuthModal } from '@/hooks/useAuthModal';
 import { useImageQuota } from '@/hooks/useImageQuota';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { getAppNavigation } from '@/config/navigation';
 import { buildApiUrl } from '@/services/api/imagesApi';
 import type { AspectChoice, HistoryEntry } from '@/types/image';
 import { DEFAULT_ASPECT_CHOICE, DEFAULT_COUNT, MAX_REFERENCE_IMAGES } from '@/types/image';
@@ -36,12 +36,6 @@ const HERO_SHINY_GRADIENT_STYLE: CSSProperties = {
 };
 const LANDING_SCROLL_KEY = 'nebulens:landing-scroll';
 const LANDING_SCROLL_RESTORE_KEY = 'nebulens:landing-scroll-restore';
-const LANDING_NAV_ITEMS = [
-  { label: '发现', to: '/', icon: Compass },
-  { label: '生图', to: '/generate', icon: ImagePlus },
-  { label: '创作模板', to: '/templates', icon: LayoutTemplate },
-  { label: '资产', to: '/history', icon: FolderOpen },
-] as const;
 const HERO_ENTRIES: HistoryEntry[] = [
   {
     record: {
@@ -291,7 +285,7 @@ const TODAY_GALLERY_IMAGES: GalleryImage[] = TODAY_CREATIONS.map((entry) => ({
 }));
 export function LandingView() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, isAdmin, logout } = useAuth();
   const { quota, isLoading: quotaLoading, checkIn } = useImageQuota();
   const { notify } = useToast();
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
@@ -443,7 +437,7 @@ export function LandingView() {
           checkedInToday={quota?.checkedInToday ?? false}
           dailyCheckInReward={quota?.dailyCheckInReward ?? 5}
           isAuthenticated={isAuthenticated}
-          items={LANDING_NAV_ITEMS}
+          items={getAppNavigation(isAdmin)}
           logoSrc="/brand/logo.png"
           onCheckIn={checkIn}
           onLogin={openAuthModal}
