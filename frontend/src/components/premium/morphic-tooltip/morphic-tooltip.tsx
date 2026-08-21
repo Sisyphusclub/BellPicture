@@ -44,6 +44,7 @@ export type MorphicTooltipProps = MorphicTooltipPlacement & {
   content: ReactNode;
   children: ReactNode;
   disabled?: boolean | undefined;
+  showOnFocus?: boolean | undefined;
   showArrow?: boolean | undefined;
   className?: string | undefined;
   contentClassName?: string | undefined;
@@ -460,6 +461,7 @@ export function MorphicTooltip({
   content,
   children,
   disabled,
+  showOnFocus = true,
   side = 'top',
   align = 'center',
   offset = 10,
@@ -482,6 +484,7 @@ export function MorphicTooltip({
         <MorphicTooltip
           content={content}
           disabled={disabled}
+          showOnFocus={showOnFocus}
           side={side}
           align={align}
           offset={offset}
@@ -536,7 +539,9 @@ export function MorphicTooltip({
       }}
       onPointerDown={closeTooltip}
       onPointerLeave={closeTooltip}
-      onFocusCapture={() => openTooltip('focus')}
+      onFocusCapture={() => {
+        if (showOnFocus) openTooltip('focus');
+      }}
       onBlurCapture={onBlur}
       className={cn('inline-flex', className)}
     >

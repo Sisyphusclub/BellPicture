@@ -35,3 +35,21 @@ it('closes an active tooltip immediately when its trigger unmounts', async () =>
   expect(screen.getByText('编辑器已打开')).toBeInTheDocument();
   await waitFor(() => expect(screen.queryByText('编辑提示词提示')).not.toBeInTheDocument());
 });
+
+it('can keep focus from opening a tooltip while retaining pointer hover help', async () => {
+  const user = userEvent.setup();
+  render(
+    <MorphicTooltipProvider delay={0}>
+      <MorphicTooltip content="关闭图片详情" showOnFocus={false}>
+        <button type="button">关闭</button>
+      </MorphicTooltip>
+    </MorphicTooltipProvider>,
+  );
+
+  const trigger = screen.getByRole('button', { name: '关闭' });
+  trigger.focus();
+  expect(screen.queryByText('关闭图片详情')).not.toBeInTheDocument();
+
+  await user.hover(trigger);
+  expect(await screen.findByText('关闭图片详情')).toBeInTheDocument();
+});

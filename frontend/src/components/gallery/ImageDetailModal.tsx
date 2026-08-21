@@ -64,7 +64,7 @@ export function ImageDetailModal({
         aria-labelledby="image-detail-title"
       >
         <div className="image-detail__close">
-          <IconTooltip label="关闭图片详情" side="left">
+          <IconTooltip label="关闭图片详情" side="left" showOnFocus={false}>
             <Button
               className="icon-button"
               type="button"
