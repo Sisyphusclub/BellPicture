@@ -6,6 +6,7 @@ import './LiquidGlassSurface.css';
 interface LiquidGlassSurfaceProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   reducedMotion?: boolean;
+  liquidGlassEnabled?: boolean;
   backdropVideoSrc?: string;
   anchorRef?: Ref<HTMLDivElement>;
 }
@@ -81,6 +82,7 @@ function waitForRenderedFrame(signal: AbortSignal): Promise<boolean> {
 export function LiquidGlassSurface({
   children,
   reducedMotion = false,
+  liquidGlassEnabled = true,
   backdropVideoSrc,
   anchorRef,
   className = '',
@@ -95,7 +97,7 @@ export function LiquidGlassSurface({
     const target = targetRef.current;
     if (!root || !target) return undefined;
     root.dataset.liquidglassReady = 'false';
-    if (!canUseLiquidGlass()) return undefined;
+    if (!liquidGlassEnabled || !canUseLiquidGlass()) return undefined;
 
     let disposed = false;
     let instance: LiquidGlass | null = null;
@@ -140,12 +142,12 @@ export function LiquidGlassSurface({
       instance?.destroy();
       delete root.dataset.liquidglassReady;
     };
-  }, [backdropVideoSrc, reducedMotion]);
+  }, [backdropVideoSrc, liquidGlassEnabled, reducedMotion]);
 
   useEffect(() => {
     const root = rootRef.current;
     const backdrop = backdropRef.current;
-    if (!root || !backdrop || !backdropVideoSrc) return undefined;
+    if (!root || !backdrop || !backdropVideoSrc || !liquidGlassEnabled) return undefined;
 
     // The hero already owns the visible video. Keep the sampling copy aligned
     // to that same hero rectangle so LiquidGlass does not create a second,
@@ -176,7 +178,7 @@ export function LiquidGlassSurface({
       window.removeEventListener('resize', syncBackdropBounds);
       backdrop.removeEventListener('loadedmetadata', syncBackdropBounds);
     };
-  }, [backdropVideoSrc]);
+  }, [backdropVideoSrc, liquidGlassEnabled]);
 
   return (
     <div

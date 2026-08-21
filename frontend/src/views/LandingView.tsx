@@ -471,6 +471,7 @@ export function LandingView() {
           <LiquidGlassSurface
             backdropVideoSrc={HERO_VIDEO}
             anchorRef={composerAnchorRef}
+            liquidGlassEnabled={!composerDocked}
             className={`landing-composer-anchor${composerDocked ? ' is-docked' : ''}${composerIsExpanded ? ' is-expanded' : ''}`}
             data-docked={composerDocked}
             data-expanded={composerIsExpanded}
