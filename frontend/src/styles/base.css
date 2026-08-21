@@ -3529,6 +3529,29 @@ video {
   }
 }
 
+/* Library routes use the same full-bleed React Flow canvas as the generation
+   workspace. The old inset frame made the template surface read like a card
+   wrapped around the page instead of a continuous working plane. */
+.app-main:not(.app-main--landing):not(.app-main--generate) {
+  background-color: var(--background);
+  background-image: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--border-strong) 46%, transparent) 0.9px,
+    transparent 1px
+  );
+  background-position: 4px 4px;
+  background-size: 20px 20px;
+}
+.app-main:not(.app-main--landing):not(.app-main--generate)::before {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .app-main:not(.app-main--landing):not(.app-main--generate) {
+    background-size: 16px 16px;
+  }
+}
+
 /* Shared workspace headings keep library and account-management routes on the
    same quiet beUI rhythm without turning operational pages into hero layouts. */
 .workspace-heading--compact {
