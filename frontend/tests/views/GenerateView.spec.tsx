@@ -192,11 +192,13 @@ it('supports up to four images per generation', async () => {
   );
 
   const increase = screen.getByRole('button', { name: '增加生成张数' });
+  expect(screen.getByRole('button', { name: '生成图片' })).toHaveTextContent('1');
   await user.click(increase);
   await user.click(increase);
   await user.click(increase);
 
   expect(screen.getByRole('status', { name: '4 张' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '生成图片' })).toHaveTextContent('4');
   expect(increase).toBeDisabled();
   await user.click(screen.getByRole('button', { name: '生成图片' }));
   await waitFor(() =>
@@ -460,7 +462,7 @@ it('matches pending skeleton count and aspect ratio to the requested results', a
   container.querySelectorAll<HTMLElement>('.generation-skeleton__card').forEach((card) => {
     expect(card).toHaveStyle({ aspectRatio: '16 / 9' });
     expect(card).toHaveAttribute('data-orientation', 'landscape');
-    expect(card).toHaveTextContent('16:9 · 标准');
+    expect(card).toHaveTextContent('16:9 · 1K');
     expect(card).toHaveTextContent('正在生成图片');
   });
 
@@ -613,11 +615,11 @@ it('edits a completed prompt and replaces the original generation batch', async 
       prompt: '霓虹雨夜建筑',
       aspectRatio: '16:9',
       count: 1,
-      resolution: '2k',
       isPublic: true,
       referenceIds: ['reference-one.png'],
     }),
   );
+  expect(generation.generate.mock.calls[1]?.[0]).not.toHaveProperty('resolution');
 
   await act(async () => {
     replacement.resolve({
@@ -732,26 +734,24 @@ it('replaces pending skeletons with a retryable error card on failure', async ()
   expect(within(errorCard).getByRole('button', { name: '重试' })).toBeEnabled();
 });
 
-it('shows admins the clarity selector and constrains 4K generation to a supported ratio', async () => {
+it('keeps admin generation fixed to 1K and ignores legacy high-resolution URL settings', async () => {
   const user = userEvent.setup();
   render(
-    <MemoryRouter initialEntries={['/generate?prompt=夜空']}>
+    <MemoryRouter initialEntries={['/generate?prompt=夜空&aspect=2%3A3&resolution=4k']}>
       <ToastProvider>
         <GenerateView />
       </ToastProvider>
     </MemoryRouter>,
   );
 
-  expect(screen.getByRole('radiogroup', { name: '清晰度' })).toBeVisible();
-  await user.click(screen.getByRole('radio', { name: '4K' }));
-
-  expect(screen.getByRole('button', { name: '选择画面比例' })).toHaveTextContent('16:9');
+  expect(screen.queryByRole('radiogroup', { name: '清晰度' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '选择画面比例' })).toHaveTextContent('2:3');
   await user.click(screen.getByRole('button', { name: '生成图片' }));
-  await waitFor(() =>
-    expect(generation.generate).toHaveBeenCalledWith(
-      expect.objectContaining({ resolution: '4k', aspectRatio: '16:9' }),
-    ),
+  await waitFor(() => expect(generation.generate).toHaveBeenCalledTimes(1));
+  expect(generation.generate.mock.calls[0]?.[0]).toEqual(
+    expect.objectContaining({ aspectRatio: '2:3' }),
   );
+  expect(generation.generate.mock.calls[0]?.[0]).not.toHaveProperty('resolution');
 });
 
 it('does not render or submit high-resolution settings for non-admin users', async () => {
@@ -771,7 +771,7 @@ it('does not render or submit high-resolution settings for non-admin users', asy
   expect(generation.generate.mock.calls[0]?.[0]).not.toHaveProperty('resolution');
 });
 
-it('restores the complete generated settings snapshot including uploaded reference ids', async () => {
+it('restores supported settings and normalizes legacy high-resolution snapshots to 1K', async () => {
   const user = userEvent.setup();
   render(
     <MemoryRouter
@@ -795,10 +795,10 @@ it('restores the complete generated settings snapshot including uploaded referen
       prompt: '雨夜建筑',
       aspectRatio: '16:9',
       count: 2,
-      resolution: '2k',
       isPublic: true,
     }),
   );
+  expect(generation.generate.mock.calls[0]?.[0]).not.toHaveProperty('resolution');
 
   await user.click(screen.getByRole('button', { name: '复用完整设置' }));
   expect(screen.getByText('沿用 1 张历史参考图')).toBeInTheDocument();

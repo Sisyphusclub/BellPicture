@@ -6345,19 +6345,20 @@ video {
   opacity: 1;
 }
 .landing-composer .agent-chat-input__submit-content--custom,
-.landing-submit-cost {
+.studio-agent-input .agent-chat-input__submit-content--custom,
+.generation-submit-cost {
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.landing-submit-cost {
+.generation-submit-cost {
   gap: 7px;
   font-size: 15px;
   font-weight: 620;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
-.landing-submit-cost svg {
+.generation-submit-cost svg {
   width: 17px;
   height: 17px;
   fill: currentcolor;
@@ -8571,7 +8572,7 @@ video {
 }
 .landing-composer-anchor.is-docked:not(.is-expanded)
   .landing-composer
-  .landing-submit-cost {
+  .generation-submit-cost {
   gap: 6px;
   white-space: nowrap;
 }
@@ -8677,6 +8678,22 @@ video {
 .studio-agent-input .studio-controls {
   width: auto;
   min-width: 0;
+}
+.studio-agent-input .agent-chat-input__submit {
+  width: auto;
+  min-width: 68px;
+  height: 36px;
+  flex: 0 0 68px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  padding: 0 10px;
+  box-shadow: none;
+}
+.studio-agent-input .agent-chat-input__submit:disabled {
+  background: var(--muted);
+  color: var(--muted-foreground);
 }
 
 @media (max-width: 860px) {

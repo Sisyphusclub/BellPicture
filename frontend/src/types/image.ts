@@ -29,11 +29,12 @@ export const IMAGE_RESOLUTIONS = ['standard', '2k', '4k'] as const;
 export type ImageResolution = (typeof IMAGE_RESOLUTIONS)[number];
 export const FOUR_K_ASPECT_RATIOS = ['16:9', '9:16'] as const;
 export const IMAGE_RESOLUTION_LABELS: Record<ImageResolution, string> = {
-  standard: '标准',
+  standard: '1K',
   '2k': '2K',
   '4k': '4K',
 };
 export const DEFAULT_IMAGE_RESOLUTION: ImageResolution = 'standard';
+export const IMAGE_GENERATION_CREDIT_COST = 1;
 export const DEFAULT_COUNT = 1;
 export const MIN_COUNT = 1;
 export const MAX_COUNT = 4;

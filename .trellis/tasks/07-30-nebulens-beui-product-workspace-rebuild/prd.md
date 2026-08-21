@@ -43,7 +43,12 @@ Completely rebuild the Generate, Creation Templates, Assets, Sign In, and Sign U
 ### Generate
 
 - Recompose the page around a persistent Agent Chat Input create bar and a continuous session result feed.
-- Preserve prompt, reference images, model, aspect ratio, count, quality, visibility, and quota state.
+- Preserve prompt, reference images, model, aspect ratio, count, visibility, and quota state.
+- Keep the current Generate workspace fixed to 1K. Do not render the former Standard/2K/4K
+  selector, and normalize legacy `resolution=2k|4k` URL values plus rerun, retry, edit, and reuse
+  snapshots to `standard` before starting a new request.
+- Discover and Generate submit actions share the same credit-cost treatment and show one credit per
+  requested image, updating from `1` to `4` as the count changes.
 - Keep upload, paste, removal, authentication gating, generation progress, error recovery, and submit/stop states functional.
 - Reuse and rerun must restore the complete supported generation contract, not prompt text alone.
 - Results expose direct actions for inspect, rerun, use as reference, reuse settings, download, visibility where supported, and delete.

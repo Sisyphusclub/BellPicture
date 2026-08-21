@@ -19,7 +19,7 @@ it.each([
     expect(placeholder).toHaveStyle({ aspectRatio: aspectRatio.replace(':', ' / ') });
     expect(placeholder).toHaveTextContent(aspectRatio);
     expect(placeholder).toHaveTextContent(
-      resolution === 'standard' ? '标准' : resolution.toUpperCase(),
+      resolution === 'standard' ? '1K' : resolution.toUpperCase(),
     );
     expect(placeholder?.querySelector('.image-generation__dots')).toBeInTheDocument();
     expect(placeholder?.querySelector('.image-generation__glow')).toBeInTheDocument();

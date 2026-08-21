@@ -1,8 +1,9 @@
-import { Compass, FolderOpen, ImagePlus, LayoutTemplate, Sparkles } from 'lucide-react';
+import { Compass, FolderOpen, ImagePlus, LayoutTemplate } from 'lucide-react';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
+import { GenerationSubmitCost } from '@/components/generation/GenerationSubmitCost';
 import { LandingSidebar } from '@/components/landing/LandingSidebar';
 import { LandingGenerationControls } from '@/components/landing/LandingGenerationControls';
 import { LandingAccountActions } from '@/components/landing/LandingAccountActions';
@@ -35,7 +36,6 @@ const HERO_SHINY_GRADIENT_STYLE: CSSProperties = {
 };
 const LANDING_SCROLL_KEY = 'nebulens:landing-scroll';
 const LANDING_SCROLL_RESTORE_KEY = 'nebulens:landing-scroll-restore';
-const LANDING_IMAGE_CREDIT_COST = 1;
 const LANDING_NAV_ITEMS = [
   { label: '发现', to: '/', icon: Compass },
   { label: '生图', to: '/generate', icon: ImagePlus },
@@ -512,12 +512,7 @@ export function LandingView() {
               placeholder="描述你想生成的画面..."
               ariaLabel="首页创作提示词"
               submitLabel="带着提示词开始创作"
-              submitContent={
-                <span className="landing-submit-cost" aria-hidden="true">
-                  <Sparkles />
-                  <span>{count * LANDING_IMAGE_CREDIT_COST}</span>
-                </span>
-              }
+              submitContent={<GenerationSubmitCost count={count} />}
               minRows={1}
               maxRows={4}
               allowFileUpload

@@ -23,6 +23,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
 import { useToast } from '@/components/common/ToastProvider';
+import { GenerationSubmitCost } from '@/components/generation/GenerationSubmitCost';
 import { GenerationHistoryFlyout } from '@/components/generation/GenerationHistoryFlyout';
 import { ImageGenerationPlaceholder } from '@/components/generation/ImageGenerationPlaceholder';
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
@@ -57,16 +58,12 @@ import {
   DEFAULT_ASPECT_RATIO,
   DEFAULT_COUNT,
   DEFAULT_IMAGE_RESOLUTION,
-  FOUR_K_ASPECT_RATIOS,
-  IMAGE_RESOLUTION_LABELS,
-  IMAGE_RESOLUTIONS,
   MAX_COUNT,
   MAX_REFERENCE_IMAGES,
   MIN_COUNT,
   type AspectRatio,
   type GenerationSettingsSnapshot,
   type HistoryEntry,
-  type ImageResolution,
 } from '@/types/image';
 import { downloadUrl } from '@/utils/download';
 import { formatClockTime } from '@/utils/format';
@@ -121,10 +118,6 @@ const GENERATE_NAV_ITEMS = [
 
 function isAspectRatio(value: string | null): value is AspectRatio {
   return value !== null && (ASPECT_RATIOS as readonly string[]).includes(value);
-}
-
-function isImageResolution(value: string | null): value is ImageResolution {
-  return value !== null && (IMAGE_RESOLUTIONS as readonly string[]).includes(value);
 }
 
 interface GenerationErrorCopy {
@@ -395,7 +388,7 @@ export function GenerateView() {
   const location = useLocation();
   const navigate = useNavigate();
   const { notify } = useToast();
-  const { user, isAuthenticated, isLoading: authLoading, isAdmin, logout } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
   const history = useImageHistory();
   const { sessions, create: createSession } = useGenerationSessions();
   const { quota, isLoading: quotaLoading, refresh: refreshQuota, checkIn } = useImageQuota();
@@ -408,10 +401,6 @@ export function GenerateView() {
   const [aspect, setAspect] = useState<AspectRatio>(() => {
     const value = searchParams.get('aspect');
     return isAspectRatio(value) ? value : DEFAULT_ASPECT_RATIO;
-  });
-  const [resolution, setResolution] = useState<ImageResolution>(() => {
-    const value = searchParams.get('resolution');
-    return isAdmin && isImageResolution(value) ? value : DEFAULT_IMAGE_RESOLUTION;
   });
   const [isPublic, setIsPublic] = useState(() => searchParams.get('isPublic') === 'true');
   const [reusedReferenceIds, setReusedReferenceIds] = useState<string[]>(() =>
@@ -499,8 +488,6 @@ export function GenerateView() {
     const queryAspect = searchParams.get('aspect');
     if (isAspectRatio(queryAspect)) setAspect(queryAspect);
     setCount(readCount(searchParams));
-    const queryResolution = searchParams.get('resolution');
-    if (isAdmin && isImageResolution(queryResolution)) setResolution(queryResolution);
     const queryPublic = searchParams.get('isPublic');
     if (queryPublic === 'true' || queryPublic === 'false') setIsPublic(queryPublic === 'true');
     const queryReferenceIds = readReferenceIds(searchParams);
@@ -508,13 +495,7 @@ export function GenerateView() {
       setReusedReferenceIds(queryReferenceIds);
       clearUpload();
     }
-  }, [clearUpload, isAdmin, searchParams]);
-
-  useEffect(() => {
-    if (!isAdmin && resolution !== DEFAULT_IMAGE_RESOLUTION) {
-      setResolution(DEFAULT_IMAGE_RESOLUTION);
-    }
-  }, [isAdmin, resolution]);
+  }, [clearUpload, searchParams]);
 
   const attachments = useMemo<AgentChatAttachment[]>(
     () =>
@@ -603,7 +584,7 @@ export function GenerateView() {
     model: 'gpt-image-2',
     count,
     aspectRatio: aspect,
-    resolution: isAdmin ? resolution : DEFAULT_IMAGE_RESOLUTION,
+    resolution: DEFAULT_IMAGE_RESOLUTION,
     isPublic,
     referenceIds: reusedReferenceIds,
   });
@@ -615,7 +596,11 @@ export function GenerateView() {
     replaceItem?: FeedItem,
   ): Promise<void> => {
     if (generation.isLoading) return;
-    if (!settings.prompt) {
+    const generationSettings: GenerationSettingsSnapshot = {
+      ...settings,
+      resolution: DEFAULT_IMAGE_RESOLUTION,
+    };
+    if (!generationSettings.prompt) {
       notify('请先描述你想生成的图片。', 'error');
       return;
     }
@@ -627,11 +612,10 @@ export function GenerateView() {
       generationSessionId = session.id;
       const nextSearch = new URLSearchParams({
         session: session.id,
-        aspect: settings.aspectRatio,
-        count: String(settings.count),
-        isPublic: String(settings.isPublic),
+        aspect: generationSettings.aspectRatio,
+        count: String(generationSettings.count),
+        isPublic: String(generationSettings.isPublic),
       });
-      if (isAdmin) nextSearch.set('resolution', settings.resolution);
       void navigate(`/generate?${nextSearch.toString()}`, { replace: true });
     }
     const generationSessionBatchIds = generationSession?.batchIds ?? [];
@@ -640,13 +624,13 @@ export function GenerateView() {
       id: pendingId,
       createdAt: new Date().toISOString(),
       entries: [],
-      settings,
+      settings: generationSettings,
     };
     if (replaceItem) {
       if (generationSessionBatchIds.includes(replaceItem.id)) {
         replaceGenerationBatch(generationSessionId, replaceItem.id, pendingId);
       } else {
-        attachGenerationBatch(generationSessionId, pendingId, settings.prompt);
+        attachGenerationBatch(generationSessionId, pendingId, generationSettings.prompt);
       }
       setFeed((current) =>
         current.map((item) => (item.id === replaceItem.id ? pendingItem : item)),
@@ -658,7 +642,7 @@ export function GenerateView() {
       );
       if (activeHistoryBatchId === replaceItem.id) setActiveHistoryBatchId(null);
     } else {
-      attachGenerationBatch(generationSessionId, pendingId, settings.prompt);
+      attachGenerationBatch(generationSessionId, pendingId, generationSettings.prompt);
       pendingScrollId.current = pendingId;
       setFeed((current) => [...current, pendingItem]);
     }
@@ -671,11 +655,13 @@ export function GenerateView() {
     };
 
     try {
-      const { resolution: settingsResolution, ...requestSettings } = settings;
       const result = await generation.generate({
-        ...requestSettings,
-        ...(isAdmin ? { resolution: settingsResolution } : {}),
-        referenceIds: [...settings.referenceIds],
+        prompt: generationSettings.prompt,
+        model: generationSettings.model,
+        count: generationSettings.count,
+        aspectRatio: generationSettings.aspectRatio,
+        isPublic: generationSettings.isPublic,
+        referenceIds: [...generationSettings.referenceIds],
         ...(referenceFiles.length ? { referenceFiles: [...referenceFiles] } : {}),
       });
       result.entries.forEach((entry) => {
@@ -691,9 +677,11 @@ export function GenerateView() {
         ),
       ];
       const completedSettings: GenerationSettingsSnapshot = {
-        ...settings,
+        ...generationSettings,
         aspectRatio: result.aspectRatio,
-        referenceIds: persistedReferenceIds.length ? persistedReferenceIds : settings.referenceIds,
+        referenceIds: persistedReferenceIds.length
+          ? persistedReferenceIds
+          : generationSettings.referenceIds,
       };
       setFeed((current) =>
         current.map((item) =>
@@ -746,7 +734,7 @@ export function GenerateView() {
     const settings: GenerationSettingsSnapshot = {
       ...item.settings,
       prompt: promptValue.trim(),
-      resolution: isAdmin ? item.settings.resolution : DEFAULT_IMAGE_RESOLUTION,
+      resolution: DEFAULT_IMAGE_RESOLUTION,
     };
     if (authLoading) return;
     if (!isAuthenticated) {
@@ -820,7 +808,6 @@ export function GenerateView() {
     setPrompt(settings.prompt);
     setCount(settings.count);
     setAspect(settings.aspectRatio);
-    setResolution(isAdmin ? settings.resolution : DEFAULT_IMAGE_RESOLUTION);
     setIsPublic(settings.isPublic);
     setReusedReferenceIds([...settings.referenceIds]);
     upload.clear();
@@ -1050,6 +1037,7 @@ export function GenerateView() {
           placeholder="描述你想生成的画面…"
           ariaLabel="图像提示词"
           submitLabel="生成图片"
+          submitContent={<GenerationSubmitCost count={count} />}
           disabled={authLoading}
           minRows={2}
           maxRows={7}
@@ -1074,15 +1062,7 @@ export function GenerateView() {
                 options={ASPECT_MENU_OPTIONS}
                 disabled={generation.isLoading}
                 className="studio-aspect-select"
-                onValueChange={(next) => {
-                  setAspect(next);
-                  if (
-                    resolution === '4k' &&
-                    !(FOUR_K_ASPECT_RATIOS as readonly string[]).includes(next)
-                  ) {
-                    setResolution('2k');
-                  }
-                }}
+                onValueChange={setAspect}
               />
               <div className="studio-count-stepper" role="group" aria-label="生成张数">
                 <Button
@@ -1107,32 +1087,6 @@ export function GenerateView() {
                   <Plus aria-hidden="true" />
                 </Button>
               </div>
-              {isAdmin ? (
-                <div className="studio-resolution-control" role="radiogroup" aria-label="清晰度">
-                  {IMAGE_RESOLUTIONS.map((option) => (
-                    <Button
-                      key={option}
-                      type="button"
-                      variant="ghost"
-                      size="compact"
-                      role="radio"
-                      aria-checked={resolution === option}
-                      disabled={generation.isLoading}
-                      onClick={() => {
-                        setResolution(option);
-                        if (
-                          option === '4k' &&
-                          !(FOUR_K_ASPECT_RATIOS as readonly string[]).includes(aspect)
-                        ) {
-                          setAspect('16:9');
-                        }
-                      }}
-                    >
-                      {IMAGE_RESOLUTION_LABELS[option]}
-                    </Button>
-                  ))}
-                </div>
-              ) : null}
               <PrivateModeToggle
                 isPublic={isPublic}
                 disabled={generation.isLoading}

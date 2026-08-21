@@ -263,12 +263,12 @@ The prompt composer is the signature product surface. Use the installed beUI Age
 - Keep prompt text, placeholders, and streamed prompt examples at `16px` across Discover and Generate so both composers share the same reading scale.
 - Attachments appear as compact thumbnail chips above the toolbar.
 - Model, ratio, count, and secondary controls sit in the lower toolbar or a morphing top layer.
-- Keep the Generate workspace submit action circular. On Discover, use the same beUI submit action
-  with a compact `68-76px` refractive pill containing a Lucide sparkle and the current request cost.
-  The Discover cost is `15` credits per requested image and updates with the count control; the
-  accessible button name remains the action, not the number. Empty prompts use a clearly subdued
-  disabled glass state, valid prompts raise contrast without becoming opaque, and pending generation
-  replaces the cost with the standard stop icon. Preserve a `40px` target and reduced-motion behavior.
+- Use the same beUI submit composition on Discover and Generate: a compact `68-76px` pill containing
+  a Lucide sparkle and the current request cost. Generation costs `1` credit per requested image and
+  updates with the count control from `1` to `4`; the accessible button name remains the action, not
+  the number. Empty prompts use a clearly subdued disabled state, valid prompts raise contrast, and
+  pending generation replaces the cost with the standard stop icon. Preserve a `36-40px` target and
+  reduced-motion behavior.
 - Keep generation shortcuts out of visible instructional copy; expose them through tooltips or accessible descriptions.
 
 ### Animated Dropdown
@@ -438,6 +438,12 @@ The home page is a product-first creation screen, not a Squarespace clone.
 - On wide screens, keep the conversation column near `960px`, but cap a single result near `360px` so the workspace remains ready for batches of up to four images. Two results use a compact two-column grid, three use three smaller columns, and four use a restrained `2 x 2` grid whose total width stays near `640px`. Pending skeletons and completed media must share the same count-aware geometry. Preserve each result's source aspect ratio and collapse to one centered column on narrow mobile screens.
 - Do not display a page title or explanatory introduction above the composer. The active workspace and current collection are communicated through navigation state and compact controls.
 - The Agent Chat Input owns prompt, reference upload, model, ratio, count, private-mode switch, quota, and submit/stop behavior. Keep the toolbar in one row where space allows: upload, model, ratio, count, and private mode on the left; quota/status and generation on the right.
+- Do not expose a quality or resolution selector in the current Generate workspace. New generation,
+  retry, edited rerun, and settings reuse are fixed to `resolution: "standard"`, presented to users
+  as `1K`; legacy 2K/4K URL or history values must not escape into a new request.
+- Discover and Generate use the same `GenerationSubmitCost` composition inside the beUI Agent Chat
+  Input submit control. The visible sparkle-and-number pill shows one credit per requested image
+  (`1-4`) and changes with the count; pending generation still replaces it with the shared stop state.
 - Advanced options open through one Animated Dropdown or responsive side sheet. Core settings stay visible and stable.
 - Reference thumbnails live inside the composer tray. Each thumbnail exposes preview and remove; reference roles or influence appear only when the generation API can honor them.
 - Generation status reserves the exact result geometry immediately: render one AICSS Image Generation placeholder per requested image using the selected aspect ratio and the same responsive grid tracks as completed results. Adapt its low-contrast dot field and morphing highlight into three stable geometries: square (`1:1`), landscape (`3:2`, `16:9`), and portrait (`2:3`, `9:16`). Show the selected ratio/resolution and the quiet status `正在生成图片`; never use a shimmer sweep or invented percentage. Crossfade each loaded image over roughly `220ms` with only a slight scale correction, remove all looping motion under `prefers-reduced-motion`, and replace failed placeholders with an equal-ratio retry card.
@@ -458,8 +464,8 @@ The home page is a product-first creation screen, not a Squarespace clone.
   `56px` text-area minimum and roughly `110-125px` total surface height. Grow multiline content only
   as needed up to a `120px` text-area maximum, then scroll internally with a low-contrast thin scrollbar; never expose the native resize
   handle. Submitting
-  reuses the batch's model, aspect ratio, count, resolution, visibility, and
-  reference IDs, then replaces that turn with equal-geometry loading placeholders. Commit the new
+  reuses the batch's model, aspect ratio, count, visibility, and reference IDs, normalizes the
+  request to 1K, then replaces that turn with equal-geometry loading placeholders. Commit the new
   batch to the session before removing the old persisted batch, and restore the original result if
   replacement generation is cancelled or fails.
 - Reuse and rerun restore the complete supported generation contract, not prompt text alone.
@@ -561,9 +567,9 @@ The home page is a product-first creation screen, not a Squarespace clone.
 
 ### Generation Settings Snapshot
 
-Every completed generation retains the settings required to reproduce its request: `prompt`, `model`, `aspectRatio`, `count`, `resolution`, `isPublic`, and all uploaded `referenceIds`. Reuse settings and rerun restore this complete snapshot. A persisted output used as a new reference is loaded from its output blob and uploaded through the same reference pipeline as a local attachment.
+Every completed generation retains the settings required to reproduce its request: `prompt`, `model`, `aspectRatio`, `count`, `resolution`, `isPublic`, and all uploaded `referenceIds`. Reuse settings and rerun restore every currently supported setting, while normalizing resolution to the current workspace's fixed 1K contract. A persisted output used as a new reference is loaded from its output blob and uploaded through the same reference pipeline as a local attachment.
 
-Generation history records persist `count` and `resolution` alongside the existing prompt, model, aspect ratio, reference IDs, dimensions, visibility, and timestamps. Standard generation stores `resolution: "standard"`; high-resolution generation stores the requested resolution. Older records may omit the new fields at the frontend validation boundary and use UI defaults, while all newly written records include them.
+Generation history records persist `count` and `resolution` alongside the existing prompt, model, aspect ratio, reference IDs, dimensions, visibility, and timestamps. The current Generate workspace stores `resolution: "standard"` and labels it `1K`. Older records may omit resolution or retain historical `2k`/`4k` metadata, but every new generation, retry, edited rerun, or settings reuse is normalized to `standard`; the backend compatibility path is not exposed by this workspace UI.
 
 ### Asset Metadata
 
