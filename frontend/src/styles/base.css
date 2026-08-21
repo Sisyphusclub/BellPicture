@@ -8695,6 +8695,14 @@ video {
   background: var(--muted);
   color: var(--muted-foreground);
 }
+.studio-agent-input .agent-chat-input__submit:hover:not(:disabled) {
+  background: rgb(255 255 255 / 1);
+  color: rgb(8 14 22 / 1);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 1),
+    0 10px 26px -13px rgb(0 0 0 / 0.82);
+  opacity: 1;
+}
 
 @media (max-width: 860px) {
   .generation-console.has-results .studio-create-bar {
