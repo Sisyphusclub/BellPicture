@@ -3639,11 +3639,13 @@ video {
   width: min(100%, 1240px);
   min-height: calc(100svh - 18px);
   background-color: color-mix(in oklch, var(--surface-raised) 32%, transparent);
-  background-image:
-    linear-gradient(color-mix(in oklch, var(--border) 22%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklch, var(--border) 22%, transparent) 1px, transparent 1px);
-  background-position: 28px 22px;
-  background-size: 72px 72px;
+  background-image: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--foreground) 18%, transparent) 1.1px,
+    transparent 1.3px
+  );
+  background-position: 18px 18px;
+  background-size: 28px 28px;
   padding: 22px 40px 112px;
 }
 .generation-console::before {
