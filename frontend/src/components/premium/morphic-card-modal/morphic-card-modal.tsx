@@ -34,6 +34,7 @@ export interface MorphicCardModalProps {
   onClose: () => void;
   children: ReactNode;
   className?: string;
+  backdropClassName?: string;
   /** Disable shared-layout morphing when the source card and detail view have different structures. */
   sharedLayout?: boolean;
 }
@@ -68,6 +69,7 @@ export function MorphicCardModal({
   onClose,
   children,
   className,
+  backdropClassName,
   sharedLayout = true,
 }: MorphicCardModalProps) {
   'use no memo';
@@ -143,7 +145,7 @@ export function MorphicCardModal({
               transition: { duration: 0.18, ease: EASE_OUT },
             }}
             transition={{ duration: 0.32, ease: EASE_OUT }}
-            className="fixed inset-0 z-[100] bg-black/70"
+            className={cn('fixed inset-0 z-[100] bg-black/70', backdropClassName)}
             onClick={onClose}
           />
           <motion.div
