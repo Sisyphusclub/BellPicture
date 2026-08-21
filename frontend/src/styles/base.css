@@ -4203,6 +4203,11 @@ video {
   overflow: hidden;
   border-radius: var(--radius-lg);
   background: var(--surface-media);
+  transition: opacity 140ms var(--ease-out-expo);
+}
+.session-result.is-detail-open {
+  opacity: 0;
+  pointer-events: none;
 }
 .session-result__morph {
   overflow: hidden;

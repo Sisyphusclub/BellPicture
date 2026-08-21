@@ -1196,7 +1196,10 @@ export function GenerateView() {
               ) : item.entries.length ? (
                 <div className="session-result-grid">
                   {item.entries.map((entry) => (
-                    <article className="session-result" key={entry.record.id}>
+                    <article
+                      className={`session-result${selected?.record.id === entry.record.id ? ' is-detail-open' : ''}`}
+                      key={entry.record.id}
+                    >
                       <SessionResultPreview entry={entry} onOpen={() => setSelected(entry)} />
                       <div className="session-result__actions">
                         <IconTooltip label="用作参考图">

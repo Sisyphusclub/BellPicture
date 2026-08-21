@@ -55,6 +55,7 @@ export function ImageDetailModal({
       id={entry.record.id}
       open
       onClose={onClose}
+      sharedLayout={false}
       className="!max-w-[1080px] !rounded-2xl !bg-card !text-card-foreground !shadow-[var(--shadow-modal)]"
     >
       <section
