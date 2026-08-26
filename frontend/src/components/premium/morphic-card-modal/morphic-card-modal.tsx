@@ -154,9 +154,12 @@ export function MorphicCardModal({
             layout={sharedLayout}
             {...(sharedLayout ? { layoutId: `morphic-card-${id}` } : {})}
             tabIndex={-1}
-            initial={reduce || sharedLayout ? false : { opacity: 0, scale: 0.985, y: 10 }}
-            animate={sharedLayout ? false : { opacity: 1, scale: 1, y: 0 }}
-            exit={reduce || sharedLayout ? {} : { opacity: 0, scale: 0.985, y: 6 }}
+            // Detail views opt out of shared-layout morphing so their media keeps
+            // a stable position. Use opacity-only entry/exit in that mode; a
+            // scale or y transform would move the image while the dialog opens.
+            initial={reduce || sharedLayout ? false : { opacity: 0 }}
+            animate={sharedLayout ? false : { opacity: 1 }}
+            exit={reduce || sharedLayout ? {} : { opacity: 0 }}
             style={{ borderRadius: 8, transformOrigin: 'center center' }}
             className={cn(
               // The morph box is the scroller itself. Avoid an h-fit flex column
