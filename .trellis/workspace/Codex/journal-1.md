@@ -169,3 +169,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 6: 调整发现页动漫模板排序
+
+**Date**: 2026-08-26
+**Task**: 调整发现页动漫模板排序
+**Branch**: `dev`
+
+### Summary
+
+发现页按分类稳定排序，将动漫模板移到完整画廊末段；模板页清单保持不变，补充首页顺序回归测试并通过构建。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e6574e8` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
