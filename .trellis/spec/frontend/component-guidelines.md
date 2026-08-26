@@ -115,6 +115,22 @@ const templates = [
 ];
 ```
 
+### GPT Image 2 Template Manifest
+
+When a prompt gallery is imported into the template route, keep the complete
+catalog in `src/data/creationTemplates.json` and keep the raster files under
+`public/media/templates/gpt-image2/`. Each item must expose `id`, `title`,
+`category`, `prompt`, `sourcePath`, `sourceUrl`, `width`, `height`, and a local
+`imageUrl`. `src/data/creationTemplates.ts` is the typed normalization boundary;
+views must consume `CREATION_TEMPLATES` rather than maintaining a second image or
+prompt array. This keeps the landing gallery, template route, and generation
+handoff synchronized while allowing the catalog to grow without duplicating
+route code.
+
+```ts
+const entries = CREATION_TEMPLATES.map(templateToHistoryEntry);
+```
+
 ## Responsive Layout
 
 - Define stable tracks, aspect ratios, and min/max sizes for carousels, grids,

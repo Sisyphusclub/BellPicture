@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend stack, ownership boundaries, and required checks for the template integration."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"beUI component usage, image-led library asset rules, motion, and accessibility constraints."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Required verification commands and responsive/image quality expectations."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Strict typing requirements for extending template metadata and derived entries."}

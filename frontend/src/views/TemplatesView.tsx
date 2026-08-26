@@ -1,4 +1,4 @@
-import { ArrowUpRight, Copy, Heart, Search, X } from 'lucide-react';
+import { ArrowUpRight, Copy, ExternalLink, Heart, Search, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -233,6 +233,15 @@ export function TemplatesView() {
               <span>{selected.category}</span>
               <h2 id="template-detail-title">{selected.title}</h2>
               <p>{selected.prompt}</p>
+              <a
+                className="template-detail__source"
+                href={selected.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <ExternalLink aria-hidden="true" />
+                查看 GPT Image 2 Prompt Gallery 来源
+              </a>
               <dl className="template-settings">
                 <div>
                   <dt>比例</dt>

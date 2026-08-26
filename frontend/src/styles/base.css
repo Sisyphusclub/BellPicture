@@ -4616,6 +4616,25 @@ video {
   font-size: 14px;
   line-height: 1.65;
 }
+.template-detail__source {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 7px;
+  color: var(--accent-cyan);
+  font-size: 12px;
+  line-height: 1.4;
+  text-decoration: none;
+}
+.template-detail__source:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.template-detail__source svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
 .template-settings {
   display: grid;
   gap: 9px;
@@ -8710,9 +8729,7 @@ video {
   padding: 0 10px;
   box-shadow: none;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded)
-  .landing-composer
-  .generation-submit-cost {
+.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer .generation-submit-cost {
   gap: 6px;
   white-space: nowrap;
 }

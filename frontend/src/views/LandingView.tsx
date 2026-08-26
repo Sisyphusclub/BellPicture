@@ -20,6 +20,7 @@ import { openAuthModal } from '@/hooks/useAuthModal';
 import { useImageQuota } from '@/hooks/useImageQuota';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { getAppNavigation } from '@/config/navigation';
+import { CREATION_TEMPLATES, templateToHistoryEntry } from '@/data/creationTemplates';
 import { buildApiUrl } from '@/services/api/imagesApi';
 import type { AspectChoice, HistoryEntry } from '@/types/image';
 import { DEFAULT_ASPECT_CHOICE, DEFAULT_COUNT, MAX_REFERENCE_IMAGES } from '@/types/image';
@@ -110,153 +111,8 @@ const HERO_ENTRIES: HistoryEntry[] = [
     imageUrl: '/media/hero-card-plants-detail.jpg',
   },
 ];
-const TEMPLATE_ENTRIES: HistoryEntry[] = [
-  {
-    record: {
-      id: 'nebulens-template-01',
-      createdAt: '2026-07-28T00:00:00.000Z',
-      prompt: '蓝调雨夜城市骑行，湿润街道、车灯倒影与极简编辑感构图',
-      model: 'gpt-image-2',
-      width: 1024,
-      height: 1536,
-      isPublic: true,
-    },
-    imageUrl: '/media/templates/template-01.webp',
-  },
-  {
-    record: {
-      id: 'nebulens-template-02',
-      createdAt: '2026-07-28T00:00:00.000Z',
-      prompt: '海边岩石中的现代住宅，清透玻璃、粗粝石材与阴天海雾',
-      model: 'gpt-image-2',
-      width: 1536,
-      height: 1024,
-      isPublic: true,
-    },
-    imageUrl: '/media/templates/template-02.webp',
-  },
-  {
-    record: {
-      id: 'nebulens-template-03',
-      createdAt: '2026-07-28T00:00:00.000Z',
-      prompt: '玻璃花器与植物静物，柔和自然光、透明折射和深色背景',
-      model: 'gpt-image-2',
-      width: 1024,
-      height: 1536,
-      isPublic: true,
-    },
-    imageUrl: '/media/templates/template-03.webp',
-  },
-  {
-    record: {
-      id: 'nebulens-template-04',
-      createdAt: '2026-07-28T00:00:00.000Z',
-      prompt: '金属、烟熏玻璃与纸张静物，低调冷光、细腻材质和留白构图',
-      model: 'gpt-image-2',
-      width: 1536,
-      height: 1024,
-      isPublic: true,
-    },
-    imageUrl: '/media/templates/template-04.webp',
-  },
-  {
-    record: {
-      id: 'nebulens-template-05',
-      createdAt: '2026-07-28T00:00:00.000Z',
-      prompt: '高架桥下的雨夜人物，深蓝阴影、潮湿地面与远处暖色车灯',
-      model: 'gpt-image-2',
-      width: 1024,
-      height: 1536,
-      isPublic: true,
-    },
-    imageUrl: '/media/templates/template-05.webp',
-  },
-  {
-    record: {
-      id: 'nebulens-template-06',
-      createdAt: '2026-07-28T00:00:00.000Z',
-      prompt: '黄昏实验性庭院装置，混凝土、金属结构和低饱和暮色光线',
-      model: 'gpt-image-2',
-      width: 1536,
-      height: 1024,
-      isPublic: true,
-    },
-    imageUrl: '/media/templates/template-06.webp',
-  },
-  {
-    record: {
-      id: 'nebulens-template-07',
-      createdAt: '2026-07-28T00:00:00.000Z',
-      prompt: '实验性字体与霓虹灯影交错的音乐活动海报，强烈但保持秩序',
-      model: 'gpt-image-2',
-      width: 1024,
-      height: 1280,
-      isPublic: true,
-    },
-    imageUrl: '/media/templates/template-07.webp',
-  },
-  {
-    record: {
-      id: 'nebulens-template-08',
-      createdAt: '2026-07-28T00:00:00.000Z',
-      prompt: '自然光下的旅行纪念册页面，手写标注与照片拼贴',
-      model: 'gpt-image-2',
-      width: 1280,
-      height: 1024,
-      isPublic: true,
-    },
-    imageUrl: '/media/templates/template-08.webp',
-  },
-  {
-    record: {
-      id: 'nebulens-template-09',
-      createdAt: '2026-07-28T00:00:00.000Z',
-      prompt: '柔和暖色的咖啡品牌包装静物，纸张纹理与细致阴影',
-      model: 'gpt-image-2',
-      width: 1024,
-      height: 1280,
-      isPublic: true,
-    },
-    imageUrl: '/media/templates/template-09.webp',
-  },
-  {
-    record: {
-      id: 'nebulens-template-10',
-      createdAt: '2026-07-28T00:00:00.000Z',
-      prompt: '未来实验室中的透明材质与冷光设备，电影感产品概念图',
-      model: 'gpt-image-2',
-      width: 1280,
-      height: 1024,
-      isPublic: true,
-    },
-    imageUrl: '/media/templates/template-10.webp',
-  },
-  {
-    record: {
-      id: 'nebulens-template-11',
-      createdAt: '2026-07-28T00:00:00.000Z',
-      prompt: '极简家居与植物构成的生活方式广告，干净背景与自然色彩',
-      model: 'gpt-image-2',
-      width: 1024,
-      height: 1280,
-      isPublic: true,
-    },
-    imageUrl: '/media/templates/template-11.webp',
-  },
-  {
-    record: {
-      id: 'nebulens-template-12',
-      createdAt: '2026-07-28T00:00:00.000Z',
-      prompt: '复古旅行海报与现代几何图形融合的视觉，低饱和撞色',
-      model: 'gpt-image-2',
-      width: 1280,
-      height: 1024,
-      isPublic: true,
-    },
-    imageUrl: '/media/templates/template-12.webp',
-  },
-];
-// Interleave portrait, landscape, and square assets so CSS columns balance naturally.
+const TEMPLATE_ENTRIES: HistoryEntry[] = CREATION_TEMPLATES.map(templateToHistoryEntry);
+// Keep the hero works first, then expose the full GPT Image 2 library in the same gallery.
 const TODAY_CREATIONS = [
   HERO_ENTRIES[3]!,
   HERO_ENTRIES[1]!,
@@ -264,18 +120,7 @@ const TODAY_CREATIONS = [
   HERO_ENTRIES[0]!,
   HERO_ENTRIES[5]!,
   HERO_ENTRIES[2]!,
-  TEMPLATE_ENTRIES[0]!,
-  TEMPLATE_ENTRIES[1]!,
-  TEMPLATE_ENTRIES[2]!,
-  TEMPLATE_ENTRIES[3]!,
-  TEMPLATE_ENTRIES[4]!,
-  TEMPLATE_ENTRIES[5]!,
-  TEMPLATE_ENTRIES[6]!,
-  TEMPLATE_ENTRIES[7]!,
-  TEMPLATE_ENTRIES[8]!,
-  TEMPLATE_ENTRIES[9]!,
-  TEMPLATE_ENTRIES[10]!,
-  TEMPLATE_ENTRIES[11]!,
+  ...TEMPLATE_ENTRIES,
 ] as const;
 const TODAY_GALLERY_IMAGES: GalleryImage[] = TODAY_CREATIONS.map((entry) => ({
   id: entry.record.id,
@@ -484,7 +329,7 @@ export function LandingView() {
             onBlurCapture={(event) => {
               if (
                 composerDocked &&
-                !event.currentTarget.contains(event.relatedTarget as Node | null) &&
+                !event.currentTarget.contains(event.relatedTarget) &&
                 !composerHasContent
               ) {
                 setComposerExpanded(false);

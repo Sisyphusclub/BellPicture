@@ -94,17 +94,6 @@ function renderRoute(path: string) {
   );
 }
 
-// Radix menu teardown and Motion modal exit keep React's jsdom act queue alive indefinitely.
-async function clickDuringMotionHandoff(element: HTMLElement): Promise<void> {
-  Reflect.set(globalThis, 'IS_REACT_ACT_ENVIRONMENT', false);
-  try {
-    element.click();
-    await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
-  } finally {
-    Reflect.set(globalThis, 'IS_REACT_ACT_ENVIRONMENT', true);
-  }
-}
-
 beforeEach(() => {
   vi.clearAllMocks();
   resetGenerationSessionsForTests();
@@ -135,7 +124,7 @@ beforeEach(() => {
 });
 
 describe('React application routes', () => {
-  it('renders the local six-image vertical gallery without hydrating the public gallery', () => {
+  it('renders the full GPT Image 2 vertical gallery without hydrating the public gallery', () => {
     const fetchSpy = vi
       .spyOn(globalThis, 'fetch')
       .mockResolvedValue(new Response(JSON.stringify([]), { status: 200 }));
@@ -165,8 +154,8 @@ describe('React application routes', () => {
     const creationSources = new Set(
       Array.from(creationCards).map((card) => card.querySelector('img')?.getAttribute('src')),
     );
-    expect(creationSources).toHaveLength(18);
-    expect(creationImages).toHaveLength(36);
+    expect(creationSources).toHaveLength(169);
+    expect(creationImages).toHaveLength(338);
     expect(animatedGalleryTracks).toHaveLength(0);
     expect(container.querySelector('.landing-creations style')).not.toBeInTheDocument();
     expect(Array.from(creationSources)).toEqual(
@@ -493,23 +482,26 @@ describe('React application routes', () => {
 
     expect(screen.getByRole('region', { name: '创作模板' })).toBeInTheDocument();
     expect(screen.getByRole('searchbox', { name: '搜索创作模板' })).toBeInTheDocument();
-    expect(screen.getAllByRole('article')).toHaveLength(12);
+    expect(screen.getAllByRole('article')).toHaveLength(163);
     const templateImages = within(screen.getByRole('region', { name: '创作模板' })).getAllByRole(
       'img',
     );
-    expect(templateImages).toHaveLength(12);
-    expect(new Set(templateImages.map((image) => image.getAttribute('src'))).size).toBe(12);
+    expect(templateImages).toHaveLength(163);
+    expect(new Set(templateImages.map((image) => image.getAttribute('src'))).size).toBe(163);
     templateImages.forEach((image) => {
-      expect(image).toHaveAttribute('src', expect.stringMatching(/^\/media\/templates\//));
+      expect(image).toHaveAttribute(
+        'src',
+        expect.stringMatching(/^\/media\/templates\/gpt-image2\//),
+      );
     });
 
-    await user.click(screen.getByRole('button', { name: '使用模板 动感运动海报' }));
+    await user.click(screen.getAllByRole('button', { name: /使用模板 / })[0]!);
     expect(screen.getByRole('region', { name: '图像生成工作区' })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: '图像提示词' })).toHaveTextContent(
-      '一张当代运动杂志封面',
+      'Create a portrait-oriented anime fashion illustration',
     );
     expect(screen.getByRole('button', { name: '选择画面比例' })).toHaveTextContent('2:3');
-    expect(screen.getByRole('status', { name: '2 张' })).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: '1 张' })).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: '私有模式' })).toBeChecked();
     expect(generation.generate).not.toHaveBeenCalled();
   });
