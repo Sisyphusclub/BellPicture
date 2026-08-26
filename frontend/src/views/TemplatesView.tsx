@@ -208,6 +208,7 @@ export function TemplatesView() {
           open
           onClose={closePreview}
           className="template-detail-modal"
+          sharedLayout={false}
         >
           <section
             className="template-detail"
