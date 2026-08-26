@@ -1,0 +1,3 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend ownership and required checks for the landing gallery ordering change."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Image-led library ordering, stable dimensions, and shared component constraints."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Regression and responsive verification requirements."}

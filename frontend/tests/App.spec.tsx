@@ -168,6 +168,11 @@ describe('React application routes', () => {
         '/media/hero-card-plants-detail.jpg',
       ]),
     );
+    const templateSources = Array.from(creationCards)
+      .slice(6)
+      .map((card) => card.querySelector('img')?.getAttribute('src'));
+    expect(templateSources.slice(0, 6).every((source) => !source?.includes('/anime-'))).toBe(true);
+    expect(templateSources.slice(-6).some((source) => source?.includes('/anime-'))).toBe(true);
     expect(
       fetchSpy.mock.calls.some(([input]) =>
         (input instanceof Request ? input.url : String(input)).includes('/api/history/public'),

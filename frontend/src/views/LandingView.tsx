@@ -111,7 +111,18 @@ const HERO_ENTRIES: HistoryEntry[] = [
     imageUrl: '/media/hero-card-plants-detail.jpg',
   },
 ];
-const TEMPLATE_ENTRIES: HistoryEntry[] = CREATION_TEMPLATES.map(templateToHistoryEntry);
+// Keep the general-purpose references visible first on Discover; anime references
+// remain available in the same gallery but move to the final section.
+const DISCOVERY_TEMPLATE_ENTRIES = CREATION_TEMPLATES.map((template) => ({
+  template,
+  entry: templateToHistoryEntry(template),
+}))
+  .sort(
+    (left, right) =>
+      Number(left.template.category === '动漫漫画') -
+      Number(right.template.category === '动漫漫画'),
+  )
+  .map(({ entry }) => entry);
 // Keep the hero works first, then expose the full GPT Image 2 library in the same gallery.
 const TODAY_CREATIONS = [
   HERO_ENTRIES[3]!,
@@ -120,7 +131,7 @@ const TODAY_CREATIONS = [
   HERO_ENTRIES[0]!,
   HERO_ENTRIES[5]!,
   HERO_ENTRIES[2]!,
-  ...TEMPLATE_ENTRIES,
+  ...DISCOVERY_TEMPLATE_ENTRIES,
 ] as const;
 const TODAY_GALLERY_IMAGES: GalleryImage[] = TODAY_CREATIONS.map((entry) => ({
   id: entry.record.id,
