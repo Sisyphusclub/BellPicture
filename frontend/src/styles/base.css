@@ -3562,6 +3562,9 @@ video {
 .workspace-heading--compact > div:first-child {
   gap: 6px;
 }
+.workspace-heading--compact {
+  padding-right: 272px;
+}
 .workspace-heading--compact h1 {
   font-size: 28px;
   letter-spacing: 0;
@@ -3573,12 +3576,21 @@ video {
   font-size: 12px;
 }
 
+/* The account actions are fixed to the app shell. Keep compact route headings
+   clear of that chrome while allowing the count to stay aligned with the title. */
+.workspace-heading--compact .page-count {
+  flex: 0 0 auto;
+  min-width: 74px;
+  justify-content: flex-end;
+}
+
 @media (max-width: 680px) {
   .workspace-heading--compact {
     align-items: flex-start;
     flex-direction: column;
     gap: 10px;
     margin-bottom: 14px;
+    padding-right: 0;
   }
   .workspace-heading--compact .page-count {
     align-self: flex-end;
@@ -4417,6 +4429,52 @@ video {
 .templates-page .template-toolbar {
   margin-bottom: 22px;
   border-top: 0;
+}
+.templates-page .template-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(132px, 156px) minmax(132px, 156px) 40px;
+  align-items: center;
+  gap: 8px;
+}
+.templates-page .template-search {
+  width: auto;
+  min-width: 0;
+  flex: none;
+}
+.templates-page .template-toolbar .beui-select-trigger {
+  width: 100%;
+  min-width: 0;
+}
+.templates-page .template-toolbar > .icon-button,
+.templates-page .template-toolbar .icon-button {
+  justify-self: end;
+}
+
+@media (max-width: 920px) {
+  .templates-page .template-toolbar {
+    grid-template-columns: minmax(180px, 1fr) repeat(2, minmax(120px, 136px)) 40px;
+  }
+}
+
+@media (max-width: 680px) {
+  .templates-page .template-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 40px;
+  }
+  .templates-page .template-search {
+    grid-column: 1 / -1;
+  }
+  .templates-page .template-toolbar .beui-select-trigger {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .templates-page .template-toolbar {
+    grid-template-columns: minmax(0, 1fr) 40px;
+  }
+  .templates-page .template-toolbar .beui-select-trigger:first-of-type {
+    grid-column: 1 / -1;
+  }
 }
 .template-gallery {
   display: grid;
@@ -8923,5 +8981,19 @@ video {
     .agent-chat-input__agent-trigger {
     transition: none;
     will-change: auto;
+  }
+}
+
+/* The mobile navigation is a fixed beUI surface. Keep the library heading
+   below it so the eyebrow and title remain readable on narrow screens. */
+@media (max-width: 860px) {
+  .templates-page {
+    padding-top: 78px;
+  }
+}
+
+@media (max-width: 680px) {
+  .templates-page {
+    padding-top: 84px;
   }
 }
