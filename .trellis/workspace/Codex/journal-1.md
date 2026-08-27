@@ -235,3 +235,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 8: 优化发现页输入框展开动画
+
+**Date**: 2026-08-27
+**Task**: 优化发现页输入框展开动画
+**Branch**: `dev`
+
+### Summary
+
+将发现页底部停靠创作框从布局属性过渡改为 Motion FLIP 合成形变，保留 beUI 单实例、移动端垂直对齐和 reduced-motion 行为，并补充回归测试与 motion 规范。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2b27d86` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
