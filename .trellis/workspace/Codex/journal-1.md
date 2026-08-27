@@ -334,3 +334,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 11: 资产空状态接入Archive drawer
+
+**Date**: 2026-08-27
+**Task**: 资产空状态接入Archive drawer
+**Branch**: `dev`
+
+### Summary
+
+为资产真实空库接入beUI Pro Archive drawer，保留筛选无结果语义，补充开始创作导航、响应式与路由测试，并记录组件来源和状态判断规范。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a6366af` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

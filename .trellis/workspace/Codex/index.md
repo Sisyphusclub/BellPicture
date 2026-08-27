@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 10
+- **Total Sessions**: 11
 - **Last Active**: 2026-08-27
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~336 | Active |
+| `journal-1.md` | ~369 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 11 | 2026-08-27 | 资产空状态接入Archive drawer | `a6366af` | `dev` |
 | 10 | 2026-08-27 | 移除发现页输入框外层玻璃壳 | `b1d16dc` | `dev` |
 | 9 | 2026-08-27 | 修复发现页输入框文字缩放与居中 | `35a1dcc` | `dev` |
 | 8 | 2026-08-27 | 优化发现页输入框展开动画 | `2b27d86` | `dev` |
