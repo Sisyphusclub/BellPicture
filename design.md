@@ -24,7 +24,7 @@ Measured reference values are adapted as follows:
 | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Wanxiang desktop rail is approximately `83px`                   | Use the shadcn Sidebar at approximately `112px` visible width with `80x64px` labeled targets. Keep `12px` between primary items and separate Assets with `16px` of whitespace only; do not add a divider or shrink it back to a dense 32px icon rail. |
 | Wanxiang composer is `940px x 145px` at 1366px and 1952px       | Discovery composer max width is `940px`; height stays within `128-145px` and becomes fluid below 860px.                                                                                                                                               |
-| Composer uses `24px` radius and dark radial glass tint          | Keep the beUI Agent Chat Input and BorderGlow structure; use the existing Nebulens liquid-glass layer at `20-24px` radius without a second outer card.                                                                                                |
+| Composer uses `24px` radius and dark radial glass tint          | Keep the beUI Agent Chat Input and BorderGlow structure as the only painted surface at `20-24px` radius; the docking and Motion wrappers stay transparent.                                                                                            |
 | Glass tint is `rgba(19,19,20,0.56-0.64)` with `2px` chrome blur | Use cool graphite transparency over the video. Never replace it with an opaque warm or purple panel.                                                                                                                                                  |
 | Gallery starts inside the first viewport with `4px` gutters     | Keep the discovery gallery close to the composer and use `4-8px` gutters with small media radii; do not insert a marketing section between them.                                                                                                      |
 | Source mobile layout retains a fixed 940px surface and clips    | Do not copy this behavior. Below 860px use the existing Sheet navigation and `width: min(100% - 32px, 940px)` composer.                                                                                                                               |
@@ -247,18 +247,13 @@ The prompt composer is the signature product surface. Use the installed beUI Age
 
 - Place it at the center of the creation flow, up to `768px` wide on home and `1060px` in the generate workspace.
 - Use a `20px` outer radius and a quiet 3px frame. Generate keeps the card-colored inner surface and
-  no permanent heavy shadow. Discover may use one cool graphite glass material on this same beUI
-  surface through the approved `@ybouane/liquidglass` adapter: a WebGL shader samples a direct
-  video backdrop child and applies refraction, blur, chromatic aberration, Fresnel reflection,
-  specular lighting, and a beveled `20px` material radius. The inset BorderGlow and content surface
-  use concentric `19px` and `16px` radii so the default rim remains a single uniform outline. Keep
-  the moving hero video perceptible through the prompt area without reducing text contrast. Keep the
-  root overflow available for menus, and provide a CSS opaque fallback when WebGL or foreignObject
-  capture is unavailable.
+  no permanent heavy shadow. Discover uses this same beUI surface over the hero video; its docking
+  anchor and nested Motion projection boundaries stay transparent and preserve overflow for menus.
+  Do not add another card, backdrop child, shader canvas, or painted radius around the composer.
 - Use ReactBits `BorderGlow` as the composer's only decorative focus effect. Keep a restrained logo-aligned golden orange, cyan, and royal blue mesh while the prompt editor is focused, intensify and orient it as the pointer approaches an edge, and replace pointer tracking with a static focus treatment under `prefers-reduced-motion`.
   On the translucent Discover composer, clip the colored `::before` mesh to a true 1px border ring,
-  disable the `::after` interior mesh fill, and retain the pointer-owned outer edge light. The glass
-  body must remain neutral; its inset glass rim stays subordinate to the focused gradient edge.
+  disable the `::after` interior mesh fill, and retain the pointer-owned outer edge light. The card
+  body must remain neutral and subordinate to the focused gradient edge.
 - On Discover/Home, stream concise image-prompt examples one character at a time from the shared prompt list. Use a low-saturation white, pale blue, and soft peach gradient (`#f3f5fa`, `#c5d9f2`, `#efc9ac`) for that shortcut prompt text; keep the logo-aligned orange, cyan, and royal-blue palette reserved for `BorderGlow`. The Generate workspace uses the quiet top-left composer placeholder `描述你想生成的画面…` instead of discovery or marketing copy.
 - Keep prompt text, placeholders, and streamed prompt examples at `16px` across Discover and Generate so both composers share the same reading scale.
 - Attachments appear as compact thumbnail chips above the toolbar.
@@ -430,7 +425,7 @@ The home page is a product-first creation screen, not a Squarespace clone.
 - Keep the home gallery unlabeled and pull it upward into the lower hero space while preserving a clear visual boundary below the Agent Composer. Display every static image at full opacity without top or bottom gradient masking. Use real generated images with `16px` radius, subtle borders, a restrained hover zoom, and the shared image-detail modal on primary images.
 - Preserve the single beUI Agent Chat Input instance while browsing the Discover gallery. Once its original anchor scrolls above the viewport, dock that same composer above the bottom edge and collapse it to a quiet single-line prompt bar with the credit submit action. Clicking or keyboard-focusing the prompt restores the complete composer and parameter toolbar in place. Keep the anchor height reserved so gallery items never move, place a pointer-transparent black-to-transparent gradient behind the docked composer, and remove the dock automatically when the original anchor returns.
 - The docked composer morph follows the beUI panel rhythm: use a roughly `360ms` `--ease-out-expo` transition for the outer width/radius and synchronized opacity/transform for the toolbar groups and placeholder. Do not use elastic overshoot; under `prefers-reduced-motion`, switch the compact/full state immediately.
-- Keep the LiquidGlass WebGL sampling layer enabled only while the composer is in the hero. When the same Agent Chat Input is docked over the gallery, disable the sampling instance and retain the beUI surface plus lightweight CSS transition so width changes do not trigger a per-frame canvas recapture.
+- Keep the docking anchor and both Motion projection boundaries transparent in every state. The same Agent Chat Input remains the sole painted surface while moving between the hero and gallery dock, without a WebGL sampling canvas or duplicate card shell.
 
 ### Generate (`/generate`)
 
@@ -610,10 +605,9 @@ Foreign or nonexistent IDs are never mutated by bulk operations. The frontend va
 - Run `npm run check:components` from `frontend/` after adding or changing a component. The check
   rejects unapproved native controls, direct foundation imports outside shared roots, competing
   component systems, browser dialogs, and undocumented consumers of external visual exceptions.
-- `BorderGlow`, `LiquidGlassSurface`, and `ImageGenerationPlaceholder` are the only non-beUI visual exceptions.
+- `BorderGlow` and `ImageGenerationPlaceholder` are the only non-beUI visual exceptions.
   `BorderGlow` may only wrap the beUI Agent Chat Input focus surface; the AICSS placeholder may only
-  render pending or image-loading states in `GenerateView`. `LiquidGlassSurface` may only provide
-  a composer-only material behind the existing beUI Agent Chat Input. The hidden file input in
+  render pending or image-loading states in `GenerateView`. The hidden file input in
   `ReferenceUploader` is the only business-component native-control exception; its visible trigger
   remains the shared `Button`.
 - Every route uses the semantic token layer in this document.

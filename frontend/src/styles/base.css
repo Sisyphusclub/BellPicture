@@ -8556,13 +8556,6 @@ video {
   backdrop-filter: blur(18px) saturate(1.16);
   -webkit-backdrop-filter: blur(18px) saturate(1.16);
 }
-.landing-composer-anchor.is-docked > .landing-liquidglass-target {
-  border-color: transparent !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
 .landing-composer-anchor.is-docked {
   position: fixed !important;
   z-index: 48;
@@ -8585,10 +8578,6 @@ video {
 }
 .landing-composer-anchor.is-docked:not(.is-expanded) {
   width: min(560px, calc(100vw - var(--sidebar-width) - 64px));
-}
-.landing-composer-anchor.is-docked > .landing-liquidglass-target > canvas {
-  opacity: 0;
-  visibility: hidden;
 }
 .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer > .border-glow-inner,
 .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer__surface,
@@ -8764,38 +8753,29 @@ video {
   display: none;
 }
 
-/* The hero composer uses the same beUI Agent Chat Input surface as the dock.
-   LiquidGlass remains a backdrop layer, while the semantic card, border, and
-   inner spacing come from the shared component tokens. */
-.landing-liquidglass-root.landing-composer-anchor:not(.is-docked) .landing-composer {
+/* The hero and dock share the same beUI Agent Chat Input surface. The anchor
+   and Motion boundaries remain visual-neutral positioning layers. */
+.landing-composer-anchor:not(.is-docked) .landing-composer {
   --card-bg: color-mix(in oklch, var(--card) 76%, transparent) !important;
   background: color-mix(in oklch, var(--card) 76%, transparent) !important;
   box-shadow: 0 20px 54px -36px rgb(0 0 0 / 0.9);
 }
-.landing-liquidglass-root.landing-composer-anchor:not(.is-docked)
-  .landing-composer
-  > .border-glow-inner,
-.landing-liquidglass-root.landing-composer-anchor:not(.is-docked)
-  .landing-composer
-  .agent-chat-input__surface {
+.landing-composer-anchor:not(.is-docked) .landing-composer > .border-glow-inner,
+.landing-composer-anchor:not(.is-docked) .landing-composer .agent-chat-input__surface {
   background: color-mix(in oklch, var(--card) 64%, transparent) !important;
 }
-.landing-liquidglass-root.landing-composer-anchor:not(.is-docked)
-  .landing-composer
-  .agent-chat-input__submit {
+.landing-composer-anchor:not(.is-docked) .landing-composer .agent-chat-input__submit {
   min-width: 68px;
   height: 36px;
   border-radius: var(--radius-full);
   background: var(--primary);
   color: var(--primary-foreground);
 }
-.landing-liquidglass-root.landing-composer-anchor:not(.is-docked)
-  .landing-composer
-  .agent-chat-input__submit:disabled {
+.landing-composer-anchor:not(.is-docked) .landing-composer .agent-chat-input__submit:disabled {
   background: var(--muted);
   color: var(--muted-foreground);
 }
-.landing-liquidglass-root.landing-composer-anchor:not(.is-docked)
+.landing-composer-anchor:not(.is-docked)
   .landing-composer
   .agent-chat-input__streaming-placeholder-text {
   color: transparent;

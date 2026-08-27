@@ -91,13 +91,6 @@
       "rationale": "Documented focus-only composer effect; it does not replace a semantic beUI control."
     },
     {
-      "module": "@ybouane/liquidglass",
-      "file": "src/components/landing/LiquidGlassSurface.tsx",
-      "source": "https://github.com/ybouane/liquidglass",
-      "allowedConsumers": ["src/components/landing/LiquidGlassSurface.tsx"],
-      "rationale": "Composer-only WebGL material applied behind the existing beUI Agent Chat Input; it does not replace semantic controls."
-    },
-    {
       "module": "@/components/generation/ImageGenerationPlaceholder",
       "file": "src/components/generation/ImageGenerationPlaceholder.tsx",
       "source": "AICSS Image Generation",

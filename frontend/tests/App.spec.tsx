@@ -181,16 +181,16 @@ describe('React application routes', () => {
     expect(screen.queryByRole('button', { name: '上一张作品' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '下一张作品' })).not.toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: '首页创作提示词' })).toBeInTheDocument();
-    const landingRoot = container.querySelector('[data-liquidglass-root="true"]');
-    const landingTarget = landingRoot?.querySelector('[data-liquidglass-target="true"]');
-    const landingComposer = container.querySelector('[data-slot="agent-chat-input"]');
-    expect(landingRoot).toBeInTheDocument();
-    expect(landingRoot).toHaveAttribute('data-liquidglass-ready', 'false');
-    expect(landingTarget).toBeInTheDocument();
-    expect(landingRoot?.querySelector('.landing-liquidglass-backdrop')).toBeInTheDocument();
-    expect(landingTarget?.getAttribute('data-config')).toContain('"refraction":0.58');
-    expect(landingTarget?.getAttribute('data-config')).toContain('"opacity":0.76');
-    expect(landingTarget?.getAttribute('data-config')).toContain('"brightness":0.1');
+    const landingAnchor = container.querySelector('.landing-composer-anchor');
+    const landingComposers = landingAnchor?.querySelectorAll('[data-slot="agent-chat-input"]');
+    const landingComposer = landingComposers?.item(0);
+    expect(landingAnchor).toBeInTheDocument();
+    expect(landingComposers).toHaveLength(1);
+    expect(landingAnchor?.querySelector('.landing-composer-layout')).toBeInTheDocument();
+    expect(landingAnchor?.querySelector('.landing-composer-content')).toBeInTheDocument();
+    expect(landingAnchor?.querySelector('.landing-liquidglass-target')).not.toBeInTheDocument();
+    expect(landingAnchor?.querySelector('.landing-liquidglass-backdrop')).not.toBeInTheDocument();
+    expect(landingAnchor?.querySelector('canvas')).not.toBeInTheDocument();
     expect(landingComposer).not.toHaveAttribute('data-liquid-glass');
     expect(
       landingComposer?.querySelector('.border-glow-liquid-glass__effect'),

@@ -7,7 +7,6 @@ import { GenerationSubmitCost } from '@/components/generation/GenerationSubmitCo
 import { LandingSidebar } from '@/components/landing/LandingSidebar';
 import { LandingGenerationControls } from '@/components/landing/LandingGenerationControls';
 import { LandingAccountActions } from '@/components/landing/LandingAccountActions';
-import { LiquidGlassSurface } from '@/components/landing/LiquidGlassSurface';
 import { useToast } from '@/components/common/ToastProvider';
 import { AgentChatInput } from '@/components/premium/agent-chat-input/agent-chat-input';
 import type { AgentChatAttachment } from '@/components/premium/agent-chat-input/types';
@@ -320,10 +319,8 @@ export function LandingView() {
             </em>
           </h1>
           <p>用 GPT-IMAGE-2 将你的创意变为精美图片，只需描述你脑海中的画面。</p>
-          <LiquidGlassSurface
-            backdropVideoSrc={HERO_VIDEO}
-            anchorRef={composerAnchorRef}
-            liquidGlassEnabled={!composerDocked}
+          <div
+            ref={composerAnchorRef}
             className={`landing-composer-anchor${composerDocked ? ' is-docked' : ''}${composerIsExpanded ? ' is-expanded' : ''}`}
             data-docked={composerDocked}
             data-expanded={composerIsExpanded}
@@ -412,7 +409,7 @@ export function LandingView() {
                 />
               </motion.div>
             </motion.div>
-          </LiquidGlassSurface>
+          </div>
         </div>
       </section>
       <ImageGalleryVertical
