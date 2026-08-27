@@ -173,6 +173,23 @@ const entries = CREATION_TEMPLATES.map(templateToHistoryEntry);
 - Use Motion or CSS transitions only when motion explains state or continuity.
 - Autoplay surfaces must pause on hover and keyboard focus. The Discover image gallery is intentionally static and unmasked: render each work once per responsive gallery at full opacity, without vertical loop tracks, animation timing styles, or top/bottom edge fades.
 - Discover uses one Agent Chat Input instance across hero and gallery browsing. When its reserved anchor leaves the viewport, the same component becomes a bottom-fixed compact prompt bar; prompt pointer or keyboard focus expands the full toolbar in place. Keep a pointer-transparent black-to-transparent backdrop behind the dock, preserve the anchor's document height so gallery results do not shift, and undock when scrolling back to the hero.
+- Animate the docked Discover composer with Motion layout projection on a wrapper that is enabled from
+  the component's first render. Keep `layoutDependency` scoped to the compact/expanded state so prompt
+  edits do not trigger extra measurements. React applies the final geometry once; the projection owns
+  the visible `transform`, while auxiliary controls may transition only `transform` and `opacity`.
+  Never transition `width`, height constraints, padding, positioning, `flex-basis`, radius, background,
+  border, or shadow during this morph. Disable layout projection for `prefers-reduced-motion` and switch
+  state immediately without remounting the underlying `AgentChatInput`.
+
+```tsx
+<motion.div
+  layout={!reducedMotion}
+  layoutDependency={composerIsExpanded}
+  transition={{ layout: { duration: composerIsExpanded ? 0.36 : 0.24, ease: [0.16, 1, 0.3, 1] } }}
+>
+  <AgentChatInput />
+</motion.div>
+```
 - Honor `prefers-reduced-motion`; disable autoplay video and remove nonessential
   transitions for reduced-motion users.
 - Dense history rails use one shared `Button` for each result batch currently rendered in

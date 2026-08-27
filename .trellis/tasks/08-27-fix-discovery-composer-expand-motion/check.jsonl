@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"复核同一 beUI 组件实例、Motion transform 投影、最终几何和 responsive/reduced-motion 契约。"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"复核 CSS 动画属性、真实浏览器帧采样、控制台、测试和构建结果。"}

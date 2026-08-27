@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"约束 beUI 输入框复用、停靠态交互、Motion 模式、响应式和 reduced-motion 行为。"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"约束动效性能、浏览器视觉 QA、回归测试和必跑检查。"}

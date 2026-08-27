@@ -223,10 +223,46 @@ describe('React application routes', () => {
     const promptInput = screen.getByRole('textbox', { name: '首页创作提示词' });
     await user.click(promptInput);
     expect(anchor).toHaveAttribute('data-expanded', 'true');
+    expect(screen.getByRole('textbox', { name: '首页创作提示词' })).toBe(promptInput);
+
+    act(() => promptInput.blur());
+    await waitFor(() => expect(anchor).toHaveAttribute('data-expanded', 'false'));
+
+    await user.click(promptInput);
+    expect(anchor).toHaveAttribute('data-expanded', 'true');
 
     await user.type(promptInput, '冷白背景产品摄影');
     expect(promptInput).toHaveTextContent('冷白背景产品摄影');
     expect(anchor).toHaveAttribute('data-expanded', 'true');
+  });
+
+  it('keeps dock focus and collapse behavior with reduced motion enabled', async () => {
+    vi.mocked(window.matchMedia).mockImplementation((query) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    const user = userEvent.setup();
+    const { container } = renderRoute('/');
+    const anchor = container.querySelector<HTMLElement>('.landing-composer-anchor');
+
+    vi.spyOn(window, 'scrollY', 'get').mockReturnValue(520);
+    vi.spyOn(anchor!, 'getBoundingClientRect').mockReturnValue(new DOMRect(250, -220, 940, 137));
+    void act(() => window.dispatchEvent(new Event('scroll')));
+    await waitFor(() => expect(anchor).toHaveAttribute('data-docked', 'true'));
+
+    const promptInput = screen.getByRole('textbox', { name: '首页创作提示词' });
+    await user.click(promptInput);
+    expect(promptInput).toHaveFocus();
+    expect(anchor).toHaveAttribute('data-expanded', 'true');
+
+    act(() => promptInput.blur());
+    await waitFor(() => expect(anchor).toHaveAttribute('data-expanded', 'false'));
   });
 
   it('places creation templates between generation and assets in the landing navigation', () => {

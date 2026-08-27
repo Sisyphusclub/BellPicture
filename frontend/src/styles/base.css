@@ -8910,63 +8910,37 @@ video {
   }
 }
 
-/* beUI-style dock morph: keep the discover composer on one compositor-friendly
-   motion curve while it changes between the compact pill and full editor. The
-   state classes still own layout and interaction; these transitions only soften
-   the visual handoff between them. */
+/* Motion projects the dock between its compact and expanded layouts on this
+   visual wrapper. State styles switch immediately to their final geometry, so
+   the morph never animates layout or paint properties frame by frame. */
+.landing-composer-layout {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
 .landing-composer-anchor.is-docked {
-  --landing-composer-morph-duration: 360ms;
-  --landing-composer-morph-ease: var(--ease-out-expo);
-  transition:
-    width var(--landing-composer-morph-duration) var(--landing-composer-morph-ease),
-    transform var(--landing-composer-morph-duration) var(--landing-composer-morph-ease);
-  will-change: width, transform;
+  --landing-composer-aux-duration: 160ms;
 }
-.landing-composer-anchor.is-docked .landing-composer {
-  transition:
-    border-radius var(--landing-composer-morph-duration) var(--landing-composer-morph-ease),
-    background-color 260ms var(--ease-out-expo),
-    border-color 260ms var(--ease-out-expo),
-    box-shadow 320ms var(--landing-composer-morph-ease);
-  will-change: border-radius, box-shadow;
-}
-.landing-composer-anchor.is-docked .landing-composer > .border-glow-inner,
-.landing-composer-anchor.is-docked .landing-composer .agent-chat-input__surface {
-  transition:
-    border-radius var(--landing-composer-morph-duration) var(--landing-composer-morph-ease),
-    padding var(--landing-composer-morph-duration) var(--landing-composer-morph-ease),
-    background-color 260ms var(--ease-out-expo);
-}
-.landing-composer-anchor.is-docked .landing-composer .agent-chat-input__textarea {
-  transition:
-    min-height var(--landing-composer-morph-duration) var(--landing-composer-morph-ease),
-    max-height var(--landing-composer-morph-duration) var(--landing-composer-morph-ease),
-    padding var(--landing-composer-morph-duration) var(--landing-composer-morph-ease),
-    color 180ms var(--ease-out-expo);
-}
-.landing-composer-anchor.is-docked .landing-composer .agent-chat-input__streaming-placeholder {
-  transition:
-    top var(--landing-composer-morph-duration) var(--landing-composer-morph-ease),
-    right var(--landing-composer-morph-duration) var(--landing-composer-morph-ease),
-    left var(--landing-composer-morph-duration) var(--landing-composer-morph-ease),
-    opacity 180ms var(--ease-out-expo);
+.landing-composer-anchor.is-docked.is-expanded {
+  --landing-composer-aux-duration: 220ms;
 }
 .landing-composer-anchor.is-docked .landing-composer .agent-chat-input__toolbar {
   transition:
-    top var(--landing-composer-morph-duration) var(--landing-composer-morph-ease),
-    right var(--landing-composer-morph-duration) var(--landing-composer-morph-ease),
-    left var(--landing-composer-morph-duration) var(--landing-composer-morph-ease),
-    transform var(--landing-composer-morph-duration) var(--landing-composer-morph-ease),
-    opacity 180ms var(--ease-out-expo);
+    opacity var(--landing-composer-aux-duration) var(--ease-out-expo),
+    transform var(--landing-composer-aux-duration) var(--ease-out-expo);
+}
+.landing-composer-anchor.is-docked .landing-composer .agent-chat-input__submit {
+  transition:
+    opacity var(--landing-composer-aux-duration) var(--ease-out-expo),
+    transform var(--landing-composer-aux-duration) var(--ease-out-expo);
 }
 .landing-composer-anchor.is-docked .landing-composer .agent-chat-input__toolbar-content {
   flex: 1 1 0%;
   min-width: 0;
   overflow: hidden;
   transition:
-    flex-basis var(--landing-composer-morph-duration) var(--landing-composer-morph-ease),
-    opacity 180ms var(--ease-out-expo),
-    transform var(--landing-composer-morph-duration) var(--landing-composer-morph-ease);
+    opacity var(--landing-composer-aux-duration) var(--ease-out-expo),
+    transform var(--landing-composer-aux-duration) var(--ease-out-expo);
 }
 .landing-composer-anchor.is-docked:not(.is-expanded)
   .landing-composer
@@ -8990,8 +8964,8 @@ video {
   pointer-events: none;
   transform: translateY(3px) scale(0.94);
   transition:
-    opacity 180ms var(--ease-out-expo),
-    transform var(--landing-composer-morph-duration) var(--landing-composer-morph-ease);
+    opacity var(--landing-composer-aux-duration) var(--ease-out-expo),
+    transform var(--landing-composer-aux-duration) var(--ease-out-expo);
 }
 .landing-composer-anchor.is-docked.is-expanded
   .landing-composer
@@ -9005,20 +8979,14 @@ video {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .landing-composer-anchor.is-docked,
-  .landing-composer-anchor.is-docked .landing-composer,
-  .landing-composer-anchor.is-docked .landing-composer > .border-glow-inner,
-  .landing-composer-anchor.is-docked .landing-composer .agent-chat-input__surface,
-  .landing-composer-anchor.is-docked .landing-composer .agent-chat-input__textarea,
-  .landing-composer-anchor.is-docked .landing-composer .agent-chat-input__streaming-placeholder,
   .landing-composer-anchor.is-docked .landing-composer .agent-chat-input__toolbar,
+  .landing-composer-anchor.is-docked .landing-composer .agent-chat-input__submit,
   .landing-composer-anchor.is-docked .landing-composer .agent-chat-input__toolbar-content,
   .landing-composer-anchor.is-docked
     .landing-composer
     .agent-chat-input__toolbar-group:first-child
     .agent-chat-input__agent-trigger {
     transition: none;
-    will-change: auto;
   }
 }
 
