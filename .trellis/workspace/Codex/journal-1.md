@@ -268,3 +268,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 9: 修复发现页输入框文字缩放与居中
+
+**Date**: 2026-08-27
+**Task**: 修复发现页输入框文字缩放与居中
+**Branch**: `dev`
+
+### Summary
+
+为停靠输入框增加嵌套 Motion 位置投影以抵消外框 FLIP 缩放，保持文字和控件视觉尺寸稳定，并将桌面停靠框对齐发现页内容画布中心。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `35a1dcc` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
