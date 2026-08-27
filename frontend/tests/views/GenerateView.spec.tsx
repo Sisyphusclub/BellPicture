@@ -7,6 +7,7 @@ const generation = vi.hoisted(() => ({
   generate: vi.fn(),
   cancel: vi.fn(),
   error: null as Error | null,
+  isLoading: false,
 }));
 
 const authMocks = vi.hoisted(() => ({
@@ -67,7 +68,7 @@ vi.mock('@/hooks/useImageQuota', () => ({
 
 vi.mock('@/hooks/useImageGeneration', () => ({
   useImageGeneration: () => ({
-    isLoading: false,
+    isLoading: generation.isLoading,
     error: generation.error,
     statusMessage: '准备生成',
     generate: generation.generate,
@@ -110,6 +111,7 @@ beforeEach(() => {
   historyMocks.remove.mockResolvedValue(undefined);
   historyMocks.batches = [];
   generation.error = null;
+  generation.isLoading = false;
   generation.generate.mockResolvedValue({
     batchId: 'batch-one',
     aspectRatio: '16:9',
@@ -204,6 +206,28 @@ it('supports up to four images per generation', async () => {
   await waitFor(() =>
     expect(generation.generate).toHaveBeenCalledWith(expect.objectContaining({ count: 4 })),
   );
+});
+
+it('uses the compact beUI stop action while generation is pending', async () => {
+  generation.isLoading = true;
+  const user = userEvent.setup();
+  const { container } = render(
+    <MemoryRouter initialEntries={['/generate']}>
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+
+  const stop = screen.getByRole('button', { name: '停止生成' });
+  expect(stop).toBeEnabled();
+  expect(stop).toHaveClass('agent-chat-input__submit--stop');
+  expect(stop).not.toHaveTextContent('1');
+  expect(stop.querySelector('svg')).toHaveClass('lucide-square', 'size-3.5', 'fill-current');
+  expect(container.querySelector('.generation-submit-cost')).not.toBeInTheDocument();
+
+  await user.click(stop);
+  expect(generation.cancel).toHaveBeenCalledTimes(1);
 });
 
 it('keeps earlier batches above a newly submitted generation', async () => {

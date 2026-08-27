@@ -9021,6 +9021,32 @@ video {
   }
 }
 
+/* The idle generation action is a credit pill. Pending generation returns to
+   beUI's compact icon-button geometry instead of inheriting that pill width. */
+.agent-chat-input__submit.agent-chat-input__submit--stop,
+:is(
+    .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer,
+    .landing-composer-anchor:not(.is-docked) .landing-composer,
+    .studio-agent-input
+  )
+  .agent-chat-input__submit.agent-chat-input__submit--stop {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: none;
+}
+
+.agent-chat-input__submit.agent-chat-input__submit--stop svg {
+  width: 14px;
+  height: 14px;
+}
+
 /* The mobile navigation is a fixed beUI surface. Keep the library heading
    below it so the eyebrow and title remain readable on narrow screens. */
 @media (max-width: 860px) {

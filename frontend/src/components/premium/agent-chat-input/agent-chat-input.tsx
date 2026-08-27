@@ -768,7 +768,7 @@ export function AgentChatInput({
               onClick={busy ? onStop : submit}
               whileTap={reduce ? {} : { scale: 0.94 }}
               transition={SPRING_PRESS}
-              className="agent-chat-input__submit"
+              className={cn('agent-chat-input__submit', busy && 'agent-chat-input__submit--stop')}
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span
@@ -783,7 +783,7 @@ export function AgentChatInput({
                   transition={reduce ? { duration: 0 } : SPRING_SWAP}
                 >
                   {busy ? (
-                    <Square aria-hidden="true" />
+                    <Square aria-hidden="true" className="size-3.5 fill-current" />
                   ) : (
                     (submitContent ?? <ArrowUp aria-hidden="true" />)
                   )}

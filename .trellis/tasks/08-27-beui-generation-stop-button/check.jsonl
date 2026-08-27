@@ -1,0 +1,5 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Run the frontend quality checklist against the completed change."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Verify the busy state remains inside the shared beUI Agent Chat Input."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Check accessibility, responsive behavior, tests, lint, typecheck, and build."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Confirm the change introduces no unsafe types or suppressions."}
+{"file":".trellis/spec/guides/index.md","reason":"Review reuse and consistency across Discover and Generate."}

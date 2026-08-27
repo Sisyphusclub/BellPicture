@@ -77,6 +77,12 @@ by this repository, not a runtime black box.
   credit pill with a Lucide sparkle and `1 * requestedImageCount`; changing the count updates the
   displayed cost from `1` to `4`. Custom idle content must never replace the shared pending stop
   state, accessible action label, disabled semantics, focus treatment, or reduced-motion behavior.
+- When route CSS widens that idle credit action, expose busy state through a component-owned modifier
+  such as `agent-chat-input__submit--stop` and restore the complete beUI icon-button geometry in the
+  final state rule: `36-40px` square size, matching `flex-basis`, zero horizontal padding, full radius,
+  and a centered filled stop icon. Swapping the React child alone is insufficient because the idle
+  pill's width and flex rules remain active. Regression coverage must keep the idle credit content,
+  pending accessible name, stop callback, and stop icon distinct.
 - Grouped toolbar controls use a stable `40px` outer height. When a grid or
   segmented control contains smaller icon buttons, set `align-items: center`
   on the container and `place-items: center` on each item explicitly; CSS Grid's

@@ -1,0 +1,5 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Follow the frontend pre-development checklist for a shared component and CSS change."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Preserve the source-owned beUI component contract and avoid page-local replicas."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Apply accessibility, state, responsive, and regression-test requirements."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Keep the shared component change type-safe without bypasses."}
+{"file":".trellis/spec/guides/index.md","reason":"Apply shared code reuse and cross-layer thinking before implementation."}
