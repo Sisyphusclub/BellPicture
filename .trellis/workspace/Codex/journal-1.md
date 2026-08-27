@@ -202,3 +202,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 7: 修复发现页输入框垂直对齐
+
+**Date**: 2026-08-27
+**Task**: 修复发现页输入框垂直对齐
+**Branch**: `dev`
+
+### Summary
+
+修复发现页停靠态 beUI 输入框在桌面和移动端的文字、流式占位与控件垂直中心偏差；补充交互回归、浏览器几何验证和组件规范。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e187a0d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
