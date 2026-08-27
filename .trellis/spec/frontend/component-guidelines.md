@@ -190,6 +190,21 @@ const entries = CREATION_TEMPLATES.map(templateToHistoryEntry);
   <AgentChatInput />
 </motion.div>
 ```
+
+Because the surface projection scales the full outer box, place the existing `AgentChatInput` inside a
+nested `layout="position"` Motion boundary. The nested projection must counteract the parent's scale so
+text, icons, and `40px` toolbar controls keep their rendered size throughout both directions. Browser QA
+must sample a readable child/control over multiple animation frames, not only the outer transform or the
+settled frame. On desktop, center the fixed dock on the same `calc(50% + 64px)` line as
+`.landing-hero__content`; keep the `<=860px` override at `50%`.
+
+```tsx
+<motion.div layout={!reducedMotion} layoutDependency={composerIsExpanded}>
+  <motion.div layout={reducedMotion ? false : 'position'} layoutDependency={composerIsExpanded}>
+    <AgentChatInput />
+  </motion.div>
+</motion.div>
+```
 - Honor `prefers-reduced-motion`; disable autoplay video and remove nonessential
   transitions for reduced-motion users.
 - Dense history rails use one shared `Button` for each result batch currently rendered in

@@ -1,0 +1,3 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"verify single beUI instance, Motion boundaries, centering and reduced-motion behavior"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"verify automated checks and real-browser responsive motion QA"}
+{"file":".trellis/tasks/08-27-fix-discovery-composer-text-scale-centering/research/motion-content-scale-correction.md","reason":"verify content remains unscaled and center delta is removed"}
