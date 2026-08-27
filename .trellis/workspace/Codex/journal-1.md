@@ -301,3 +301,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 10: 移除发现页输入框外层玻璃壳
+
+**Date**: 2026-08-27
+**Task**: 移除发现页输入框外层玻璃壳
+**Branch**: `dev`
+
+### Summary
+
+从发现页渲染树移除重复的 LiquidGlass 卡片、canvas 和依赖，改用透明定位容器，只保留 beUI AgentChatInput 作为唯一可见表面，并保持 docking 与 Motion 行为。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b1d16dc` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
