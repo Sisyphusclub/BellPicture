@@ -367,3 +367,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 12: 优化生成停止按钮样式
+
+**Date**: 2026-08-27
+**Task**: 优化生成停止按钮样式
+**Branch**: `dev`
+
+### Summary
+
+将生成中的积分胶囊替换为 beUI 40px 圆形停止按钮，保留取消与无障碍行为，补充回归测试并完成桌面和移动端视觉验证。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4812c58` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
