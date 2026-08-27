@@ -8688,17 +8688,38 @@ video {
   border-radius: 17px;
   background: var(--card) !important;
 }
+.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer .agent-chat-input__surface {
+  padding: 6px 8px;
+}
 .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer .agent-chat-input__textarea {
   min-height: 52px !important;
   max-height: 52px !important;
-  padding: 12px 78px 8px 52px !important;
+  padding: 15px 78px 5px 52px !important;
   color: var(--foreground);
   caret-color: var(--foreground);
+}
+.landing-composer-anchor.is-docked.is-expanded .landing-composer .agent-chat-input__textarea {
+  padding: 27px 18px 10px !important;
+}
+.landing-composer-anchor.is-docked.is-expanded
+  .landing-composer
+  .agent-chat-input__streaming-placeholder {
+  top: 30px;
+}
+@media (max-width: 860px) {
+  .landing-composer-anchor.is-docked.is-expanded .landing-composer .agent-chat-input__textarea {
+    padding: 31px 14px 6px !important;
+  }
+  .landing-composer-anchor.is-docked.is-expanded
+    .landing-composer
+    .agent-chat-input__streaming-placeholder {
+    top: 35px;
+  }
 }
 .landing-composer-anchor.is-docked:not(.is-expanded)
   .landing-composer
   .agent-chat-input__streaming-placeholder {
-  top: 17px;
+  top: 20px;
   right: 82px;
   left: 58px;
   font-size: 15px;

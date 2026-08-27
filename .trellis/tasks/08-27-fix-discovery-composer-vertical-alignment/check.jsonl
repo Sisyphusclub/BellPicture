@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"复核修改是否保持共享 beUI 组件、可访问性、响应式和停靠交互契约。"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"复核自动化检查、浏览器中心线测量、溢出和控制台状态。"}

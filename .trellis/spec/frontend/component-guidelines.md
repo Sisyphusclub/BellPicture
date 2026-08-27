@@ -89,6 +89,31 @@ by this repository, not a runtime black box.
   default stretch alignment can leave `32px` buttons visibly above the text
   baseline.
 
+### Docked Discover Composer Alignment
+
+The compact editor, streaming placeholder, add action, and submit action must share one vertical
+center line. In the expanded state, a single rendered text line must center within the editor while
+multiline content keeps its natural growth and scrolling behavior. The desktop editor is `76px`
+tall, while the `<=860px` editor is `86px`; do not reuse desktop vertical padding or placeholder
+offsets at the mobile breakpoint.
+
+```css
+/* Correct: preserve total padding while calibrating each editor height. */
+.is-docked.is-expanded .agent-chat-input__textarea {
+  padding-block: 27px 10px;
+}
+
+@media (max-width: 860px) {
+  .is-docked.is-expanded .agent-chat-input__textarea {
+    padding-block: 31px 6px;
+  }
+}
+```
+
+For browser QA, compare the rendered text `Range` center to the editor center rather than comparing
+element boxes alone. Keep the delta below `1px` at desktop and `390px` mobile, and require zero
+horizontal document overflow.
+
 ### Image-led Library Assets
 
 - Every visible template in an image-led library uses a semantically matched,

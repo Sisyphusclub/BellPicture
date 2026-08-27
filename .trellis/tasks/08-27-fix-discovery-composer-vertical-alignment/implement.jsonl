@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"约束 beUI Agent Chat Input 的局部扩展、样式归属、响应式与交互行为。"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"约束视觉缺陷的回归测试、桌面/移动浏览器 QA 和必跑检查。"}

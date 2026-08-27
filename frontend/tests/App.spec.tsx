@@ -220,7 +220,12 @@ describe('React application routes', () => {
     await waitFor(() => expect(anchor).toHaveAttribute('data-docked', 'true'));
     expect(anchor).toHaveAttribute('data-expanded', 'false');
 
-    await user.click(screen.getByRole('textbox', { name: '首页创作提示词' }));
+    const promptInput = screen.getByRole('textbox', { name: '首页创作提示词' });
+    await user.click(promptInput);
+    expect(anchor).toHaveAttribute('data-expanded', 'true');
+
+    await user.type(promptInput, '冷白背景产品摄影');
+    expect(promptInput).toHaveTextContent('冷白背景产品摄影');
     expect(anchor).toHaveAttribute('data-expanded', 'true');
   });
 
