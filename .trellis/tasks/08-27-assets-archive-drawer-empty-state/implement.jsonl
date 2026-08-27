@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Use the project beUI source-owned component, accessibility, styling, responsive, and reduced-motion rules."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Preserve loading, empty, error, unauthenticated, populated, and responsive state quality gates."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Keep the new component API and route integration fully typed."}
+{"file":".trellis/tasks/08-27-assets-archive-drawer-empty-state/research/beui-archive-drawer.md","reason":"Use the verified official Archive drawer DOM, SVG geometry, motion states, export name, and registry limitation."}

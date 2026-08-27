@@ -1,11 +1,12 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { HistoryEntry } from '@/types/image';
 
 const historyMocks = vi.hoisted(() => ({
+  entries: [] as HistoryEntry[],
   update: vi.fn(),
   updateMany: vi.fn(),
   remove: vi.fn(),
@@ -62,8 +63,8 @@ vi.mock('@/hooks/useAuth', () => ({
 
 vi.mock('@/hooks/useImageHistory', () => ({
   useImageHistory: () => ({
-    records: entries.map((entry) => entry.record),
-    entries,
+    records: historyMocks.entries.map((entry) => entry.record),
+    entries: historyMocks.entries,
     isHydrating: false,
     hydrateError: null,
     update: historyMocks.update,
@@ -89,9 +90,12 @@ function deferred<T>() {
 
 function renderView() {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={['/history']}>
       <ToastProvider>
-        <HistoryView />
+        <Routes>
+          <Route path="/history" element={<HistoryView />} />
+          <Route path="/generate" element={<p>生成路线</p>} />
+        </Routes>
       </ToastProvider>
     </MemoryRouter>,
   );
@@ -101,6 +105,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   authMocks.isAuthenticated = true;
   authMocks.isLoading = false;
+  historyMocks.entries = entries;
   historyMocks.update.mockImplementation((id: string, updates: Record<string, unknown>) =>
     Promise.resolve({
       ...entries.find((entry) => entry.record.id === id)!.record,
@@ -113,6 +118,31 @@ beforeEach(() => {
 });
 
 describe('HistoryView asset workflows', () => {
+  it('uses the beUI Archive drawer for a truly empty asset library', async () => {
+    historyMocks.entries = [];
+    const user = userEvent.setup();
+    const { container } = renderView();
+
+    expect(screen.getByRole('heading', { name: '还没有资产' })).toBeInTheDocument();
+    expect(container.querySelector('[data-beui-empty-state="archive"]')).toBeInTheDocument();
+    expect(screen.queryByText('暂无符合条件的资产。')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '选择当前结果' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '开始创作' }));
+    expect(screen.getByText('生成路线')).toBeInTheDocument();
+  });
+
+  it('keeps the filtered no-results state distinct from an empty library', async () => {
+    const user = userEvent.setup();
+    const { container } = renderView();
+
+    await user.type(screen.getByRole('searchbox', { name: '搜索资产' }), '不存在的资产');
+
+    expect(screen.getByText('暂无符合条件的资产。')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '还没有资产' })).not.toBeInTheDocument();
+    expect(container.querySelector('[data-beui-empty-state="archive"]')).not.toBeInTheDocument();
+  });
+
   it('keeps asset controls hidden while the authentication state is pending', () => {
     authMocks.isAuthenticated = false;
     authMocks.isLoading = true;

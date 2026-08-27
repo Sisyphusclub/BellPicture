@@ -487,6 +487,7 @@ The home page is a product-first creation screen, not a Squarespace clone.
 - Generated images are the repeated surface; do not put image cards inside a larger decorative card.
 - Selection mode supports select all in the current result set, bulk download, collection assignment, and bulk delete. Destructive bulk actions require confirmation.
 - Preserve inspect, download, reuse prompt/settings, public state, pagination/load-more, single delete, loading, empty, error, unauthenticated, and retry behavior.
+- Once authenticated history hydration settles with zero saved entries, use the beUI Pro Archive drawer empty state with `还没有资产`, one concise persistence sentence, and a `开始创作` action that opens Generate. If saved entries exist but the active filters return no matches, keep the separate `暂无符合条件的资产。` result state; never replace loading or retryable errors with the archive illustration.
 - Grid mode optimizes visual scanning. List mode exposes prompt, model, dimensions, visibility, collection, and created date without opening each image.
 
 ### Admin Users (`/admin/users`)

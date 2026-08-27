@@ -256,6 +256,19 @@ settled frame. On desktop, center the fixed dock on the same `calc(50% + 64px)` 
 - Loading, empty, error, unauthorized, and forbidden states are first-class UI
   states, not blank containers.
 
+### Assets Empty-State Contract
+
+- Determine a truly empty asset library from `history.entries.length === 0`, after authentication
+  and history hydration settle. Render the source-owned beUI `EmptyStateArchive` with the heading
+  `还没有资产`, one concise sentence, and a shared `Button` that navigates to `/generate`.
+- A non-empty library whose `filtered` array is empty is a no-results state, not an empty library.
+  Keep `暂无符合条件的资产。` in that branch so search, date, visibility, favorites, and collection
+  filters do not falsely suggest that the account has never created anything.
+- Do not render `EmptyStateArchive` over the initial hydration skeleton or an empty-library hydration
+  error. The error and retry path remain authoritative until a successful refresh.
+- Route tests must cover the true-empty branch, the action route, and the filtered-empty branch as
+  separate visible outcomes.
+
 ### Landing Account and Daily Check-in
 
 - Compose the discovery header from the shared `Button`, `IconTooltip`, and

@@ -4761,6 +4761,56 @@ video {
 .assets-page .asset-library {
   margin-top: 16px;
 }
+.asset-archive-empty {
+  display: flex;
+  width: 100%;
+  max-width: 520px;
+  min-height: 390px;
+  margin-inline: auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 20px;
+  color: var(--foreground);
+  text-align: center;
+}
+.asset-archive-empty__art {
+  position: relative;
+  width: min(205px, 100%);
+  margin-bottom: 20px;
+  color: var(--foreground);
+}
+.asset-archive-empty__art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.asset-archive-empty__content {
+  width: min(100%, 384px);
+}
+.asset-archive-empty__content h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+.asset-archive-empty__content p {
+  max-width: 320px;
+  margin: 8px auto 0;
+  color: var(--muted-foreground);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.asset-archive-empty__content .button {
+  min-height: 34px;
+  margin-top: 16px;
+  gap: 6px;
+}
+.asset-archive-empty__content .button svg {
+  width: 14px;
+  height: 14px;
+}
 .image-tile {
   overflow: hidden;
   border: 1px solid transparent;

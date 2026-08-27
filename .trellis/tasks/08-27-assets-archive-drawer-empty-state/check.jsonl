@@ -1,0 +1,3 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Review source provenance, shared Button usage, a11y, responsive layout, and reduced-motion behavior."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Run the required frontend checks and verify all first-class route states."}
+{"file":".trellis/tasks/08-27-assets-archive-drawer-empty-state/research/beui-archive-drawer.md","reason":"Compare the implementation against the measured official Archive drawer geometry and hover state."}

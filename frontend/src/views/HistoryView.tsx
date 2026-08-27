@@ -18,6 +18,7 @@ import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
 import { useToast } from '@/components/common/ToastProvider';
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
 import { ImageGrid } from '@/components/gallery/ImageGrid';
+import { EmptyStateArchive } from '@/components/premium/empty-states';
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/ui/icon-tooltip';
 import { Input } from '@/components/ui/input';
@@ -442,7 +443,7 @@ export function HistoryView() {
                 取消
               </Button>
             </div>
-          ) : (
+          ) : history.entries.length ? (
             <Button
               type="button"
               variant="ghost"
@@ -453,7 +454,7 @@ export function HistoryView() {
             >
               选择当前结果
             </Button>
-          )}
+          ) : null}
 
           {history.hydrateError ? (
             <div className="inline-error" role="alert">
@@ -481,6 +482,8 @@ export function HistoryView() {
                   <span key={index} />
                 ))}
               </div>
+            ) : history.hydrateError && !history.entries.length ? null : !history.entries.length ? (
+              <EmptyStateArchive onAction={() => void navigate('/generate')} />
             ) : !filtered.length ? (
               <div className="empty-state">
                 <p>暂无符合条件的资产。</p>
