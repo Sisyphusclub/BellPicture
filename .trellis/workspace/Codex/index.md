@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 17
+- **Total Sessions**: 18
 - **Last Active**: 2026-08-28
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~568 | Active |
+| `journal-1.md` | ~602 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 18 | 2026-08-28 | 修复提示词编辑按钮间距 | `8959650`, `62f59b9` | `dev` |
 | 17 | 2026-08-28 | 修复提示词气泡垂直留白 | `8ec5f58`, `17271b9` | `dev` |
 | 16 | 2026-08-28 | 修复输入框光效圆角断层 | `5e54108` | `dev` |
 | 15 | 2026-08-28 | 统一首页与生图页输入框光效 | `bf9cea1` | `dev` |

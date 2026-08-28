@@ -1,1 +1,9 @@
-{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file":".trellis/spec/backend/index.md","reason":"后端分层、质量和检查入口"}
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"schema、事务、索引和迁移约束"}
+{"file":".trellis/spec/backend/error-handling.md","reason":"AppError、错误映射与异步控制器约束"}
+{"file":".trellis/spec/backend/logging-guidelines.md","reason":"隐私日志和结构化元数据约束"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"后端测试与类型检查要求"}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"异步响应并发和 hook 生命周期规范"}
+{"file":".trellis/spec/frontend/state-management.md","reason":"模块级历史缓存的账号隔离约束"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"前端测试和验证要求"}
+{"file":".trellis/tasks/08-28-fix-security-races-resources/prd.md","reason":"本任务完整范围、决策与验收标准"}

@@ -566,3 +566,37 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 18: 修复提示词编辑按钮间距
+
+**Date**: 2026-08-28
+**Task**: 修复提示词编辑按钮间距
+**Branch**: `dev`
+
+### Summary
+
+将提示词正文和元信息与 beUI 编辑入口拆分为两列 Grid，桌面保留 12px、窄屏保留 10px 稳定间距，消除铅笔图标贴近文字的问题，同时保持气泡紧凑高度与完整编辑行为。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8959650` | (see git log) |
+| `62f59b9` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
