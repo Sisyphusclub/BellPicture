@@ -587,6 +587,11 @@ it('edits a completed prompt and replaces the original generation batch', async 
   await user.click(screen.getByRole('button', { name: '生成图片' }));
   await screen.findByRole('button', { name: '查看图片：雨夜建筑' });
   const editTrigger = screen.getByRole('button', { name: '编辑提示词' });
+  const promptBubble = container.querySelector('.session-batch__prompt--editable');
+  const editSlot = promptBubble?.querySelector('.session-batch__prompt-edit-slot');
+  expect(editSlot).toBeTruthy();
+  expect(editSlot).toContainElement(editTrigger);
+  expect(editSlot?.parentElement).toBe(promptBubble);
   await user.hover(editTrigger);
   expect(await screen.findByText('编辑提示词')).toBeInTheDocument();
   await user.click(editTrigger);

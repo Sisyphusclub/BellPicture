@@ -62,6 +62,10 @@ by this repository, not a runtime black box.
 - Do not style generic descendants such as `.session-batch__header span` when a
   container may host metadata and control groups. Target the semantic element
   class so component-owned `display`, alignment, and gap rules remain authoritative.
+- When an icon control uses `IconTooltip` inside a content-sized bubble, position the
+  complete Tooltip trigger wrapper out of document flow. Positioning only the nested
+  button leaves the wrapper's inline box as an empty line and creates false vertical
+  space; use a semantic slot that centers the trigger against the bubble.
 - Use the layered dark workbench canvas and restrained graphite surfaces defined
   by the project. Do not flatten operational pages into one full-black canvas.
 - Landing-page measurements follow the prompt-first beUI composition in

@@ -357,19 +357,21 @@ function EditablePromptBubble({ item, disabled, onRegenerate }: EditablePromptBu
         {formatClockTime(item.createdAt)} · {ASPECT_RATIO_LABELS[item.settings.aspectRatio]} ·{' '}
         {item.settings.count} 张
       </span>
-      <IconTooltip label="编辑提示词">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="session-batch__prompt-edit"
-          aria-label="编辑提示词"
-          disabled={disabled}
-          onClick={() => setIsEditing(true)}
-        >
-          <Pencil aria-hidden="true" />
-        </Button>
-      </IconTooltip>
+      <span className="session-batch__prompt-edit-slot">
+        <IconTooltip label="编辑提示词">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="session-batch__prompt-edit"
+            aria-label="编辑提示词"
+            disabled={disabled}
+            onClick={() => setIsEditing(true)}
+          >
+            <Pencil aria-hidden="true" />
+          </Button>
+        </IconTooltip>
+      </span>
     </div>
   );
 }

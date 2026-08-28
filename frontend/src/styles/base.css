@@ -7135,10 +7135,17 @@ video {
 .session-batch__prompt--editable {
   padding-right: 44px;
 }
-.session-batch__prompt-edit {
+.session-batch__prompt-edit-slot {
   position: absolute;
-  top: 8px;
+  top: 50%;
   right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-50%);
+}
+.session-batch__prompt-edit {
+  position: static;
   display: inline-grid;
   width: 28px;
   height: 28px;
