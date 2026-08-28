@@ -799,3 +799,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 25: 创作模板动漫内容后置
+
+**Date**: 2026-08-28
+**Task**: 创作模板动漫内容后置
+**Branch**: `dev`
+
+### Summary
+
+复用共享稳定排序，将创作模板默认精选中的动漫漫画分类移到末尾；保留显式排序语义并完成浏览器与前端测试验证。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `95be763` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
