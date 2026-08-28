@@ -574,7 +574,7 @@ video {
 }
 .landing-account-actions {
   position: fixed;
-  top: 16px;
+  top: 28px;
   right: 18px;
   z-index: 41;
   display: flex;

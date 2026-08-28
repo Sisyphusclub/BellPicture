@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Defines shared landing/studio shell ownership, beUI controls, and responsive behavior."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Defines browser geometry checks, overflow, accessibility, and required frontend verification."}

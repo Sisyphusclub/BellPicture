@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Verify the shared account action cluster remains source-owned and aligned without changing behavior."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Verify measured desktop center lines, responsive hiding, overflow, console, tests, lint, and build."}

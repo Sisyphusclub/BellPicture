@@ -340,6 +340,9 @@ last-batch clearance at 1440 x 813 and 390 x 844.
 - Keep the desktop cluster fixed inside the discovery viewport without causing
   horizontal overflow. Below `860px`, hide it and surface the same account,
   credits, and check-in operation through `LandingSidebar`.
+- On desktop, align the fixed account cluster to the collapsed sidebar brand's
+  `50px` vertical center line. The `44px` cluster therefore starts at `28px`;
+  do not independently anchor it to the viewport's original `16px` inset.
 - Popovers close on outside pointer interaction and Escape, preserve their
   trigger relationship through ARIA attributes, and reduce spatial motion to a
   short opacity transition under `prefers-reduced-motion`.
