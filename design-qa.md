@@ -1409,6 +1409,49 @@ No actionable P0, P1, or P2 findings remain.
 
 final result: passed
 
+## Assets And User Management Header Clearance QA (2026-08-28)
+
+- Source feedback screenshots:
+  `C:/Users/Administrator/Desktop/aae23017-5af4-4881-9f7a-ba2cdc62cc4c.png` and
+  `C:/Users/Administrator/Desktop/506199ed-cb87-4971-85cb-4b8c1ba9a187.png`.
+- Local implementation: `http://127.0.0.1:5174/templates`,
+  `http://127.0.0.1:5174/history`, and `http://127.0.0.1:5174/admin/users`.
+- Source states: authenticated desktop Assets empty state and authenticated desktop User
+  Management table.
+- Implementation screenshot: unavailable because the Chrome connection fails before page capture;
+  the installed runtime still imports a removed `26.820.80927` browser service path.
+
+### Findings
+
+- P1 spacing and layout rhythm: both workbench pages started inside the fixed account action region.
+  The account chrome ends near `72px`, while the pages previously started at `24px`. The code now
+  starts desktop content and the Assets sticky command bar at `92px`, preserving a `20px` gap.
+- P1 Templates spacing: the Templates page and sticky toolbar still used an older `18px` desktop
+  offset. Both now use the same `92px` boundary as the other operational pages.
+- Responsive structure: below `860px`, page content uses `84px` plus the top safe area and the
+  Assets sticky bar uses `76px` plus the top safe area. This keeps both below the fixed `56px`
+  mobile header without stacking the desktop clearance a second time.
+- Fonts and typography, colors and visual tokens, image quality and asset fidelity, and copy/content
+  were intentionally unchanged by this narrow correction.
+
+### Patches Made
+
+- Added one shared desktop workbench header-clearance variable for Assets and User Management.
+- Applied the same desktop boundary to the Assets sticky command bar.
+- Aligned the Templates page and sticky toolbar to that desktop boundary without changing its grid.
+- Preserved separate mobile content and sticky offsets with safe-area support.
+
+### Verification
+
+- Focused Assets and User Management tests: passed, 15 tests.
+- Templates route tests: passed, 18 tests.
+- TypeScript typecheck: passed.
+- Lint: passed with the existing Fast Refresh warning in `src/components/ui/sidebar.tsx`.
+- Targeted Prettier and `git diff --check`: passed.
+- Visual comparison: blocked until a post-fix screenshot can be captured in Chrome.
+
+final result: blocked
+
 ## GPT-Style Generate Prompt Bubble QA (2026-08-28)
 
 - Source visual truth:

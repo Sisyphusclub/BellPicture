@@ -394,6 +394,30 @@ The prompt composer is the signature product surface. Use the installed beUI Age
 - Pagination uses icon buttons and an animated page-size menu.
 - Mobile changes rows into labeled records without dropping quota editing or delete actions.
 
+### Operational Workbench Bars
+
+- Templates, Assets, and Admin share a `.workspace-page` content frame capped at `1580px` and centered
+  in the main area. Their horizontal gutters are `32px` on desktop, `20px` at `<=860px`, and `14px`
+  at `<=560px`; Discover and Generate retain their route-specific canvas clearance and internal
+  composer or feed widths.
+- Assets starts directly with one sticky command bar: search and the filtered/total count lead;
+  date, visibility, sort, favorites, and view mode follow as compact `40px` controls. Do not put a
+  page title or descriptive introduction above it.
+- Keep the collection rail on the same graphite plane under the command bar. Reserve a stable
+  `48px` selection lane below it so entering or leaving bulk mode does not shift the media library.
+- Admin uses a compact heading row with the account count, refresh, and create command. Account
+  creation opens as an inline secondary tool above the list and returns focus to its trigger after
+  completion; the data table remains the primary first-screen surface.
+- On desktop, Templates, Assets, and Admin content starts at `92px`, below the fixed account actions.
+  The Templates and Assets sticky command bars use the same top boundary so scrolling cannot move
+  either surface underneath that chrome.
+- At tablet widths, Assets uses two media columns and both tables switch to labeled records. Below
+  `860px`, reserve the fixed `56px` mobile header plus its viewport inset before page content, and
+  offset sticky command bars below that header instead of letting either surface overlap the other.
+- At tablet widths, Assets list rows and Admin table rows recompose into labeled records instead of
+  creating horizontal page overflow. Search, counts, quota saving, pagination, and destructive
+  actions remain visible at `390px` and `320px`.
+
 ### Empty, Loading, and Error States
 
 - Empty states explain the next useful action in one sentence and provide one clear command when action is possible.
@@ -617,5 +641,5 @@ Foreign or nonexistent IDs are never mutated by bulk operations. The frontend va
 - Dark theme is complete across every route; optional light tokens remain coherent.
 - Operational pages contain no visible explanatory subtitles, feature descriptions, tutorials, or keyboard shortcut prose.
 - Every visible action works end to end; unsupported provider capabilities are absent rather than disabled decoration.
-- No horizontal overflow, clipped text, overlapping controls, or layout shifts at 1440px, 1024px, 768px, 390px, and 320px.
+- No horizontal overflow, clipped text, overlapping controls, or layout shifts at 1920px, 1440px, 1024px, 768px, 390px, and 320px.
 - Typecheck, lint, tests, production build, formatting, whitespace checks, browser console checks, and same-viewport visual QA pass before handoff.

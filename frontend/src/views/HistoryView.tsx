@@ -299,162 +299,175 @@ export function HistoryView() {
         </div>
       ) : (
         <>
-          <header className="workspace-heading workspace-heading--compact">
-            <div>
-              <p className="eyebrow">NEBULENS / LIBRARY</p>
-              <h1>资产</h1>
-              <p>集中查看、筛选和复用你的生成结果。</p>
+          <div className="asset-workbench__chrome">
+            <div className="asset-commandbar">
+              <div className="asset-commandbar__primary">
+                <label className="search-field asset-search">
+                  <Search aria-hidden="true" />
+                  <span className="sr-only">搜索资产</span>
+                  <Input
+                    type="search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="搜索提示词、模型或收藏集"
+                  />
+                </label>
+                <span
+                  className="asset-result-count"
+                  aria-label={`当前显示 ${filtered.length} 项，共 ${history.entries.length} 项`}
+                  aria-live="polite"
+                >
+                  <strong>{filtered.length}</strong>
+                  <span> / {history.entries.length} 项</span>
+                </span>
+              </div>
+              <div className="asset-commandbar__controls">
+                <SelectMenu
+                  label="日期筛选"
+                  value={date}
+                  options={DATE_OPTIONS}
+                  onValueChange={setDate}
+                />
+                <SelectMenu
+                  label="可见性筛选"
+                  value={visibility}
+                  options={VISIBILITY_OPTIONS}
+                  onValueChange={setVisibility}
+                />
+                <SelectMenu
+                  label="资产排序"
+                  value={sort}
+                  options={SORT_OPTIONS}
+                  onValueChange={setSort}
+                />
+                <IconTooltip label="仅显示收藏资产">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className={cn('icon-button', favoritesOnly && 'is-active')}
+                    aria-label="仅显示收藏资产"
+                    aria-pressed={favoritesOnly}
+                    onClick={() => setFavoritesOnly((current) => !current)}
+                  >
+                    <Heart aria-hidden="true" />
+                  </Button>
+                </IconTooltip>
+                <div className="view-switch" role="group" aria-label="资产视图">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="网格视图"
+                    aria-pressed={view === 'grid'}
+                    onClick={() => setView('grid')}
+                  >
+                    <Grid2X2 aria-hidden="true" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="列表视图"
+                    aria-pressed={view === 'list'}
+                    onClick={() => setView('list')}
+                  >
+                    <List aria-hidden="true" />
+                  </Button>
+                </div>
+              </div>
             </div>
-            <div className="page-count" aria-live="polite">
-              <strong>{filtered.length}</strong>
-              <span>项资产</span>
-            </div>
-          </header>
-          <div className="workspace-toolbar asset-toolbar">
-            <label className="search-field asset-search">
-              <Search aria-hidden="true" />
-              <span className="sr-only">搜索资产</span>
-              <Input
-                type="search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="搜索资产"
-              />
-            </label>
-            <SelectMenu
-              label="日期筛选"
-              value={date}
-              options={DATE_OPTIONS}
-              onValueChange={setDate}
-            />
-            <SelectMenu
-              label="可见性筛选"
-              value={visibility}
-              options={VISIBILITY_OPTIONS}
-              onValueChange={setVisibility}
-            />
-            <SelectMenu
-              label="资产排序"
-              value={sort}
-              options={SORT_OPTIONS}
-              onValueChange={setSort}
-            />
-            <IconTooltip label="仅显示收藏资产">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className={cn('icon-button', favoritesOnly && 'is-active')}
-                aria-label="仅显示收藏资产"
-                aria-pressed={favoritesOnly}
-                onClick={() => setFavoritesOnly((current) => !current)}
-              >
-                <Heart aria-hidden="true" />
-              </Button>
-            </IconTooltip>
-            <div className="view-switch" role="group" aria-label="资产视图">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label="网格视图"
-                aria-pressed={view === 'grid'}
-                onClick={() => setView('grid')}
-              >
-                <Grid2X2 aria-hidden="true" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label="列表视图"
-                aria-pressed={view === 'list'}
-                onClick={() => setView('list')}
-              >
-                <List aria-hidden="true" />
-              </Button>
-            </div>
+
+            <nav className="collection-rail" aria-label="收藏集筛选">
+              <span className="collection-rail__label">收藏集</span>
+              <div className="collection-rail__items">
+                {[
+                  { id: 'all', label: '全部' },
+                  { id: 'none', label: '未分类' },
+                  ...collections.map((item) => ({ id: item, label: item })),
+                ].map((item) => (
+                  <Button
+                    key={item.id}
+                    type="button"
+                    variant="ghost"
+                    size="compact"
+                    aria-pressed={collection === item.id}
+                    onClick={() => setCollection(item.id)}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
+              </div>
+            </nav>
+
+            {history.entries.length ? (
+              <div className="asset-selection-slot">
+                {selectedIds.size ? (
+                  <div className="selection-bar" role="toolbar" aria-label="已选资产操作">
+                    <strong>{selectedIds.size} 项</strong>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="compact"
+                      aria-pressed={allFilteredSelected}
+                      onClick={selectAll}
+                    >
+                      <Check aria-hidden="true" />
+                      {allFilteredSelected ? '取消全选' : '全选结果'}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="compact"
+                      variant="secondary"
+                      onClick={() => void bulkDownload()}
+                    >
+                      <Download aria-hidden="true" />
+                      下载
+                    </Button>
+                    <SelectMenu
+                      label="批量分配收藏集"
+                      value={collectionAssignment}
+                      options={collectionOptions}
+                      disabled={mutating}
+                      onValueChange={(value) => void assignCollection(value)}
+                    />
+                    <Button
+                      type="button"
+                      size="compact"
+                      variant="danger"
+                      disabled={mutating}
+                      onClick={() => setDeleteTarget({ kind: 'bulk', ids: [...selectedIds] })}
+                    >
+                      <Trash2 aria-hidden="true" />
+                      删除
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="compact"
+                      onClick={() => setSelectedIds(new Set())}
+                    >
+                      取消
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="asset-selection-idle">
+                    <span>{filtered.length} 项结果</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="compact"
+                      className="select-all-entry"
+                      disabled={!filtered.length}
+                      onClick={selectAll}
+                    >
+                      选择当前结果
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : null}
           </div>
-
-          <nav className="collection-rail" aria-label="收藏集筛选">
-            {[
-              { id: 'all', label: '全部' },
-              { id: 'none', label: '未分类' },
-              ...collections.map((item) => ({ id: item, label: item })),
-            ].map((item) => (
-              <Button
-                key={item.id}
-                type="button"
-                variant="ghost"
-                size="compact"
-                aria-pressed={collection === item.id}
-                onClick={() => setCollection(item.id)}
-              >
-                {item.label}
-              </Button>
-            ))}
-          </nav>
-
-          {selectedIds.size ? (
-            <div className="selection-bar" role="toolbar" aria-label="已选资产操作">
-              <Button
-                type="button"
-                variant="ghost"
-                size="compact"
-                aria-pressed={allFilteredSelected}
-                onClick={selectAll}
-              >
-                <Check aria-hidden="true" />
-                {allFilteredSelected ? '取消全选' : '全选结果'}
-              </Button>
-              <strong>{selectedIds.size} 项</strong>
-              <Button
-                type="button"
-                size="compact"
-                variant="secondary"
-                onClick={() => void bulkDownload()}
-              >
-                <Download aria-hidden="true" />
-                下载
-              </Button>
-              <SelectMenu
-                label="批量分配收藏集"
-                value={collectionAssignment}
-                options={collectionOptions}
-                disabled={mutating}
-                onValueChange={(value) => void assignCollection(value)}
-              />
-              <Button
-                type="button"
-                size="compact"
-                variant="danger"
-                disabled={mutating}
-                onClick={() => setDeleteTarget({ kind: 'bulk', ids: [...selectedIds] })}
-              >
-                <Trash2 aria-hidden="true" />
-                删除
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="compact"
-                onClick={() => setSelectedIds(new Set())}
-              >
-                取消
-              </Button>
-            </div>
-          ) : history.entries.length ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="compact"
-              className="select-all-entry"
-              disabled={!filtered.length}
-              onClick={selectAll}
-            >
-              选择当前结果
-            </Button>
-          ) : null}
 
           {history.hydrateError ? (
             <div className="inline-error" role="alert">
@@ -519,7 +532,7 @@ export function HistoryView() {
                 </div>
                 {filtered.map((entry) => (
                   <div className="asset-list__row" role="row" key={entry.record.id}>
-                    <span role="cell">
+                    <span role="cell" data-label="选择">
                       <Button
                         type="button"
                         variant="ghost"
@@ -536,7 +549,7 @@ export function HistoryView() {
                         {selectedIds.has(entry.record.id) ? <Check aria-hidden="true" /> : null}
                       </Button>
                     </span>
-                    <span role="cell">
+                    <span role="cell" data-label="图片">
                       <Button
                         type="button"
                         variant="ghost"
@@ -547,17 +560,17 @@ export function HistoryView() {
                         <img src={entry.imageUrl} alt="" loading="lazy" />
                       </Button>
                     </span>
-                    <span role="cell" className="asset-list__prompt">
+                    <span role="cell" className="asset-list__prompt" data-label="提示词">
                       {entry.record.prompt}
                     </span>
-                    <span role="cell">
+                    <span role="cell" data-label="模型与尺寸">
                       {entry.record.model}
                       <small>
                         {entry.record.width} × {entry.record.height} ·{' '}
                         {entry.record.aspectRatio ?? '1:1'}
                       </small>
                     </span>
-                    <span role="cell" className="asset-visibility">
+                    <span role="cell" className="asset-visibility" data-label="可见性">
                       {entry.record.isPublic ? (
                         <Globe2 aria-hidden="true" />
                       ) : (
@@ -565,9 +578,13 @@ export function HistoryView() {
                       )}
                       {entry.record.isPublic ? '公开' : '私有'}
                     </span>
-                    <span role="cell">{entry.record.collection ?? '未分类'}</span>
-                    <span role="cell">{formatDateTime(entry.record.createdAt)}</span>
-                    <span role="cell" className="asset-list__actions">
+                    <span role="cell" data-label="收藏集">
+                      {entry.record.collection ?? '未分类'}
+                    </span>
+                    <span role="cell" data-label="时间">
+                      {formatDateTime(entry.record.createdAt)}
+                    </span>
+                    <span role="cell" className="asset-list__actions" data-label="操作">
                       <IconTooltip label={entry.record.isFavorite ? '取消收藏' : '收藏'}>
                         <Button
                           type="button"

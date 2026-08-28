@@ -532,7 +532,7 @@ describe('React application routes', () => {
     const user = userEvent.setup();
     renderRoute('/templates');
 
-    expect(screen.getByRole('region', { name: '创作模板' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '创作模板' })).toHaveClass('workspace-page');
     expect(screen.getByRole('searchbox', { name: '搜索创作模板' })).toBeInTheDocument();
     expect(screen.getAllByRole('article')).toHaveLength(163);
     const templateImages = within(screen.getByRole('region', { name: '创作模板' })).getAllByRole(
@@ -573,10 +573,15 @@ describe('React application routes', () => {
 
   it('keeps history and admin routes', () => {
     const history = renderRoute('/history');
-    expect(screen.getByRole('region', { name: '个人资产' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '个人资产' })).toHaveClass('workspace-page');
     history.unmount();
     renderRoute('/admin/users');
     expect(screen.getByRole('heading', { name: '用户管理' })).toBeInTheDocument();
-    expect(screen.getByRole('form', { name: '创建新用户' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '用户管理' })).toHaveClass('workspace-page');
+    expect(screen.getByRole('button', { name: '创建用户' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    expect(screen.queryByRole('form', { name: '创建新用户' })).not.toBeInTheDocument();
   });
 });

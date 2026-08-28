@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, Plus, RefreshCw, Save, Search, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
@@ -14,6 +14,10 @@ import type { AdminUser } from '@/types/admin';
 
 function displayName(user: AdminUser): string {
   return user.username ?? user.name;
+}
+
+function isValidDailyTotal(value: number): boolean {
+  return Number.isInteger(value) && value >= 0 && value <= 10_000;
 }
 
 const PAGE_SIZE_OPTIONS = [
@@ -34,9 +38,12 @@ export function AdminUsersView() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [pageSize, setPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]['value']>('10');
   const [page, setPage] = useState(1);
+  const createTriggerRef = useRef<HTMLButtonElement>(null);
+  const shouldRestoreCreateFocusRef = useRef(false);
 
   useEffect(() => {
     if (isAdmin)
@@ -46,11 +53,7 @@ export function AdminUsersView() {
   }, [isAdmin, notify, refresh]);
 
   const canCreate = useMemo(
-    () =>
-      username.trim().length > 0 &&
-      password.length >= 8 &&
-      Number.isInteger(dailyTotal) &&
-      dailyTotal >= 0,
+    () => username.trim().length > 0 && password.length >= 8 && isValidDailyTotal(dailyTotal),
     [dailyTotal, password, username],
   );
   const filteredUsers = useMemo(() => {
@@ -71,6 +74,16 @@ export function AdminUsersView() {
 
   useEffect(() => setPage(1), [pageSize, query]);
   useEffect(() => setPage((current) => Math.min(current, pageCount)), [pageCount]);
+  useEffect(() => {
+    if (createOpen || creating || !shouldRestoreCreateFocusRef.current) return;
+    shouldRestoreCreateFocusRef.current = false;
+    createTriggerRef.current?.focus();
+  }, [createOpen, creating]);
+  const refreshUsers = (): void => {
+    void refresh().catch((caught) =>
+      notify(caught instanceof Error ? caught.message : '用户列表加载失败。', 'error'),
+    );
+  };
   const submit = async (event: FormEvent): Promise<void> => {
     event.preventDefault();
     if (!canCreate || creating) return;
@@ -80,6 +93,8 @@ export function AdminUsersView() {
       setUsername('');
       setPassword('');
       setDailyTotal(20);
+      shouldRestoreCreateFocusRef.current = true;
+      setCreateOpen(false);
       notify('用户已创建。');
     } catch (caught) {
       notify(caught instanceof Error ? caught.message : '创建用户失败。', 'error');
@@ -88,9 +103,11 @@ export function AdminUsersView() {
     }
   };
   const saveQuota = async (target: AdminUser): Promise<void> => {
+    const dailyQuota = quotaEdits[target.id] ?? target.quota.total;
+    if (savingId !== null || !isValidDailyTotal(dailyQuota)) return;
     setSavingId(target.id);
     try {
-      await updateQuota(target.id, quotaEdits[target.id] ?? target.quota.total);
+      await updateQuota(target.id, dailyQuota);
       setQuotaEdits((current) => {
         const next = { ...current };
         delete next[target.id];
@@ -119,16 +136,30 @@ export function AdminUsersView() {
 
   return (
     <section className="workspace-page admin-page" aria-labelledby="admin-title">
-      <header className="workspace-heading">
-        <div>
-          <p className="eyebrow">NEBULENS / ADMIN</p>
+      <header className="admin-command-header">
+        <div className="admin-command-header__title">
           <h1 id="admin-title">用户管理</h1>
-          <p>维护成员身份与每日生成额度。</p>
+          {isAdmin ? <span aria-live="polite">{users.length} 个账号</span> : null}
         </div>
-        <div className="page-count">
-          <strong>{users.length}</strong>
-          <span>当前账号</span>
-        </div>
+        {isAdmin ? (
+          <div className="admin-command-header__actions">
+            <Button type="button" variant="secondary" disabled={isLoading} onClick={refreshUsers}>
+              <RefreshCw aria-hidden="true" />
+              {isLoading ? '刷新中…' : '刷新'}
+            </Button>
+            <Button
+              ref={createTriggerRef}
+              type="button"
+              aria-expanded={createOpen}
+              aria-controls="admin-create-form"
+              disabled={creating}
+              onClick={() => setCreateOpen((current) => !current)}
+            >
+              <Plus aria-hidden="true" />
+              创建用户
+            </Button>
+          </div>
+        ) : null}
       </header>
       {authLoading ? (
         <p className="loading-state" role="status">
@@ -143,77 +174,61 @@ export function AdminUsersView() {
       ) : null}
       {isAdmin ? (
         <>
-          <form
-            className="admin-create"
-            aria-label="创建新用户"
-            onSubmit={(event) => void submit(event)}
-          >
-            <div className="admin-create__intro">
-              <Plus aria-hidden="true" />
-              <span>
+          {createOpen ? (
+            <form
+              id="admin-create-form"
+              className="admin-create"
+              aria-label="创建新用户"
+              aria-busy={creating}
+              onSubmit={(event) => void submit(event)}
+            >
+              <div className="admin-create__heading">
                 <strong>创建用户</strong>
-                <small>设置登录凭据与默认每日额度。</small>
-              </span>
-            </div>
-            <label>
-              <span>用户名</span>
-              <Input
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                autoComplete="username"
-                placeholder="例如 new_user"
-              />
-            </label>
-            <label>
-              <span>初始密码</span>
-              <Input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="new-password"
-                placeholder="至少 8 个字符"
-              />
-            </label>
-            <label>
-              <span>每日额度</span>
-              <Input
-                type="number"
-                min="0"
-                max="10000"
-                value={dailyTotal}
-                onChange={(event) => setDailyTotal(Number.parseInt(event.target.value, 10) || 0)}
-              />
-            </label>
-            <Button type="submit" disabled={!canCreate || creating}>
-              {creating ? '正在创建…' : '创建用户'}
-            </Button>
-          </form>
-          <section className="admin-panel" aria-label="用户额度列表" aria-busy={isLoading}>
-            <header>
-              <div>
-                <p className="eyebrow">USERS & QUOTA</p>
-                <h2>账号列表</h2>
-                <p>账号、角色、用量和额度调整集中在此处。</p>
               </div>
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={isLoading}
-                onClick={() => void refresh()}
-              >
-                <RefreshCw aria-hidden="true" />
-                {isLoading ? '刷新中…' : '刷新'}
+              <label>
+                <span>用户名</span>
+                <Input
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  autoComplete="username"
+                  autoFocus
+                  disabled={creating}
+                  placeholder="例如 new_user"
+                />
+              </label>
+              <label>
+                <span>初始密码</span>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="new-password"
+                  disabled={creating}
+                  placeholder="至少 8 个字符"
+                />
+              </label>
+              <label>
+                <span>每日额度</span>
+                <Input
+                  type="number"
+                  min="0"
+                  max="10000"
+                  value={dailyTotal}
+                  disabled={creating}
+                  onChange={(event) => setDailyTotal(Number.parseInt(event.target.value, 10) || 0)}
+                />
+              </label>
+              <Button type="submit" disabled={!canCreate || creating}>
+                {creating ? '正在创建…' : '确认创建'}
               </Button>
-            </header>
+            </form>
+          ) : null}
+          <section className="admin-panel" aria-label="用户额度列表" aria-busy={isLoading}>
+            <h2 className="sr-only">账号列表</h2>
             {error ? (
               <div className="inline-error" role="alert">
                 <span>{error.message}</span>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="compact"
-                  onClick={() => void refresh()}
-                >
+                <Button type="button" variant="secondary" size="compact" onClick={refreshUsers}>
                   重新加载
                 </Button>
               </div>
@@ -222,7 +237,7 @@ export function AdminUsersView() {
               <p className="loading-state" role="status">
                 正在载入账号…
               </p>
-            ) : !users.length ? (
+            ) : error && !users.length ? null : !users.length ? (
               <div className="empty-state">
                 <p>暂无用户。可以先从上方创建一个新账号。</p>
               </div>
@@ -242,6 +257,13 @@ export function AdminUsersView() {
                   <span>
                     显示 {filteredUsers.length} / {users.length} 个账号
                   </span>
+                  <SelectMenu
+                    label="每页显示数量"
+                    value={pageSize}
+                    options={PAGE_SIZE_OPTIONS}
+                    onValueChange={setPageSize}
+                    className="admin-page-size"
+                  />
                 </div>
                 {visibleUsers.length ? (
                   <div className="admin-table" role="table">
@@ -275,6 +297,7 @@ export function AdminUsersView() {
                               min="0"
                               max="10000"
                               value={quotaEdits[item.id] ?? item.quota.total}
+                              disabled={savingId === item.id}
                               onChange={(event) =>
                                 setQuotaEdits((current) => ({
                                   ...current,
@@ -299,7 +322,10 @@ export function AdminUsersView() {
                             type="button"
                             variant="secondary"
                             size="compact"
-                            disabled={savingId === item.id}
+                            disabled={
+                              savingId !== null ||
+                              !isValidDailyTotal(quotaEdits[item.id] ?? item.quota.total)
+                            }
                             onClick={() => void saveQuota(item)}
                           >
                             <Save aria-hidden="true" />
@@ -345,13 +371,6 @@ export function AdminUsersView() {
                     第 {safePage} / {pageCount} 页
                   </span>
                   <div>
-                    <SelectMenu
-                      label="每页显示数量"
-                      value={pageSize}
-                      options={PAGE_SIZE_OPTIONS}
-                      onValueChange={setPageSize}
-                      className="admin-page-size"
-                    />
                     <IconTooltip label="上一页">
                       <Button
                         type="button"

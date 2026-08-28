@@ -233,6 +233,12 @@ image filename prefixes.
 
 - Define stable tracks, aspect ratios, and min/max sizes for carousels, grids,
   upload controls, toolbars, and navigation.
+- Treat fixed mobile navigation and page-level sticky controls as one vertical
+  stack. Page content must clear the fixed header, and sticky toolbars must use
+  the same header-plus-safe-area offset instead of attaching to viewport top.
+- Define explicit tablet tracks for media grids and recompose dense tables into
+  labeled records before their minimum columns would create page overflow. Do
+  not rely on desktop tracks to shrink naturally between desktop and mobile.
 - Test at 1440px desktop and 390px mobile at minimum.
 - Page content must not create horizontal document overflow.
 - Desktop navigation may collapse to fixed mobile navigation, but every route and

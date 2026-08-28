@@ -12,6 +12,8 @@ const historyMocks = vi.hoisted(() => ({
   remove: vi.fn(),
   removeMany: vi.fn(),
   refresh: vi.fn(),
+  isHydrating: false,
+  hydrateError: null as Error | null,
 }));
 
 const authMocks = vi.hoisted(() => ({
@@ -65,8 +67,8 @@ vi.mock('@/hooks/useImageHistory', () => ({
   useImageHistory: () => ({
     records: historyMocks.entries.map((entry) => entry.record),
     entries: historyMocks.entries,
-    isHydrating: false,
-    hydrateError: null,
+    isHydrating: historyMocks.isHydrating,
+    hydrateError: historyMocks.hydrateError,
     update: historyMocks.update,
     updateMany: historyMocks.updateMany,
     remove: historyMocks.remove,
@@ -106,6 +108,8 @@ beforeEach(() => {
   authMocks.isAuthenticated = true;
   authMocks.isLoading = false;
   historyMocks.entries = entries;
+  historyMocks.isHydrating = false;
+  historyMocks.hydrateError = null;
   historyMocks.update.mockImplementation((id: string, updates: Record<string, unknown>) =>
     Promise.resolve({
       ...entries.find((entry) => entry.record.id === id)!.record,
@@ -115,9 +119,29 @@ beforeEach(() => {
   historyMocks.updateMany.mockResolvedValue([]);
   historyMocks.remove.mockResolvedValue(undefined);
   historyMocks.removeMany.mockResolvedValue(1);
+  historyMocks.refresh.mockResolvedValue(undefined);
 });
 
 describe('HistoryView asset workflows', () => {
+  it('uses a compact command bar and keeps collection context in the working plane', async () => {
+    const user = userEvent.setup();
+    renderView();
+
+    expect(screen.queryByRole('heading', { name: '资产' })).not.toBeInTheDocument();
+    expect(screen.getByRole('searchbox', { name: '搜索资产' })).toHaveAttribute(
+      'placeholder',
+      '搜索提示词、模型或收藏集',
+    );
+    expect(screen.getByLabelText('当前显示 2 项，共 2 项')).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: '收藏集筛选' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '灵感库' }));
+
+    expect(screen.getByLabelText('当前显示 1 项，共 2 项')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /查看图片：/ })).toHaveLength(1);
+    expect(screen.getByRole('button', { name: '灵感库' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
   it('uses the beUI Archive drawer for a truly empty asset library', async () => {
     historyMocks.entries = [];
     const user = userEvent.setup();
@@ -151,6 +175,26 @@ describe('HistoryView asset workflows', () => {
     expect(screen.getByRole('status', { name: '正在确认登录状态' })).toBeInTheDocument();
     expect(screen.queryByRole('searchbox', { name: '搜索资产' })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: '登录后查看资产' })).not.toBeInTheDocument();
+  });
+
+  it('keeps hydration loading and retryable errors ahead of the empty state', async () => {
+    historyMocks.entries = [];
+    historyMocks.isHydrating = true;
+    const loading = renderView();
+
+    expect(screen.getByRole('status', { name: '正在同步资产' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '还没有资产' })).not.toBeInTheDocument();
+
+    loading.unmount();
+    historyMocks.isHydrating = false;
+    historyMocks.hydrateError = new Error('资产同步失败');
+    const user = userEvent.setup();
+    renderView();
+
+    expect(screen.getByRole('alert')).toHaveTextContent('资产同步失败');
+    expect(screen.queryByRole('heading', { name: '还没有资产' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '重新加载' }));
+    expect(historyMocks.refresh).toHaveBeenCalledOnce();
   });
 
   it('filters assets immediately and switches to compact list mode', async () => {

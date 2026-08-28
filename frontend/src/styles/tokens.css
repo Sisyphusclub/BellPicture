@@ -50,6 +50,8 @@
   --font-hero-serif: 'Instrument Serif', 'Times New Roman', serif;
   --font-serif: 'Geist Sans', Inter, 'Helvetica Neue', ui-sans-serif, sans-serif;
   --sidebar-width: 232px;
+  --workspace-content-max: 1580px;
+  --workspace-page-gutter: 32px;
 
   --radius-xs: 4px;
   --radius-sm: 8px;
