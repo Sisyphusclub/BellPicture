@@ -400,3 +400,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 13: 修复首页输入框圆角光效
+
+**Date**: 2026-08-28
+**Task**: 修复首页输入框圆角光效
+**Branch**: `dev`
+
+### Summary
+
+统一首页输入框渐变边框与外光层的圆角几何，移除重复硬描边，并完成桌面、移动端、停靠状态及完整前端检查。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e651726` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
