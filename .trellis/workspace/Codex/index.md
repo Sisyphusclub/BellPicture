@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 15
+- **Total Sessions**: 16
 - **Last Active**: 2026-08-28
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~501 | Active |
+| `journal-1.md` | ~534 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 16 | 2026-08-28 | 修复输入框光效圆角断层 | `5e54108` | `dev` |
 | 15 | 2026-08-28 | 统一首页与生图页输入框光效 | `bf9cea1` | `dev` |
 | 14 | 2026-08-28 | 调整生成工作区垂直布局 | `b3aa83c` | `dev` |
 | 13 | 2026-08-28 | 修复首页输入框圆角光效 | `e651726` | `dev` |

@@ -499,3 +499,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 16: 修复输入框光效圆角断层
+
+**Date**: 2026-08-28
+**Task**: 修复输入框光效圆角断层
+**Branch**: `dev`
+
+### Summary
+
+将共享 BorderGlow 的完整 1px 结构边框与指针方向柔光分离，移除会切断圆角的方向遮罩和 inset 描边；验证 Discover 主态、桌面与移动端停靠态、Generate 配色、四方向指针、失焦淡出、无横向溢出，并更新组件规范和设计 QA。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5e54108` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
