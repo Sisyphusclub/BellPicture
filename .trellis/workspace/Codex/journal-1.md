@@ -667,3 +667,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 21: 移除输入框内部矩形覆盖层
+
+**Date**: 2026-08-28
+**Task**: 移除输入框内部矩形覆盖层
+**Branch**: `dev`
+
+### Summary
+
+将 Generate 的 beUI surface 改为透明结构容器并继承圆角，让 BorderGlow 根层成为唯一可见表面；完成桌面、390px 移动端和 Discover 隔离验证。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `989b068` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
