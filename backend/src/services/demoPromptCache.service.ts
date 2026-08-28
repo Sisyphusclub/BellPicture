@@ -54,7 +54,9 @@ export async function readCachedDemoPromptImage(
   hit: DemoPromptCacheHit,
   config: DemoPromptCacheConfig,
   modeOverride?: GenerateImageOutput['mode'],
+  signal?: AbortSignal,
 ): Promise<GenerateImageOutput | null> {
+  signal?.throwIfAborted();
   const meta = await readCacheMeta(hit.key);
   if (meta === null) return null;
 
@@ -62,9 +64,9 @@ export async function readCachedDemoPromptImage(
   const hasImage = await internalOutputFileExists(imageFilename);
   if (!hasImage) return null;
 
-  if (config.delayMs > 0) await delay(config.delayMs);
+  if (config.delayMs > 0) await delay(config.delayMs, undefined, { signal });
 
-  const saved = await copyInternalOutputToSavedOutput(imageFilename);
+  const saved = await copyInternalOutputToSavedOutput(imageFilename, signal);
 
   return {
     batchId: randomUUID(),
@@ -85,13 +87,21 @@ export async function readCachedDemoPromptImage(
 export async function writeDemoPromptCache(
   hit: DemoPromptCacheHit,
   result: GenerateImageOutput,
+  signal?: AbortSignal,
 ): Promise<void> {
+  signal?.throwIfAborted();
   const firstImage = result.images[0];
   if (firstImage === undefined) return;
   if (firstImage.mime !== 'image/png') {
-    throw new AppError('STORAGE_ERROR', 'Demo prompt cache only supports PNG outputs', 500, undefined, {
-      mime: firstImage.mime,
-    });
+    throw new AppError(
+      'STORAGE_ERROR',
+      'Demo prompt cache only supports PNG outputs',
+      500,
+      undefined,
+      {
+        mime: firstImage.mime,
+      },
+    );
   }
 
   const meta: DemoPromptMeta = {
@@ -102,7 +112,8 @@ export async function writeDemoPromptCache(
     mode: result.mode,
   };
 
-  await copyOutputToInternalOutput(firstImage.absolutePath, cacheImageFilename(hit.key));
+  await copyOutputToInternalOutput(firstImage.absolutePath, cacheImageFilename(hit.key), signal);
+  signal?.throwIfAborted();
   await writeInternalOutputFile(cacheMetaFilename(hit.key), JSON.stringify(meta));
 }
 
@@ -153,5 +164,7 @@ function isDemoPromptMeta(value: unknown): value is DemoPromptMeta {
 }
 
 function isAspectRatio(value: unknown): value is AspectRatio {
-  return value === '1:1' || value === '3:2' || value === '2:3' || value === '16:9' || value === '9:16';
+  return (
+    value === '1:1' || value === '3:2' || value === '2:3' || value === '16:9' || value === '9:16'
+  );
 }

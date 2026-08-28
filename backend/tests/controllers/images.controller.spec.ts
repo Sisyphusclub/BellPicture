@@ -16,6 +16,7 @@ import {
   type GenerateInput,
   type GenerateOutput,
 } from '../../src/types/image.js';
+import { productDateKey } from '../../src/utils/date.js';
 
 const PNG_PREFIX = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -441,6 +442,7 @@ describe('POST /api/images/generate', () => {
 
     expect(first.status).toBe(200);
     expect(provider.generate).toHaveBeenCalledOnce();
+    await new Promise((resolve) => setTimeout(resolve, 25));
 
     const afterFirstQuota = await request(app).get('/api/images/quota');
     expect(afterFirstQuota.body.remaining).toBe(19);
@@ -494,7 +496,11 @@ describe('POST /api/images/generate', () => {
     expect(first.status).toBe(200);
     expect(provider.generate).toHaveBeenCalledOnce();
 
-    const referenceId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.png';
+    const upload = await request(app)
+      .post('/api/images/upload')
+      .attach('image', Buffer.concat([PNG_PREFIX, Buffer.alloc(32)]), 'reference.png');
+    expect(upload.status).toBe(200);
+    const referenceId = upload.body.id as string;
     const second = await request(app)
       .post('/api/images/generate')
       .send({
@@ -662,6 +668,88 @@ describe('POST /api/images/generate', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('BAD_REQUEST');
+  });
+
+  it('rejects another user reference upload before calling the provider', async () => {
+    const { provider } = fakeProvider();
+    const ownerId = `reference-owner-${randomUUID()}`;
+    const otherId = `reference-other-${randomUUID()}`;
+    const ownerApp = buildApp(provider, stubAuth(ownerId));
+    const otherApp = buildApp(provider, stubAuth(otherId));
+    const upload = await request(ownerApp)
+      .post('/api/images/upload')
+      .attach('image', Buffer.concat([PNG_PREFIX, Buffer.alloc(32)]), 'private.png');
+    expect(upload.status).toBe(200);
+
+    const forbidden = await request(otherApp)
+      .post('/api/images/generate')
+      .send({ prompt: 'steal', referenceId: upload.body.id });
+
+    expect(forbidden.status).toBe(403);
+    expect(forbidden.body.error.code).toBe('FORBIDDEN');
+    expect(provider.generate).not.toHaveBeenCalled();
+
+    const owned = await request(ownerApp)
+      .post('/api/images/generate')
+      .send({ prompt: 'owned', referenceId: upload.body.id });
+    expect(owned.status).toBe(200);
+    expect(provider.generate).toHaveBeenCalledOnce();
+  });
+
+  it('reserves the final credit before concurrent provider work', async () => {
+    let releaseProvider!: () => void;
+    const providerGate = new Promise<void>((resolve) => {
+      releaseProvider = resolve;
+    });
+    const provider: ImageGenerationProvider = {
+      generate: vi.fn(async (): Promise<GenerateOutput> => {
+        await providerGate;
+        const saved = await saveOutput(Buffer.concat([PNG_PREFIX, Buffer.alloc(32)]), 'png');
+        return {
+          images: [{ outputPath: saved.absolutePath, width: 1024, height: 1024 }],
+          aspectRatio: '1:1',
+        };
+      }),
+    };
+    const userId = `quota-race-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId));
+    db.insert(userQuota)
+      .values({ userId, usedToday: 0, quotaDate: productDateKey(), dailyTotal: 1 })
+      .onConflictDoUpdate({ target: userQuota.userId, set: { usedToday: 0, dailyTotal: 1 } })
+      .run();
+
+    const firstPromise = request(app).post('/api/images/generate').send({ prompt: 'first' });
+    const firstStarted = firstPromise.then((response) => response);
+    await vi.waitFor(() => expect(provider.generate).toHaveBeenCalledOnce());
+    const second = await request(app).post('/api/images/generate').send({ prompt: 'second' });
+    expect(second.status).toBe(429);
+    expect(provider.generate).toHaveBeenCalledOnce();
+
+    releaseProvider();
+    expect((await firstStarted).status).toBe(200);
+  });
+
+  it('releases a reservation after provider failure', async () => {
+    const successful = fakeProvider().provider.generate as ReturnType<typeof vi.fn>;
+    const provider: ImageGenerationProvider = {
+      generate: vi
+        .fn()
+        .mockRejectedValueOnce(new AppError('PROVIDER_ERROR', 'failed', 502))
+        .mockImplementation(successful),
+    };
+    const userId = `quota-release-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId));
+    db.insert(userQuota)
+      .values({ userId, usedToday: 0, quotaDate: productDateKey(), dailyTotal: 1 })
+      .onConflictDoUpdate({ target: userQuota.userId, set: { usedToday: 0, dailyTotal: 1 } })
+      .run();
+
+    expect(
+      (await request(app).post('/api/images/generate').send({ prompt: 'failure' })).status,
+    ).toBe(502);
+    expect((await request(app).post('/api/images/generate').send({ prompt: 'retry' })).status).toBe(
+      200,
+    );
   });
 
   it('propagates PROVIDER_RATE_LIMITED 429 from the provider', async () => {

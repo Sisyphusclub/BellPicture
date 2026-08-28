@@ -23,6 +23,7 @@ import {
 import { useAuth } from './useAuth';
 
 interface HistoryState {
+  ownerUserId: string | null;
   records: ImageRecord[];
   isHydrating: boolean;
   hydrateError: Error | null;
@@ -38,30 +39,47 @@ export interface GroupedBatch {
 }
 
 const store = createExternalStore<HistoryState>({
+  ownerUserId: null,
   records: [],
   isHydrating: false,
   hydrateError: null,
 });
-let hydrated = false;
+let hydratedUserId: string | null = null;
+let requestGeneration = 0;
 
 function imageUrlFor(record: ImageRecord): string {
   return buildApiUrl(`/api/outputs/${record.id}`);
 }
 
-async function hydrate(): Promise<void> {
+function resetForUser(userId: string | null): void {
+  requestGeneration += 1;
+  hydratedUserId = null;
+  store.set({ ownerUserId: userId, records: [], isHydrating: false, hydrateError: null });
+}
+
+async function hydrate(userId: string): Promise<void> {
   const state = store.getSnapshot();
-  if (hydrated || state.isHydrating) return;
-  hydrated = true;
-  store.set({ ...state, isHydrating: true, hydrateError: null });
+  if (state.ownerUserId !== userId) resetForUser(userId);
+  if (hydratedUserId === userId || store.getSnapshot().isHydrating) return;
+  hydratedUserId = userId;
+  const currentRequest = ++requestGeneration;
+  store.set({ ...store.getSnapshot(), isHydrating: true, hydrateError: null });
   try {
     const remote = await fetchHistory();
+    if (currentRequest !== requestGeneration || store.getSnapshot().ownerUserId !== userId) {
+      return;
+    }
     store.set({
+      ownerUserId: userId,
       records: [...remote].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
       isHydrating: false,
       hydrateError: null,
     });
   } catch (error) {
-    hydrated = false;
+    if (currentRequest !== requestGeneration || store.getSnapshot().ownerUserId !== userId) {
+      return;
+    }
+    hydratedUserId = null;
     store.set({
       ...store.getSnapshot(),
       isHydrating: false,
@@ -74,6 +92,9 @@ async function hydrate(): Promise<void> {
 }
 
 export function addImageRecord(record: ImageRecord): HistoryEntry {
+  if (store.getSnapshot().ownerUserId === null) {
+    return { record, imageUrl: imageUrlFor(record) };
+  }
   store.set((state) => ({
     ...state,
     records: [record, ...state.records.filter((item) => item.id !== record.id)],
@@ -83,21 +104,25 @@ export function addImageRecord(record: ImageRecord): HistoryEntry {
 
 export function useImageHistory() {
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const userId = isAuthenticated ? (user?.id ?? null) : null;
+  const visibleState = state.ownerUserId === userId ? state : EMPTY_HISTORY_STATE;
 
   useEffect(() => {
     if (isAuthLoading) return;
-    if (isAuthenticated) {
-      void hydrate();
+    if (userId !== null) {
+      if (store.getSnapshot().ownerUserId !== userId) resetForUser(userId);
+      void hydrate(userId);
       return;
     }
-    hydrated = false;
-    store.set({ records: [], isHydrating: false, hydrateError: null });
-  }, [isAuthenticated, isAuthLoading]);
+    if (store.getSnapshot().ownerUserId !== null || store.getSnapshot().records.length > 0) {
+      resetForUser(null);
+    }
+  }, [isAuthLoading, userId]);
 
   const entries = useMemo<HistoryEntry[]>(
-    () => state.records.map((record) => ({ record, imageUrl: imageUrlFor(record) })),
-    [state.records],
+    () => visibleState.records.map((record) => ({ record, imageUrl: imageUrlFor(record) })),
+    [visibleState.records],
   );
   const batches = useMemo<GroupedBatch[]>(() => {
     const grouped = new Map<string, GroupedBatch>();
@@ -130,42 +155,83 @@ export function useImageHistory() {
   }, [entries]);
 
   const refresh = useCallback(async (): Promise<void> => {
-    if (!isAuthenticated) {
-      hydrated = false;
-      store.set({ records: [], isHydrating: false, hydrateError: null });
+    if (userId === null) {
+      resetForUser(null);
       return;
     }
-    hydrated = false;
-    await hydrate();
-  }, [isAuthenticated]);
-  const remove = useCallback(async (id: string): Promise<void> => {
-    await deleteHistoryRecord(id);
-    store.set((current) => ({
-      ...current,
-      records: current.records.filter((record) => record.id !== id),
-    }));
-  }, []);
-  const removeBatch = useCallback(async (batchId: string): Promise<void> => {
-    await deleteHistoryBatch(batchId);
-    store.set((current) => ({
-      ...current,
-      records: current.records.filter((record) => (record.batchId ?? record.id) !== batchId),
-    }));
-  }, []);
+    hydratedUserId = null;
+    await hydrate(userId);
+  }, [userId]);
+  const remove = useCallback(
+    async (id: string): Promise<void> => {
+      const mutationUserId = userId;
+      const mutationGeneration = requestGeneration;
+      await deleteHistoryRecord(id);
+      if (
+        mutationUserId === null ||
+        mutationGeneration !== requestGeneration ||
+        store.getSnapshot().ownerUserId !== mutationUserId
+      ) {
+        return;
+      }
+      store.set((current) => ({
+        ...current,
+        records: current.records.filter((record) => record.id !== id),
+      }));
+    },
+    [userId],
+  );
+  const removeBatch = useCallback(
+    async (batchId: string): Promise<void> => {
+      const mutationUserId = userId;
+      const mutationGeneration = requestGeneration;
+      await deleteHistoryBatch(batchId);
+      if (
+        mutationUserId === null ||
+        mutationGeneration !== requestGeneration ||
+        store.getSnapshot().ownerUserId !== mutationUserId
+      ) {
+        return;
+      }
+      store.set((current) => ({
+        ...current,
+        records: current.records.filter((record) => (record.batchId ?? record.id) !== batchId),
+      }));
+    },
+    [userId],
+  );
   const update = useCallback(
     async (id: string, updates: ImageMetadataUpdate): Promise<ImageRecord> => {
+      const mutationUserId = userId;
+      const mutationGeneration = requestGeneration;
       const record = await updateHistoryRecord(id, updates);
+      if (
+        mutationUserId === null ||
+        mutationGeneration !== requestGeneration ||
+        store.getSnapshot().ownerUserId !== mutationUserId
+      ) {
+        return record;
+      }
       store.set((current) => ({
         ...current,
         records: current.records.map((item) => (item.id === id ? record : item)),
       }));
       return record;
     },
-    [],
+    [userId],
   );
   const updateMany = useCallback(
     async (ids: readonly string[], updates: ImageMetadataUpdate): Promise<ImageRecord[]> => {
+      const mutationUserId = userId;
+      const mutationGeneration = requestGeneration;
       const records = await updateHistoryRecords(ids, updates);
+      if (
+        mutationUserId === null ||
+        mutationGeneration !== requestGeneration ||
+        store.getSnapshot().ownerUserId !== mutationUserId
+      ) {
+        return records;
+      }
       const byId = new Map(records.map((record) => [record.id, record]));
       store.set((current) => ({
         ...current,
@@ -173,24 +239,36 @@ export function useImageHistory() {
       }));
       return records;
     },
-    [],
+    [userId],
   );
-  const removeMany = useCallback(async (ids: readonly string[]): Promise<number> => {
-    const removed = await deleteHistoryRecords(ids);
-    const selected = new Set(ids);
-    store.set((current) => ({
-      ...current,
-      records: current.records.filter((record) => !selected.has(record.id)),
-    }));
-    return removed;
-  }, []);
+  const removeMany = useCallback(
+    async (ids: readonly string[]): Promise<number> => {
+      const mutationUserId = userId;
+      const mutationGeneration = requestGeneration;
+      const removed = await deleteHistoryRecords(ids);
+      if (
+        mutationUserId === null ||
+        mutationGeneration !== requestGeneration ||
+        store.getSnapshot().ownerUserId !== mutationUserId
+      ) {
+        return removed;
+      }
+      const selected = new Set(ids);
+      store.set((current) => ({
+        ...current,
+        records: current.records.filter((record) => !selected.has(record.id)),
+      }));
+      return removed;
+    },
+    [userId],
+  );
 
   return {
-    records: state.records,
+    records: visibleState.records,
     entries,
     batches,
-    isHydrating: state.isHydrating,
-    hydrateError: state.hydrateError,
+    isHydrating: visibleState.isHydrating,
+    hydrateError: visibleState.hydrateError,
     refresh,
     add: addImageRecord,
     remove,
@@ -204,6 +282,14 @@ export function useImageHistory() {
 }
 
 export function resetImageHistoryForTests(): void {
-  hydrated = false;
-  store.set({ records: [], isHydrating: false, hydrateError: null });
+  requestGeneration += 1;
+  hydratedUserId = null;
+  store.set({ ownerUserId: null, records: [], isHydrating: false, hydrateError: null });
 }
+
+const EMPTY_HISTORY_STATE: HistoryState = {
+  ownerUserId: null,
+  records: [],
+  isHydrating: false,
+  hydrateError: null,
+};

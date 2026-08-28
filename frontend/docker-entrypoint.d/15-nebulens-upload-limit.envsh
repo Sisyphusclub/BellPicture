@@ -1,0 +1,16 @@
+#!/bin/sh
+
+case "${UPLOAD_MAX_BYTES:-}" in
+  ''|*[!0-9]*)
+    echo >&2 "UPLOAD_MAX_BYTES must be a positive integer"
+    return 1
+    ;;
+esac
+
+if [ "$UPLOAD_MAX_BYTES" -le 0 ]; then
+  echo >&2 "UPLOAD_MAX_BYTES must be a positive integer"
+  return 1
+fi
+
+# Leave room for multipart headers and boundaries around the single file.
+export NGINX_CLIENT_MAX_BODY_SIZE_BYTES=$((UPLOAD_MAX_BYTES + 1048576))

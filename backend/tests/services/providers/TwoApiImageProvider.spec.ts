@@ -379,6 +379,60 @@ describe('TwoApiImageProvider', () => {
     });
   });
 
+  it('maps an external cancellation during a successful response body to REQUEST_ABORTED', async () => {
+    const controller = new AbortController();
+    let requestSignal: AbortSignal | undefined;
+    const response = jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] });
+    vi.spyOn(response, 'json').mockImplementation(
+      () =>
+        new Promise((resolve, reject) => {
+          requestSignal?.addEventListener(
+            'abort',
+            () => reject(new DOMException('cancelled', 'AbortError')),
+            { once: true },
+          );
+          void resolve;
+        }),
+    );
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async (_url, init) => {
+      requestSignal = init?.signal ?? undefined;
+      return response;
+    });
+    const provider = new TwoApiImageProvider(baseConfig, fetchMock);
+
+    const pending = provider.generate({ prompt: 'private prompt', signal: controller.signal });
+    await vi.waitFor(() => expect(response.json).toHaveBeenCalledOnce());
+    controller.abort();
+
+    await expect(pending).rejects.toMatchObject({ code: 'REQUEST_ABORTED', status: 499 });
+  });
+
+  it('maps a timeout during a successful response body to PROVIDER_TIMEOUT', async () => {
+    let requestSignal: AbortSignal | undefined;
+    const response = jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] });
+    vi.spyOn(response, 'json').mockImplementation(
+      () =>
+        new Promise((resolve, reject) => {
+          requestSignal?.addEventListener(
+            'abort',
+            () => reject(new DOMException('timed out', 'AbortError')),
+            { once: true },
+          );
+          void resolve;
+        }),
+    );
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async (_url, init) => {
+      requestSignal = init?.signal ?? undefined;
+      return response;
+    });
+    const provider = new TwoApiImageProvider({ ...baseConfig, timeoutMs: 5 }, fetchMock);
+
+    await expect(provider.generate({ prompt: 'timeout' })).rejects.toMatchObject({
+      code: 'PROVIDER_TIMEOUT',
+      status: 504,
+    });
+  });
+
   it('tolerates trailing slashes in baseUrl', async () => {
     const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
       jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),

@@ -25,7 +25,6 @@ describe('config/env', () => {
     delete process.env.HIGH_RES_IMAGE_MODEL;
     delete process.env.PORT;
     delete process.env.IMAGE_API_TIMEOUT_MS;
-    delete process.env.GPT_POOL_QUOTA;
     delete process.env.UPLOAD_DIR;
     delete process.env.OUTPUT_DIR;
     delete process.env.LOG_LEVEL;
@@ -50,7 +49,6 @@ describe('config/env', () => {
     expect(env.HIGH_RES_IMAGE_MODEL).toBeUndefined();
     expect(env.PORT).toBe(3000);
     expect(env.IMAGE_API_TIMEOUT_MS).toBe(120_000);
-    expect(env.GPT_POOL_QUOTA).toBe(100);
     expect(env.UPLOAD_DIR).toBe('./tmp/uploads');
     expect(env.OUTPUT_DIR).toBe('./tmp/outputs');
     expect(env.LOG_LEVEL).toBe('info');

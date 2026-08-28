@@ -11,6 +11,9 @@ COPY frontend ./
 RUN npm run build
 
 FROM nginx:1.27-alpine AS runner
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+ENV UPLOAD_MAX_BYTES=10485760
+COPY frontend/nginx.conf /etc/nginx/templates/default.conf.template
+COPY frontend/docker-entrypoint.d/15-nebulens-upload-limit.envsh /docker-entrypoint.d/15-nebulens-upload-limit.envsh
+RUN chmod +x /docker-entrypoint.d/15-nebulens-upload-limit.envsh
 COPY --from=build /app/frontend/dist /usr/share/nginx/html
 EXPOSE 80

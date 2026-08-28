@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 import {
   createGenerateRequest,
@@ -18,6 +18,7 @@ import {
 } from '@/types/image';
 
 import { addImageRecord } from './useImageHistory';
+import { useAuth } from './useAuth';
 
 export interface GenerateImageOptions {
   prompt: string;
@@ -35,6 +36,27 @@ export interface GenerateImageOptions {
 
 function normalizeIds(ids?: string[], id?: string): string[] {
   return [...new Set((ids ?? (id ? [id] : [])).map((item) => item.trim()).filter(Boolean))];
+}
+
+interface AuthRequestContext {
+  userId: string | null;
+  generation: number;
+}
+
+function assertCurrentAuthContext(
+  expected: AuthRequestContext,
+  current: AuthRequestContext,
+  controller: AbortController,
+): void {
+  if (
+    expected.userId !== null &&
+    expected.userId === current.userId &&
+    expected.generation === current.generation
+  ) {
+    return;
+  }
+  controller.abort();
+  throw new DOMException('Account changed during image generation', 'AbortError');
 }
 
 function providerMessage(error: ImageApiError): string {
@@ -73,11 +95,31 @@ function generationError(error: unknown): Error {
 }
 
 export function useImageGeneration() {
-  const activeRequest = useRef<AbortController | null>(null);
+  const { user, isAuthenticated } = useAuth();
+  const userId = isAuthenticated ? (user?.id ?? null) : null;
+  const authContext = useRef<AuthRequestContext>({ userId, generation: 0 });
+  const activeRequest = useRef<{
+    controller: AbortController;
+    authGeneration: number;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [lastBatch, setLastBatch] = useState<GeneratedBatchResult | null>(null);
   const [statusMessage, setStatusMessage] = useState('已准备好开始新的生成。');
+
+  useLayoutEffect(() => {
+    if (authContext.current.userId === userId) return;
+    authContext.current = {
+      userId,
+      generation: authContext.current.generation + 1,
+    };
+    const active = activeRequest.current;
+    if (active !== null && active.authGeneration !== authContext.current.generation) {
+      active.controller.abort();
+      setIsLoading(false);
+    }
+    setLastBatch(null);
+  }, [userId]);
 
   const generate = useCallback(
     async (options: GenerateImageOptions): Promise<GeneratedBatchResult> => {
@@ -91,8 +133,10 @@ export function useImageGeneration() {
       setError(null);
       setStatusMessage('正在准备请求内容。');
       const controller = new AbortController();
-      activeRequest.current = controller;
+      const requestContext = authContext.current;
+      activeRequest.current = { controller, authGeneration: requestContext.generation };
       try {
+        assertCurrentAuthContext(requestContext, authContext.current, controller);
         let referenceIds = normalizeIds(options.referenceIds, options.referenceId);
         const files =
           options.referenceFiles ?? (options.referenceFile ? [options.referenceFile] : []);
@@ -103,6 +147,7 @@ export function useImageGeneration() {
           referenceIds = (await uploadReferenceImages(files, controller.signal)).map(
             (upload) => upload.id,
           );
+          assertCurrentAuthContext(requestContext, authContext.current, controller);
         }
         setStatusMessage(
           referenceIds.length ? '正在结合参考图生成图片。' : '正在根据提示词生成图片。',
@@ -122,6 +167,7 @@ export function useImageGeneration() {
           }),
           controller.signal,
         );
+        assertCurrentAuthContext(requestContext, authContext.current, controller);
         const createdAt = new Date().toISOString();
         const entries: HistoryEntry[] = generated.images.map((image) => {
           const record: ImageRecord = {
@@ -164,7 +210,7 @@ export function useImageGeneration() {
         setStatusMessage('生成失败。');
         throw nextError;
       } finally {
-        if (activeRequest.current === controller) {
+        if (activeRequest.current?.controller === controller) {
           activeRequest.current = null;
           setIsLoading(false);
         }
@@ -179,7 +225,7 @@ export function useImageGeneration() {
     lastBatch,
     statusMessage,
     generate,
-    cancel: () => activeRequest.current?.abort(),
+    cancel: () => activeRequest.current?.controller.abort(),
     clearLastBatch: () => setLastBatch(null),
   };
 }

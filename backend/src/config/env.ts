@@ -10,7 +10,6 @@ export interface Env {
   IMAGE_MODEL: string;
   HIGH_RES_IMAGE_MODEL: string | undefined;
   IMAGE_API_TIMEOUT_MS: number;
-  GPT_POOL_QUOTA: number;
   UPLOAD_DIR: string;
   UPLOAD_MAX_BYTES: number;
   OUTPUT_DIR: string;
@@ -107,7 +106,6 @@ function loadEnv(): Env {
     IMAGE_MODEL: readString('IMAGE_MODEL', 'gpt-image-2'),
     HIGH_RES_IMAGE_MODEL: readOptionalString('HIGH_RES_IMAGE_MODEL'),
     IMAGE_API_TIMEOUT_MS: readInt('IMAGE_API_TIMEOUT_MS', 120_000),
-    GPT_POOL_QUOTA: readInt('GPT_POOL_QUOTA', 100),
     UPLOAD_DIR: readString('UPLOAD_DIR', './tmp/uploads'),
     UPLOAD_MAX_BYTES: readInt('UPLOAD_MAX_BYTES', 10_485_760),
     OUTPUT_DIR: readString('OUTPUT_DIR', './tmp/outputs'),

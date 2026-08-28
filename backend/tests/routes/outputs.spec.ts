@@ -1,9 +1,13 @@
 import { Buffer } from 'node:buffer';
+import { randomUUID } from 'node:crypto';
+import { mkdir } from 'node:fs/promises';
+import path from 'node:path';
 
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../src/app.js';
+import { env } from '../../src/config/env.js';
 import type { ImageGenerationProvider } from '../../src/services/providers/ImageGenerationProvider.js';
 import { saveOutput } from '../../src/storage/localStorage.js';
 
@@ -50,6 +54,17 @@ describe('GET /api/outputs/:filename', () => {
     const res = await request(app).get('/api/outputs/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png');
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('NOT_FOUND');
+  });
+
+  it('keeps non-ENOENT storage failures as 500', async () => {
+    const filename = `${randomUUID()}.png`;
+    await mkdir(path.join(path.resolve(env.OUTPUT_DIR), filename), { recursive: true });
+    const app = createApp({ provider: fakeProvider });
+
+    const res = await request(app).get(`/api/outputs/${filename}`);
+
+    expect(res.status).toBe(500);
+    expect(res.body.error.code).toBe('STORAGE_ERROR');
   });
 });
 

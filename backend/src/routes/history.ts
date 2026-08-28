@@ -16,8 +16,8 @@ export function buildHistoryRouter(deps: HistoryRouterDeps = {}): Router {
   const controller = buildHistoryController();
 
   // GET /api/history/public → list public image records from every account, newest first.
-  router.get('/public', (_req, res, next) => {
-    controller.listPublic(_req, res, next);
+  router.get('/public', (req, res, next) => {
+    controller.listPublic(req, res, next);
   });
 
   // DELETE /api/history/public/:id → admin removes one public record from the public gallery.

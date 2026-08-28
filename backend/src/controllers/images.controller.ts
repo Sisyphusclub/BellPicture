@@ -13,11 +13,16 @@ import {
 } from '../services/demoPromptCache.service.js';
 import { isUserAdmin } from '../services/adminUser.service.js';
 import { insertImageRecords, type NewImageRecord } from '../services/history.service.js';
-import { generateImage, type GenerateImageOutput } from '../services/imageGeneration.service.js';
+import {
+  assertReferenceImagesOwnedByUser,
+  generateImage,
+  type GenerateImageOutput,
+} from '../services/imageGeneration.service.js';
 import type { ImageGenerationProvider } from '../services/providers/ImageGenerationProvider.js';
 import type { DailyCheckInResult, QuotaSnapshot } from '../services/quota.service.js';
+import { recordReferenceUpload } from '../services/referenceUpload.service.js';
 import type { UserQuotaService } from '../services/userQuota.service.js';
-import { saveUpload } from '../storage/localStorage.js';
+import { removeOutput, removeUpload, saveUpload } from '../storage/localStorage.js';
 import {
   ASPECT_RATIOS,
   DEFAULT_COUNT,
@@ -129,11 +134,17 @@ export function buildImagesController(deps: ImagesControllerDeps): {
 
     async upload(req, res, next) {
       try {
-        requireUser(req);
+        const user = requireUser(req);
         if (!req.file) {
           throw new AppError('BAD_REQUEST', 'Missing "image" form field with a file', 400);
         }
         const saved = await saveUpload(req.file.buffer);
+        try {
+          recordReferenceUpload(saved.filename, user.id);
+        } catch (err) {
+          await removeUpload(saved.absolutePath);
+          throw err;
+        }
         const body: UploadResponse = {
           id: saved.filename,
           filename: saved.filename,
@@ -147,6 +158,7 @@ export function buildImagesController(deps: ImagesControllerDeps): {
     },
 
     async generate(req, res, next) {
+      const requestAbort = createRequestAbortSignal(req, res);
       try {
         const user = requireUser(req);
         const parsed = parseGenerateBody(generateBodySchema, req.body);
@@ -162,10 +174,14 @@ export function buildImagesController(deps: ImagesControllerDeps): {
 
           const result = await generateDemoImage({
             presetId: parsed.demoPresetId,
+            signal: requestAbort.signal,
             ...(deps.demoGenerationDelayMs !== undefined
               ? { delayMs: deps.demoGenerationDelayMs }
               : {}),
           });
+          if (requestAbort.signal.aborted) {
+            await discardAbortedResult(result, requestAbort.signal);
+          }
           persistGeneratedImages({
             result,
             userId: user.id,
@@ -182,6 +198,9 @@ export function buildImagesController(deps: ImagesControllerDeps): {
         }
 
         const hasReferenceContext = referenceIds.length > 0;
+        if (hasReferenceContext) {
+          await assertReferenceImagesOwnedByUser(referenceIds, user.id, requestAbort.signal);
+        }
         const promptCacheHit =
           deps.demoPromptCache !== undefined
             ? findDemoPromptCacheHit(parsed.prompt, deps.demoPromptCache)
@@ -191,8 +210,12 @@ export function buildImagesController(deps: ImagesControllerDeps): {
             promptCacheHit,
             deps.demoPromptCache,
             hasReferenceContext ? 'image-to-image' : undefined,
+            requestAbort.signal,
           );
           if (cachedResult !== null) {
+            if (requestAbort.signal.aborted) {
+              await discardAbortedResult(cachedResult, requestAbort.signal);
+            }
             persistGeneratedImages({
               result: cachedResult,
               userId: user.id,
@@ -217,13 +240,15 @@ export function buildImagesController(deps: ImagesControllerDeps): {
             ...(referenceIds.length > 0 ? { referenceIds } : {}),
             ...(parsed.model !== undefined ? { model: parsed.model } : {}),
             ...(parsed.aspectRatio !== undefined ? { aspectRatio: parsed.aspectRatio } : {}),
+            userId: user.id,
+            requestId: req.requestId,
+            signal: requestAbort.signal,
           },
           { provider: deps.provider, quotaPool },
         );
-        if (promptCacheHit !== null && !hasReferenceContext) {
-          await writeDemoPromptCache(promptCacheHit, result);
+        if (requestAbort.signal.aborted) {
+          await discardAbortedResult(result, requestAbort.signal);
         }
-
         persistGeneratedImages({
           result,
           userId: user.id,
@@ -236,12 +261,25 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           requestId: req.requestId,
         });
         res.status(200).json(responseFromGeneratedResult(result));
+        if (promptCacheHit !== null && !hasReferenceContext) {
+          void writeDemoPromptCache(promptCacheHit, result, requestAbort.signal).catch(
+            (cacheError: unknown) => {
+              logger.warn(
+                { requestId: req.requestId, batchId: result.batchId, err: cacheError },
+                'images.generate: failed to write optional demo prompt cache',
+              );
+            },
+          );
+        }
       } catch (err) {
-        next(err);
+        if (!requestAbort.signal.aborted || (!res.destroyed && !res.writableEnded)) next(err);
+      } finally {
+        requestAbort.dispose();
       }
     },
 
     async generateHighRes(req, res, next) {
+      const requestAbort = createRequestAbortSignal(req, res);
       try {
         const user = requireUser(req);
         const parsed = parseGenerateBody(highResGenerateBodySchema, req.body);
@@ -255,10 +293,16 @@ export function buildImagesController(deps: ImagesControllerDeps): {
             ...(parsed.model !== undefined ? { model: parsed.model } : {}),
             ...(parsed.aspectRatio !== undefined ? { aspectRatio: parsed.aspectRatio } : {}),
             resolution: parsed.resolution,
+            userId: user.id,
+            requestId: req.requestId,
+            signal: requestAbort.signal,
           },
           { provider: deps.provider, quotaPool },
         );
 
+        if (requestAbort.signal.aborted) {
+          await discardAbortedResult(result, requestAbort.signal);
+        }
         persistGeneratedImages({
           result,
           userId: user.id,
@@ -272,7 +316,9 @@ export function buildImagesController(deps: ImagesControllerDeps): {
         });
         res.status(200).json(responseFromGeneratedResult(result));
       } catch (err) {
-        next(err);
+        if (!requestAbort.signal.aborted || (!res.destroyed && !res.writableEnded)) next(err);
+      } finally {
+        requestAbort.dispose();
       }
     },
   };
@@ -353,4 +399,44 @@ function responseFromGeneratedResult(result: GenerateImageOutput): GenerateRespo
       height: image.height,
     })),
   };
+}
+
+function createRequestAbortSignal(
+  req: Request,
+  res: Response,
+): { signal: AbortSignal; dispose: () => void } {
+  const controller = new AbortController();
+  const abort = (): void => {
+    if (!controller.signal.aborted) {
+      controller.abort(new DOMException('Client disconnected', 'AbortError'));
+    }
+  };
+  const abortOnPrematureClose = (): void => {
+    if (!res.writableEnded) abort();
+  };
+  req.once('aborted', abort);
+  res.once('close', abortOnPrematureClose);
+  return {
+    signal: controller.signal,
+    dispose: () => {
+      req.off('aborted', abort);
+      res.off('close', abortOnPrematureClose);
+    },
+  };
+}
+
+async function discardAbortedResult(
+  result: GenerateImageOutput,
+  signal: AbortSignal,
+): Promise<void> {
+  await removeGeneratedImages(result);
+  throw requestAbortedError(signal.reason);
+}
+
+async function removeGeneratedImages(result: GenerateImageOutput): Promise<void> {
+  await Promise.all(result.images.map((image) => removeOutput(image.absolutePath)));
+}
+
+function requestAbortedError(cause: unknown): AppError {
+  return new AppError('REQUEST_ABORTED', 'Image generation request was cancelled', 499, cause);
 }

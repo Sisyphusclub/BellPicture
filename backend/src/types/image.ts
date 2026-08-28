@@ -62,6 +62,8 @@ export function isAspectRatioSupportedForResolution(
 
 export interface GenerateInput {
   prompt: string;
+  requestId?: string;
+  signal?: AbortSignal;
   /**
    * Optional reference image path under UPLOAD_DIR.
    * Routes the request to /v1/images/edits.

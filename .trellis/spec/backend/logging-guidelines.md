@@ -1,8 +1,7 @@
 # Backend Logging Guidelines
 
-> **Status**: Verified against `backend/src/logger.ts` after task
-> `05-09-backend-skeleton`. Redact list widened from the planning version
-> to a superset that also covers top-level and `env.*` key paths.
+> **Status**: Updated for task `08-28-fix-security-races-resources`. Provider
+> logs carry request metadata only; prompt content is never a production log field.
 
 ---
 
@@ -104,7 +103,10 @@ or thread `requestId` explicitly through service calls.
 In `TwoApiImageProvider`:
 
 ```ts
-logger.info({ requestId, model, hasReference: !!referencePath }, 'image generation: provider request');
+logger.info(
+  { requestId, model, promptLength: prompt.length, hasReference, referenceCount, count, size },
+  'image generation: provider request',
+);
 const start = Date.now();
 try {
   const out = await callProvider(...);
@@ -123,6 +125,10 @@ try {
 - ❌ `console.log` / `console.error`. Always `logger.<level>()`.
 - ❌ Logging request bodies that may contain image data (huge, binary).
   Log only metadata: size, mime type, count.
+- ❌ Logging prompt text, prompt previews, or substrings at any level. Prompts
+  may contain personal data, customer material, or unreleased product details;
+  fields such as `promptPreview` are forbidden. Log `promptLength`, model,
+  request id, count, and reference metadata instead.
 - ❌ Logging API keys, env vars, raw `Authorization` headers — even at
   `debug`. This includes `IMAGE_API_KEY`, `HIGH_RES_IMAGE_API_KEY`,
   `OPENAI_COMPAT_API_KEY`, and computed bearer strings. Use the redact list,

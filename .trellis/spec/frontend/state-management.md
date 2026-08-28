@@ -7,14 +7,14 @@
 
 Choose the narrowest owner that satisfies the workflow.
 
-| State | Owner | Examples |
-| --- | --- | --- |
-| Ephemeral control state | component | open menu, active carousel slide, hover pause |
-| Page workflow state | route hook/view | generation form, staged filters, selection |
-| Cross-route application state | Context provider | authenticated user, toast feedback |
-| Shared reactive cache | external store | auth modal, image detail modal, public gallery cache |
-| Server data and IO | service + hook | history, quota, admin users, generation |
-| URL navigation state | React Router | current route and redirects |
+| State                         | Owner            | Examples                                             |
+| ----------------------------- | ---------------- | ---------------------------------------------------- |
+| Ephemeral control state       | component        | open menu, active carousel slide, hover pause        |
+| Page workflow state           | route hook/view  | generation form, staged filters, selection           |
+| Cross-route application state | Context provider | authenticated user, toast feedback                   |
+| Shared reactive cache         | external store   | auth modal, image detail modal, public gallery cache |
+| Server data and IO            | service + hook   | history, quota, admin users, generation              |
+| URL navigation state          | React Router     | current route and redirects                          |
 
 Do not duplicate a value in two layers. Derive values such as `isAuthenticated`,
 visible records, result counts, or button-disabled state from their source data.
@@ -37,6 +37,9 @@ status, refresh, login, registration, and logout actions through `useAuth()`.
 - The backend remains authoritative for authorization.
 - UI visibility based on `isAdmin` improves usability but is not a security
   boundary.
+- A fetched profile is valid only for the current Better Auth session user id.
+  On account switch, expose the new normalized session user until its matching
+  profile arrives; never fall back to a non-null profile from the prior account.
 - A 401 from protected image APIs opens the shared login modal through the
   registered unauthorized handler.
 
@@ -58,8 +61,9 @@ service results into React state and user actions.
 - Do not optimistically remove data unless failure recovery is implemented or the
   operation's semantics make rollback trivial.
 - After a successful mutation, update the owning cache or refetch it.
-- Preserve backend identifiers such as `referenceIds` for regeneration rather
-  than reconstructing them from visual state.
+- Preserve owner-scoped private-history identifiers such as `referenceIds` for
+  regeneration rather than reconstructing them from visual state. Public
+  gallery payloads must not carry reusable reference ids.
 - Public gallery moderation updates only the public cache; it does not delete the
   owner's private history.
 
@@ -73,6 +77,10 @@ recover to a valid empty/default state when data is malformed.
 ## Concurrency
 
 - Guard against stale asynchronous responses.
+- Shared authenticated caches carry an explicit owner id plus request
+  generation. Account switch/logout increments the generation and clears the
+  visible snapshot before any new request can settle; fetch and mutation
+  handlers verify both values before committing.
 - Disable duplicate destructive or generation submits while a request is active.
 - Always clear loading state in `finally`.
 - Keep the previous successful result visible during a non-destructive refresh

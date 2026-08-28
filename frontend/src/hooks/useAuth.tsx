@@ -216,12 +216,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     await refetchSession();
   }, [refetchSession]);
 
+  const currentProfile = profile?.id === sessionUser?.id ? profile : sessionUser;
   const value = useMemo<AuthContextValue>(
     () => ({
-      user: profile ?? sessionUser,
+      user: currentProfile,
       isAuthenticated,
       isLoading: session.isPending,
-      isAdmin: profile?.isAdmin === true,
+      isAdmin: currentProfile?.isAdmin === true,
       refreshProfile,
       signInWithGoogle,
       signInWithUsername,
@@ -229,8 +230,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       logout,
     }),
     [
-      profile,
-      sessionUser,
+      currentProfile,
       isAuthenticated,
       session.isPending,
       refreshProfile,

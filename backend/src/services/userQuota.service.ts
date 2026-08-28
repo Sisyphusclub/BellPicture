@@ -7,7 +7,12 @@ import { AppError } from '../errors/AppError.js';
 import { logger } from '../logger.js';
 import { productDateKey } from '../utils/date.js';
 
-import type { DailyCheckInResult, QuotaPool, QuotaSnapshot } from './quota.service.js';
+import type {
+  DailyCheckInResult,
+  QuotaPool,
+  QuotaReservation,
+  QuotaSnapshot,
+} from './quota.service.js';
 
 interface EffectiveQuota {
   used: number;
@@ -58,21 +63,8 @@ export function createUserQuotaService(): UserQuotaService {
       return snapshotFromEffective(readEffective(userId));
     }
 
-    function ensureAvailable(count: number): void {
-      const quota = readEffective(userId);
-      const total = quota.baseTotal + quota.bonus;
-      const { used } = quota;
-      if (used + count > total) {
-        throw new AppError('QUOTA_EXHAUSTED', 'Daily user quota is exhausted', 429, undefined, {
-          requested: count,
-          remaining: Math.max(0, total - used),
-          total,
-        });
-      }
-    }
-
-    function consume(count: number): QuotaSnapshot {
-      const result = db.transaction((tx): QuotaSnapshot => {
+    function reserve(count: number): QuotaReservation {
+      const result = db.transaction((tx): { snapshot: QuotaSnapshot; quotaDate: string } => {
         const row = tx
           .select({
             usedToday: userQuota.usedToday,
@@ -110,17 +102,96 @@ export function createUserQuotaService(): UserQuotaService {
           })
           .run();
         return {
-          total,
-          remaining: Math.max(0, total - nextUsed),
-          checkedInToday,
-          dailyCheckInReward: env.DAILY_CHECK_IN_REWARD,
+          quotaDate: today,
+          snapshot: {
+            total,
+            remaining: Math.max(0, total - nextUsed),
+            checkedInToday,
+            dailyCheckInReward: env.DAILY_CHECK_IN_REWARD,
+          },
         };
       });
       logger.debug(
-        { userId, consumed: count, remaining: result.remaining },
-        'user quota: consumed',
+        { userId, reserved: count, remaining: result.snapshot.remaining },
+        'user quota: reserved',
       );
-      return result;
+
+      let state: 'reserved' | 'committed' | 'released' = 'reserved';
+
+      function reduceReserved(amount: number): QuotaSnapshot {
+        if (amount === 0) return snapshot();
+        return db.transaction((tx): QuotaSnapshot => {
+          const row = tx
+            .select({
+              usedToday: userQuota.usedToday,
+              quotaDate: userQuota.quotaDate,
+              dailyTotal: userQuota.dailyTotal,
+              checkInDate: userQuota.checkInDate,
+              bonusToday: userQuota.bonusToday,
+            })
+            .from(userQuota)
+            .where(eq(userQuota.userId, userId))
+            .get();
+          if (!row || row.quotaDate !== result.quotaDate) return snapshot();
+          if (row.usedToday < amount) {
+            throw new AppError('INTERNAL', 'Quota reservation cannot be reduced', 500);
+          }
+          const nextUsed = row.usedToday - amount;
+          tx.update(userQuota)
+            .set({ usedToday: nextUsed })
+            .where(eq(userQuota.userId, userId))
+            .run();
+          return snapshotFromEffective({
+            used: nextUsed,
+            baseTotal: row.dailyTotal ?? env.DAILY_USER_QUOTA,
+            bonus: row.checkInDate === result.quotaDate ? row.bonusToday : 0,
+            checkedInToday: row.checkInDate === result.quotaDate,
+          });
+        });
+      }
+
+      return {
+        commit(actualCount: number): QuotaSnapshot {
+          if (state !== 'reserved') {
+            throw new AppError('INTERNAL', 'Quota reservation is already settled', 500, undefined, {
+              state,
+            });
+          }
+          if (!Number.isInteger(actualCount) || actualCount < 0 || actualCount > count) {
+            throw new AppError(
+              'INTERNAL',
+              'Invalid quota reservation commit count',
+              500,
+              undefined,
+              {
+                actualCount,
+                reservedCount: count,
+              },
+            );
+          }
+          const committed = reduceReserved(count - actualCount);
+          state = 'committed';
+          logger.debug(
+            { userId, reserved: count, committed: actualCount },
+            'user quota: reservation committed',
+          );
+          return committed;
+        },
+        release(): QuotaSnapshot {
+          if (state !== 'reserved') {
+            throw new AppError('INTERNAL', 'Quota reservation is already settled', 500, undefined, {
+              state,
+            });
+          }
+          const released = reduceReserved(count);
+          state = 'released';
+          logger.debug(
+            { userId, released: count, remaining: released.remaining },
+            'user quota: reservation released',
+          );
+          return released;
+        },
+      };
     }
 
     function checkIn(): DailyCheckInResult {
@@ -185,7 +256,7 @@ export function createUserQuotaService(): UserQuotaService {
       return result;
     }
 
-    return { snapshot, ensureAvailable, consume, checkIn };
+    return { snapshot, reserve, checkIn };
   }
 
   return { forUser };

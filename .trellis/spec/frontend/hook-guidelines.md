@@ -1,6 +1,7 @@
 # React Hook Guidelines
 
-> **Status**: Verified against the React implementation in `frontend/`.
+> **Status**: Updated for task `08-28-fix-security-races-resources` with
+> account-scoped async cache and paginated gallery contracts.
 
 Hooks encapsulate reusable stateful behavior. Pure calculations belong in
 utilities; HTTP contracts belong in services; markup belongs in components.
@@ -48,6 +49,11 @@ interface UseRecordsResult {
 
 - Prevent stale responses from overwriting newer state by using request ids,
   abort signals, or an equivalent ordering guard.
+- For authenticated module-level caches, ordering alone is insufficient: bind
+  state to `ownerUserId` and require both the user id and monotonically
+  increasing request generation to match before committing fetch or mutation
+  results. Increment the generation and expose an empty snapshot immediately on
+  logout/account switch.
 - Use `void action()` only when the rejection is handled inside the action.
 - Reset errors at the start of a retry when the interface should leave the error
   state immediately.
@@ -90,6 +96,98 @@ Prefer testing hooks through the component behavior they enable. Test a hook
 directly only when it contains meaningful state transitions that would be awkward
 to cover through a route/component. Stub the service boundary rather than React
 internals.
+
+## Scenario: account-scoped history and paginated gallery caches
+
+### 1. Scope / Trigger
+
+- Trigger: module-level history survives route mounts while authentication can
+  change and requests can resolve out of order; public gallery hydration now
+  consumes an opaque cursor page contract.
+
+### 2. Signatures
+
+```ts
+interface HistoryState {
+  ownerUserId: string | null;
+  records: ImageRecord[];
+  isHydrating: boolean;
+  hydrateError: Error | null;
+}
+
+fetchPublicHistory(input?: { cursor?: string; limit?: number }): Promise<{
+  records: ImageRecord[];
+  nextCursor?: string;
+}>;
+```
+
+### 3. Contracts
+
+- `useImageHistory` derives the active cache owner from `useAuth().user.id`.
+  While state belongs to another owner, render the stable empty snapshot; never
+  render old records until an effect catches up.
+- `resetForUser` increments `requestGeneration`, clears records/errors/loading,
+  and sets the new owner. Fetch, delete, update, bulk mutation, and generation
+  result handlers may commit only when captured generation and user id still
+  match current state.
+- `AuthProvider` may expose a fetched profile only when `profile.id` equals the
+  current Better Auth session user id. During a switch, fall back to the new
+  session user instead of briefly retaining the old profile.
+- `usePublicGallery` replaces records on refresh, appends and de-duplicates on
+  `loadMore`, and treats an absent `nextCursor` as end-of-list. A request
+  generation guard prevents refresh/load-more responses from overwriting each
+  other.
+
+### 4. Validation & Error Matrix
+
+| Condition                                          | Hook behavior                                     |
+| -------------------------------------------------- | ------------------------------------------------- |
+| A history response arrives after logout            | Discard; cache remains empty                      |
+| A response arrives after session switched A -> B   | Discard unless owner is B and generation matches  |
+| A mutation started as A resolves while B is active | Return service result but do not mutate B cache   |
+| Auth session is B while loaded profile is A        | Expose normalized B session user, never A profile |
+| Public page contains a duplicate id                | Keep one record                                   |
+| `nextCursor` absent                                | `hasMore=false`; `loadMore` is a no-op            |
+| Public refresh races load-more                     | Only the latest request generation commits        |
+
+### 5. Good/Base/Bad Cases
+
+- Good: A logs out and B logs in before A's slow response; B sees an empty/
+  loading state and then only B's history.
+- Base: repeated gallery hydration after the final page performs no request.
+- Bad: a module-global `records` array with a single `hydrated` boolean; it has
+  no identity boundary and can expose A data to B.
+- Bad: profile fallback `profile ?? sessionUser`; an old non-null profile wins
+  during an account switch.
+
+### 6. Tests Required
+
+- Deferred-promise hook test resolves B before A and then A, asserting only B
+  remains visible; repeat for logout and late mutation/generation responses.
+- Auth provider test changes session user before the old profile request settles
+  and asserts the old id/admin flag is never exposed.
+- Gallery hook/API tests cover initial page, cursor request, append de-duplication,
+  end-of-list, refresh race, and malformed response rejection.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+const records = await fetchHistory();
+store.set({ records });
+```
+
+#### Correct
+
+```ts
+const owner = user.id;
+const request = ++requestGeneration;
+const records = await fetchHistory();
+if (request !== requestGeneration || store.getSnapshot().ownerUserId !== owner)
+  return;
+store.set((state) => ({ ...state, records }));
+```
 
 ## Forbidden Patterns
 

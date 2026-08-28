@@ -217,8 +217,7 @@ http://localhost:5173
 | `IMAGE_MODEL`                 | 否   | 默认图像模型，默认 `gpt-image-2`                                      |
 | `HIGH_RES_IMAGE_MODEL`        | 否   | 管理员 2K/4K 专用模型名，例如 `codex-gpt-image-2`；留空则沿用请求模型 |
 | `IMAGE_API_TIMEOUT_MS`        | 否   | 图像生成请求超时时间                                                  |
-| `GPT_POOL_QUOTA`              | 否   | 后端图像生成池额度配置                                                |
-| `UPLOAD_MAX_BYTES`            | 否   | 参考图上传大小上限                                                    |
+| `UPLOAD_MAX_BYTES`            | 否   | 参考图上传大小上限；Compose 会同时传给后端与前端代理，代理自动增加 1 MiB multipart 余量 |
 | `DAILY_USER_QUOTA`            | 否   | 默认用户每日生图额度                                                  |
 | `GOOGLE_CLIENT_ID`            | 否   | Google OAuth Client ID                                                |
 | `GOOGLE_CLIENT_SECRET`        | 否   | Google OAuth Client Secret                                            |

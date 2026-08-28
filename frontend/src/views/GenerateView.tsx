@@ -419,6 +419,11 @@ export function GenerateView() {
   const activeSessionId = searchParams.get('session');
   const previousSessionId = useRef<string | null>(activeSessionId);
   const accountName = user?.username ?? user?.name ?? '账户';
+  const currentUserId = isAuthenticated ? (user?.id ?? null) : null;
+  const currentUserIdRef = useRef(currentUserId);
+  useLayoutEffect(() => {
+    currentUserIdRef.current = currentUserId;
+  }, [currentUserId]);
 
   useEffect(() => {
     if (!activeSessionId || previousSessionId.current === activeSessionId) return;
@@ -590,6 +595,7 @@ export function GenerateView() {
     clearComposer = false,
     replaceItem?: FeedItem,
   ): Promise<void> => {
+    const generationUserId = currentUserIdRef.current;
     if (generation.isLoading) return;
     const generationSettings: GenerationSettingsSnapshot = {
       ...settings,
@@ -659,6 +665,9 @@ export function GenerateView() {
         referenceIds: [...generationSettings.referenceIds],
         ...(referenceFiles.length ? { referenceFiles: [...referenceFiles] } : {}),
       });
+      if (generationUserId === null || currentUserIdRef.current !== generationUserId) {
+        throw new Error('生成已停止。');
+      }
       result.entries.forEach((entry) => {
         if (entry.record.isPublic) addPublicRecord(entry.record);
       });

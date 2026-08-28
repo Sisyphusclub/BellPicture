@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import { copyFile, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { createReadStream, createWriteStream, type ReadStream } from 'node:fs';
+import { copyFile, mkdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { pipeline } from 'node:stream/promises';
 
 import { env } from '../config/env.js';
 import { AppError } from '../errors/AppError.js';
@@ -138,21 +140,40 @@ export async function ensureOutputRoot(): Promise<string> {
 }
 
 export async function readOutput(filename: string): Promise<Buffer> {
-  if (
-    filename.includes('/') ||
-    filename.includes('\\') ||
-    filename.includes('..') ||
-    path.isAbsolute(filename)
-  ) {
-    throw new AppError('STORAGE_ERROR', 'Invalid filename', 500, undefined, { filename });
-  }
-  const root = path.resolve(env.OUTPUT_DIR);
-  const absolutePath = path.resolve(root, filename);
-  assertWithinRoot(absolutePath, root);
+  const absolutePath = resolveOutputPath(filename);
   try {
     return await readFile(absolutePath);
   } catch (err) {
     throw new AppError('STORAGE_ERROR', `Failed to read output: ${filename}`, 500, err);
+  }
+}
+
+export async function statOutput(filename: string): Promise<{ size: number }> {
+  const absolutePath = resolveOutputPath(filename);
+  try {
+    const info = await stat(absolutePath);
+    if (!info.isFile()) {
+      throw new AppError('STORAGE_ERROR', `Output is not a file: ${filename}`, 500);
+    }
+    return { size: info.size };
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+    throw new AppError('STORAGE_ERROR', `Failed to stat output: ${filename}`, 500, err);
+  }
+}
+
+export function createOutputReadStream(filename: string): ReadStream {
+  return createReadStream(resolveOutputPath(filename));
+}
+
+export async function removeOutput(absolutePath: string): Promise<void> {
+  const root = path.resolve(env.OUTPUT_DIR);
+  const resolved = path.resolve(absolutePath);
+  assertWithinRoot(resolved, root);
+  try {
+    await unlink(resolved);
+  } catch (err) {
+    if (!isNodeErrorCode(err, 'ENOENT')) throw err;
   }
 }
 
@@ -195,6 +216,7 @@ export async function internalOutputFileExists(filename: string): Promise<boolea
 export async function copyOutputToInternalOutput(
   sourceAbsolutePath: string,
   filename: string,
+  signal?: AbortSignal,
 ): Promise<void> {
   assertInternalOutputFilename(filename);
   const root = await ensureOutputRoot();
@@ -202,19 +224,28 @@ export async function copyOutputToInternalOutput(
   const targetPath = path.resolve(root, filename);
   assertWithinRoot(sourcePath, root);
   assertWithinRoot(targetPath, root);
-  await copyFile(sourcePath, targetPath);
+  await copyFileWithSignal(sourcePath, targetPath, signal);
 }
 
-export async function copyInternalOutputToSavedOutput(filename: string): Promise<SavedFile> {
+export async function copyInternalOutputToSavedOutput(
+  filename: string,
+  signal?: AbortSignal,
+): Promise<SavedFile> {
   assertInternalOutputFilename(filename);
   const root = await ensureOutputRoot();
   const sourcePath = path.resolve(root, filename);
   assertWithinRoot(sourcePath, root);
   const sourceInfo = await stat(sourcePath);
   if (!sourceInfo.isFile()) {
-    throw new AppError('STORAGE_ERROR', `Internal output is not a file: ${filename}`, 500, undefined, {
-      filename,
-    });
+    throw new AppError(
+      'STORAGE_ERROR',
+      `Internal output is not a file: ${filename}`,
+      500,
+      undefined,
+      {
+        filename,
+      },
+    );
   }
 
   const ext = normalizeExt(path.extname(filename));
@@ -222,7 +253,7 @@ export async function copyInternalOutputToSavedOutput(filename: string): Promise
   const outputFilename = `${id}.${ext}`;
   const absolutePath = path.resolve(root, outputFilename);
   assertWithinRoot(absolutePath, root);
-  await copyFile(sourcePath, absolutePath);
+  await copyFileWithSignal(sourcePath, absolutePath, signal);
   return {
     id,
     ext: ext as UploadExt | 'png',
@@ -255,6 +286,17 @@ export async function saveUpload(buffer: Buffer): Promise<SavedFile> {
     absolutePath,
     size: buffer.byteLength,
   };
+}
+
+export async function removeUpload(absolutePath: string): Promise<void> {
+  const root = path.resolve(env.UPLOAD_DIR);
+  const resolved = path.resolve(absolutePath);
+  assertWithinRoot(resolved, root);
+  try {
+    await unlink(resolved);
+  } catch (err) {
+    if (!isNodeErrorCode(err, 'ENOENT')) throw err;
+  }
 }
 
 /**
@@ -328,4 +370,45 @@ function assertInternalOutputFilename(filename: string): void {
       filename,
     });
   }
+}
+
+function resolveOutputPath(filename: string): string {
+  if (
+    filename.includes('/') ||
+    filename.includes('\\') ||
+    filename.includes('..') ||
+    path.isAbsolute(filename)
+  ) {
+    throw new AppError('STORAGE_ERROR', 'Invalid filename', 500, undefined, { filename });
+  }
+  const root = path.resolve(env.OUTPUT_DIR);
+  const absolutePath = path.resolve(root, filename);
+  assertWithinRoot(absolutePath, root);
+  return absolutePath;
+}
+
+async function copyFileWithSignal(
+  sourcePath: string,
+  targetPath: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  if (signal === undefined) {
+    await copyFile(sourcePath, targetPath);
+    return;
+  }
+  signal.throwIfAborted();
+  try {
+    await pipeline(createReadStream(sourcePath), createWriteStream(targetPath), { signal });
+  } catch (err) {
+    try {
+      await unlink(targetPath);
+    } catch (cleanupErr) {
+      if (!isNodeErrorCode(cleanupErr, 'ENOENT')) throw cleanupErr;
+    }
+    throw err;
+  }
+}
+
+function isNodeErrorCode(error: unknown, code: string): boolean {
+  return error instanceof Error && 'code' in error && error.code === code;
 }

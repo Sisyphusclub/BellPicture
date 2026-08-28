@@ -1,9 +1,7 @@
 # Backend Error Handling
 
-> **Status**: Verified against `backend/src/errors/AppError.ts` +
-> `backend/src/middlewares/errorHandler.ts` after task `05-11-image-endpoints`.
-> ErrorCode union extended; details now included in the JSON response body
-> when set.
+> **Status**: Updated for task `08-28-fix-security-races-resources` against
+> `AppError`, generation cancellation, output streaming, and media proxy errors.
 
 ---
 
@@ -32,6 +30,7 @@ export type ErrorCode =
   | "PROVIDER_EMPTY_RESULT" // 2API returned no image payload
   | "PROVIDER_TIMEOUT" // request exceeded IMAGE_API_TIMEOUT_MS
   | "PROVIDER_RATE_LIMITED" // 2API returned 429
+  | "REQUEST_ABORTED" // caller disconnected/cancelled; internal status 499
   | "QUOTA_EXHAUSTED" // per-user daily image quota would overflow
   | "STORAGE_ERROR" // local fs read/write failed
   | "INTERNAL";
@@ -124,16 +123,17 @@ Mounted **last** in `app.ts`, after all routes.
 `TwoApiImageProvider` must translate raw HTTP / network errors into
 `AppError` instances:
 
-| Trigger                                             | AppError.code              | HTTP                                                                                                    |
-| --------------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `AbortError` from `fetch`                           | `PROVIDER_TIMEOUT`         | 504                                                                                                     |
-| 2API 429                                            | `PROVIDER_RATE_LIMITED`    | 429 (the only upstream status we surface as-is)                                                         |
-| 2API 400 / 422                                      | `PROVIDER_PROMPT_REJECTED` | 422 (`details = { upstreamStatus, reason: "prompt_rejected" }`)                                         |
-| 2API other 4xx                                      | `PROVIDER_ERROR`           | 502 (configuration/auth/provider failure, `details.reason = "provider_http_error"`)                     |
-| 2API 5xx                                            | `PROVIDER_ERROR`           | 502                                                                                                     |
-| Malformed JSON                                      | `PROVIDER_ERROR`           | 502                                                                                                     |
-| Missing / empty image data                          | `PROVIDER_EMPTY_RESULT`    | 502 (`details.reason = "empty_result"`)                                                                 |
-| Local file-read fails before fetch (image-to-image) | `PROVIDER_ERROR`           | 502 (treated as "provider unreachable" — the file should have existed if the service did the preflight) |
+| Trigger                                                   | AppError.code              | HTTP                                                                                                    |
+| --------------------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Caller signal aborted before/during fetch or JSON read    | `REQUEST_ABORTED`          | 499; normally no response because the client disconnected                                               |
+| Provider timeout signal aborted during fetch or JSON read | `PROVIDER_TIMEOUT`         | 504                                                                                                     |
+| 2API 429                                                  | `PROVIDER_RATE_LIMITED`    | 429 (the only upstream status we surface as-is)                                                         |
+| 2API 400 / 422                                            | `PROVIDER_PROMPT_REJECTED` | 422 (`details = { upstreamStatus, reason: "prompt_rejected" }`)                                         |
+| 2API other 4xx                                            | `PROVIDER_ERROR`           | 502 (configuration/auth/provider failure, `details.reason = "provider_http_error"`)                     |
+| 2API 5xx                                                  | `PROVIDER_ERROR`           | 502                                                                                                     |
+| Malformed JSON                                            | `PROVIDER_ERROR`           | 502                                                                                                     |
+| Missing / empty image data                                | `PROVIDER_EMPTY_RESULT`    | 502 (`details.reason = "empty_result"`)                                                                 |
+| Local file-read fails before fetch (image-to-image)       | `PROVIDER_ERROR`           | 502 (treated as "provider unreachable" — the file should have existed if the service did the preflight) |
 
 Always log the upstream status + a redacted summary of the response body
 (no `Authorization` header echoes, no API key fragments).
@@ -156,11 +156,14 @@ boundary:
 | `referenceId` does not match a file on disk                              | `BAD_REQUEST`            | 400 (`details.referenceId` = the id)          |
 | `referenceIds` contains more than `MAX_REFERENCE_IMAGES` ids             | `BAD_REQUEST`            | 400                                           |
 | Any id in `referenceIds` does not match a file on disk                   | `BAD_REQUEST`            | 400 (`details.referenceId` = the failing id)  |
+| Reference id has no ownership metadata                                   | `BAD_REQUEST`            | 400 (`details.referenceId` = the id)          |
+| Reference id is registered to another authenticated user                 | `FORBIDDEN`              | 403 before file access/provider call          |
 | `/api/images/generate` receives `resolution: "2k"` or `"4k"`             | `BAD_REQUEST`            | 400 (`details.issues` from zod)               |
 | `/api/images/generate/high-res` omits `resolution` or sends `"standard"` | `BAD_REQUEST`            | 400 (`details.issues` from zod)               |
 | `4k` generation uses unsupported aspect ratio (`1:1`, `3:2`, `2:3`)      | `BAD_REQUEST`            | 400 (`details = { aspectRatio, resolution }`) |
 | `GET /api/outputs/:filename` filename malformed                          | `BAD_REQUEST`            | 400                                           |
 | `GET /api/outputs/:filename` file missing                                | `NOT_FOUND`              | 404                                           |
+| Output exists but stat/open fails with permissions or other I/O error    | `STORAGE_ERROR`          | 500; preserve the underlying cause            |
 
 ## Auth failure mapping
 
@@ -178,7 +181,7 @@ messages:
 | `auth.api.getSession` returns null (no cookie / expired)            | `UNAUTHORIZED`    | 401                                               |
 | `auth.api.getSession` throws unexpectedly                           | `UNAUTHORIZED`    | 401 (cause attached; logged at `error`)           |
 | Authenticated non-admin calls admin-only endpoint                   | `FORBIDDEN`       | 403                                               |
-| Per-user daily quota would overflow on `consume`                    | `QUOTA_EXHAUSTED` | 429 (`details = { requested, remaining, total }`) |
+| Per-user daily quota would overflow on atomic `reserve`             | `QUOTA_EXHAUSTED` | 429 (`details = { requested, remaining, total }`) |
 
 The `openaiCompatAuth` middleware (mounted on `/v1/*`) translates inbound API-key
 failures into the same error envelope:
@@ -199,6 +202,89 @@ registered unauthorized handler — keep the error envelope shape
 
 ---
 
+## Scenario: cancellation and streamed-resource failures
+
+### 1. Scope / Trigger
+
+- Trigger: generation, media proxying, and output delivery continue after the
+  initial HTTP handler starts. Client disconnects and mid-stream failures must
+  cancel work without being misreported as normal 404s or causing a second
+  response write.
+
+### 2. Signatures
+
+```ts
+generateImage(input: GenerateImageInput & { signal?: AbortSignal }): Promise<GenerateImageOutput>;
+provider.generate(input: GenerateInput & { signal?: AbortSignal }): Promise<GenerateOutput>;
+statOutput(filename: string): Promise<{ size: number }>;
+createOutputReadStream(filename: string): ReadStream;
+```
+
+### 3. Contracts
+
+- Convert `req.aborted` and a premature `res.close` into one `AbortSignal` and
+  pass it through provider fetch/JSON reading, output writes/copies, demo delay,
+  and every pre-persistence checkpoint.
+- Combine caller cancellation with the provider timeout, but map them by source:
+  caller -> `REQUEST_ABORTED`; deadline -> `PROVIDER_TIMEOUT`.
+- Cancellation releases reserved quota, removes generated outputs, and skips
+  history and optional demo-cache persistence.
+- Output delivery runs `stat` first to set `Content-Length`, then pipelines a
+  read stream into the response with backpressure. Only a nested Node `ENOENT`
+  cause becomes 404; permission and storage faults remain 500.
+- The media proxy uses a 30-second upstream deadline and aborts upstream fetch/
+  pipeline when downstream closes. If an upstream stream fails after headers
+  were sent, destroy the response; do not call the JSON error middleware.
+
+### 4. Validation & Error Matrix
+
+| Condition                                            | Result                                                           |
+| ---------------------------------------------------- | ---------------------------------------------------------------- |
+| Browser cancels before provider completes            | Abort upstream; 499 internally; no quota/history/output          |
+| Provider exceeds configured generation timeout       | 504 `PROVIDER_TIMEOUT`                                           |
+| Media upstream exceeds 30 seconds before headers     | 504 `PROVIDER_TIMEOUT`                                           |
+| Media/output client closes mid-stream                | Abort pipeline/upstream; no second response                      |
+| Output stat cause is `ENOENT`                        | 404 `NOT_FOUND`                                                  |
+| Output stat cause is `EACCES`, `EPERM`, or other I/O | 500 `STORAGE_ERROR`                                              |
+| Stream fails after response headers                  | Destroy response and log; never `next(err)` into JSON middleware |
+
+### 5. Good/Base/Bad Cases
+
+- Good: stopping generation aborts provider work and restores the reservation.
+- Base: a missing output is reported as 404 before headers are sent.
+- Bad: treating every `STORAGE_ERROR` as missing hides disk/permission incidents.
+- Bad: aborting only browser `fetch`; paid server work then continues and the UI
+  falsely reports that generation stopped.
+
+### 6. Tests Required
+
+- Controller/provider tests abort during fetch, JSON parsing, and output save,
+  asserting `REQUEST_ABORTED`, cleanup, and no history/cache write.
+- Output route tests distinguish `ENOENT` from permission/I/O causes and verify
+  stream-based delivery.
+- Media route tests assert deadline cancellation, downstream-close cancellation,
+  and response destruction for an upstream error after headers.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+const buffer = await readOutput(filename);
+if (error.code === "STORAGE_ERROR") throw notFound();
+res.end(buffer);
+```
+
+#### Correct
+
+```ts
+const { size } = await statOutput(filename);
+res.setHeader("Content-Length", size);
+await pipeline(createOutputReadStream(filename), res, { signal });
+```
+
+---
+
 ## Forbidden patterns
 
 - ❌ `try { ... } catch { /* swallow */ }`. If you catch, either re-throw
@@ -211,6 +297,9 @@ registered unauthorized handler — keep the error envelope shape
   in any form (full or partial).
 - ❌ Returning sentinel values (`null`, `-1`, `''`) to signal failure from
   service functions. Throw.
+- ❌ Calling `next(err)` after a streaming response has sent headers. Destroy
+  the response or let the pipeline close it; a JSON error envelope can no
+  longer be written coherently.
 
 ---
 

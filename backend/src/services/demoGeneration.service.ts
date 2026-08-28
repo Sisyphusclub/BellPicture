@@ -3,7 +3,7 @@ import { deflateSync } from 'node:zlib';
 import { setTimeout as delay } from 'node:timers/promises';
 
 import { AppError } from '../errors/AppError.js';
-import { saveOutput } from '../storage/localStorage.js';
+import { removeOutput, saveOutput } from '../storage/localStorage.js';
 import type { AspectRatio } from '../types/image.js';
 
 import type { GenerateImageOutput } from './imageGeneration.service.js';
@@ -18,6 +18,7 @@ const CRC_TABLE = buildCrcTable();
 export interface GenerateDemoImageInput {
   presetId: string;
   delayMs?: number;
+  signal?: AbortSignal;
 }
 
 interface Rgba {
@@ -37,9 +38,14 @@ export async function generateDemoImage(
   }
 
   const delayMs = input.delayMs ?? DEMO_GENERATION_DELAY_MS;
-  if (delayMs > 0) await delay(delayMs);
+  if (delayMs > 0) await delay(delayMs, undefined, { signal: input.signal });
+  input.signal?.throwIfAborted();
 
   const saved = await saveOutput(createDemoPng(), 'png');
+  if (input.signal?.aborted === true) {
+    await removeOutput(saved.absolutePath);
+    input.signal.throwIfAborted();
+  }
   return {
     batchId: randomUUID(),
     aspectRatio: '1:1' satisfies AspectRatio,
@@ -188,7 +194,8 @@ function fillRoundedRect(
   const bottom = y + height - 1;
   for (let yy = y; yy <= bottom; yy += 1) {
     for (let xx = x; xx <= right; xx += 1) {
-      const dx = xx < x + radius ? x + radius - xx : xx > right - radius ? xx - (right - radius) : 0;
+      const dx =
+        xx < x + radius ? x + radius - xx : xx > right - radius ? xx - (right - radius) : 0;
       const dy =
         yy < y + radius ? y + radius - yy : yy > bottom - radius ? yy - (bottom - radius) : 0;
       if (dx * dx + dy * dy <= radius * radius) blendPixel(raw, xx, yy, color);

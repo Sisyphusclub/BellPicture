@@ -19,6 +19,7 @@ import {
 
 export interface HistoryListResponse {
   records: ImageRecord[];
+  nextCursor?: string;
 }
 
 export async function fetchHistory(): Promise<ImageRecord[]> {
@@ -31,14 +32,23 @@ export async function fetchHistory(): Promise<ImageRecord[]> {
   return payload.records;
 }
 
-export async function fetchPublicHistory(): Promise<ImageRecord[]> {
-  const response = await publicFetch(buildApiUrl('/api/history/public'));
+export async function fetchPublicHistory(
+  input: {
+    cursor?: string;
+    limit?: number;
+  } = {},
+): Promise<HistoryListResponse> {
+  const query = new URLSearchParams();
+  if (input.cursor !== undefined) query.set('cursor', input.cursor);
+  if (input.limit !== undefined) query.set('limit', String(input.limit));
+  const suffix = query.size > 0 ? `?${query.toString()}` : '';
+  const response = await publicFetch(buildApiUrl(`/api/history/public${suffix}`));
   const payload = await parseJsonResponse(response);
   if (!response.ok) throw buildApiError(response.status, payload);
   if (!isHistoryListResponse(payload)) {
     throw new ImageApiError(response.status, 'INVALID_RESPONSE', '公开画廊返回了无法识别的响应。');
   }
-  return payload.records;
+  return payload;
 }
 
 export async function deleteHistoryRecord(id: string): Promise<void> {
@@ -176,5 +186,8 @@ function isStringArray(value: unknown): value is string[] {
 function isHistoryListResponse(value: unknown): value is HistoryListResponse {
   if (!isRecord(value)) return false;
   if (!Array.isArray(value.records)) return false;
-  return value.records.every(isImageRecord);
+  return (
+    value.records.every(isImageRecord) &&
+    (value.nextCursor === undefined || typeof value.nextCursor === 'string')
+  );
 }

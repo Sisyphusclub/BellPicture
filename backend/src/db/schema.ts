@@ -99,6 +99,20 @@ export const userQuota = sqliteTable('user_quota', {
   bonusToday: integer('bonus_today').notNull().default(0),
 });
 
+export const referenceUploads = sqliteTable(
+  'reference_uploads',
+  {
+    filename: text('filename').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (t) => ({
+    byUserCreatedAt: index('reference_uploads_user_created_idx').on(t.userId, t.createdAt),
+  }),
+);
+
 export const imageRecords = sqliteTable(
   'image_records',
   {
@@ -127,5 +141,10 @@ export const imageRecords = sqliteTable(
   (t) => ({
     byUserCreatedAt: index('image_records_user_created_idx').on(t.userId, t.createdAt),
     byBatch: index('image_records_batch_idx').on(t.batchId),
+    byPublicCreatedId: index('image_records_public_created_id_idx').on(
+      t.isPublic,
+      t.createdAt,
+      t.id,
+    ),
   }),
 );

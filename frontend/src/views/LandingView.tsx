@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,11 +19,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { openAuthModal } from '@/hooks/useAuthModal';
 import { useImageQuota } from '@/hooks/useImageQuota';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { usePublicGallery } from '@/hooks/usePublicGallery';
 import { getAppNavigation } from '@/config/navigation';
 import { CREATION_TEMPLATES, templateToHistoryEntry } from '@/data/creationTemplates';
 import { buildApiUrl } from '@/services/api/imagesApi';
 import type { AspectChoice, HistoryEntry } from '@/types/image';
 import { DEFAULT_ASPECT_CHOICE, DEFAULT_COUNT, MAX_REFERENCE_IMAGES } from '@/types/image';
+import { Button } from '@/components/ui/button';
 
 const HERO_VIDEO = buildApiUrl('/api/media/liquid-glass.mp4');
 const HERO_SHINY_GRADIENT_STYLE: CSSProperties = {
@@ -134,18 +136,13 @@ const TODAY_CREATIONS = [
   HERO_ENTRIES[2]!,
   ...DISCOVERY_TEMPLATE_ENTRIES,
 ] as const;
-const TODAY_GALLERY_IMAGES: GalleryImage[] = TODAY_CREATIONS.map((entry) => ({
-  id: entry.record.id,
-  src: entry.imageUrl,
-  alt: entry.record.prompt,
-  aspectRatio: entry.record.width / entry.record.height,
-}));
 export function LandingView() {
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading: authLoading, isAdmin, logout } = useAuth();
   const { quota, isLoading: quotaLoading, checkIn } = useImageQuota();
   const { notify } = useToast();
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+  const publicGallery = usePublicGallery();
   const composerAnchorRef = useRef<HTMLDivElement>(null);
   const composerDockedRef = useRef(false);
   const [videoFailed, setVideoFailed] = useState(false);
@@ -159,6 +156,20 @@ export function LandingView() {
   const [composerExpanded, setComposerExpanded] = useState(false);
   const composerHasContent = prompt.trim().length > 0 || attachments.length > 0;
   const composerIsExpanded = composerDocked && (composerExpanded || composerHasContent);
+  const galleryEntries = useMemo(
+    () => [...publicGallery.entries, ...TODAY_CREATIONS],
+    [publicGallery.entries],
+  );
+  const galleryImages = useMemo<GalleryImage[]>(
+    () =>
+      galleryEntries.map((entry) => ({
+        id: entry.record.id,
+        src: entry.imageUrl,
+        alt: entry.record.prompt,
+        aspectRatio: entry.record.width / entry.record.height,
+      })),
+    [galleryEntries],
+  );
 
   useEffect(() => {
     const savedScroll = Number(sessionStorage.getItem(LANDING_SCROLL_KEY));
@@ -417,13 +428,25 @@ export function LandingView() {
         eyebrow=""
         title=""
         description=""
-        images={TODAY_GALLERY_IMAGES}
+        images={galleryImages}
         columnCount={6}
         onImageClick={(image) => {
-          const entry = TODAY_CREATIONS.find((candidate) => candidate.record.id === image.id);
+          const entry = galleryEntries.find((candidate) => candidate.record.id === image.id);
           if (entry) setSelected(entry);
         }}
       />
+      {publicGallery.hasMore ? (
+        <div className="flex justify-center pb-16">
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={publicGallery.isHydrating}
+            onClick={() => void publicGallery.loadMore()}
+          >
+            {publicGallery.isHydrating ? '加载中' : '加载更多'}
+          </Button>
+        </div>
+      ) : null}
       <ImageDetailModal
         entry={selected}
         onClose={() => setSelected(null)}

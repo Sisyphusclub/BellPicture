@@ -8,7 +8,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../src/app.js';
 import { db } from '../../src/db/drizzle.js';
 import { user } from '../../src/db/schema.js';
+import { sqlite } from '../../src/db/sqlite.js';
 import { AppError } from '../../src/errors/AppError.js';
+import { insertImageRecords } from '../../src/services/history.service.js';
 import type { ImageGenerationProvider } from '../../src/services/providers/ImageGenerationProvider.js';
 import { saveOutput } from '../../src/storage/localStorage.js';
 import type { GenerateInput, GenerateOutput } from '../../src/types/image.js';
@@ -238,6 +240,77 @@ describe('GET /api/history/public', () => {
     );
     expect(res.body.records.some((r: { prompt: string }) => r.prompt === 'A private')).toBe(false);
     expect(res.body.records.every((r: { isPublic: boolean }) => r.isPublic)).toBe(true);
+  });
+
+  it('paginates a shared timestamp without duplicates and strips reference identifiers', async () => {
+    const userId = `hist-page-${randomUUID()}`;
+    ensureUser(userId);
+    const createdAt = new Date(Date.now() + 60_000);
+    const ids = [`${randomUUID()}.png`, `${randomUUID()}.png`, `${randomUUID()}.png`].sort(
+      (left, right) => right.localeCompare(left),
+    );
+    insertImageRecords(
+      ids.map((id) => ({
+        id,
+        batchId: randomUUID(),
+        userId,
+        prompt: `page ${id}`,
+        model: 'gpt-image-2',
+        referenceId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.png',
+        referenceIds: ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.png'],
+        filename: id,
+        mime: 'image/png',
+        width: 1024,
+        height: 1024,
+        count: 1,
+        resolution: 'standard',
+        isPublic: true,
+        createdAt,
+      })),
+    );
+    const app = createApp({ provider: fakeProvider(), authMiddleware: stubAuth(userId) });
+
+    const first = await request(app).get('/api/history/public?limit=2');
+    expect(first.status).toBe(200);
+    expect(first.body.records.map((record: { id: string }) => record.id)).toEqual(ids.slice(0, 2));
+    expect(first.body.nextCursor).toEqual(expect.any(String));
+    expect(
+      first.body.records.every(
+        (record: Record<string, unknown>) =>
+          record['referenceId'] === undefined && record['referenceIds'] === undefined,
+      ),
+    ).toBe(true);
+
+    const second = await request(app).get(
+      `/api/history/public?limit=2&cursor=${encodeURIComponent(first.body.nextCursor as string)}`,
+    );
+    expect(second.status).toBe(200);
+    expect(second.body.records[0].id).toBe(ids[2]);
+    expect(
+      new Set([
+        ...first.body.records.map((record: { id: string }) => record.id),
+        ...second.body.records.map((record: { id: string }) => record.id),
+      ]).size,
+    ).toBe(first.body.records.length + second.body.records.length);
+  });
+
+  it('rejects oversized pages and invalid cursors', async () => {
+    const app = createApp({ provider: fakeProvider() });
+
+    expect((await request(app).get('/api/history/public?limit=51')).status).toBe(400);
+    expect((await request(app).get('/api/history/public?cursor=not-a-cursor')).status).toBe(400);
+  });
+
+  it('uses the public created-at/id composite index', () => {
+    const plan = sqlite
+      .prepare(
+        'EXPLAIN QUERY PLAN SELECT * FROM image_records WHERE is_public = 1 ORDER BY created_at DESC, id DESC LIMIT 24',
+      )
+      .all() as Array<{ detail: string }>;
+
+    expect(plan.some((row) => row.detail.includes('image_records_public_created_id_idx'))).toBe(
+      true,
+    );
   });
 });
 

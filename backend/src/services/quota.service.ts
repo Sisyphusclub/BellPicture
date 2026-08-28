@@ -9,9 +9,13 @@ export interface DailyCheckInResult extends QuotaSnapshot {
   claimed: boolean;
 }
 
+export interface QuotaReservation {
+  commit: (actualCount: number) => QuotaSnapshot;
+  release: () => QuotaSnapshot;
+}
+
 export interface QuotaPool {
   snapshot: () => QuotaSnapshot;
-  ensureAvailable: (count: number) => void;
-  consume: (count: number) => QuotaSnapshot;
+  reserve: (count: number) => QuotaReservation;
   checkIn: () => DailyCheckInResult;
 }

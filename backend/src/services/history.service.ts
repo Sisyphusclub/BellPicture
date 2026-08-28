@@ -1,7 +1,10 @@
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { Buffer } from 'node:buffer';
+
+import { and, desc, eq, inArray, lt, or } from 'drizzle-orm';
 
 import { db } from '../db/drizzle.js';
 import { imageRecords } from '../db/schema.js';
+import { AppError } from '../errors/AppError.js';
 import type { AspectRatio, ImageResolution } from '../types/image.js';
 
 export interface ImageRecordDTO {
@@ -24,6 +27,16 @@ export interface ImageRecordDTO {
   collection?: string;
   createdAt: string; // ISO 8601
 }
+
+export type PublicImageRecordDTO = Omit<ImageRecordDTO, 'referenceId' | 'referenceIds'>;
+
+export interface PublicImageRecordPage {
+  records: PublicImageRecordDTO[];
+  nextCursor?: string;
+}
+
+export const DEFAULT_PUBLIC_HISTORY_PAGE_SIZE = 24;
+export const MAX_PUBLIC_HISTORY_PAGE_SIZE = 50;
 
 export interface NewImageRecord {
   id: string;
@@ -175,14 +188,71 @@ export function listImageRecordsForUser(userId: string): ImageRecordDTO[] {
   return rows.map(toDTO);
 }
 
-export function listPublicImageRecords(): ImageRecordDTO[] {
+export function listPublicImageRecords(input: {
+  cursor?: string;
+  limit: number;
+}): PublicImageRecordPage {
+  const cursor = input.cursor === undefined ? undefined : decodePublicCursor(input.cursor);
+  const cursorCondition =
+    cursor === undefined
+      ? undefined
+      : or(
+          lt(imageRecords.createdAt, new Date(cursor.createdAt)),
+          and(
+            eq(imageRecords.createdAt, new Date(cursor.createdAt)),
+            lt(imageRecords.id, cursor.id),
+          ),
+        );
   const rows = db
     .select()
     .from(imageRecords)
-    .where(eq(imageRecords.isPublic, true))
-    .orderBy(desc(imageRecords.createdAt))
+    .where(and(eq(imageRecords.isPublic, true), cursorCondition))
+    .orderBy(desc(imageRecords.createdAt), desc(imageRecords.id))
+    .limit(input.limit + 1)
     .all();
-  return rows.map(toDTO);
+  const pageRows = rows.slice(0, input.limit);
+  const records = pageRows.map(toPublicDTO);
+  const last = pageRows.at(-1);
+  return {
+    records,
+    ...(rows.length > input.limit && last !== undefined
+      ? { nextCursor: encodePublicCursor(last.createdAt, last.id) }
+      : {}),
+  };
+}
+
+function toPublicDTO(row: typeof imageRecords.$inferSelect): PublicImageRecordDTO {
+  const dto = toDTO(row);
+  delete dto.referenceId;
+  delete dto.referenceIds;
+  return dto;
+}
+
+function encodePublicCursor(createdAt: Date, id: string): string {
+  return Buffer.from(JSON.stringify({ createdAt: createdAt.getTime(), id }), 'utf8').toString(
+    'base64url',
+  );
+}
+
+function decodePublicCursor(cursor: string): { createdAt: number; id: string } {
+  try {
+    const parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8')) as unknown;
+    if (typeof parsed !== 'object' || parsed === null) throw new Error('cursor is not an object');
+    const fields = parsed as Record<string, unknown>;
+    if (
+      typeof fields['createdAt'] !== 'number' ||
+      !Number.isSafeInteger(fields['createdAt']) ||
+      fields['createdAt'] < 0 ||
+      fields['createdAt'] > Date.now() + 86_400_000 ||
+      typeof fields['id'] !== 'string' ||
+      fields['id'].length === 0
+    ) {
+      throw new Error('cursor fields are invalid');
+    }
+    return { createdAt: fields['createdAt'], id: fields['id'] };
+  } catch (err) {
+    throw new AppError('BAD_REQUEST', 'Invalid public history cursor', 400, err);
+  }
 }
 
 /** Deletes one record. Returns number of rows deleted (0 if not owned by user). */

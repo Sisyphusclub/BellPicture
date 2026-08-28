@@ -68,6 +68,20 @@ vi.mock('@/hooks/useImageHistory', () => ({
   }),
 }));
 
+vi.mock('@/hooks/usePublicGallery', () => ({
+  usePublicGallery: () => ({
+    entries: [],
+    isHydrating: false,
+    hydrateError: null,
+    hasMore: false,
+    refresh: vi.fn(),
+    loadMore: vi.fn(),
+    add: vi.fn(),
+    removeAsAdmin: vi.fn(),
+  }),
+  addPublicRecord: vi.fn(),
+}));
+
 vi.mock('@/hooks/useAdminUsers', () => ({
   useAdminUsers: () => ({
     users: [],
@@ -124,10 +138,7 @@ beforeEach(() => {
 });
 
 describe('React application routes', () => {
-  it('renders the full GPT Image 2 vertical gallery without hydrating the public gallery', () => {
-    const fetchSpy = vi
-      .spyOn(globalThis, 'fetch')
-      .mockResolvedValue(new Response(JSON.stringify([]), { status: 200 }));
+  it('renders the full GPT Image 2 vertical gallery through the paginated gallery boundary', () => {
     const { container } = renderRoute('/');
     expect(
       screen.getByRole('heading', { level: 1, name: 'Turn your idea into images' }),
@@ -173,11 +184,6 @@ describe('React application routes', () => {
       .map((card) => card.querySelector('img')?.getAttribute('src'));
     expect(templateSources.slice(0, 6).every((source) => !source?.includes('/anime-'))).toBe(true);
     expect(templateSources.slice(-6).some((source) => source?.includes('/anime-'))).toBe(true);
-    expect(
-      fetchSpy.mock.calls.some(([input]) =>
-        (input instanceof Request ? input.url : String(input)).includes('/api/history/public'),
-      ),
-    ).toBe(false);
     expect(screen.queryByRole('button', { name: '上一张作品' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '下一张作品' })).not.toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: '首页创作提示词' })).toBeInTheDocument();

@@ -6,8 +6,10 @@ import {
   deleteImageRecordBatchForUser,
   deleteImageRecordForUser,
   deleteImageRecordsForUser,
+  DEFAULT_PUBLIC_HISTORY_PAGE_SIZE,
   listImageRecordsForUser,
   listPublicImageRecords,
+  MAX_PUBLIC_HISTORY_PAGE_SIZE,
   removePublicImageRecordFromGalleryAsAdmin,
   type ImageRecordDTO,
   updateImageRecordForUser,
@@ -18,7 +20,18 @@ import '../types/express.js';
 
 export interface HistoryListResponse {
   records: ImageRecordDTO[];
+  nextCursor?: string;
 }
+
+const publicHistoryQuerySchema = z.object({
+  cursor: z.string().min(1).max(512).optional(),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(MAX_PUBLIC_HISTORY_PAGE_SIZE)
+    .default(DEFAULT_PUBLIC_HISTORY_PAGE_SIZE),
+});
 
 const imageMetadataUpdateSchema = z
   .object({
@@ -93,10 +106,14 @@ export function buildHistoryController(): {
       }
     },
 
-    listPublic(_req, res, next) {
+    listPublic(req, res, next) {
       try {
-        const records = listPublicImageRecords();
-        const body: HistoryListResponse = { records };
+        const query = parseQuery(publicHistoryQuerySchema, req.query);
+        const page = listPublicImageRecords({
+          limit: query.limit,
+          ...(query.cursor === undefined ? {} : { cursor: query.cursor }),
+        });
+        const body: HistoryListResponse = page;
         res.status(200).json(body);
       } catch (err) {
         next(err);
@@ -197,4 +214,17 @@ export function buildHistoryController(): {
       }
     },
   };
+}
+
+function parseQuery<T>(schema: z.ZodType<T>, query: unknown): T {
+  try {
+    return schema.parse(query);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      throw new AppError('BAD_REQUEST', 'Invalid public history query', 400, error, {
+        issues: error.issues,
+      });
+    }
+    throw error;
+  }
 }

@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { AppError } from '../../errors/AppError.js';
 import { logger } from '../../logger.js';
-import { mimeFromExt, saveOutput } from '../../storage/localStorage.js';
+import { mimeFromExt, removeOutput, saveOutput } from '../../storage/localStorage.js';
 import {
   DEFAULT_ASPECT_RATIO,
   DEFAULT_COUNT,
@@ -64,6 +64,9 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     }
     const referencePaths = normalizeReferencePaths(input);
     const hasReference = referencePaths.length > 0;
+    const timeoutSignal = AbortSignal.timeout(this.config.timeoutMs);
+    const requestSignal =
+      input.signal === undefined ? timeoutSignal : AbortSignal.any([input.signal, timeoutSignal]);
 
     const start = Date.now();
     let response: Response;
@@ -77,9 +80,23 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
             referencePaths,
             count,
             sizing.size,
+            requestSignal,
+            input.requestId,
           )
-        : await this.callGenerations(baseUrl, apiKey, model, input.prompt, count, sizing.size);
+        : await this.callGenerations(
+            baseUrl,
+            apiKey,
+            model,
+            input.prompt,
+            count,
+            sizing.size,
+            requestSignal,
+            input.requestId,
+          );
     } catch (err) {
+      if (input.signal?.aborted === true) {
+        throw new AppError('REQUEST_ABORTED', 'Image generation request was cancelled', 499, err);
+      }
       if (isTimeoutLike(err)) {
         throw new AppError(
           'PROVIDER_TIMEOUT',
@@ -134,6 +151,17 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     try {
       parsed = (await response.json()) as OpenAIImageResponse;
     } catch (err) {
+      if (input.signal?.aborted === true) {
+        throw new AppError('REQUEST_ABORTED', 'Image generation request was cancelled', 499, err);
+      }
+      if (timeoutSignal.aborted || isTimeoutLike(err)) {
+        throw new AppError(
+          'PROVIDER_TIMEOUT',
+          `Image generation timed out after ${this.config.timeoutMs}ms`,
+          504,
+          err,
+        );
+      }
       throw new AppError('PROVIDER_ERROR', 'Provider returned malformed JSON', 502, err);
     }
 
@@ -149,19 +177,40 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     }
 
     const images: GenerateImageItem[] = [];
-    for (const item of data) {
-      if (typeof item.b64_json !== 'string' || item.b64_json.length === 0) {
+    try {
+      for (const item of data) {
+        requestSignal.throwIfAborted();
+        if (typeof item.b64_json !== 'string' || item.b64_json.length === 0) {
+          throw new AppError(
+            'PROVIDER_EMPTY_RESULT',
+            'Provider did not return image data',
+            502,
+            undefined,
+            { reason: 'empty_result' },
+          );
+        }
+        const buffer = Buffer.from(item.b64_json, 'base64');
+        const saved = await saveOutput(buffer, 'png');
+        if (requestSignal.aborted) {
+          await removeOutput(saved.absolutePath);
+          requestSignal.throwIfAborted();
+        }
+        images.push({ outputPath: saved.absolutePath, width: sizing.width, height: sizing.height });
+      }
+    } catch (err) {
+      await Promise.all(images.map((image) => removeOutput(image.outputPath)));
+      if (input.signal?.aborted === true) {
+        throw new AppError('REQUEST_ABORTED', 'Image generation request was cancelled', 499, err);
+      }
+      if (timeoutSignal.aborted) {
         throw new AppError(
-          'PROVIDER_EMPTY_RESULT',
-          'Provider did not return image data',
-          502,
-          undefined,
-          { reason: 'empty_result' },
+          'PROVIDER_TIMEOUT',
+          `Image generation timed out after ${this.config.timeoutMs}ms`,
+          504,
+          err,
         );
       }
-      const buffer = Buffer.from(item.b64_json, 'base64');
-      const saved = await saveOutput(buffer, 'png');
-      images.push({ outputPath: saved.absolutePath, width: sizing.width, height: sizing.height });
+      throw err;
     }
 
     logger.info(
@@ -210,10 +259,12 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     prompt: string,
     count: number,
     size: string,
+    signal: AbortSignal,
+    requestId?: string,
   ): Promise<Response> {
     const url = buildUrl(baseUrl, 'v1/images/generations');
     logger.info(
-      { model, promptPreview: prompt.slice(0, 80), url, count, size },
+      { requestId, model, promptLength: prompt.length, url, count, size },
       'image generation: provider request (text-to-image)',
     );
     return this.fetchImpl(url, {
@@ -229,7 +280,7 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
         size,
         response_format: 'b64_json',
       }),
-      signal: AbortSignal.timeout(this.config.timeoutMs),
+      signal,
     });
   }
 
@@ -241,6 +292,8 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     referencePaths: string[],
     count: number,
     size: string,
+    signal: AbortSignal,
+    requestId?: string,
   ): Promise<Response> {
     const url = buildUrl(baseUrl, 'v1/images/edits');
     const referenceFiles = await Promise.all(
@@ -263,8 +316,9 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
 
     logger.info(
       {
+        requestId,
         model,
-        promptPreview: prompt.slice(0, 80),
+        promptLength: prompt.length,
         url,
         referenceFiles: referenceFiles.map((file) => file.basename),
         referenceBytes: referenceFiles.reduce((sum, file) => sum + file.buffer.byteLength, 0),
@@ -279,7 +333,7 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}` },
       body: form,
-      signal: AbortSignal.timeout(this.config.timeoutMs),
+      signal,
     });
   }
 }

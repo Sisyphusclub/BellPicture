@@ -11,10 +11,13 @@ const generation = vi.hoisted(() => ({
 }));
 
 const authMocks = vi.hoisted(() => ({
+  user: { id: 'user-a', username: 'user-a' },
   isAuthenticated: true,
   isLoading: false,
   isAdmin: true,
 }));
+
+const publicGalleryMocks = vi.hoisted(() => ({ addPublicRecord: vi.fn() }));
 
 const historyMocks = vi.hoisted(() => ({
   batches: [] as Array<{
@@ -87,7 +90,7 @@ vi.mock('@/hooks/useImageHistory', () => ({
   }),
 }));
 
-vi.mock('@/hooks/usePublicGallery', () => ({ addPublicRecord: vi.fn() }));
+vi.mock('@/hooks/usePublicGallery', () => publicGalleryMocks);
 
 import { ToastProvider } from '@/components/common/ToastProvider';
 import { GenerateView } from '@/views/GenerateView';
@@ -107,6 +110,7 @@ beforeEach(() => {
   authMocks.isAuthenticated = true;
   authMocks.isLoading = false;
   authMocks.isAdmin = true;
+  authMocks.user = { id: 'user-a', username: 'user-a' };
   historyMocks.removeBatch.mockResolvedValue(undefined);
   historyMocks.remove.mockResolvedValue(undefined);
   historyMocks.batches = [];
@@ -228,6 +232,61 @@ it('uses the compact beUI stop action while generation is pending', async () => 
 
   await user.click(stop);
   expect(generation.cancel).toHaveBeenCalledTimes(1);
+});
+
+it('discards a completed response when the authenticated account changes', async () => {
+  const pending = deferred<Awaited<ReturnType<typeof generation.generate>>>();
+  generation.generate.mockReturnValueOnce(pending.promise);
+  const user = userEvent.setup();
+  const { container, rerender } = render(
+    <MemoryRouter initialEntries={['/generate?prompt=account-a-result&isPublic=true']}>
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+
+  await user.click(screen.getByRole('button', { name: '生成图片' }));
+  await waitFor(() => expect(generation.generate).toHaveBeenCalledOnce());
+
+  authMocks.user = { id: 'user-b', username: 'user-b' };
+  rerender(
+    <MemoryRouter initialEntries={['/generate?prompt=account-a-result&isPublic=true']}>
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+  await act(async () => {
+    pending.resolve({
+      batchId: 'account-a-batch',
+      aspectRatio: '1:1',
+      generationMode: 'text-to-image',
+      entries: [
+        {
+          record: {
+            id: 'account-a.png',
+            batchId: 'account-a-batch',
+            createdAt: '2026-08-28T00:00:00.000Z',
+            prompt: 'account-a-result',
+            model: 'gpt-image-2',
+            aspectRatio: '1:1',
+            width: 1024,
+            height: 1024,
+            count: 1,
+            resolution: 'standard',
+            isPublic: true,
+            isFavorite: false,
+          },
+          imageUrl: '/account-a.png',
+        },
+      ],
+    });
+    await pending.promise;
+  });
+
+  await waitFor(() => expect(container.querySelectorAll('.session-batch')).toHaveLength(0));
+  expect(publicGalleryMocks.addPublicRecord).not.toHaveBeenCalled();
 });
 
 it('keeps earlier batches above a newly submitted generation', async () => {

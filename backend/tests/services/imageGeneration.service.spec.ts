@@ -1,11 +1,13 @@
 import { Buffer } from 'node:buffer';
+import { stat } from 'node:fs/promises';
 
 import { describe, expect, it, vi } from 'vitest';
 
 import { AppError } from '../../src/errors/AppError.js';
 import { generateImage } from '../../src/services/imageGeneration.service.js';
 import type { ImageGenerationProvider } from '../../src/services/providers/ImageGenerationProvider.js';
-import { saveUpload } from '../../src/storage/localStorage.js';
+import type { QuotaPool } from '../../src/services/quota.service.js';
+import { saveOutput, saveUpload } from '../../src/storage/localStorage.js';
 import type { GenerateInput, GenerateOutput } from '../../src/types/image.js';
 
 const PNG_PREFIX = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -143,13 +145,13 @@ describe('imageGeneration.service', () => {
     const provider = fakeProvider();
     await expect(
       generateImage(
-        { prompt: 'p', referenceId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png' },
+        { prompt: 'p', referenceId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.webp' },
         { provider },
       ),
     ).rejects.toBeInstanceOf(AppError);
     await expect(
       generateImage(
-        { prompt: 'p', referenceId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png' },
+        { prompt: 'p', referenceId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.webp' },
         { provider },
       ),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST', status: 400 });
@@ -161,5 +163,89 @@ describe('imageGeneration.service', () => {
     await expect(
       generateImage({ prompt: 'p', referenceId: 'totally-bogus' }, { provider }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST', status: 400 });
+  });
+
+  it('passes cancellation to the provider and releases the quota reservation', async () => {
+    const controller = new AbortController();
+    const release = vi.fn();
+    const commit = vi.fn();
+    const quotaPool: QuotaPool = {
+      snapshot: vi.fn(() => ({
+        total: 1,
+        remaining: 1,
+        checkedInToday: false,
+        dailyCheckInReward: 5,
+      })),
+      reserve: vi.fn(() => ({ commit, release })),
+      checkIn: vi.fn(() => ({
+        total: 1,
+        remaining: 1,
+        checkedInToday: true,
+        dailyCheckInReward: 5,
+        claimed: true,
+      })),
+    };
+    const provider: ImageGenerationProvider = {
+      generate: vi.fn(
+        (input: GenerateInput) =>
+          new Promise<GenerateOutput>((_resolve, reject) => {
+            input.signal?.addEventListener(
+              'abort',
+              () => reject(new DOMException('cancelled', 'AbortError')),
+              { once: true },
+            );
+          }),
+      ),
+    };
+
+    const pending = generateImage(
+      { prompt: 'cancel me', signal: controller.signal },
+      { provider, quotaPool },
+    );
+    await vi.waitFor(() => expect(provider.generate).toHaveBeenCalledOnce());
+    controller.abort();
+
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    expect(release).toHaveBeenCalledOnce();
+    expect(commit).not.toHaveBeenCalled();
+  });
+
+  it('removes provider outputs and releases quota when reservation commit fails', async () => {
+    const saved = await saveOutput(PNG_PREFIX, 'png');
+    const commitError = new AppError('INTERNAL', 'quota settlement failed', 500);
+    const release = vi.fn();
+    const quotaPool: QuotaPool = {
+      snapshot: vi.fn(() => ({
+        total: 1,
+        remaining: 1,
+        checkedInToday: false,
+        dailyCheckInReward: 5,
+      })),
+      reserve: vi.fn(() => ({
+        commit: vi.fn(() => {
+          throw commitError;
+        }),
+        release,
+      })),
+      checkIn: vi.fn(() => ({
+        total: 1,
+        remaining: 1,
+        checkedInToday: true,
+        dailyCheckInReward: 5,
+        claimed: true,
+      })),
+    };
+    const provider: ImageGenerationProvider = {
+      generate: vi.fn(async () => ({
+        images: [{ outputPath: saved.absolutePath, width: 1024, height: 1024 }],
+        aspectRatio: '1:1' as const,
+      })),
+    };
+
+    await expect(generateImage({ prompt: 'settle me' }, { provider, quotaPool })).rejects.toBe(
+      commitError,
+    );
+    await expect(stat(saved.absolutePath)).rejects.toMatchObject({ code: 'ENOENT' });
+    expect(release).toHaveBeenCalledOnce();
   });
 });

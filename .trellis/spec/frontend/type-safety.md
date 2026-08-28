@@ -1,6 +1,7 @@
 # Frontend Type Safety
 
-> **Status**: Verified by the first `frontend/` implementation.
+> **Status**: Updated for task `08-28-fix-security-races-resources` with
+> owner-scoped reference ids and paginated public-history wire types.
 
 ---
 
@@ -156,8 +157,8 @@ function isImageRecord(value: unknown): value is ImageRecord {
 - `POST /api/images/generate` with JSON `GenerateRequest`.
 - `POST /api/images/generate/high-res` with JSON `GenerateRequest` plus
   `resolution: '2k' | '4k'`; authenticated and admin-only.
-- `GET /api/history/public` returns all public image records, newest first, and
-  does not require auth.
+- `GET /api/history/public?limit=<1..50>&cursor=<opaque>` returns one public
+  page newest first and does not require auth.
 - `DELETE /api/history/public/:id` is authenticated and admin-only. It removes
   one image from the public gallery by setting `image_records.is_public = false`;
   it does not delete the owner's `/api/history` record or the output file.
@@ -200,10 +201,15 @@ function isImageRecord(value: unknown): value is ImageRecord {
 - History record response: `ImageRecord` includes required `isPublic: boolean`
   and optional `referenceIds: readonly string[]`; `referenceId` mirrors the
   first id for legacy callers. Treat both fields as immutable API data in UI
-  computed values and tests.
-  image management keeps the owner-scoped `/api/history` list, while the
-  homepage gallery hydrates `/api/history/public` for all accounts' public
-  records.
+  computed values and tests. These reusable ids exist only in authenticated,
+  owner-scoped history; public-history records omit both fields.
+- Public history response is `{ records, nextCursor? }`, defaults to 24 and is
+  capped at 50 records. `nextCursor` is opaque: pass it back unchanged through
+  `fetchPublicHistory({ cursor })`; never decode or synthesize it in the frontend.
+  The homepage appends de-duplicated pages until `nextCursor` is absent.
+- A reference id returned by private history is reusable only by that same
+  authenticated user. Foreign ids receive `FORBIDDEN`; unregistered/stale ids
+  receive `BAD_REQUEST`.
 - Admin gallery moderation calls `deletePublicGalleryRecordAsAdmin(id)` from
   `usePublicGallery.removeAsAdmin(id)`. On success, remove the record from the
   module-level public gallery cache; do not mutate private history state.
@@ -223,6 +229,12 @@ function isImageRecord(value: unknown): value is ImageRecord {
     message for backward compatibility.
 - Env: `VITE_API_BASE_URL` is required for real backend calls; default local
   development value is `http://localhost:3000`.
+- Container env: Compose passes the same positive-integer `UPLOAD_MAX_BYTES` to
+  backend Multer and the frontend Nginx image. Before official Nginx template
+  expansion, `15-nebulens-upload-limit.envsh` exports
+  `NGINX_CLIENT_MAX_BODY_SIZE_BYTES = UPLOAD_MAX_BYTES + 1048576`; the 1 MiB
+  allowance covers multipart boundaries and headers around a maximum-size file.
+  Do not restore a hard-coded `client_max_body_size 10m`.
 
 ### 4. Validation & Error Matrix
 
@@ -230,6 +242,8 @@ function isImageRecord(value: unknown): value is ImageRecord {
 | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | Empty prompt                                                  | Generation hook throws before network IO                                                             |
 | Upload response shape invalid                                 | Throw `ImageApiError` with `INVALID_RESPONSE`                                                        |
+| Container `UPLOAD_MAX_BYTES` missing/non-positive/non-integer | Frontend container entrypoint fails before rendering Nginx config                                    |
+| File size equals backend upload maximum                       | Nginx accepts multipart framing overhead; Multer remains the authoritative file-size validator       |
 | Generate response shape invalid                               | Throw `ImageApiError` with `INVALID_RESPONSE`                                                        |
 | Backend error envelope present                                | Throw `ImageApiError(status, code, message, requestId, details)`                                     |
 | Non-admin high-res request                                    | Backend returns `FORBIDDEN`; frontend should not expose the high-res selector                        |
@@ -243,6 +257,9 @@ function isImageRecord(value: unknown): value is ImageRecord {
 | localStorage schema mismatch                                  | Ignore stored payload and return an empty history                                                    |
 | Existing history `referenceIds`                               | Send them directly in `GenerateRequest.referenceIds`; do not call upload first                       |
 | More than 4 reference images                                  | UI must not send more than `MAX_REFERENCE_IMAGES`; backend rejects extra ids                         |
+| Private-history reference id belongs to another user          | Backend returns `FORBIDDEN`; do not retry or expose the id                                           |
+| Public page omits `nextCursor`                                | Mark end-of-list; do not issue another load-more request                                             |
+| Public `nextCursor` present                                   | Pass it unchanged on the next `fetchPublicHistory` call and append unique records                    |
 | Anonymous gallery delete                                      | Backend returns `UNAUTHORIZED`; frontend opens login through `authedFetch`                           |
 | Non-admin gallery delete                                      | Backend returns `FORBIDDEN`; frontend shows the localized API message                                |
 | Missing/non-public gallery id                                 | Backend returns `NOT_FOUND`; frontend keeps the public gallery cache unchanged                       |
@@ -264,6 +281,8 @@ function isImageRecord(value: unknown): value is ImageRecord {
   `image-to-image`.
 - Multi-reference: selecting, dropping, or pasting several images uploads them
   via `uploadReferenceImages()` and sends the returned ids as `referenceIds`.
+- Public pagination: initial hydration replaces the cache; load-more appends a
+  bounded page, removes duplicate ids, and stops when no cursor is returned.
 - Admin moderation: an admin can remove another user's public image from the
   homepage gallery; that owner's private history still contains the record with
   `isPublic: false`.
@@ -292,6 +311,12 @@ function isImageRecord(value: unknown): value is ImageRecord {
   hides the record from public listing but preserves owner history, and frontend
   tests assert only admins see gallery delete controls and `usePublicGallery`
   calls the authenticated delete endpoint.
+- Public history API/hook tests assert cursor query encoding, response
+  narrowing, append/de-duplication, end-of-list, and that public payloads do not
+  contain reusable reference identifiers.
+- Deployment smoke check renders the Nginx template with a non-default
+  `UPLOAD_MAX_BYTES` and asserts `client_max_body_size` equals that value plus
+  1 MiB; invalid values must fail the entrypoint.
 - Demo prompt regression: frontend view tests assert `.prompt-showcase__demo`
   does not render for ordinary users or admins; backend tests own cache-hit and
   cache-miss behavior.
@@ -330,7 +355,9 @@ await deleteHistoryRecord(id);
 
 ```ts
 await deletePublicGalleryRecordAsAdmin(id);
-updatePublicGalleryCache((records) => records.filter((record) => record.id !== id));
+updatePublicGalleryCache((records) =>
+  records.filter((record) => record.id !== id),
+);
 ```
 
 #### Wrong
