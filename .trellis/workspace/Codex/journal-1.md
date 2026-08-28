@@ -634,3 +634,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 20: 修复输入框光效四角断层
+
+**Date**: 2026-08-28
+**Task**: 修复输入框光效四角断层
+**Branch**: `dev`
+
+### Summary
+
+统一 BorderGlow 静态边框、渐变环与方向外发光的同心圆角几何；完成 Generate、Discover、桌面与 390px 移动端浏览器验证。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `170740b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
