@@ -143,6 +143,54 @@ No actionable P0, P1, or P2 findings remain.
 
 final result: passed
 
+## Composer Glow Corner Continuity QA (2026-08-28)
+
+- Source screenshot: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-ec03a9de-cea0-4ec3-b886-27cdea26e14e.png`.
+- Full implementation screenshot: `design-qa-assets/composer-glow-corners-after-1440x813.png`.
+- Focused implementation screenshot: `design-qa-assets/composer-glow-corners-focused-1440x813.png`.
+- Docked evidence: `design-qa-assets/composer-glow-corners-docked-compact-1440x813.png` and
+  `design-qa-assets/composer-glow-corners-docked-expanded-1440x813.png`.
+- Responsive and shared-route evidence: `design-qa-assets/composer-glow-corners-mobile-390x844.png`,
+  `design-qa-assets/composer-glow-corners-docked-mobile-390x844.png`, and
+  `design-qa-assets/composer-glow-corners-generate-1440x813.png`.
+- Local implementation: `http://localhost:5173/` and `http://localhost:5173/generate`.
+
+### Findings
+
+No actionable P0, P1, or P2 mismatch remains.
+
+- Corner continuity: at the source screenshot's left-edge pointer position, the top-left and
+  bottom-left arcs now join their adjacent horizontal and vertical edges without a visible cut.
+  The same uninterrupted ring remains at the top, right, and bottom pointer positions.
+- Layer ownership: computed `::before` `mask-image` is `none` in all four pointer directions.
+  `.edge-light` retains its conic direction mask, while its shadow stack contains only soft outer
+  shadows and no inset stroke that could introduce a second corner boundary.
+- Palette fidelity: Generate reports the shared `#ffb51b`, `#12c8f4`, and `#1464ff` gradient
+  variables; Discover and Generate both render the same complete structural ring.
+- State coverage: Discover hero, desktop compact dock, desktop expanded dock, 390 x 844 hero,
+  and 390 x 844 compact dock all report zero horizontal overflow and preserve their existing
+  geometry.
+- Lifecycle: after focus and pointer leave, `::before`, `::after`, and `.edge-light` computed
+  opacity each settles to `0`. The browser log contains no warning or error entries.
+
+### Patches Made
+
+- Removed the directional conic mask from the shared 1px structural border.
+- Removed inset edge-light strokes while retaining the pointer-responsive outer glow shadows.
+- Kept composer geometry, controls, docking motion, generation behavior, and route CSS unchanged.
+
+### Verification
+
+- `npm run check:components`: passed.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed with the existing Fast Refresh warning in
+  `src/components/ui/sidebar.tsx:743`.
+- `npm run test`: passed, 13 files and 76 tests.
+- `npm run build`: passed with the existing non-blocking Vite chunk-size warning.
+- Focused Prettier check, `git diff --check`, and Trellis task validation: passed.
+
+final result: passed
+
 ## Landing and Generate Composer Glow Parity QA (2026-08-28)
 
 - Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-d7f8cf8c-5aeb-4b42-852b-6a2e2b533a2c.png` for the uneven Discover state and `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-31811fc0-b144-4017-b084-f4d769e28179.png` for the Generate glow target.

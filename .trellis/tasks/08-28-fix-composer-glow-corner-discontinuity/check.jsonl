@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Verify continuous shared edge geometry, focus/reduced-motion behavior, docking states, and desktop/mobile browser evidence."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Run required automated checks plus same-viewport visual, overflow, console, and interaction QA."}

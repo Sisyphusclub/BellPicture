@@ -71,11 +71,13 @@ by this repository, not a runtime black box.
   beUI Agent Chat Input and its BorderGlow are the only painted composer surface in hero, compact
   docked, and expanded docked states; do not wrap it in another card, glass target, or canvas layer.
 - Discover and Generate must use the shared `BorderGlow` `::before`, `::after`, and `.edge-light`
-  rendering unchanged so the orange, cyan, and blue palette has one direction mask and intensity
-  model. Route CSS may change the composer's surface material, but must not replace the shared conic
-  mask with a full-perimeter gradient ring, simplify the shared inner/outer glow shadows, or disable
-  one of the shared glow layers. Browser QA must compare the computed gradient palette, `::before`
-  mask, edge-light shadow, opacity, and root radius at 1440px, 390px, and both Discover docked states.
+  rendering so the orange, cyan, and blue palette has one intensity model. The `::before` layer owns
+  an uninterrupted 1px structural ring and must not use a directional mask; pointer direction belongs
+  only to the soft outer `.edge-light` glow, whose shadow stack must not add a second inset stroke.
+  Route CSS may change the composer's surface material, but must not replace the shared ring algorithm
+  or disable one of the shared glow layers. Browser QA must compare the computed gradient palette,
+  unmasked `::before` ring, edge-light direction mask and outer shadows, opacity, and root radius at
+  1440px, 390px, and both Discover docked states.
 
 ```css
 /* Correct: customize only the route surface; shared pseudo-elements remain authoritative. */
