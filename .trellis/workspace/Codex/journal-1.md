@@ -832,3 +832,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 26: 统一运营页面左右边距
+
+**Date**: 2026-08-28
+**Task**: 统一运营页面左右边距
+**Branch**: `dev`
+
+### Summary
+
+修正运营页面折叠侧栏轨道，统一 Templates、Assets、Admin 的桌面左右边距；新增样式契约测试并完成多视口浏览器验证。组件检查、类型检查、lint、全量测试和构建通过。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `dfe9bfe` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
