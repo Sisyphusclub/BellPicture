@@ -532,3 +532,37 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 17: 修复提示词气泡垂直留白
+
+**Date**: 2026-08-28
+**Task**: 修复提示词气泡垂直留白
+**Branch**: `dev`
+
+### Summary
+
+将编辑 Tooltip 的完整触发包装层移出提示词正文流，消除单行气泡底部假空行，并把编辑按钮按气泡高度垂直居中；补充结构回归测试、组件规范与设计 QA，完整前端校验通过。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8ec5f58` | (see git log) |
+| `17271b9` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
