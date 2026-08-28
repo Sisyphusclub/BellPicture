@@ -1408,3 +1408,77 @@ No actionable P0, P1, or P2 findings remain.
 - `git diff --check`: passed with only repository LF-to-CRLF notices.
 
 final result: passed
+
+## GPT-Style Generate Prompt Bubble QA (2026-08-28)
+
+- Source visual truth:
+  `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-093074c9-26e7-4bd3-8ba2-d9c52ebf0268.png`,
+  `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-dd9e3e23-a1c9-41e1-8eba-f20f1b11c2b4.png`, and
+  `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-b10a3c96-5043-4da5-b894-c9e2fd7d88bc.png`.
+- Local implementation: `http://localhost:5173/generate`.
+- Implementation screenshots:
+  `design-qa-assets/prompt-bubble/desktop-idle.png`,
+  `design-qa-assets/prompt-bubble/desktop-hover.png`,
+  `design-qa-assets/prompt-bubble/desktop-focus.png`, and
+  `design-qa-assets/prompt-bubble/mobile-idle.png`.
+- Focused side-by-side comparison: `design-qa-assets/prompt-bubble/focused-comparison.png`.
+- Viewports: 1440 x 813 desktop and 390 x 844 mobile override (375px CSS client width).
+- States: authenticated dark Generate workspace, completed prompt idle/hover/keyboard focus,
+  prompt edit entry, and pending prompt structure through the focused regression test.
+
+### Findings
+
+No actionable P0, P1, or P2 mismatches remain.
+
+- Fonts and typography: prompt copy uses the existing Geist stack at 14px desktop and 16px mobile,
+  medium weight, normal letter spacing, and natural wrapping. The short `生成一张猫` sample remains
+  one line at both checked viewports instead of breaking after four characters.
+- Spacing and layout rhythm: the painted bubble measures 101 x 43px on desktop and 97 x 41px on
+  mobile. It contains one paragraph and no metadata or hidden-control column. The 30px action row is
+  a sibling below the bubble and does not change the painted surface width.
+- Colors and visual tokens: the reference's neutral bubble treatment is mapped to the existing
+  graphite raised surface and subtle border. No glow, gradient, nested card, or extra rectangle was
+  introduced.
+- Image quality and asset fidelity: generated output and existing workspace imagery are unchanged.
+  Copy and Pencil use the existing Lucide icon source rather than replacement glyphs or custom SVGs.
+- Copy and content: the toolbar exposes exactly `复制提示词` and `编辑提示词`. The source Share icon
+  is intentionally omitted to follow the user's explicit request.
+- Interaction and accessibility: desktop hover and `:focus-within` reveal the toolbar; the keyboard
+  focus state has a visible focus ring. Coarse-pointer CSS keeps actions visible. Copy writes the
+  complete prompt and shows `提示词已复制。`; Edit opens the existing editor. During pending
+  generation Copy stays enabled and Edit is disabled.
+- Responsive integrity: desktop and mobile report `scrollWidth === clientWidth`; the bubble, actions,
+  result, fixed composer, and mobile header do not overlap horizontally.
+
+### Comparison Evidence
+
+- Full view: desktop idle/hover and mobile captures show the compact message integrated into the
+  existing Generate workspace without shifting result media or the fixed composer.
+- Focused region: `focused-comparison.png` places the source bubble and action references beside the
+  rendered idle and hover regions. The implementation matches the content-sized bubble and external
+  action-row relationship while intentionally omitting Share and retaining the product's dark theme.
+- A component crop is the authoritative fidelity target because the supplied references describe the
+  message bubble rather than the surrounding page. Full-page captures are retained for integration
+  and overflow evidence.
+
+### Patches Made
+
+- Removed prompt metadata and the fixed hidden Edit column from the painted bubble.
+- Added a sibling BeUI Copy/Edit toolbar with hover, focus, touch, disabled, and reduced-motion states.
+- Corrected pending selectors so the shell is alignment-only and surface styles target the bubble.
+- Added regression coverage for Copy, no Share, external toolbar structure, pending disabled behavior,
+  existing editor behavior, and replacement generation.
+- Removed the temporary local demo batch after browser capture.
+
+### Verification
+
+- `npm run check:components`: passed.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed with the existing Fast Refresh warning in `src/components/ui/sidebar.tsx`.
+- `npm run test`: passed, 18 files and 90 tests.
+- `npm run build`: passed with the existing Vite large-chunk warning.
+- Targeted Prettier for the three changed frontend files: passed.
+- Repository-wide `npm run format:check`: still reports 42 pre-existing files outside this task.
+- `git diff --check`: passed.
+
+final result: passed

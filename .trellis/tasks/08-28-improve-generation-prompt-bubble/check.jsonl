@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Review semantic structure, BeUI provenance, hover/focus/touch behavior, and responsive constraints."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Run the required automated and browser QA checks before completion."}

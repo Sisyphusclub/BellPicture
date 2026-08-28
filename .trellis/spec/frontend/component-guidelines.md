@@ -68,6 +68,38 @@ by this repository, not a runtime black box.
   wrapper's inline box as an empty line, while overlaying the full trigger can crowd
   short text. Prefer a semantic two-column layout when the control needs stable
   separation from wrapping copy.
+
+### Generate Prompt Bubble Actions
+
+The Generate user-message bubble is content-sized and contains prompt text only. Put contextual
+actions in a sibling `role="toolbar"` below the bubble so hidden or disabled controls never add an
+empty grid column inside the painted surface. The toolbar contains Copy and Edit in that order; do
+not add Share. Reveal it from the shell's `:hover` and `:focus-within`, and keep it visible for
+`hover: none` or coarse-pointer environments. Copy remains available while generation is pending;
+Edit preserves the route's pending disabled guard.
+
+```tsx
+// Wrong: an invisible button still widens the painted bubble.
+<div className="session-batch__prompt session-batch__prompt--editable">
+  <p>{prompt}</p>
+  <IconTooltip label="编辑提示词"><Button /></IconTooltip>
+</div>
+
+// Correct: the bubble owns text; the shell owns contextual operations.
+<div className="session-batch__prompt-shell">
+  <div className="session-batch__prompt session-batch__prompt--editable"><p>{prompt}</p></div>
+  <div className="session-batch__prompt-actions" role="toolbar" aria-label="提示词操作">
+    <IconTooltip label="复制提示词"><Button /></IconTooltip>
+    <IconTooltip label="编辑提示词"><Button disabled={pending} /></IconTooltip>
+  </div>
+</div>
+```
+
+Pending-state CSS must target `.session-batch__prompt` for surface paint and
+`.session-batch__prompt-shell` only for alignment/max-width. Route tests must assert that the
+toolbar is not a bubble descendant, prompt metadata and Share are absent, Copy writes the complete
+prompt, and pending Edit is disabled without changing bubble child count.
+
 - Use the layered dark workbench canvas and restrained graphite surfaces defined
   by the project. Do not flatten operational pages into one full-black canvas.
 - Landing-page measurements follow the prompt-first beUI composition in

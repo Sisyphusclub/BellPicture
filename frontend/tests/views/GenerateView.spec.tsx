@@ -315,7 +315,10 @@ it('keeps earlier batches above a newly submitted generation', async () => {
       },
     ],
   });
-  generation.generate.mockReturnValueOnce(pending.promise);
+  generation.generate.mockImplementationOnce(() => {
+    generation.isLoading = true;
+    return pending.promise;
+  });
   const user = userEvent.setup();
   const { container } = render(
     <MemoryRouter initialEntries={['/generate']}>
@@ -340,6 +343,19 @@ it('keeps earlier batches above a newly submitted generation', async () => {
       ),
     ).toEqual(['第一幅提示', '第二幅提示']);
   });
+
+  const pendingBatch = container.querySelector('.session-batch[data-state="generating"]');
+  const pendingBubble = pendingBatch?.querySelector('.session-batch__prompt--editable');
+  const pendingToolbar = within(pendingBatch as HTMLElement).getByRole('toolbar', {
+    name: '提示词操作',
+  });
+  expect(pendingBubble?.children).toHaveLength(1);
+  expect(pendingBubble).toHaveTextContent('第二幅提示');
+  expect(pendingBubble?.querySelector('.session-batch__meta')).toBeNull();
+  expect(pendingBubble).not.toContainElement(pendingToolbar);
+  expect(within(pendingToolbar).getByRole('button', { name: '复制提示词' })).toBeEnabled();
+  expect(within(pendingToolbar).getByRole('button', { name: '编辑提示词' })).toBeDisabled();
+  expect(within(pendingToolbar).queryByRole('button', { name: /分享/ })).not.toBeInTheDocument();
 
   await act(async () => {
     pending.resolve({
@@ -645,15 +661,22 @@ it('edits a completed prompt and replaces the original generation batch', async 
 
   await user.click(screen.getByRole('button', { name: '生成图片' }));
   await screen.findByRole('button', { name: '查看图片：雨夜建筑' });
-  const editTrigger = screen.getByRole('button', { name: '编辑提示词' });
-  const promptBubble = container.querySelector('.session-batch__prompt--editable');
-  const promptCopy = promptBubble?.querySelector('.session-batch__prompt-copy');
-  const editSlot = promptBubble?.querySelector('.session-batch__prompt-edit-slot');
-  expect(promptCopy).toHaveTextContent('雨夜建筑');
-  expect(editSlot).toBeTruthy();
-  expect(editSlot).toContainElement(editTrigger);
-  expect(editSlot?.parentElement).toBe(promptBubble);
-  expect(editSlot?.previousElementSibling).toBe(promptCopy);
+  const clipboardWrite = vi.spyOn(navigator.clipboard, 'writeText');
+  const promptShell = container.querySelector<HTMLElement>('.session-batch__prompt-shell');
+  const promptBubble = container.querySelector<HTMLElement>('.session-batch__prompt--editable');
+  const promptActions = screen.getByRole('toolbar', { name: '提示词操作' });
+  const copyTrigger = within(promptActions).getByRole('button', { name: '复制提示词' });
+  const editTrigger = within(promptActions).getByRole('button', { name: '编辑提示词' });
+  expect(promptBubble?.children).toHaveLength(1);
+  expect(promptBubble).toHaveTextContent('雨夜建筑');
+  expect(promptBubble?.querySelector('.session-batch__meta')).toBeNull();
+  expect(promptBubble).not.toContainElement(promptActions);
+  expect(promptShell).toContainElement(promptBubble);
+  expect(promptShell).toContainElement(promptActions);
+  expect(within(promptActions).queryByRole('button', { name: /分享/ })).not.toBeInTheDocument();
+  await user.click(copyTrigger);
+  expect(clipboardWrite).toHaveBeenCalledWith('雨夜建筑');
+  expect(await screen.findByText('提示词已复制。')).toBeInTheDocument();
   await user.hover(editTrigger);
   expect(await screen.findByText('编辑提示词')).toBeInTheDocument();
   await user.click(editTrigger);

@@ -64,7 +64,6 @@ import {
   type HistoryEntry,
 } from '@/types/image';
 import { downloadUrl } from '@/utils/download';
-import { formatClockTime } from '@/utils/format';
 
 interface FeedItem {
   id: string;
@@ -267,6 +266,7 @@ function resizePromptEditor(textarea: HTMLTextAreaElement): void {
 }
 
 function EditablePromptBubble({ item, disabled, onRegenerate }: EditablePromptBubbleProps) {
+  const { notify } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(item.settings.prompt);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -291,6 +291,15 @@ function EditablePromptBubble({ item, disabled, onRegenerate }: EditablePromptBu
   const cancelEditing = (): void => {
     setDraft(item.settings.prompt);
     setIsEditing(false);
+  };
+
+  const copyPrompt = async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(item.settings.prompt);
+      notify('提示词已复制。');
+    } catch {
+      notify('复制失败，请手动复制。', 'error');
+    }
   };
 
   if (isEditing) {
@@ -351,21 +360,29 @@ function EditablePromptBubble({ item, disabled, onRegenerate }: EditablePromptBu
   }
 
   return (
-    <div className="session-batch__prompt session-batch__prompt--editable">
-      <div className="session-batch__prompt-copy">
+    <div className="session-batch__prompt-shell">
+      <div className="session-batch__prompt session-batch__prompt--editable">
         <p>{item.settings.prompt}</p>
-        <span className="session-batch__meta">
-          {formatClockTime(item.createdAt)} · {ASPECT_RATIO_LABELS[item.settings.aspectRatio]} ·{' '}
-          {item.settings.count} 张
-        </span>
       </div>
-      <span className="session-batch__prompt-edit-slot">
+      <div className="session-batch__prompt-actions" role="toolbar" aria-label="提示词操作">
+        <IconTooltip label="复制提示词">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="session-batch__prompt-action"
+            aria-label="复制提示词"
+            onClick={() => void copyPrompt()}
+          >
+            <Copy aria-hidden="true" />
+          </Button>
+        </IconTooltip>
         <IconTooltip label="编辑提示词">
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="session-batch__prompt-edit"
+            className="session-batch__prompt-action"
             aria-label="编辑提示词"
             disabled={disabled}
             onClick={() => setIsEditing(true)}
@@ -373,7 +390,7 @@ function EditablePromptBubble({ item, disabled, onRegenerate }: EditablePromptBu
             <Pencil aria-hidden="true" />
           </Button>
         </IconTooltip>
-      </span>
+      </div>
     </div>
   );
 }
