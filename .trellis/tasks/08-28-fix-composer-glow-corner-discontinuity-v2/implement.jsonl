@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"共享 BorderGlow、beUI 组件与圆角光效实现约束"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"真实浏览器、响应式和视觉回归验证要求"}

@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"检查共享光效算法未被路由级样式分叉"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"执行前端质量门禁和桌面/移动浏览器 QA"}

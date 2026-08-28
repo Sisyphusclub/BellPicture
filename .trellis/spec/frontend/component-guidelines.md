@@ -80,6 +80,10 @@ by this repository, not a runtime black box.
   rendering so the orange, cyan, and blue palette has one intensity model. The `::before` layer owns
   an uninterrupted 1px structural ring and must not use a directional mask; pointer direction belongs
   only to the soft outer `.edge-light` glow, whose shadow stack must not add a second inset stroke.
+  Keep the three layers on one corner geometry: if `.edge-light` is expanded to make room for its
+  shadow, its radius must increase by the same expansion; its `::before` source must use the root
+  radius explicitly. Move structural pseudo-elements by the root border width when the root has a
+  visible border, otherwise the static border and gradient ring form offset arcs at each corner.
   Route CSS may change the composer's surface material, but must not replace the shared ring algorithm
   or disable one of the shared glow layers. Browser QA must compare the computed gradient palette,
   unmasked `::before` ring, edge-light direction mask and outer shadows, opacity, and root radius at

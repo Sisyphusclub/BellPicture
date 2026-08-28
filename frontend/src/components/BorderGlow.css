@@ -4,6 +4,7 @@
   --edge-sensitivity: 30;
   --color-sensitivity: calc(var(--edge-sensitivity) + 20);
   --border-radius: 28px;
+  --border-width: 1px;
   --glow-padding: 40px;
   --cone-spread: 25;
 
@@ -37,7 +38,9 @@
 
 /* colored mesh-gradient border */
 .border-glow-card::before {
+  inset: calc(var(--border-width) * -1);
   border: 1px solid transparent;
+  border-radius: calc(var(--border-radius) + var(--border-width));
   background:
     linear-gradient(var(--card-bg, #120f17) 0 100%) padding-box,
     linear-gradient(rgb(255 255 255 / 0%) 0% 100%) border-box,
@@ -64,7 +67,9 @@
 
 /* colored mesh-gradient background fill near edges */
 .border-glow-card::after {
+  inset: calc(var(--border-width) * -1);
   border: 1px solid transparent;
+  border-radius: calc(var(--border-radius) + var(--border-width));
   background:
     var(--gradient-one, radial-gradient(at 80% 55%, hsla(268, 100%, 76%, 1) 0px, transparent 50%))
       padding-box,
@@ -107,7 +112,10 @@
 
 /* outer glow layer */
 .border-glow-card > .edge-light {
-  inset: calc(var(--glow-padding) * -1);
+  /* The glow needs room for its shadow, but its outer curve must grow with
+     that room so the mask cannot square off the four corners. */
+  inset: calc((var(--glow-padding) + var(--border-width)) * -1);
+  border-radius: calc(var(--border-radius) + var(--glow-padding) + var(--border-width));
   pointer-events: none;
   z-index: 1;
 
@@ -129,7 +137,7 @@
   content: '';
   position: absolute;
   inset: var(--glow-padding);
-  border-radius: inherit;
+  border-radius: calc(var(--border-radius) + var(--border-width));
   box-shadow:
     0 0 1px 0 var(--glow-color-60, hsl(40deg 80% 80% / 60%)),
     0 0 3px 0 var(--glow-color-50, hsl(40deg 80% 80% / 50%)),
