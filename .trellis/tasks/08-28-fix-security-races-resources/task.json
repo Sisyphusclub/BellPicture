@@ -3,7 +3,7 @@
   "name": "fix-security-races-resources",
   "title": "修复安全竞态与资源风险",
   "description": "",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,
