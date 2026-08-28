@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend ownership, responsive constraints, and required quality checks."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Shared workspace layout, stable spacing tokens, and responsive sidebar guidance."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"CSS regression, browser boundary, and overflow verification requirements."}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"Use one shared rail token instead of route-specific offsets."}
