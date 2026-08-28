@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 22
+- **Total Sessions**: 23
 - **Last Active**: 2026-08-28
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~735 | Active |
+| `journal-1.md` | ~768 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 23 | 2026-08-28 | 将输入框光效层限制为边框环 | `5f5e9a5` | `dev` |
 | 22 | 2026-08-28 | 修复生图安全竞态与资源风险 | `d2669fb` | `dev` |
 | 21 | 2026-08-28 | 移除输入框内部矩形覆盖层 | `989b068` | `dev` |
 | 20 | 2026-08-28 | 修复输入框光效四角断层 | `170740b` | `dev` |

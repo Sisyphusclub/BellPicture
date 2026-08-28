@@ -733,3 +733,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 23: 将输入框光效层限制为边框环
+
+**Date**: 2026-08-28
+**Task**: 将输入框光效层限制为边框环
+**Branch**: `dev`
+
+### Summary
+
+移除 BorderGlow::before 的实心 padding-box 背景，使用 hollow mask 只保留结构环；验证 Generate、Discover、桌面与 390px 移动端。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5f5e9a5` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
