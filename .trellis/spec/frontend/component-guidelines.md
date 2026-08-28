@@ -244,6 +244,33 @@ settled frame. On desktop, center the fixed dock on the same `calc(50% + 64px)` 
   default, switch to immediate scrolling for reduced motion, and keep the control attached to the
   composer so dynamic composer height and mobile navigation cannot overlap it. Hide the control only
   after the complete batch bottom clears the composer boundary and a meaningful batch area is visible.
+
+### Generate Workspace Vertical Rhythm
+
+The fixed Generate composer uses one `16px` supplemental bottom gap in empty and populated states.
+On mobile, add that gap after the `74px` bottom navigation and `safe-area-inset-bottom`; do not replace
+the navigation avoidance with the gap. Keep the empty-state illustration formulas on the same base so
+moving the composer does not change their relative separation.
+
+```css
+.generation-console.has-results .studio-create-bar {
+  bottom: 16px;
+}
+
+@media (max-width: 560px) {
+  .generation-console.has-results .studio-create-bar {
+    bottom: calc(74px + 16px + env(safe-area-inset-bottom));
+  }
+}
+```
+
+On desktop, a populated session begins with `clamp(64px, 9svh, 112px)` top padding so large workbench
+viewports do not pin the conversation to the top chrome. At `<=860px`, use `64px` so the first batch
+clears the fixed `56px` mobile header. When changing these values, search every later Generate media
+query: narrow-screen rules intentionally repeat the empty-state padding, composer bottom, and
+illustration offset. Browser QA must measure the first batch, header boundary, composer bottom, and
+last-batch clearance at 1440 x 813 and 390 x 844.
+
 - Generate-result skeletons must preserve the requested count, aspect ratio, and
   final responsive grid tracks. Use the source-owned AICSS Image Generation dot
   field with separate square, landscape, and portrait masks, a quiet morph and

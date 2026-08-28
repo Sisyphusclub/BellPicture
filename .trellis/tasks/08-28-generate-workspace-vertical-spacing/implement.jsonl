@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Follow the frontend pre-development checklist for a Generate workspace layout change."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Preserve fixed-composer ownership, result clearance, responsive behavior, and beUI component boundaries."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Apply desktop/mobile visual QA, overflow, console, and automated verification requirements."}
+{"file":".impeccable.md","reason":"Keep the operational workspace compact, quiet, and result-first."}

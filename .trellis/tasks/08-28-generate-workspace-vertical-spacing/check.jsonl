@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Run all required frontend quality checks after the spacing fix."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Verify Generate result positioning, fixed composer clearance, mobile navigation avoidance, and beUI ownership."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Require same-viewport comparison, console checks, responsive measurements, tests, lint, typecheck, and build."}
+{"file":".impeccable.md","reason":"Confirm the final density remains appropriate for a calm creative workbench."}

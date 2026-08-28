@@ -7571,7 +7571,7 @@ video {
    into a second page hero. These rules intentionally stay scoped to the studio
    surface so the discovery composer keeps its own rhythm. */
 .generation-console.is-empty {
-  padding-bottom: 36px;
+  padding-bottom: 16px;
 }
 .generation-console.is-empty .studio-create-bar {
   margin-top: auto;
@@ -7580,7 +7580,7 @@ video {
   position: absolute;
   top: 28px;
   right: 40px;
-  bottom: calc(36px + 197px);
+  bottom: calc(16px + 197px);
   left: 40px;
   z-index: 1;
   display: flex;
@@ -7643,7 +7643,7 @@ video {
   line-height: 1.6;
 }
 .generation-console.has-results .studio-create-bar {
-  bottom: 36px;
+  bottom: 16px;
 }
 .studio-agent-input.border-glow-card {
   /* Keep the composer surface visible without adding a second idle-state frame. */
@@ -7955,15 +7955,15 @@ video {
 
 @media (max-width: 860px) {
   .generation-console.is-empty {
-    padding-bottom: calc(74px + 36px + env(safe-area-inset-bottom));
+    padding-bottom: calc(74px + 16px + env(safe-area-inset-bottom));
   }
   .generation-console.has-results .studio-create-bar {
-    bottom: calc(74px + 36px + env(safe-area-inset-bottom));
+    bottom: calc(74px + 16px + env(safe-area-inset-bottom));
   }
   .generation-empty-state {
     top: 14px;
     right: 18px;
-    bottom: calc(74px + 36px + env(safe-area-inset-bottom) + 180px);
+    bottom: calc(74px + 16px + env(safe-area-inset-bottom) + 180px);
     left: 18px;
     gap: 9px;
   }
@@ -8092,20 +8092,20 @@ video {
     margin-left: 0;
   }
   .generation-empty-state {
-    bottom: calc(36px + 179px);
+    bottom: calc(16px + 179px);
   }
 }
 
 @media (max-width: 560px) {
   .generation-console.is-empty {
-    padding-bottom: calc(74px + 32px + env(safe-area-inset-bottom));
+    padding-bottom: calc(74px + 16px + env(safe-area-inset-bottom));
   }
   .generation-console.has-results .studio-create-bar {
-    bottom: calc(74px + 32px + env(safe-area-inset-bottom));
+    bottom: calc(74px + 16px + env(safe-area-inset-bottom));
   }
   .generation-empty-state {
     right: 14px;
-    bottom: calc(74px + 32px + env(safe-area-inset-bottom) + 248px);
+    bottom: calc(74px + 16px + env(safe-area-inset-bottom) + 248px);
     left: 14px;
   }
   .studio-agent-input .agent-chat-input__surface {
@@ -8339,13 +8339,13 @@ video {
 
 @media (min-width: 861px) and (max-width: 1000px) {
   .generation-empty-state {
-    bottom: calc(36px + 223px);
+    bottom: calc(16px + 223px);
   }
 }
 
 @media (min-width: 561px) and (max-width: 860px) {
   .generation-empty-state {
-    bottom: calc(74px + 36px + env(safe-area-inset-bottom) + 223px);
+    bottom: calc(74px + 16px + env(safe-area-inset-bottom) + 223px);
   }
 }
 
@@ -8368,7 +8368,7 @@ video {
     padding: 0 7px;
   }
   .generation-empty-state {
-    bottom: calc(74px + 32px + env(safe-area-inset-bottom) + 270px);
+    bottom: calc(74px + 16px + env(safe-area-inset-bottom) + 270px);
   }
 }
 
@@ -8551,6 +8551,11 @@ video {
 .app-shell--generate .generation-console.has-results::after {
   left: var(--sidebar-width);
 }
+@media (min-width: 861px) {
+  .app-shell--generate .generation-console.has-results .session-feed {
+    padding-top: clamp(64px, 9svh, 112px);
+  }
+}
 @media (max-width: 860px) {
   .app-main--generate {
     padding-left: 0;
@@ -8559,6 +8564,9 @@ video {
     padding-right: 18px;
     padding-left: 18px;
     background-size: 16px 16px;
+  }
+  .app-shell--generate .generation-console.has-results .session-feed {
+    padding-top: 64px;
   }
   .app-shell--generate .generation-console.has-results::after {
     left: 0;
