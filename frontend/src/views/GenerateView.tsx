@@ -352,11 +352,13 @@ function EditablePromptBubble({ item, disabled, onRegenerate }: EditablePromptBu
 
   return (
     <div className="session-batch__prompt session-batch__prompt--editable">
-      <p>{item.settings.prompt}</p>
-      <span className="session-batch__meta">
-        {formatClockTime(item.createdAt)} · {ASPECT_RATIO_LABELS[item.settings.aspectRatio]} ·{' '}
-        {item.settings.count} 张
-      </span>
+      <div className="session-batch__prompt-copy">
+        <p>{item.settings.prompt}</p>
+        <span className="session-batch__meta">
+          {formatClockTime(item.createdAt)} · {ASPECT_RATIO_LABELS[item.settings.aspectRatio]} ·{' '}
+          {item.settings.count} 张
+        </span>
+      </div>
       <span className="session-batch__prompt-edit-slot">
         <IconTooltip label="编辑提示词">
           <Button

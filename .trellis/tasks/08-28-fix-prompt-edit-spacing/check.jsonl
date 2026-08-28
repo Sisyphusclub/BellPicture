@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Verify the prompt copy and beUI edit trigger use separate stable layout tracks without changing behavior."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Verify desktop/mobile spacing, overflow, accessibility, regression tests, lint, and build gates."}

@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Defines beUI composition, semantic prompt ownership, layout, focus, and responsive behavior."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Defines regression coverage, responsive overflow, accessibility, and required frontend checks."}

@@ -7133,16 +7133,19 @@ video {
   line-height: 1.35;
 }
 .session-batch__prompt--editable {
-  padding-right: 44px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  align-items: center;
+  column-gap: 12px;
+  padding-right: 8px;
+}
+.session-batch__prompt-copy {
+  min-width: 0;
 }
 .session-batch__prompt-edit-slot {
-  position: absolute;
-  top: 50%;
-  right: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transform: translateY(-50%);
 }
 .session-batch__prompt-edit {
   position: static;
@@ -7395,7 +7398,8 @@ video {
     padding: 10px 13px 9px;
   }
   .session-batch__prompt--editable {
-    padding-right: 42px;
+    column-gap: 10px;
+    padding-right: 8px;
   }
   .session-batch__prompt--editing {
     width: min(94%, 420px);
