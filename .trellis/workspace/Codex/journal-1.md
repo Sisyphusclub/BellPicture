@@ -766,3 +766,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 24: 优化生成提示词气泡
+
+**Date**: 2026-08-28
+**Task**: 优化生成提示词气泡
+**Branch**: `dev`
+
+### Summary
+
+完成 GPT 风格提示词气泡、复制与编辑悬停操作，并通过前端测试与视觉校验。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6143301` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
