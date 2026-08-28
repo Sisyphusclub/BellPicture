@@ -1,0 +1,5 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Apply the frontend quality checklist to the completed changes."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Review component reuse, semantics, accessibility, and interaction consistency."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Verify responsive behavior, loading/error/empty states, tests, and production quality."}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"Check that view changes did not regress async state or hook contracts."}
+{"file":".trellis/tasks/08-28-redesign-assets-user-management/prd.md","reason":"Check every user-confirmed acceptance criterion and out-of-scope boundary."}

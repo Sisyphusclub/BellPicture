@@ -1,0 +1,6 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Load the frontend pre-development checklist and quality gates."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Follow the project's component composition, accessibility, and reuse conventions."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Preserve responsive, accessible, tested production behavior during the redesign."}
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"Keep view, component, hook, and style changes within established frontend boundaries."}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"Preserve existing async state and hook behavior while changing the views."}
+{"file":".trellis/tasks/08-28-redesign-assets-user-management/prd.md","reason":"Implement the user-confirmed scope, interaction requirements, and acceptance criteria."}
