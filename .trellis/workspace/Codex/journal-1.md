@@ -466,3 +466,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 15: 统一首页与生图页输入框光效
+
+**Date**: 2026-08-28
+**Task**: 统一首页与生图页输入框光效
+**Branch**: `dev`
+
+### Summary
+
+移除 Discover 首页重复的整圈渐变与删减版外发光，使其复用 Generate 的共享 BorderGlow 配色、方向遮罩和强度；完成桌面、移动端、停靠态、失焦态与全量前端验证。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `bf9cea1` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
