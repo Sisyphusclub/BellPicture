@@ -600,3 +600,37 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 19: 对齐顶部栏品牌与账户操作
+
+**Date**: 2026-08-28
+**Task**: 对齐顶部栏品牌与账户操作
+**Branch**: `dev`
+
+### Summary
+
+将共享桌面账户操作组下移 12px，使模板、通知、积分和头像与左侧 Nebulens 品牌统一落在 50px 垂直中心线；浏览器实测中心差值由 -12px 归零，移动端隐藏与零横向溢出保持不变。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3bfcb9a` | (see git log) |
+| `3f16a7d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
