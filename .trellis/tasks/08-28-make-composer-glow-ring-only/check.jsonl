@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"检查伪元素职责分离且中心不再绘制实心背景"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"执行响应式、控制台和构建质量门禁"}

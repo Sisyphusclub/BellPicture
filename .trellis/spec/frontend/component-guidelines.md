@@ -87,9 +87,13 @@ by this repository, not a runtime black box.
   In Generate, `.agent-chat-input__surface` is a structural layout container only: keep its
   background transparent and let it inherit the inner radius. The `BorderGlow` root owns the sole
   graphite fill; painting the inset surface creates a second rectangular card over the shared ring.
+  The shared `::before` is likewise a hollow structural ring, implemented as `border-box` minus
+  `padding-box`; it must never include a solid `--card-bg` padding layer. Otherwise its focus opacity
+  paints another full rectangle through the root's translucent surface even when all DOM children
+  are transparent.
   Route CSS may change the composer's surface material, but must not replace the shared ring algorithm
   or disable one of the shared glow layers. Browser QA must compare the computed gradient palette,
-  unmasked `::before` ring, edge-light direction mask and outer shadows, opacity, and root radius at
+  hollow `::before` ring mask, edge-light direction mask and outer shadows, opacity, and root radius at
   1440px, 390px, and both Discover docked states.
 
 ```css
