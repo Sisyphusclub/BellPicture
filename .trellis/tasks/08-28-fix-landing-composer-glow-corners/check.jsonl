@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Run all required frontend quality checks after the visual fix."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Verify Discover and Generate remain consistent across focus, docked, mobile, and reduced-motion states."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Require same-viewport visual comparison, console checks, tests, lint, typecheck, and build."}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"Review the final solution for duplicated or asymmetric glow geometry."}

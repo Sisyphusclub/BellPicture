@@ -6676,10 +6676,10 @@ video {
   -webkit-backdrop-filter: none;
 }
 .agent-chat-input.landing-composer.border-glow-card::before {
-  inset: -1px;
+  inset: 0;
   display: block;
   border: 0;
-  border-radius: calc(var(--border-radius) + 1px);
+  border-radius: inherit;
   padding: 1px;
   background:
     var(--gradient-one) border-box,
@@ -6700,6 +6700,12 @@ video {
   mask-composite: exclude;
   pointer-events: none;
   z-index: 2;
+}
+.agent-chat-input.landing-composer.border-glow-card > .edge-light::before {
+  box-shadow:
+    0 0 4px var(--glow-color-40),
+    0 0 12px var(--glow-color-30),
+    0 0 28px 2px var(--glow-color-20);
 }
 .agent-chat-input.landing-composer.border-glow-card::after {
   display: none;

@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Follow the frontend pre-development checklist for a shared visual component fix."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Preserve beUI ownership, composer geometry, focus, responsive, and reduced-motion contracts."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Apply browser visual QA, accessibility, performance, and regression verification requirements."}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"Keep the fix in shared BorderGlow geometry where appropriate and avoid duplicate page-only algorithms."}
