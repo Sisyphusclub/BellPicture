@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"确认结构容器保留但不再绘制第二层卡片"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"执行响应式、控制台和构建质量门禁"}

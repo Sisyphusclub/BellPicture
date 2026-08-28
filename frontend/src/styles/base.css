@@ -8847,8 +8847,8 @@ video {
   border-radius: 19px;
 }
 .studio-agent-input .agent-chat-input__surface {
-  border-radius: 16px;
-  background: color-mix(in oklch, var(--card) 92%, transparent);
+  border-radius: inherit;
+  background: transparent;
   padding: 4px 8px 8px;
 }
 .studio-agent-input .agent-chat-input__textarea {

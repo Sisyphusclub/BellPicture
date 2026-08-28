@@ -84,6 +84,9 @@ by this repository, not a runtime black box.
   shadow, its radius must increase by the same expansion; its `::before` source must use the root
   radius explicitly. Move structural pseudo-elements by the root border width when the root has a
   visible border, otherwise the static border and gradient ring form offset arcs at each corner.
+  In Generate, `.agent-chat-input__surface` is a structural layout container only: keep its
+  background transparent and let it inherit the inner radius. The `BorderGlow` root owns the sole
+  graphite fill; painting the inset surface creates a second rectangular card over the shared ring.
   Route CSS may change the composer's surface material, but must not replace the shared ring algorithm
   or disable one of the shared glow layers. Browser QA must compare the computed gradient palette,
   unmasked `::before` ring, edge-light direction mask and outer shadows, opacity, and root radius at
