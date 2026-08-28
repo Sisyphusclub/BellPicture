@@ -700,3 +700,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 22: 修复生图安全竞态与资源风险
+
+**Date**: 2026-08-28
+**Task**: 修复生图安全竞态与资源风险
+**Branch**: `dev`
+
+### Summary
+
+修复参考图越权、额度预留与取消竞态、账号缓存污染、输出和媒体资源风险、公开历史分页及部署配置问题，并补齐跨层回归测试与代码规格。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d2669fb` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
