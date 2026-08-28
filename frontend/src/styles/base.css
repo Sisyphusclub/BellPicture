@@ -9746,3 +9746,16 @@ video {
     transition: none;
   }
 }
+
+/* The operational sidebar is the collapsed floating rail on desktop. Keep
+   the page canvas centered inside that rail plus the viewport, rather than
+   reserving the expanded sidebar width used by the legacy shell. */
+.app-main:not(.app-main--landing):not(.app-main--generate) {
+  padding-left: var(--workspace-sidebar-rail);
+}
+
+@media (max-width: 860px) {
+  .app-main:not(.app-main--landing):not(.app-main--generate) {
+    padding-left: 0;
+  }
+}

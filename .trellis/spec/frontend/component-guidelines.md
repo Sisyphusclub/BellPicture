@@ -229,6 +229,11 @@ user choices such as recent-use or title sorting remain authoritative. Route
 tests must assert the category boundary rather than inferring category from
 image filename prefixes.
 
+Operational `.workspace-page` routes sit after the collapsed floating sidebar
+rail. Use the shared `--workspace-sidebar-rail` token for desktop `.app-main`
+padding and reset it to `0` at the mobile breakpoint where the sidebar is
+hidden; do not reuse the expanded `--sidebar-width` value for this canvas.
+
 ## Responsive Layout
 
 - Define stable tracks, aspect ratios, and min/max sizes for carousels, grids,
