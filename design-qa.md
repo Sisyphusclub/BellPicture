@@ -143,6 +143,51 @@ No actionable P0, P1, or P2 findings remain.
 
 final result: passed
 
+## Landing and Generate Composer Glow Parity QA (2026-08-28)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-d7f8cf8c-5aeb-4b42-852b-6a2e2b533a2c.png` for the uneven Discover state and `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-31811fc0-b144-4017-b084-f4d769e28179.png` for the Generate glow target.
+- Implementation screenshot: `C:/Users/ADMINI~1/AppData/Local/Temp/nebulens-glow-qa/landing-after.png`.
+- Full-view comparison evidence: `C:/Users/ADMINI~1/AppData/Local/Temp/nebulens-glow-qa/generate-landing-comparison.png`.
+- Focused comparison evidence: `C:/Users/ADMINI~1/AppData/Local/Temp/nebulens-glow-qa/generate-landing-focused-comparison.png`.
+- Local implementation: `http://localhost:5173/` and `http://localhost:5173/generate`.
+- Viewports/states: anonymous dark workspace at 1440 x 813 with the composer focused, plus Discover at 390 x 844 in hero, compact docked, and expanded docked states.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: prompt, control, quota, and submit typography are unchanged. The focused comparison preserves each route's existing content hierarchy without clipping or wrapping regressions.
+- Spacing and layout rhythm: Discover retains its 940px hero and expanded dock footprint, 560px compact desktop dock, and responsive 358px mobile dock. All checked states keep the existing 20px outer radius and report zero horizontal overflow.
+- Colors and visual tokens: Discover and Generate now compute the same eight orange/cyan/blue gradient layers, `::before` conic direction mask, `::after` fill mask, edge-light mask, opacity values, and full cyan inner/outer shadow stack. The fixed full-perimeter blue and yellow lines from the supplied Discover screenshot are absent.
+- Image quality and asset fidelity: the existing landing video and gallery rasters remain unchanged. The glow fix adds no image asset, placeholder, SVG, or code-drawn decoration.
+- Copy and content: all prompt examples, model/count/private controls, quota labels, and submit-cost content remain unchanged.
+- Interaction and responsiveness: focus and pointer direction continue to control the shared glow. Compact and expanded dock states retain their geometry; after focus leaves the component, `::before`, `::after`, and edge-light computed opacity all settle to `0`.
+
+### Comparison Evidence
+
+- The full-view side-by-side capture places Generate and Discover at the same 1440 x 813 viewport and focus state. Both show the restrained cyan emphasis near the active edge and the same warm transition without a permanently saturated perimeter.
+- The focused crop makes the complete composer outlines readable. Generate and Discover share the same directional highlight distribution and continuous corner treatment despite their intentionally different route content and widths.
+- Computed-style parity returned `true` for palette, root radius, before/after masks and opacity, edge mask and opacity, edge shadow, and active edge proximity.
+
+### Patches Made
+
+- Removed the Discover-only full-perimeter gradient ring.
+- Removed the Discover-only reduced outer-shadow stack and restored the shared BorderGlow inner/outer glow treatment.
+- Restored the shared low-opacity edge fill on Discover.
+- Updated the frontend component contract to forbid route-owned replacement glow algorithms.
+
+### Verification
+
+- `npm run check:components`: passed.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed with one pre-existing Fast Refresh warning in `src/components/ui/sidebar.tsx`.
+- `npm run test`: passed, 13 files and 76 tests.
+- `npm run build`: passed with the existing non-blocking Vite chunk-size warning.
+- Targeted Prettier check and `git diff --check`: passed. The repository-wide format check retains its 43 pre-existing unrelated files.
+- Browser console: no warnings or errors.
+
+final result: passed
+
 ## Discovery Gallery Fade Removal QA (2026-08-13)
 
 - Source visual truth: the user-requested removal of the fade from the previously approved static gallery at `design-qa-assets/discovery-static-gallery-1440x813.png`.

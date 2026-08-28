@@ -70,13 +70,20 @@ by this repository, not a runtime black box.
 - Discover keeps its docking anchor and both Motion layout boundaries visual-neutral. The existing
   beUI Agent Chat Input and its BorderGlow are the only painted composer surface in hero, compact
   docked, and expanded docked states; do not wrap it in another card, glass target, or canvas layer.
-- Treat the Discover `BorderGlow` root radius as the single source for every painted edge. A
-  route-specific 1px gradient ring must use `inset: 0` and `border-radius: inherit`; its directional
-  `.edge-light` may add soft outer shadows but must not add another inset stroke or sharp outer line.
-  When the composer interior is transparent, keep the gradient clipped with a ring mask: a
-  transparent `padding-box` layer does not hide lower `border-box` backgrounds and will leak the
-  gradient across the input surface. Browser QA must compare the root, ring, and edge-light computed
-  radii at 1440px, 390px, and both docked states.
+- Discover and Generate must use the shared `BorderGlow` `::before`, `::after`, and `.edge-light`
+  rendering unchanged so the orange, cyan, and blue palette has one direction mask and intensity
+  model. Route CSS may change the composer's surface material, but must not replace the shared conic
+  mask with a full-perimeter gradient ring, simplify the shared inner/outer glow shadows, or disable
+  one of the shared glow layers. Browser QA must compare the computed gradient palette, `::before`
+  mask, edge-light shadow, opacity, and root radius at 1440px, 390px, and both Discover docked states.
+
+```css
+/* Correct: customize only the route surface; shared pseudo-elements remain authoritative. */
+.landing-composer.border-glow-card {
+  --card-bg: color-mix(in oklch, var(--card) 76%, transparent);
+}
+```
+
 - Keep card radii at 8px or less unless a source primitive requires otherwise.
 - Do not add decorative gradients, orbs, fake artwork, or handcrafted SVG icons.
 - Route-specific Agent Chat Input submit content must use the typed `submitContent` composition prop

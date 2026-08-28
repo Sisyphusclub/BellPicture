@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Review shared glow ownership, focus/reduced-motion behavior, radius continuity, and desktop/mobile browser verification."}
+{"file":"design.md","reason":"Verify the rendered glow remains within the approved Nebulens palette and matches the Generate workspace reference."}

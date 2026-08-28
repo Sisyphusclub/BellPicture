@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Defines the shared beUI Agent Chat Input and BorderGlow ownership, single-radius geometry, route override constraints, and required responsive browser QA."}
+{"file":"design.md","reason":"Defines the approved Nebulens orange/cyan/blue BorderGlow palette and the requirement that Discover and Generate share the creation-surface visual contract."}

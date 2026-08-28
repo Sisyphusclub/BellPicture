@@ -6650,9 +6650,8 @@ video {
   }
 }
 
-/* Discover keeps the beUI composer interaction contract while using the hero
-   video as a refracted material layer. The body follows Wanxiang's softened
-   glass stack while the existing Nebulens focus ring remains independent. */
+/* Discover keeps its route-specific hero material while the beUI Agent Chat
+   Input continues to own the shared BorderGlow focus treatment. */
 .agent-chat-input.landing-composer.border-glow-card {
   --card-bg: transparent !important;
   --liquid-glass-tint-center: rgb(56 78 102 / 0.14);
@@ -6674,41 +6673,6 @@ video {
     0 0 0 1px rgb(192 223 247 / 0.04);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-}
-.agent-chat-input.landing-composer.border-glow-card::before {
-  inset: 0;
-  display: block;
-  border: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background:
-    var(--gradient-one) border-box,
-    var(--gradient-two) border-box,
-    var(--gradient-three) border-box,
-    var(--gradient-four) border-box,
-    var(--gradient-five) border-box,
-    var(--gradient-six) border-box,
-    var(--gradient-seven) border-box,
-    var(--gradient-base) border-box;
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-  z-index: 2;
-}
-.agent-chat-input.landing-composer.border-glow-card > .edge-light::before {
-  box-shadow:
-    0 0 4px var(--glow-color-40),
-    0 0 12px var(--glow-color-30),
-    0 0 28px 2px var(--glow-color-20);
-}
-.agent-chat-input.landing-composer.border-glow-card::after {
-  display: none;
 }
 .agent-chat-input.landing-composer.border-glow-card:focus-within {
   border-color: transparent;
