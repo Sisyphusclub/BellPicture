@@ -433,3 +433,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 14: 调整生成工作区垂直布局
+
+**Date**: 2026-08-28
+**Task**: 调整生成工作区垂直布局
+**Branch**: `dev`
+
+### Summary
+
+下移 Generate 有结果状态的会话内容，收紧桌面与移动端固定输入框底部留白；同步空状态公式、前端规范并完成桌面和移动端质量验证。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b3aa83c` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
