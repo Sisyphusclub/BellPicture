@@ -221,6 +221,14 @@ route code.
 const entries = CREATION_TEMPLATES.map(templateToHistoryEntry);
 ```
 
+The Discover gallery and the template route's default `featured` order must
+use `orderTemplatesWithAnimeLast(CREATION_TEMPLATES)`: general-purpose
+categories retain manifest order, followed by the `动漫漫画` category in its
+manifest order. Apply this priority only to the default content order. Explicit
+user choices such as recent-use or title sorting remain authoritative. Route
+tests must assert the category boundary rather than inferring category from
+image filename prefixes.
+
 ## Responsive Layout
 
 - Define stable tracks, aspect ratios, and min/max sizes for carousels, grids,

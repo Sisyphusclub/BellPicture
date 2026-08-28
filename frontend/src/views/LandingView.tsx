@@ -21,7 +21,11 @@ import { useImageQuota } from '@/hooks/useImageQuota';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { usePublicGallery } from '@/hooks/usePublicGallery';
 import { getAppNavigation } from '@/config/navigation';
-import { CREATION_TEMPLATES, templateToHistoryEntry } from '@/data/creationTemplates';
+import {
+  CREATION_TEMPLATES,
+  orderTemplatesWithAnimeLast,
+  templateToHistoryEntry,
+} from '@/data/creationTemplates';
 import { buildApiUrl } from '@/services/api/imagesApi';
 import type { AspectChoice, HistoryEntry } from '@/types/image';
 import { DEFAULT_ASPECT_CHOICE, DEFAULT_COUNT, MAX_REFERENCE_IMAGES } from '@/types/image';
@@ -116,16 +120,8 @@ const HERO_ENTRIES: HistoryEntry[] = [
 ];
 // Keep the general-purpose references visible first on Discover; anime references
 // remain available in the same gallery but move to the final section.
-const DISCOVERY_TEMPLATE_ENTRIES = CREATION_TEMPLATES.map((template) => ({
-  template,
-  entry: templateToHistoryEntry(template),
-}))
-  .sort(
-    (left, right) =>
-      Number(left.template.category === '动漫漫画') -
-      Number(right.template.category === '动漫漫画'),
-  )
-  .map(({ entry }) => entry);
+const DISCOVERY_TEMPLATE_ENTRIES =
+  orderTemplatesWithAnimeLast(CREATION_TEMPLATES).map(templateToHistoryEntry);
 // Keep the hero works first, then expose the full GPT Image 2 library in the same gallery.
 const TODAY_CREATIONS = [
   HERO_ENTRIES[3]!,

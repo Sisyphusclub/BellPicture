@@ -60,6 +60,19 @@ export const TEMPLATE_CATEGORIES = [
   ...new Set(CREATION_TEMPLATES.map((template) => template.category)),
 ] as const;
 
+export function orderTemplatesWithAnimeLast(
+  templates: readonly CreationTemplate[],
+): CreationTemplate[] {
+  const anime: CreationTemplate[] = [];
+  const general: CreationTemplate[] = [];
+
+  for (const template of templates) {
+    (template.category === '动漫漫画' ? anime : general).push(template);
+  }
+
+  return [...general, ...anime];
+}
+
 export function templateToHistoryEntry(template: CreationTemplate): HistoryEntry {
   return {
     record: {

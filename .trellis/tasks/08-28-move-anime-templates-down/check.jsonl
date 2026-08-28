@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend required quality gate."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Confirm default template ordering changes without visual or interaction regressions."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Focused route tests plus complete frontend checks and browser verification."}
+{"file":".trellis/tasks/archive/2026-08/08-26-move-anime-discovery-images/prd.md","reason":"Verify discovery and template routes remain consistent with the prior ordering contract."}

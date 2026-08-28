@@ -1,0 +1,5 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend ownership, architecture rules, and required checks."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Image-led gallery ordering and shared component behavior constraints."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Regression testing and browser QA requirements."}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"The same anime-ordering rule is consumed by two routes and must have one source of truth."}
+{"file":".trellis/tasks/archive/2026-08/08-26-move-anime-discovery-images/prd.md","reason":"Existing discovery-page anime ordering decision to extend consistently."}

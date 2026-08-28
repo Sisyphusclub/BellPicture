@@ -546,13 +546,26 @@ describe('React application routes', () => {
         expect.stringMatching(/^\/media\/templates\/gpt-image2\//),
       );
     });
+    const templateCategories = screen
+      .getAllByRole('article')
+      .map((card) => card.querySelector('small')?.textContent);
+    expect(templateCategories.slice(0, 12).every((value) => value !== '动漫漫画')).toBe(true);
+    expect(templateCategories.slice(-12).every((value) => value === '动漫漫画')).toBe(true);
+
+    await user.click(screen.getByRole('button', { name: '模板排序' }));
+    await user.click(screen.getByRole('menuitemradio', { name: '名称排序' }));
+    expect(screen.getAllByRole('button', { name: /预览模板：/ })[0]).toHaveAccessibleName(
+      '预览模板：16-panel anime expression grid',
+    );
+    await user.click(screen.getByRole('button', { name: '模板排序' }));
+    await user.click(screen.getByRole('menuitemradio', { name: '精选排序' }));
 
     await user.click(screen.getAllByRole('button', { name: /使用模板 / })[0]!);
     expect(screen.getByRole('region', { name: '图像生成工作区' })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: '图像提示词' })).toHaveTextContent(
-      'Create a portrait-oriented anime fashion illustration',
+      'Generate a high-end photorealistic render of a future-facing biotech laboratory',
     );
-    expect(screen.getByRole('button', { name: '选择画面比例' })).toHaveTextContent('2:3');
+    expect(screen.getByRole('button', { name: '选择画面比例' })).toHaveTextContent('16:9');
     expect(screen.getByRole('status', { name: '1 张' })).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: '私有模式' })).toBeChecked();
     expect(generation.generate).not.toHaveBeenCalled();

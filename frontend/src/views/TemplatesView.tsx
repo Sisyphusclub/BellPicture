@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { SelectMenu } from '@/components/ui/select-menu';
 import {
   CREATION_TEMPLATES,
+  orderTemplatesWithAnimeLast,
   TEMPLATE_CATEGORIES,
   type CreationTemplate,
 } from '@/data/creationTemplates';
@@ -64,7 +65,7 @@ export function TemplatesView() {
     if (sort === 'title') {
       return [...items].sort((a, b) => a.title.localeCompare(b.title, 'zh-CN'));
     }
-    return items;
+    return orderTemplatesWithAnimeLast(items);
   }, [category, favoriteIds, favoritesOnly, query, recent, sort]);
 
   const copyPrompt = async (template: CreationTemplate): Promise<void> => {
