@@ -105,6 +105,12 @@ prompt, and pending Edit is disabled without changing bubble child count.
 - Landing-page measurements follow the prompt-first beUI composition in
   `design.md`. Do not apply home display typography or carousel spacing to admin
   and workbench screens.
+- The Discover gallery keeps the prompt-first hero full-bleed while its content
+  column follows the operational workspace geometry: center the outer section
+  on the post-sidebar rail, cap it with `--workspace-content-max`, and use
+  `--workspace-page-gutter` for both the section and its inner gallery. Reset
+  the rail offset and reuse the 20px/14px gutter values at the mobile
+  breakpoints so gallery media aligns with Templates, Assets, and Users.
 - Discover keeps its docking anchor and both Motion layout boundaries visual-neutral. The existing
   beUI Agent Chat Input and its BorderGlow are the only painted composer surface in hero, compact
   docked, and expanded docked states; do not wrap it in another card, glass target, or canvas layer.

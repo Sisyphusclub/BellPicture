@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend quality-check commands and route-level requirements."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Responsive overflow, visual QA, and regression-test acceptance criteria."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Component and CSS contract expectations for shared gallery surfaces."}
+{"file":".trellis/spec/guides/index.md","reason":"Cross-layer consistency checks before final verification."}

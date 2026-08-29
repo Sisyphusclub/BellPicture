@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend package conventions and pre-development checklist for the React/Vite implementation."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Shared beUI component, responsive layout, and accessibility conventions used by the gallery."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Required regression coverage and browser/layout verification for responsive UI changes."}
+{"file":".trellis/spec/guides/index.md","reason":"Cross-layer thinking checklist for shared layout tokens and route consistency."}

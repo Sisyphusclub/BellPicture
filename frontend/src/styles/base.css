@@ -1562,10 +1562,10 @@ video {
 .landing-creations {
   position: relative;
   z-index: 8;
-  left: 64px;
-  width: calc(100% - 148px);
+  left: calc(var(--workspace-sidebar-rail) / 2);
+  width: min(calc(100% - var(--workspace-sidebar-rail)), var(--workspace-content-max));
   margin: calc(-100svh + clamp(654px, 68svh, 718px) - 80px) auto 0;
-  padding: 0 0 96px;
+  padding: 0 var(--workspace-page-gutter) 96px;
   background: transparent;
 }
 
@@ -3051,9 +3051,9 @@ video {
   }
   .landing-creations {
     left: 0;
-    width: calc(100% - 32px);
+    width: 100%;
     margin: calc(-100svh + clamp(620px, 62svh, 690px) - 80px) auto 0;
-    padding: 0 0 88px;
+    padding: 0 var(--workspace-page-gutter) 88px;
   }
   .image-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3347,9 +3347,9 @@ video {
     max-width: 42px;
   }
   .landing-creations {
-    width: calc(100% - 28px);
+    width: 100%;
     margin-top: calc(-100svh + clamp(590px, 68svh, 650px) - 12px);
-    padding: 0 0 72px;
+    padding: 0 var(--workspace-page-gutter) 72px;
   }
   .landing-creations > div > header h2 {
     font-size: 24px;
@@ -9655,7 +9655,8 @@ video {
 }
 
 @media (max-width: 860px) {
-  .workspace-page {
+  .workspace-page,
+  .landing-creations {
     --workspace-page-gutter: 20px;
   }
   .assets-page,
@@ -9690,7 +9691,8 @@ video {
 }
 
 @media (max-width: 560px) {
-  .workspace-page {
+  .workspace-page,
+  .landing-creations {
     --workspace-page-gutter: 14px;
   }
   .assets-page,

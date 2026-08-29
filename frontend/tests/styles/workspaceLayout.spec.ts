@@ -23,6 +23,25 @@ describe('operational workspace layout contract', () => {
     expect(baseStyles).toContain('--workspace-page-gutter: 14px;');
   });
 
+  it('aligns the landing gallery to the operational content column', () => {
+    const landingContract = baseStyles.slice(
+      baseStyles.indexOf('.landing-creations {'),
+      baseStyles.indexOf('.landing-creations > div > header'),
+    );
+
+    expect(landingContract).toContain('left: calc(var(--workspace-sidebar-rail) / 2);');
+    expect(landingContract).toContain(
+      'width: min(calc(100% - var(--workspace-sidebar-rail)), var(--workspace-content-max));',
+    );
+    expect(landingContract).toContain('padding: 0 var(--workspace-page-gutter) 96px;');
+    expect(baseStyles).toContain(
+      '.workspace-page,\n  .landing-creations {\n    --workspace-page-gutter: 20px;',
+    );
+    expect(baseStyles).toContain(
+      '.workspace-page,\n  .landing-creations {\n    --workspace-page-gutter: 14px;',
+    );
+  });
+
   it('shares one title, toolbar, control, and media-density contract', () => {
     const operationalContract = baseStyles.slice(
       baseStyles.lastIndexOf(
