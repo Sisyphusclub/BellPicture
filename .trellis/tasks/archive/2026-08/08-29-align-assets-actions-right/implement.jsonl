@@ -1,0 +1,3 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend required checks"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Asset overlay beUI, responsive, focus, and touch contracts"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Browser and regression QA requirements"}
