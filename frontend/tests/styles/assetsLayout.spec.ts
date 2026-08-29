@@ -31,12 +31,21 @@ describe('assets media layout contract', () => {
     const actionsStart = assetsContract.indexOf('.assets-page .image-tile__actions {');
     const actionsEnd = assetsContract.indexOf('}', actionsStart) + 1;
     const actionsRule = assetsContract.slice(actionsStart, actionsEnd);
-    expect(actionsRule).toContain('left: 50%;');
+    expect(actionsRule).toContain('right: 10px;');
+    expect(actionsRule).not.toContain('left: 50%;');
     expect(actionsRule).toContain('width: max-content;');
     expect(actionsRule).toContain('gap: 6px;');
     expect(actionsRule).not.toContain('background:');
     expect(actionsRule).not.toContain('border:');
     expect(actionsRule).not.toContain('backdrop-filter:');
+
+    const actionButtonStart = assetsContract.indexOf('.assets-page .image-tile__actions button {');
+    const actionButtonEnd = assetsContract.indexOf('}', actionButtonStart) + 1;
+    const actionButtonRule = assetsContract.slice(actionButtonStart, actionButtonEnd);
+    expect(actionButtonRule).toContain(
+      'background: color-mix(in oklch, var(--card) 78%, transparent);',
+    );
+    expect(actionButtonRule).not.toContain('opacity:');
     expect(baseStyles).toContain('@media (min-width: 1600px) {');
     expect(baseStyles).toContain('grid-template-columns: repeat(5, minmax(0, 1fr));');
   });

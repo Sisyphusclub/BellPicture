@@ -9334,8 +9334,8 @@ video {
 }
 .assets-page .image-tile__actions {
   position: absolute;
+  right: 10px;
   bottom: 10px;
-  left: 50%;
   z-index: 4;
   width: max-content;
   max-width: calc(100% - 20px);
@@ -9345,7 +9345,7 @@ video {
   padding: 0;
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, 6px);
+  transform: translateY(6px);
   transition:
     opacity 160ms var(--ease-out-expo),
     transform 160ms var(--ease-out-expo);
@@ -9354,7 +9354,7 @@ video {
 .assets-page .image-tile__morph:focus-within .image-tile__actions {
   opacity: 1;
   pointer-events: auto;
-  transform: translate(-50%, 0);
+  transform: translateY(0);
 }
 .assets-page .image-tile__actions button {
   width: 32px;
@@ -9362,7 +9362,11 @@ video {
   min-width: 32px;
   min-height: 32px;
   flex: 0 0 32px;
+  background: color-mix(in oklch, var(--card) 78%, transparent);
   box-shadow: var(--shadow-float);
+}
+.assets-page .image-tile__actions button:hover {
+  background: color-mix(in oklch, var(--surface-hover) 88%, transparent);
 }
 .assets-page .image-tile__actions svg {
   width: 15px;
@@ -9377,7 +9381,7 @@ video {
   .assets-page .image-tile__actions {
     opacity: 1;
     pointer-events: auto;
-    transform: translateX(-50%);
+    transform: none;
   }
 }
 .assets-page .asset-list {

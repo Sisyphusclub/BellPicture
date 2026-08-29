@@ -217,7 +217,7 @@ scaled image inside the clipped media wrapper loses its outer edges.
 Assets overlay actions live inside `.image-tile__morph` as a labelled `role="toolbar"`. Compose the
 shared beUI `Button` with `variant="secondary"` and `size="icon"`, wrapped by `IconTooltip`; do not
 strip the button surface and replace it with a page-local toolbar slab. The toolbar container is
-visual-neutral: it owns only bottom-center positioning, spacing, pointer state, and opacity/transform
+visual-neutral: it owns only bottom-right positioning, spacing, pointer state, and opacity/transform
 reveal. Keep each icon control at `32px × 32px`, use `flex: 0 0 32px`, and center a `15px` Lucide icon.
 Reveal the toolbar on media hover or `focus-within`, and keep it visible and interactive for coarse
 pointers. This preserves beUI hover/focus styling while generated media remains the dominant surface.
@@ -277,11 +277,14 @@ visible. On coarse-pointer devices, keep the control visible so per-item selecti
 /* Correct: the container positions shared beUI secondary icon buttons only. */
 .assets-page .image-tile__actions {
   position: absolute;
+  right: 10px;
   bottom: 10px;
-  left: 50%;
   width: max-content;
   gap: 6px;
-  transform: translateX(-50%);
+}
+
+.assets-page .image-tile__actions button {
+  background: color-mix(in oklch, var(--card) 78%, transparent);
 }
 
 @media (min-width: 1600px) {
