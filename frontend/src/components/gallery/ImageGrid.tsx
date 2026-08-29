@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/ui/icon-tooltip';
 import { cn } from '@/lib/utils';
 import type { HistoryEntry } from '@/types/image';
-import { formatClockTime } from '@/utils/format';
 
 interface ImageGridProps {
   entries: readonly HistoryEntry[];
@@ -71,6 +70,77 @@ export function ImageGrid({
               >
                 <img src={entry.imageUrl} alt={entry.record.prompt || '生成图片'} loading="lazy" />
               </Button>
+              <div className="image-tile__actions">
+                {onCopyPrompt ? (
+                  <IconTooltip label="复制提示词">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="复制提示词"
+                      onClick={() => onCopyPrompt(entry)}
+                    >
+                      <Copy aria-hidden="true" />
+                    </Button>
+                  </IconTooltip>
+                ) : null}
+                {onReuse ? (
+                  <IconTooltip label="复用设置">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="复用设置"
+                      onClick={() => onReuse(entry)}
+                    >
+                      <RefreshCw aria-hidden="true" />
+                    </Button>
+                  </IconTooltip>
+                ) : null}
+                {onDownload ? (
+                  <IconTooltip label="下载图片">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="下载图片"
+                      onClick={() => onDownload(entry)}
+                    >
+                      <Download aria-hidden="true" />
+                    </Button>
+                  </IconTooltip>
+                ) : null}
+                {onToggleVisibility ? (
+                  <IconTooltip label={entry.record.isPublic ? '设为私有' : '设为公开'}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={entry.record.isPublic ? '设为私有' : '设为公开'}
+                      onClick={() => onToggleVisibility(entry)}
+                    >
+                      {entry.record.isPublic ? (
+                        <Globe2 aria-hidden="true" />
+                      ) : (
+                        <Lock aria-hidden="true" />
+                      )}
+                    </Button>
+                  </IconTooltip>
+                ) : null}
+                {onRemove ? (
+                  <IconTooltip label="删除图片">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`删除图片 ${entry.record.id}`}
+                      onClick={() => onRemove(entry)}
+                    >
+                      <Trash2 aria-hidden="true" />
+                    </Button>
+                  </IconTooltip>
+                ) : null}
+              </div>
             </MorphicCard>
             {onToggleSelection ? (
               <Button
@@ -106,84 +176,6 @@ export function ImageGrid({
                 </Button>
               </IconTooltip>
             ) : null}
-            <div className="image-tile__meta">
-              <p>{entry.record.prompt}</p>
-              <span>
-                {formatClockTime(entry.record.createdAt)} · {entry.record.aspectRatio ?? '1:1'}
-              </span>
-              <span>{entry.record.collection ?? '未分类'}</span>
-            </div>
-            <div className="image-tile__actions">
-              {onCopyPrompt ? (
-                <IconTooltip label="复制提示词">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label="复制提示词"
-                    onClick={() => onCopyPrompt(entry)}
-                  >
-                    <Copy aria-hidden="true" />
-                  </Button>
-                </IconTooltip>
-              ) : null}
-              {onReuse ? (
-                <IconTooltip label="复用设置">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label="复用设置"
-                    onClick={() => onReuse(entry)}
-                  >
-                    <RefreshCw aria-hidden="true" />
-                  </Button>
-                </IconTooltip>
-              ) : null}
-              {onDownload ? (
-                <IconTooltip label="下载图片">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label="下载图片"
-                    onClick={() => onDownload(entry)}
-                  >
-                    <Download aria-hidden="true" />
-                  </Button>
-                </IconTooltip>
-              ) : null}
-              {onToggleVisibility ? (
-                <IconTooltip label={entry.record.isPublic ? '设为私有' : '设为公开'}>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label={entry.record.isPublic ? '设为私有' : '设为公开'}
-                    onClick={() => onToggleVisibility(entry)}
-                  >
-                    {entry.record.isPublic ? (
-                      <Globe2 aria-hidden="true" />
-                    ) : (
-                      <Lock aria-hidden="true" />
-                    )}
-                  </Button>
-                </IconTooltip>
-              ) : null}
-              {onRemove ? (
-                <IconTooltip label="删除图片">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`删除图片 ${entry.record.id}`}
-                    onClick={() => onRemove(entry)}
-                  >
-                    <Trash2 aria-hidden="true" />
-                  </Button>
-                </IconTooltip>
-              ) : null}
-            </div>
           </article>
         );
       })}

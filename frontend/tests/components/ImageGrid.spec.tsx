@@ -38,13 +38,13 @@ it('exposes preview and deletion actions for an asset', () => {
   expect(select).toHaveBeenCalledWith(entry);
   expect(toggleSelection).toHaveBeenCalledWith(entry);
   expect(remove).toHaveBeenCalledWith(entry);
-  expect(screen.getByText('未分类')).toBeInTheDocument();
+  expect(screen.queryByText('未分类')).not.toBeInTheDocument();
   expect(
     screen.getByRole('button', { name: '删除图片 one.png' }).closest('.image-tile__actions'),
   ).toBeInTheDocument();
   expect(
     screen.getByRole('button', { name: '删除图片 one.png' }).closest('.image-tile__morph'),
-  ).not.toBeInTheDocument();
+  ).toBeInTheDocument();
   expect(screen.getByRole('button', { name: '查看图片：雨夜城市街角' }).parentElement).toHaveStyle({
     aspectRatio: '1792 / 1024',
   });
