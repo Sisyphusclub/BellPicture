@@ -127,12 +127,19 @@ describe('HistoryView asset workflows', () => {
     const user = userEvent.setup();
     renderView();
 
-    expect(screen.queryByRole('heading', { name: '资产' })).not.toBeInTheDocument();
+    const title = screen.getByRole('heading', { level: 1, name: '资产' });
+    expect(title.closest('header')).toHaveClass('operational-page-header');
+    expect(within(title.closest('header')!).getByText('2 项资产')).toHaveClass(
+      'operational-page-header__meta',
+    );
     expect(screen.getByRole('searchbox', { name: '搜索资产' })).toHaveAttribute(
       'placeholder',
       '搜索提示词、模型或收藏集',
     );
     expect(screen.getByLabelText('当前显示 2 项，共 2 项')).toBeInTheDocument();
+    expect(
+      screen.getByRole('searchbox', { name: '搜索资产' }).closest('.asset-commandbar'),
+    ).toHaveClass('operational-toolbar');
     expect(screen.getByRole('navigation', { name: '收藏集筛选' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '灵感库' }));
@@ -172,6 +179,7 @@ describe('HistoryView asset workflows', () => {
     authMocks.isLoading = true;
     renderView();
 
+    expect(screen.getByRole('heading', { level: 1, name: '资产' })).toBeInTheDocument();
     expect(screen.getByRole('status', { name: '正在确认登录状态' })).toBeInTheDocument();
     expect(screen.queryByRole('searchbox', { name: '搜索资产' })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: '登录后查看资产' })).not.toBeInTheDocument();

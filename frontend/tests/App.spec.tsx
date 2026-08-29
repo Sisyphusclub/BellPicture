@@ -708,6 +708,12 @@ describe('React application routes', () => {
     renderRoute('/templates');
 
     expect(screen.getByRole('region', { name: '创作模板' })).toHaveClass('workspace-page');
+    const templatesTitle = screen.getByRole('heading', { level: 1, name: '创作模板' });
+    expect(templatesTitle.closest('header')).toHaveClass('operational-page-header');
+    expect(within(templatesTitle.closest('header')!).getByText('163 个模板')).toHaveClass(
+      'operational-page-header__meta',
+    );
+    expect(screen.queryByText('NEBULENS / LIBRARY')).not.toBeInTheDocument();
     expect(screen.getByRole('searchbox', { name: '搜索创作模板' })).toBeInTheDocument();
     expect(screen.getAllByRole('article')).toHaveLength(163);
     const templateImages = within(screen.getByRole('region', { name: '创作模板' })).getAllByRole(
@@ -749,9 +755,14 @@ describe('React application routes', () => {
   it('keeps history and admin routes', () => {
     const history = renderRoute('/history');
     expect(screen.getByRole('region', { name: '个人资产' })).toHaveClass('workspace-page');
+    expect(screen.getByRole('heading', { level: 1, name: '资产' }).closest('header')).toHaveClass(
+      'operational-page-header',
+    );
     history.unmount();
     renderRoute('/admin/users');
-    expect(screen.getByRole('heading', { name: '用户管理' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: '用户管理' }).closest('header'),
+    ).toHaveClass('operational-page-header');
     expect(screen.getByRole('region', { name: '用户管理' })).toHaveClass('workspace-page');
     expect(screen.getByRole('button', { name: '创建用户' })).toHaveAttribute(
       'aria-expanded',

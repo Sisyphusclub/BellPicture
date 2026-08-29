@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useToast } from '@/components/common/ToastProvider';
+import { OperationalPageHeader } from '@/components/common/OperationalPageHeader';
 import { MorphicCard, MorphicCardModal } from '@/components/premium/morphic-card-modal';
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/ui/icon-tooltip';
@@ -86,18 +87,12 @@ export function TemplatesView() {
 
   return (
     <section className="workspace-page templates-page" data-view="templates" aria-label="创作模板">
-      <header className="workspace-heading workspace-heading--compact">
-        <div>
-          <p className="eyebrow">NEBULENS / LIBRARY</p>
-          <h1>创作模板</h1>
-          <p>从经过整理的提示词和参数组合开始，快速进入生图工作台。</p>
-        </div>
-        <div className="page-count" aria-live="polite">
-          <strong>{filtered.length}</strong>
-          <span>个模板</span>
-        </div>
-      </header>
-      <div className="workspace-toolbar template-toolbar">
+      <OperationalPageHeader
+        id="templates-title"
+        title="创作模板"
+        meta={`${filtered.length} 个模板`}
+      />
+      <div className="operational-toolbar template-toolbar">
         <label className="search-field template-search">
           <Search aria-hidden="true" />
           <span className="sr-only">搜索创作模板</span>

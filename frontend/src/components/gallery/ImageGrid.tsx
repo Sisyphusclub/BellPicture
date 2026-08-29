@@ -1,4 +1,14 @@
-import { Check, Copy, Download, Globe2, Heart, Lock, RefreshCw, Trash2 } from 'lucide-react';
+import {
+  Check,
+  Copy,
+  Download,
+  Globe2,
+  Heart,
+  Lock,
+  RefreshCw,
+  Square,
+  Trash2,
+} from 'lucide-react';
 
 import { MorphicCard } from '@/components/premium/morphic-card-modal';
 import { Button } from '@/components/ui/button';
@@ -47,12 +57,15 @@ export function ImageGrid({
         const selected = selectedIds.has(entry.record.id);
         return (
           <article className={cn('image-tile', selected && 'is-selected')} key={entry.record.id}>
-            <MorphicCard id={entry.record.id} className="image-tile__morph">
+            <MorphicCard
+              id={entry.record.id}
+              className="image-tile__morph"
+              style={{ aspectRatio: `${entry.record.width} / ${entry.record.height}` }}
+            >
               <Button
                 type="button"
                 variant="ghost"
                 className="image-tile__preview"
-                style={{ aspectRatio: `${entry.record.width} / ${entry.record.height}` }}
                 aria-label={`查看图片：${entry.record.prompt}`}
                 onClick={() => onSelect(entry)}
               >
@@ -69,11 +82,14 @@ export function ImageGrid({
                 aria-pressed={selected}
                 onClick={() => onToggleSelection(entry)}
               >
-                {selected ? <Check aria-hidden="true" /> : null}
+                {selected ? <Check aria-hidden="true" /> : <Square aria-hidden="true" />}
               </Button>
             ) : null}
             {onToggleFavorite ? (
-              <IconTooltip label={entry.record.isFavorite ? '取消收藏' : '收藏'}>
+              <IconTooltip
+                label={entry.record.isFavorite ? '取消收藏' : '收藏'}
+                className="image-tile__favorite-trigger"
+              >
                 <Button
                   type="button"
                   variant="ghost"

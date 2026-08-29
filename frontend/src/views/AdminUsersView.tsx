@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
+import { OperationalPageHeader } from '@/components/common/OperationalPageHeader';
 import { useToast } from '@/components/common/ToastProvider';
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/ui/icon-tooltip';
@@ -10,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { SelectMenu } from '@/components/ui/select-menu';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 import { useAuth } from '@/hooks/useAuth';
+import { openAuthModal } from '@/hooks/useAuthModal';
 import type { AdminUser } from '@/types/admin';
 
 function displayName(user: AdminUser): string {
@@ -28,7 +30,7 @@ const PAGE_SIZE_OPTIONS = [
 
 export function AdminUsersView() {
   const { notify } = useToast();
-  const { user: currentUser, isAdmin, isLoading: authLoading } = useAuth();
+  const { user: currentUser, isAuthenticated, isAdmin, isLoading: authLoading } = useAuth();
   const { users, isLoading, error, refresh, createUser, updateQuota, removeUser } = useAdminUsers();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -136,35 +138,44 @@ export function AdminUsersView() {
 
   return (
     <section className="workspace-page admin-page" aria-labelledby="admin-title">
-      <header className="admin-command-header">
-        <div className="admin-command-header__title">
-          <h1 id="admin-title">用户管理</h1>
-          {isAdmin ? <span aria-live="polite">{users.length} 个账号</span> : null}
-        </div>
-        {isAdmin ? (
-          <div className="admin-command-header__actions">
-            <Button type="button" variant="secondary" disabled={isLoading} onClick={refreshUsers}>
-              <RefreshCw aria-hidden="true" />
-              {isLoading ? '刷新中…' : '刷新'}
-            </Button>
-            <Button
-              ref={createTriggerRef}
-              type="button"
-              aria-expanded={createOpen}
-              aria-controls="admin-create-form"
-              disabled={creating}
-              onClick={() => setCreateOpen((current) => !current)}
-            >
-              <Plus aria-hidden="true" />
-              创建用户
-            </Button>
-          </div>
-        ) : null}
-      </header>
+      <OperationalPageHeader
+        id="admin-title"
+        title="用户管理"
+        meta={isAdmin ? `${users.length} 个账号` : undefined}
+        actions={
+          isAdmin ? (
+            <>
+              <Button type="button" variant="secondary" disabled={isLoading} onClick={refreshUsers}>
+                <RefreshCw aria-hidden="true" />
+                {isLoading ? '刷新中…' : '刷新'}
+              </Button>
+              <Button
+                ref={createTriggerRef}
+                type="button"
+                aria-expanded={createOpen}
+                aria-controls="admin-create-form"
+                disabled={creating}
+                onClick={() => setCreateOpen((current) => !current)}
+              >
+                <Plus aria-hidden="true" />
+                创建用户
+              </Button>
+            </>
+          ) : undefined
+        }
+      />
       {authLoading ? (
         <p className="loading-state" role="status">
           正在确认管理员权限…
         </p>
+      ) : !isAuthenticated ? (
+        <div className="auth-gate" role="status">
+          <h2>登录后管理用户</h2>
+          <p>请使用管理员账号登录后继续。</p>
+          <Button type="button" onClick={() => openAuthModal()}>
+            登录
+          </Button>
+        </div>
       ) : !isAdmin ? (
         <div className="auth-gate" role="status">
           <p className="eyebrow">权限提示</p>
@@ -242,8 +253,8 @@ export function AdminUsersView() {
                 <p>暂无用户。可以先从上方创建一个新账号。</p>
               </div>
             ) : (
-              <div className="admin-table-shell">
-                <div className="admin-table-toolbar">
+              <>
+                <div className="operational-toolbar admin-table-toolbar">
                   <label className="admin-search">
                     <Search aria-hidden="true" />
                     <span className="sr-only">搜索用户</span>
@@ -265,141 +276,145 @@ export function AdminUsersView() {
                     className="admin-page-size"
                   />
                 </div>
-                {visibleUsers.length ? (
-                  <div className="admin-table" role="table">
-                    <div className="admin-row admin-row--head" role="row">
-                      <span role="columnheader">用户</span>
-                      <span role="columnheader">创建时间</span>
-                      <span role="columnheader">今日额度</span>
-                      <span role="columnheader">操作</span>
-                    </div>
-                    {visibleUsers.map((item) => (
-                      <article className="admin-row" role="row" key={item.id}>
-                        <div className="admin-identity" role="cell" data-label="用户">
-                          <span className="account-avatar" aria-hidden="true">
-                            {displayName(item).slice(0, 1).toUpperCase()}
-                          </span>
-                          <span>
-                            <strong>{displayName(item)}</strong>
-                            <em>{item.isAdmin ? '管理员' : '普通用户'}</em>
-                            <small>{item.email}</small>
-                          </span>
-                        </div>
-                        <time role="cell" data-label="创建时间" dateTime={item.createdAt}>
-                          {new Date(item.createdAt).toLocaleString('zh-CN', { hour12: false })}
-                        </time>
-                        <div className="admin-quota" role="cell" data-label="今日额度">
-                          <label htmlFor={`quota-${item.id}`}>
-                            <span className="sr-only">设置 {displayName(item)} 的每日额度</span>
-                            <Input
-                              id={`quota-${item.id}`}
-                              type="number"
-                              min="0"
-                              max="10000"
-                              value={quotaEdits[item.id] ?? item.quota.total}
-                              disabled={savingId === item.id}
-                              onChange={(event) =>
-                                setQuotaEdits((current) => ({
-                                  ...current,
-                                  [item.id]: Number.parseInt(event.target.value, 10) || 0,
-                                }))
-                              }
-                            />
-                          </label>
-                          <span>
-                            已用 {item.quota.usedToday}，剩余 {item.quota.remainingToday}
-                          </span>
-                          <div aria-hidden="true">
-                            <i
-                              style={{
-                                width: `${item.quota.total > 0 ? Math.min(100, (item.quota.usedToday / item.quota.total) * 100) : 0}%`,
-                              }}
-                            />
+                <div className="admin-table-shell">
+                  {visibleUsers.length ? (
+                    <div className="admin-table" role="table">
+                      <div className="admin-row admin-row--head" role="row">
+                        <span role="columnheader">用户</span>
+                        <span role="columnheader">创建时间</span>
+                        <span role="columnheader">今日额度</span>
+                        <span role="columnheader">操作</span>
+                      </div>
+                      {visibleUsers.map((item) => (
+                        <article className="admin-row" role="row" key={item.id}>
+                          <div className="admin-identity" role="cell" data-label="用户">
+                            <span className="account-avatar" aria-hidden="true">
+                              {displayName(item).slice(0, 1).toUpperCase()}
+                            </span>
+                            <span>
+                              <strong>{displayName(item)}</strong>
+                              <em>{item.isAdmin ? '管理员' : '普通用户'}</em>
+                              <small>{item.email}</small>
+                            </span>
                           </div>
-                        </div>
-                        <div className="admin-actions" role="cell" data-label="操作">
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="compact"
-                            disabled={
-                              savingId !== null ||
-                              !isValidDailyTotal(quotaEdits[item.id] ?? item.quota.total)
-                            }
-                            onClick={() => void saveQuota(item)}
-                          >
-                            <Save aria-hidden="true" />
-                            {savingId === item.id ? '保存中…' : '保存额度'}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="danger"
-                            size="compact"
-                            title={
-                              item.isAdmin || item.id === currentUser?.id
-                                ? '受保护账号不可删除'
-                                : '删除用户'
-                            }
-                            aria-label={`删除用户 ${displayName(item)}`}
-                            disabled={
-                              item.isAdmin || item.id === currentUser?.id || deletingId === item.id
-                            }
-                            onClick={() => setDeleteTarget(item)}
-                          >
-                            <Trash2 aria-hidden="true" />
-                            {deletingId === item.id ? '删除中…' : '删除'}
-                          </Button>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="empty-state admin-table-empty">
-                    <p>没有匹配“{query.trim()}”的账号。</p>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="compact"
-                      onClick={() => setQuery('')}
-                    >
-                      清除搜索
-                    </Button>
-                  </div>
-                )}
-                <footer className="admin-pagination" aria-label="用户列表分页">
-                  <span>
-                    第 {safePage} / {pageCount} 页
-                  </span>
-                  <div>
-                    <IconTooltip label="上一页">
+                          <time role="cell" data-label="创建时间" dateTime={item.createdAt}>
+                            {new Date(item.createdAt).toLocaleString('zh-CN', { hour12: false })}
+                          </time>
+                          <div className="admin-quota" role="cell" data-label="今日额度">
+                            <label htmlFor={`quota-${item.id}`}>
+                              <span className="sr-only">设置 {displayName(item)} 的每日额度</span>
+                              <Input
+                                id={`quota-${item.id}`}
+                                type="number"
+                                min="0"
+                                max="10000"
+                                value={quotaEdits[item.id] ?? item.quota.total}
+                                disabled={savingId === item.id}
+                                onChange={(event) =>
+                                  setQuotaEdits((current) => ({
+                                    ...current,
+                                    [item.id]: Number.parseInt(event.target.value, 10) || 0,
+                                  }))
+                                }
+                              />
+                            </label>
+                            <span>
+                              已用 {item.quota.usedToday}，剩余 {item.quota.remainingToday}
+                            </span>
+                            <div aria-hidden="true">
+                              <i
+                                style={{
+                                  width: `${item.quota.total > 0 ? Math.min(100, (item.quota.usedToday / item.quota.total) * 100) : 0}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <div className="admin-actions" role="cell" data-label="操作">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="compact"
+                              disabled={
+                                savingId !== null ||
+                                !isValidDailyTotal(quotaEdits[item.id] ?? item.quota.total)
+                              }
+                              onClick={() => void saveQuota(item)}
+                            >
+                              <Save aria-hidden="true" />
+                              {savingId === item.id ? '保存中…' : '保存额度'}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="danger"
+                              size="compact"
+                              title={
+                                item.isAdmin || item.id === currentUser?.id
+                                  ? '受保护账号不可删除'
+                                  : '删除用户'
+                              }
+                              aria-label={`删除用户 ${displayName(item)}`}
+                              disabled={
+                                item.isAdmin ||
+                                item.id === currentUser?.id ||
+                                deletingId === item.id
+                              }
+                              onClick={() => setDeleteTarget(item)}
+                            >
+                              <Trash2 aria-hidden="true" />
+                              {deletingId === item.id ? '删除中…' : '删除'}
+                            </Button>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="empty-state admin-table-empty">
+                      <p>没有匹配“{query.trim()}”的账号。</p>
                       <Button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="icon-button"
-                        aria-label="上一页"
-                        disabled={safePage <= 1}
-                        onClick={() => setPage((current) => Math.max(1, current - 1))}
+                        variant="secondary"
+                        size="compact"
+                        onClick={() => setQuery('')}
                       >
-                        <ChevronLeft aria-hidden="true" />
+                        清除搜索
                       </Button>
-                    </IconTooltip>
-                    <IconTooltip label="下一页">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="icon-button"
-                        aria-label="下一页"
-                        disabled={safePage >= pageCount}
-                        onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
-                      >
-                        <ChevronRight aria-hidden="true" />
-                      </Button>
-                    </IconTooltip>
-                  </div>
-                </footer>
-              </div>
+                    </div>
+                  )}
+                  <footer className="admin-pagination" aria-label="用户列表分页">
+                    <span>
+                      第 {safePage} / {pageCount} 页
+                    </span>
+                    <div>
+                      <IconTooltip label="上一页">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="icon-button"
+                          aria-label="上一页"
+                          disabled={safePage <= 1}
+                          onClick={() => setPage((current) => Math.max(1, current - 1))}
+                        >
+                          <ChevronLeft aria-hidden="true" />
+                        </Button>
+                      </IconTooltip>
+                      <IconTooltip label="下一页">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="icon-button"
+                          aria-label="下一页"
+                          disabled={safePage >= pageCount}
+                          onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+                        >
+                          <ChevronRight aria-hidden="true" />
+                        </Button>
+                      </IconTooltip>
+                    </div>
+                  </footer>
+                </div>
+              </>
             )}
           </section>
         </>

@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
+import { OperationalPageHeader } from '@/components/common/OperationalPageHeader';
 import { useToast } from '@/components/common/ToastProvider';
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
 import { ImageGrid } from '@/components/gallery/ImageGrid';
@@ -271,6 +272,11 @@ export function HistoryView() {
 
   return (
     <section className="workspace-page assets-page" data-view="assets" aria-label="个人资产">
+      <OperationalPageHeader
+        id="assets-title"
+        title="资产"
+        meta={`${history.entries.length} 项资产`}
+      />
       {authLoading ? (
         <div className="asset-auth-loading" role="status" aria-label="正在确认登录状态">
           <div className="asset-auth-loading__toolbar" aria-hidden="true">
@@ -300,7 +306,7 @@ export function HistoryView() {
       ) : (
         <>
           <div className="asset-workbench__chrome">
-            <div className="asset-commandbar">
+            <div className="operational-toolbar asset-commandbar">
               <div className="asset-commandbar__primary">
                 <label className="search-field asset-search">
                   <Search aria-hidden="true" />

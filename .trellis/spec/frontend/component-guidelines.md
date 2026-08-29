@@ -205,6 +205,70 @@ const templates = [
 ];
 ```
 
+### Assets Media Geometry
+
+The Assets grid preserves each record's source `width / height` ratio on the outer
+`.image-tile__morph` layout participant. Do not put the ratio only on the nested preview Button:
+the shared Button baseline has square geometry, while the MorphicCard wrapper is the box measured by
+the grid and Motion layout. The preview fills that wrapper and the image uses `object-fit: contain` so
+source media is not cropped. Disable the shared preview hover scale in the Assets route because a
+scaled image inside the clipped media wrapper loses its outer edges.
+
+Assets action rows must also override the older shared `flex: 1` button rule. Keep each icon control
+at `32px × 32px`, use `flex: 0 0 32px`, center a `15px` Lucide icon, and align the group to the end.
+Keep the action row visible when it occupies layout height. For overlay controls wrapped in
+`IconTooltip`, position the complete Tooltip trigger and reset the nested Button to `position: static`;
+positioning only the Button leaves an empty inline trigger in document flow. At `1600px` and wider,
+use five columns so the `1580px` workspace does not produce oversized thumbnails. Regression coverage
+must include square, landscape, and portrait records plus a CSS contract that detects loss of the
+fixed button geometry. On hover-capable devices, keep an unselected multi-select control hidden at
+rest, reveal its Lucide `Square` on card hover or keyboard focus, and keep the selected `Check`
+visible. On coarse-pointer devices, keep the control visible so per-item selection remains usable.
+
+```tsx
+<MorphicCard style={{ aspectRatio: `${record.width} / ${record.height}` }}>
+  <Button className="image-tile__preview">
+    <img src={imageUrl} alt={record.prompt} />
+  </Button>
+</MorphicCard>
+```
+
+```css
+.assets-page .image-tile__preview {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: inherit;
+}
+
+.assets-page .image-tile__preview:hover img {
+  transform: none;
+}
+
+.assets-page .image-tile__select {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.assets-page .image-tile:hover .image-tile__select,
+.assets-page .image-tile:focus-within .image-tile__select,
+.assets-page .image-tile.is-selected .image-tile__select {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.assets-page .image-tile__actions button {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+}
+
+@media (min-width: 1600px) {
+  .assets-page .image-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+```
+
 ### GPT Image 2 Template Manifest
 
 When a prompt gallery is imported into the template route, keep the complete

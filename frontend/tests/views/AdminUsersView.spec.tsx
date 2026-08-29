@@ -4,10 +4,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AdminUser } from '@/types/admin';
 
-const authMocks = vi.hoisted(() => ({
-  user: { id: 'user-0', name: 'Admin', email: 'admin@example.com', isAdmin: true },
-  isAdmin: true,
-  isLoading: false,
+interface MockAuthState {
+  user: { id: string; name: string; email: string; isAdmin: boolean } | null;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
+  isLoading: boolean;
+}
+
+const authMocks = vi.hoisted(
+  (): MockAuthState => ({
+    user: { id: 'user-0', name: 'Admin', email: 'admin@example.com', isAdmin: true },
+    isAuthenticated: true,
+    isAdmin: true,
+    isLoading: false,
+  }),
+);
+
+const authModalMocks = vi.hoisted(() => ({
+  openAuthModal: vi.fn(),
 }));
 
 const adminMocks = vi.hoisted(() => ({
@@ -23,6 +37,8 @@ const adminMocks = vi.hoisted(() => ({
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => authMocks,
 }));
+
+vi.mock('@/hooks/useAuthModal', () => authModalMocks);
 
 vi.mock('@/hooks/useAdminUsers', () => ({
   useAdminUsers: () => adminMocks,
@@ -66,6 +82,7 @@ function deferred<T>() {
 beforeEach(() => {
   vi.clearAllMocks();
   authMocks.user = { id: 'user-0', name: 'Admin', email: 'admin@example.com', isAdmin: true };
+  authMocks.isAuthenticated = true;
   authMocks.isAdmin = true;
   authMocks.isLoading = false;
   adminMocks.users = makeUsers();
@@ -83,6 +100,21 @@ beforeEach(() => {
 });
 
 describe('AdminUsersView workbench', () => {
+  it('uses the shared operational title and keeps filters outside the table surface', () => {
+    renderView();
+
+    const title = screen.getByRole('heading', { level: 1, name: '用户管理' });
+    const header = title.closest('header');
+    const search = screen.getByRole('searchbox', { name: '搜索用户' });
+    const toolbar = search.closest('.admin-table-toolbar');
+    const tableShell = screen.getByRole('table').closest('.admin-table-shell');
+
+    expect(header).toHaveClass('operational-page-header');
+    expect(within(header!).getByText('12 个账号')).toHaveClass('operational-page-header__meta');
+    expect(toolbar).toHaveClass('operational-toolbar');
+    expect(tableShell).not.toContainElement(toolbar as HTMLElement);
+  });
+
   it('keeps the account form secondary and creates a user from the inline workflow', async () => {
     const createRequest = deferred<AdminUser>();
     adminMocks.createUser.mockReturnValueOnce(createRequest.promise);
@@ -189,6 +221,7 @@ describe('AdminUsersView workbench', () => {
   });
 
   it('renders permission and loading states without exposing admin actions', () => {
+    authMocks.isAuthenticated = true;
     authMocks.isAdmin = false;
     authMocks.user = { id: 'user-9', name: 'Member', email: 'member@example.com', isAdmin: false };
     const forbidden = renderView();
@@ -209,6 +242,23 @@ describe('AdminUsersView workbench', () => {
     adminMocks.isLoading = true;
     renderView();
     expect(screen.getByRole('status')).toHaveTextContent('正在载入账号');
+  });
+
+  it('gives signed-out users a login recovery path', async () => {
+    const user = userEvent.setup();
+    authMocks.user = null;
+    authMocks.isAuthenticated = false;
+    authMocks.isAdmin = false;
+    renderView();
+
+    expect(screen.getByRole('heading', { level: 1, name: '用户管理' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '登录后管理用户' })).toBeInTheDocument();
+    expect(screen.queryByText('无权访问')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '创建用户' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '登录' }));
+    expect(authModalMocks.openAuthModal).toHaveBeenCalledOnce();
+    expect(adminMocks.refresh).not.toHaveBeenCalled();
   });
 
   it('keeps a load error authoritative and retryable when no cached users exist', async () => {
