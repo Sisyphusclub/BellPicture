@@ -1064,3 +1064,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 33: 统一首页画廊内容区布局
+
+**Date**: 2026-08-29
+**Task**: 统一首页画廊内容区布局
+**Branch**: `dev`
+
+### Summary
+
+首页画廊复用运营页面的侧边栏轨道、1580px 内容上限与响应式 gutter；新增布局契约测试并完成桌面/390px 浏览器复测。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7886ab9` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
