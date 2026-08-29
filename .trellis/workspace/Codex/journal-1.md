@@ -865,3 +865,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 27: 修复生图页路由返回历史恢复
+
+**Date**: 2026-08-29
+**Task**: 修复生图页路由返回历史恢复
+**Branch**: `dev`
+
+### Summary
+
+按账号和标签页记录最后查看的生成会话，返回裸生图路由时一次性恢复；保护提示词与自动生成入口，并补齐多会话、跨账号、迟到 store 更新及路由往返回归测试。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8724cf6` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

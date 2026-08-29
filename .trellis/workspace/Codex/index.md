@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 26
-- **Last Active**: 2026-08-28
+- **Total Sessions**: 27
+- **Last Active**: 2026-08-29
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~867 | Active |
+| `journal-1.md` | ~900 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 27 | 2026-08-29 | 修复生图页路由返回历史恢复 | `8724cf6` | `dev` |
 | 26 | 2026-08-28 | 统一运营页面左右边距 | `dfe9bfe` | `dev` |
 | 25 | 2026-08-28 | 创作模板动漫内容后置 | `95be763` | `dev` |
 | 24 | 2026-08-28 | 优化生成提示词气泡 | `6143301` | `dev` |
