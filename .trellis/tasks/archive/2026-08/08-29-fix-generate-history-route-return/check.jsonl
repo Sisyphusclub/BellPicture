@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Verify the implementation respects frontend architecture and gates."}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"Review effect ordering, dependencies, and stale state risks."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Review URL and persistent session state behavior."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Verify regression coverage and required checks."}

@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend architecture and required quality gates."}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"Effect dependencies, external-store synchronization, and async state rules."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"URL navigation state and persisted store ownership rules."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Route-level regression testing and completion checks."}
