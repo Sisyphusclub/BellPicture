@@ -1031,3 +1031,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 32: 统一资产顶部按钮背景并稳定悬浮栏
+
+**Date**: 2026-08-29
+**Task**: 统一资产顶部按钮背景并稳定悬浮栏
+**Branch**: `dev`
+
+### Summary
+
+将左上选择和右上收藏按钮统一为半透明语义表面，并把底部操作栏的显隐绑定到整张资产卡片，避免鼠标移到顶部按钮时底栏发生位移或闪动；完成桌面、390px、控制台和全量测试验证。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ed858fb` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
