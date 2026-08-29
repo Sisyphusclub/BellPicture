@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend architecture and required checks"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"beUI component, asset media, accessibility, and responsive contracts"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Testing and visual QA requirements"}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"Reuse existing beUI primitives instead of adding a new toolbar component"}
