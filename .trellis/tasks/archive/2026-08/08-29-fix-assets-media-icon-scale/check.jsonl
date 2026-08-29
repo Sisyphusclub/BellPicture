@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Check media aspect-ratio, icon-button geometry, responsive layout, and accessibility contracts."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Check automated gates and responsive visual QA evidence."}
