@@ -9759,3 +9759,84 @@ video {
     padding-left: 0;
   }
 }
+
+/* Keep operational tables on one quiet surface, following the beUI Data Table
+   hierarchy instead of stacking borders around every toolbar and section. */
+.assets-page .asset-workbench__chrome {
+  border-bottom: 0;
+  padding-bottom: 4px;
+}
+.assets-page .collection-rail {
+  margin-top: 4px;
+  border-top: 0;
+  border-bottom: 0;
+  background: transparent;
+  padding: 6px 0 0;
+}
+.assets-page .asset-selection-slot {
+  min-height: 40px;
+  border-top: 0;
+}
+.assets-page .asset-selection-idle,
+.assets-page .selection-bar {
+  min-height: 40px;
+  padding: 8px 0 0;
+}
+.assets-page .asset-library {
+  margin-top: 0;
+  border-top: 0;
+  padding-top: 20px;
+}
+.assets-page .asset-list {
+  overflow: hidden;
+  border: 1px solid color-mix(in oklch, var(--border-strong) 72%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklch, var(--card) 58%, var(--background));
+}
+.assets-page .asset-list__head {
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklch, var(--muted) 32%, var(--background));
+  padding-inline: 10px;
+}
+.assets-page .asset-list__row {
+  border-top: 0;
+  padding: 10px;
+}
+.assets-page .asset-list__row + .asset-list__row {
+  border-top: 1px solid color-mix(in oklch, var(--border) 58%, transparent);
+}
+.assets-page .asset-list__row:hover {
+  background: color-mix(in oklch, var(--muted) 36%, transparent);
+}
+
+.admin-page .admin-command-header {
+  border-bottom: 0;
+  margin-bottom: 24px;
+  padding-bottom: 0;
+}
+.admin-page .admin-table-shell {
+  border: 1px solid color-mix(in oklch, var(--border-strong) 72%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklch, var(--card) 58%, var(--background));
+}
+.admin-page .admin-table-toolbar {
+  border-bottom: 0;
+  background: transparent;
+  padding: 12px;
+}
+.admin-page .admin-table {
+  border-top: 1px solid var(--border);
+}
+.admin-page .admin-row {
+  border-bottom: 0;
+  padding: 12px;
+}
+.admin-page .admin-row + .admin-row {
+  border-top: 1px solid color-mix(in oklch, var(--border) 58%, transparent);
+}
+.admin-page .admin-row--head {
+  border-bottom: 1px solid var(--border);
+}
+.admin-page .admin-pagination {
+  border-top: 1px solid var(--border);
+}
