@@ -42,6 +42,12 @@ it('exposes preview and deletion actions for an asset', () => {
   expect(
     screen.getByRole('button', { name: '删除图片 one.png' }).closest('.image-tile__actions'),
   ).toBeInTheDocument();
+  const toolbar = screen.getByRole('toolbar', { name: '图片操作' });
+  expect(toolbar).toContainElement(screen.getByRole('button', { name: '删除图片 one.png' }));
+  expect(screen.getByRole('button', { name: '删除图片 one.png' })).toHaveClass(
+    'button--secondary',
+    'button--icon',
+  );
   expect(
     screen.getByRole('button', { name: '删除图片 one.png' }).closest('.image-tile__morph'),
   ).toBeInTheDocument();

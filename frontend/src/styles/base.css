@@ -9334,29 +9334,27 @@ video {
 }
 .assets-page .image-tile__actions {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
-  left: 8px;
+  bottom: 10px;
+  left: 50%;
   z-index: 4;
-  min-height: 40px;
+  width: max-content;
+  max-width: calc(100% - 20px);
+  min-height: 32px;
   justify-content: center;
-  border: 1px solid rgb(255 255 255 / 0.14);
-  border-radius: var(--radius-sm);
-  background: oklch(0.12 0.005 265 / 0.9);
-  padding: 3px;
+  gap: 6px;
+  padding: 0;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(6px);
+  transform: translate(-50%, 6px);
   transition:
     opacity 160ms var(--ease-out-expo),
     transform 160ms var(--ease-out-expo);
-  backdrop-filter: blur(12px);
 }
 .assets-page .image-tile__morph:hover .image-tile__actions,
 .assets-page .image-tile__morph:focus-within .image-tile__actions {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0);
+  transform: translate(-50%, 0);
 }
 .assets-page .image-tile__actions button {
   width: 32px;
@@ -9364,9 +9362,7 @@ video {
   min-width: 32px;
   min-height: 32px;
   flex: 0 0 32px;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
+  box-shadow: var(--shadow-float);
 }
 .assets-page .image-tile__actions svg {
   width: 15px;
@@ -9381,7 +9377,7 @@ video {
   .assets-page .image-tile__actions {
     opacity: 1;
     pointer-events: auto;
-    transform: none;
+    transform: translateX(-50%);
   }
 }
 .assets-page .asset-list {

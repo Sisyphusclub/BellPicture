@@ -214,14 +214,20 @@ the grid and Motion layout. The preview fills that wrapper and the image uses `o
 source media is not cropped. Disable the shared preview hover scale in the Assets route because a
 scaled image inside the clipped media wrapper loses its outer edges.
 
-Assets action rows must also override the older shared `flex: 1` button rule. Keep each icon control
-at `32px × 32px`, use `flex: 0 0 32px`, center a `15px` Lucide icon, and align the group to the end.
-Keep the action row visible when it occupies layout height. For overlay controls wrapped in
-`IconTooltip`, position the complete Tooltip trigger and reset the nested Button to `position: static`;
-positioning only the Button leaves an empty inline trigger in document flow. At `1600px` and wider,
-use five columns so the `1580px` workspace does not produce oversized thumbnails. Regression coverage
-must include square, landscape, and portrait records plus a CSS contract that detects loss of the
-fixed button geometry. On hover-capable devices, keep an unselected multi-select control hidden at
+Assets overlay actions live inside `.image-tile__morph` as a labelled `role="toolbar"`. Compose the
+shared beUI `Button` with `variant="secondary"` and `size="icon"`, wrapped by `IconTooltip`; do not
+strip the button surface and replace it with a page-local toolbar slab. The toolbar container is
+visual-neutral: it owns only bottom-center positioning, spacing, pointer state, and opacity/transform
+reveal. Keep each icon control at `32px × 32px`, use `flex: 0 0 32px`, and center a `15px` Lucide icon.
+Reveal the toolbar on media hover or `focus-within`, and keep it visible and interactive for coarse
+pointers. This preserves beUI hover/focus styling while generated media remains the dominant surface.
+
+For overlay controls wrapped in `IconTooltip`, position the complete Tooltip trigger when it needs an
+independent anchor; positioning only the nested Button leaves an empty inline trigger in document
+flow. At `1600px` and wider, use five columns so the `1580px` workspace does not produce oversized
+thumbnails. Regression coverage must include square, landscape, and portrait records, toolbar
+semantics and beUI button variants, plus a CSS contract that rejects a background, border, or blur on
+the toolbar container. On hover-capable devices, keep an unselected multi-select control hidden at
 rest, reveal its Lucide `Square` on card hover or keyboard focus, and keep the selected `Check`
 visible. On coarse-pointer devices, keep the control visible so per-item selection remains usable.
 
@@ -260,6 +266,22 @@ visible. On coarse-pointer devices, keep the control visible so per-item selecti
   width: 32px;
   height: 32px;
   flex: 0 0 32px;
+}
+
+/* Wrong: a route-owned slab hides the beUI control language. */
+.assets-page .image-tile__actions {
+  background: rgb(0 0 0 / 90%);
+  backdrop-filter: blur(12px);
+}
+
+/* Correct: the container positions shared beUI secondary icon buttons only. */
+.assets-page .image-tile__actions {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  width: max-content;
+  gap: 6px;
+  transform: translateX(-50%);
 }
 
 @media (min-width: 1600px) {

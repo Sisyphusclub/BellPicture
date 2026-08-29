@@ -70,12 +70,12 @@ export function ImageGrid({
               >
                 <img src={entry.imageUrl} alt={entry.record.prompt || '生成图片'} loading="lazy" />
               </Button>
-              <div className="image-tile__actions">
+              <div className="image-tile__actions" role="toolbar" aria-label="图片操作">
                 {onCopyPrompt ? (
                   <IconTooltip label="复制提示词">
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="secondary"
                       size="icon"
                       aria-label="复制提示词"
                       onClick={() => onCopyPrompt(entry)}
@@ -88,7 +88,7 @@ export function ImageGrid({
                   <IconTooltip label="复用设置">
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="secondary"
                       size="icon"
                       aria-label="复用设置"
                       onClick={() => onReuse(entry)}
@@ -101,7 +101,7 @@ export function ImageGrid({
                   <IconTooltip label="下载图片">
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="secondary"
                       size="icon"
                       aria-label="下载图片"
                       onClick={() => onDownload(entry)}
@@ -114,7 +114,7 @@ export function ImageGrid({
                   <IconTooltip label={entry.record.isPublic ? '设为私有' : '设为公开'}>
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="secondary"
                       size="icon"
                       aria-label={entry.record.isPublic ? '设为私有' : '设为公开'}
                       onClick={() => onToggleVisibility(entry)}
@@ -131,7 +131,7 @@ export function ImageGrid({
                   <IconTooltip label="删除图片">
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="secondary"
                       size="icon"
                       aria-label={`删除图片 ${entry.record.id}`}
                       onClick={() => onRemove(entry)}
