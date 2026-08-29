@@ -998,3 +998,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 31: 调整资产操作按钮透明度与右对齐
+
+**Date**: 2026-08-29
+**Task**: 调整资产操作按钮透明度与右对齐
+**Branch**: `dev`
+
+### Summary
+
+将资产悬浮操作按钮背景改为 78% 半透明语义表面，并把工具栏固定到图片右下角 10px；保留图标完整不透明度、beUI hover、键盘和触屏行为，完成桌面与 390px 验证。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e470f1d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
