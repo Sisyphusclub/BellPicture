@@ -9292,6 +9292,11 @@ video {
   min-width: 32px;
   min-height: 32px;
   flex: 0 0 32px;
+  background: color-mix(in oklch, var(--card) 78%, transparent);
+}
+.assets-page .image-tile__select:hover,
+.assets-page .image-tile__favorite:hover {
+  background: color-mix(in oklch, var(--surface-hover) 88%, transparent);
 }
 .assets-page .image-tile__select {
   top: 8px;
@@ -9350,8 +9355,8 @@ video {
     opacity 160ms var(--ease-out-expo),
     transform 160ms var(--ease-out-expo);
 }
-.assets-page .image-tile__morph:hover .image-tile__actions,
-.assets-page .image-tile__morph:focus-within .image-tile__actions {
+.assets-page .image-tile:hover .image-tile__actions,
+.assets-page .image-tile:focus-within .image-tile__actions {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);

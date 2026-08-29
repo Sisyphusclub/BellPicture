@@ -18,6 +18,13 @@ describe('assets media layout contract', () => {
     expect(assetsContract).toContain('transform: none;');
     expect(assetsContract).toContain('.assets-page .image-tile__favorite-trigger {');
     expect(assetsContract).toContain('min-height: 32px;');
+    expect(assetsContract).toContain('.assets-page .image-tile:hover .image-tile__actions,');
+    expect(assetsContract).toContain(
+      '.assets-page .image-tile:focus-within .image-tile__actions {',
+    );
+    expect(assetsContract).not.toContain(
+      '.assets-page .image-tile__morph:hover .image-tile__actions,',
+    );
     expect(assetsContract).toContain('.assets-page .image-tile:hover .image-tile__select,');
     expect(assetsContract).toContain('.assets-page .image-tile.is-selected .image-tile__select {');
     expect(assetsContract).toContain('opacity: 0;');
@@ -38,6 +45,16 @@ describe('assets media layout contract', () => {
     expect(actionsRule).not.toContain('background:');
     expect(actionsRule).not.toContain('border:');
     expect(actionsRule).not.toContain('backdrop-filter:');
+
+    const topActionsStart = assetsContract.indexOf(
+      '.assets-page .image-tile__select,\n.assets-page .image-tile__favorite {',
+    );
+    const topActionsEnd = assetsContract.indexOf('}', topActionsStart) + 1;
+    const topActionsRule = assetsContract.slice(topActionsStart, topActionsEnd);
+    expect(topActionsRule).toContain(
+      'background: color-mix(in oklch, var(--card) 78%, transparent);',
+    );
+    expect(topActionsRule).not.toContain('opacity:');
 
     const actionButtonStart = assetsContract.indexOf('.assets-page .image-tile__actions button {');
     const actionButtonEnd = assetsContract.indexOf('}', actionButtonStart) + 1;

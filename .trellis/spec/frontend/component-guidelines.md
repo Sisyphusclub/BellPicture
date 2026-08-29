@@ -219,8 +219,17 @@ shared beUI `Button` with `variant="secondary"` and `size="icon"`, wrapped by `I
 strip the button surface and replace it with a page-local toolbar slab. The toolbar container is
 visual-neutral: it owns only bottom-right positioning, spacing, pointer state, and opacity/transform
 reveal. Keep each icon control at `32px × 32px`, use `flex: 0 0 32px`, and center a `15px` Lucide icon.
-Reveal the toolbar on media hover or `focus-within`, and keep it visible and interactive for coarse
-pointers. This preserves beUI hover/focus styling while generated media remains the dominant surface.
+Reveal the toolbar from the complete `.image-tile` hover or `focus-within` state, not only from the
+nested media wrapper. The selection and favorite controls sit outside `.image-tile__morph`; binding
+the complete state to that wrapper makes the toolbar translate or lose pointer events when the cursor
+moves to a top control. Keep the toolbar visible and interactive for coarse pointers. This preserves
+beUI hover/focus styling while generated media remains the dominant surface.
+
+The top selection and favorite controls use the same translucent semantic surface as the bottom
+secondary actions: mix `var(--card)` at `78%` for rest and `var(--surface-hover)` at `88%` for hover.
+Apply transparency to `background`, never to the complete button, so icons and focus treatment remain
+fully opaque. The selected checkbox state remains authoritative and may replace this surface with
+`var(--primary)`.
 
 For overlay controls wrapped in `IconTooltip`, position the complete Tooltip trigger when it needs an
 independent anchor; positioning only the nested Button leaves an empty inline trigger in document
@@ -285,6 +294,18 @@ visible. On coarse-pointer devices, keep the control visible so per-item selecti
 
 .assets-page .image-tile__actions button {
   background: color-mix(in oklch, var(--card) 78%, transparent);
+}
+
+.assets-page .image-tile__select,
+.assets-page .image-tile__favorite {
+  background: color-mix(in oklch, var(--card) 78%, transparent);
+}
+
+.assets-page .image-tile:hover .image-tile__actions,
+.assets-page .image-tile:focus-within .image-tile__actions {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 @media (min-width: 1600px) {
