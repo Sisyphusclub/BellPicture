@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 29
+- **Total Sessions**: 30
 - **Last Active**: 2026-08-29
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~967 | Active |
+| `journal-1.md` | ~1000 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 30 | 2026-08-29 | 优化资产图片悬浮操作栏 | `227eabe` | `dev` |
 | 29 | 2026-08-29 | 统一运营页面布局与标题 | `15d18f6`, `fab2964` | `dev` |
 | 28 | 2026-08-29 | 修复生图页路由返回历史恢复 | `8724cf6` | `dev` |
 | 27 | 2026-08-29 | 精简资产与用户数据表格边界 | `1bf151c` | `dev` |

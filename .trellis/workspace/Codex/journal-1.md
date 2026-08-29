@@ -965,3 +965,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 30: 优化资产图片悬浮操作栏
+
+**Date**: 2026-08-29
+**Task**: 优化资产图片悬浮操作栏
+**Branch**: `dev`
+
+### Summary
+
+移除资产图片上的自定义整条黑色操作栏，恢复 beUI secondary 图标按钮与 MorphicTooltip，补充 toolbar 语义、响应式和回归测试，并完成桌面、键盘和 390px 浏览器验证。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `227eabe` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
