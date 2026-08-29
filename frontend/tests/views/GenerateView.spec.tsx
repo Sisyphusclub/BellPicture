@@ -93,6 +93,7 @@ vi.mock('@/hooks/useImageHistory', () => ({
 vi.mock('@/hooks/usePublicGallery', () => publicGalleryMocks);
 
 import { ToastProvider } from '@/components/common/ToastProvider';
+import { resetGenerationSessionsForTests } from '@/hooks/useGenerationSessions';
 import { GenerateView } from '@/views/GenerateView';
 
 function deferred<T>() {
@@ -107,6 +108,7 @@ function deferred<T>() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  resetGenerationSessionsForTests();
   authMocks.isAuthenticated = true;
   authMocks.isLoading = false;
   authMocks.isAdmin = true;

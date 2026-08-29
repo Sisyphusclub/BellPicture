@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const generation = vi.hoisted(() => ({
@@ -16,6 +16,10 @@ const quotaMocks = vi.hoisted(() => ({
     dailyCheckInReward: 5,
     claimed: true,
   }),
+}));
+
+const historyMocks = vi.hoisted(() => ({
+  batches: [] as unknown[],
 }));
 
 vi.mock('@/hooks/useAuth', () => ({
@@ -56,7 +60,7 @@ vi.mock('@/hooks/useImageHistory', () => ({
   useImageHistory: () => ({
     records: [],
     entries: [],
-    batches: [],
+    batches: historyMocks.batches,
     isHydrating: false,
     hydrateError: null,
     refresh: vi.fn(),
@@ -96,11 +100,67 @@ vi.mock('@/hooks/useAdminUsers', () => ({
 
 import { App } from '@/App';
 import { ToastProvider } from '@/components/common/ToastProvider';
-import { resetGenerationSessionsForTests } from '@/hooks/useGenerationSessions';
+import {
+  attachGenerationBatch,
+  createGenerationSession,
+  rememberGenerationSession,
+  resetGenerationSessionsForTests,
+} from '@/hooks/useGenerationSessions';
 
-function renderRoute(path: string) {
+type TestRouteEntry =
+  | string
+  | { pathname: string; search?: string; state?: Record<string, unknown> | null };
+
+function LocationProbe() {
+  const location = useLocation();
+  return (
+    <output aria-label="当前路由" data-has-state={location.state === null ? 'false' : 'true'}>
+      {`${location.pathname}${location.search}`}
+    </output>
+  );
+}
+
+function mockHistoryBatch(batchId: string, prompt: string) {
+  return {
+    batchId,
+    createdAt: '2026-08-29T08:00:00.000Z',
+    prompt,
+    model: 'gpt-image-2',
+    entries: [
+      {
+        record: {
+          id: `${batchId}.png`,
+          batchId,
+          createdAt: '2026-08-29T08:00:00.000Z',
+          prompt,
+          model: 'gpt-image-2',
+          aspectRatio: '16:9',
+          width: 1792,
+          height: 1024,
+          count: 1,
+          resolution: 'standard',
+          isPublic: false,
+          isFavorite: false,
+        },
+        imageUrl: `/${batchId}.png`,
+      },
+    ],
+    settings: {
+      prompt,
+      model: 'gpt-image-2',
+      count: 1,
+      aspectRatio: '16:9',
+      resolution: 'standard',
+      isPublic: false,
+      referenceIds: [],
+    },
+  };
+}
+
+function renderRoute(entry: TestRouteEntry) {
   return render(
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter initialEntries={[entry]}>
+      <LocationProbe />
       <ToastProvider>
         <App />
       </ToastProvider>
@@ -111,6 +171,7 @@ function renderRoute(path: string) {
 beforeEach(() => {
   vi.clearAllMocks();
   resetGenerationSessionsForTests();
+  historyMocks.batches = [];
   generation.generate.mockResolvedValue({
     batchId: 'landing-batch',
     aspectRatio: '16:9',
@@ -506,6 +567,120 @@ describe('React application routes', () => {
     await user.click(screen.getByRole('button', { name: '生成图片' }));
     expect(await screen.findByRole('button', { name: '查看图片：蓝色玻璃森林' })).toBeVisible();
     expect(screen.getByRole('button', { name: '查看图片：橙色机械城市' })).toBeVisible();
+  });
+
+  it('restores the last viewed generation session after navigating away and back', async () => {
+    const session = createGenerationSession('雾中的未来车站');
+    attachGenerationBatch(session.id, 'route-return-batch', '雾中的未来车站');
+    createGenerationSession('另一个更晚创建的会话');
+    historyMocks.batches = [mockHistoryBatch('route-return-batch', '雾中的未来车站')];
+    const user = userEvent.setup();
+    renderRoute(`/generate?session=${session.id}`);
+
+    expect(await screen.findByRole('button', { name: '查看图片：雾中的未来车站' })).toBeVisible();
+
+    await user.click(
+      within(screen.getByRole('navigation', { name: '首页导航' })).getByRole('link', {
+        name: '创作模板',
+      }),
+    );
+    expect(await screen.findByRole('region', { name: '创作模板' })).toBeVisible();
+
+    await user.click(
+      within(screen.getByRole('navigation', { name: '首页导航' })).getByRole('link', {
+        name: '生图',
+      }),
+    );
+
+    expect(await screen.findByRole('button', { name: '查看图片：雾中的未来车站' })).toBeVisible();
+    expect(screen.getByLabelText('当前路由')).toHaveTextContent(`/generate?session=${session.id}`);
+  });
+
+  it('does not replace a prompt handoff with a remembered session', () => {
+    const session = createGenerationSession('旧会话');
+    attachGenerationBatch(session.id, 'old-batch', '旧会话');
+    rememberGenerationSession('admin', session.id);
+    historyMocks.batches = [mockHistoryBatch('old-batch', '旧会话')];
+
+    renderRoute('/generate?prompt=%E6%96%B0%E7%9A%84%E5%88%9B%E4%BD%9C');
+
+    expect(screen.getByLabelText('当前路由')).toHaveTextContent(
+      '/generate?prompt=%E6%96%B0%E7%9A%84%E5%88%9B%E4%BD%9C',
+    );
+    expect(screen.getByRole('textbox', { name: '图像提示词' })).toHaveTextContent('新的创作');
+    expect(screen.queryByRole('button', { name: '查看图片：旧会话' })).not.toBeInTheDocument();
+  });
+
+  it('starts a real automatic generation entry instead of restoring a remembered session', async () => {
+    const session = createGenerationSession('旧会话');
+    attachGenerationBatch(session.id, 'old-batch', '旧会话');
+    rememberGenerationSession('admin', session.id);
+    historyMocks.batches = [mockHistoryBatch('old-batch', '旧会话')];
+
+    renderRoute({
+      pathname: '/generate',
+      search:
+        '?prompt=%E8%87%AA%E5%8A%A8%E7%94%9F%E6%88%90%E7%9A%84%E6%96%B0%E7%94%BB%E9%9D%A2&aspect=16%3A9&count=1&isPublic=false',
+      state: { autoGenerate: true },
+    });
+
+    await waitFor(() => expect(generation.generate).toHaveBeenCalledTimes(1));
+    expect(generation.generate).toHaveBeenCalledWith(
+      expect.objectContaining({ prompt: '自动生成的新画面' }),
+    );
+    await waitFor(() =>
+      expect(screen.getByLabelText('当前路由').textContent).toMatch(/^\/generate\?session=/),
+    );
+    expect(screen.getByLabelText('当前路由')).not.toHaveTextContent(session.id);
+    expect(screen.queryByRole('button', { name: '查看图片：旧会话' })).not.toBeInTheDocument();
+  });
+
+  it('does not restore a remembered session for a state-only automatic entry', async () => {
+    const session = createGenerationSession('旧会话');
+    attachGenerationBatch(session.id, 'old-batch', '旧会话');
+    rememberGenerationSession('admin', session.id);
+    historyMocks.batches = [mockHistoryBatch('old-batch', '旧会话')];
+
+    renderRoute({ pathname: '/generate', state: { autoGenerate: true } });
+
+    await waitFor(() =>
+      expect(screen.getByLabelText('当前路由')).toHaveAttribute('data-has-state', 'false'),
+    );
+    expect(screen.getByLabelText('当前路由')).toHaveTextContent(/^\/generate$/);
+    expect(generation.generate).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: '查看图片：旧会话' })).not.toBeInTheDocument();
+  });
+
+  it('does not restore after the bare route has already been initialized', async () => {
+    historyMocks.batches = [mockHistoryBatch('late-batch', '另一标签页的会话')];
+    renderRoute('/generate');
+
+    act(() => {
+      const session = createGenerationSession('另一标签页的会话');
+      attachGenerationBatch(session.id, 'late-batch', '另一标签页的会话');
+      rememberGenerationSession('admin', session.id);
+    });
+
+    await waitFor(() =>
+      expect(screen.getByLabelText('当前路由')).toHaveTextContent(/^\/generate$/),
+    );
+    expect(
+      screen.queryByRole('button', { name: '查看图片：另一标签页的会话' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('does not restore a session remembered by another account', () => {
+    const session = createGenerationSession('账号 A 的会话');
+    attachGenerationBatch(session.id, 'account-a-batch', '账号 A 的会话');
+    rememberGenerationSession('account-a', session.id);
+    historyMocks.batches = [mockHistoryBatch('account-a-batch', '账号 A 的会话')];
+
+    renderRoute('/generate');
+
+    expect(screen.getByLabelText('当前路由')).toHaveTextContent(/^\/generate$/);
+    expect(
+      screen.queryByRole('button', { name: '查看图片：账号 A 的会话' }),
+    ).not.toBeInTheDocument();
   });
 
   it('keeps session management hidden while preserving the generation workspace', () => {

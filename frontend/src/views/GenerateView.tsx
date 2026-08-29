@@ -41,6 +41,9 @@ import { getAppNavigation } from '@/config/navigation';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import {
   attachGenerationBatch,
+  forgetRememberedGenerationSession,
+  getRememberedGenerationSession,
+  rememberGenerationSession,
   replaceGenerationBatch,
   useGenerationSessions,
 } from '@/hooks/useGenerationSessions';
@@ -408,6 +411,7 @@ export function GenerateView() {
   const { clear: clearUpload, selectFiles: selectUploadFiles } = upload;
   const generation = useImageGeneration();
   const autoGenerationHandled = useRef(false);
+  const bareRouteRestoreHandled = useRef(false);
   const [prompt, setPrompt] = useState(searchParams.get('prompt') ?? '');
   const [count, setCount] = useState(() => readCount(searchParams));
   const [aspect, setAspect] = useState<AspectRatio>(() => {
@@ -441,6 +445,16 @@ export function GenerateView() {
   useLayoutEffect(() => {
     currentUserIdRef.current = currentUserId;
   }, [currentUserId]);
+
+  useEffect(() => {
+    if (authLoading || currentUserId === null || !activeSessionId) return;
+    const session = sessions.find((candidate) => candidate.id === activeSessionId);
+    if (!session) return;
+    const historyBatchIds = new Set(history.batches.map((batch) => batch.batchId));
+    if (session.batchIds.some((batchId) => historyBatchIds.has(batchId))) {
+      rememberGenerationSession(currentUserId, activeSessionId);
+    }
+  }, [activeSessionId, authLoading, currentUserId, history.batches, sessions]);
 
   useEffect(() => {
     if (!activeSessionId || previousSessionId.current === activeSessionId) return;
@@ -636,6 +650,9 @@ export function GenerateView() {
       });
       void navigate(`/generate?${nextSearch.toString()}`, { replace: true });
     }
+    if (generationUserId !== null) {
+      rememberGenerationSession(generationUserId, generationSessionId);
+    }
     const generationSessionBatchIds = generationSession?.batchIds ?? [];
     const pendingId = `pending-${crypto.randomUUID()}`;
     const pendingItem: FeedItem = {
@@ -795,6 +812,36 @@ export function GenerateView() {
     location.state,
     navigate,
     selectUploadFiles,
+  ]);
+
+  useEffect(() => {
+    if (authLoading || bareRouteRestoreHandled.current) return;
+    bareRouteRestoreHandled.current = true;
+    if (
+      activeSessionId ||
+      searchParams.toString() !== '' ||
+      requestsAutoGeneration(location.state) ||
+      currentUserId === null
+    ) {
+      return;
+    }
+
+    const rememberedSessionId = getRememberedGenerationSession(currentUserId);
+    if (!rememberedSessionId) return;
+    if (!sessions.some((session) => session.id === rememberedSessionId)) {
+      forgetRememberedGenerationSession(currentUserId);
+      return;
+    }
+    const nextSearch = new URLSearchParams({ session: rememberedSessionId });
+    void navigate(`/generate?${nextSearch.toString()}`, { replace: true });
+  }, [
+    activeSessionId,
+    authLoading,
+    currentUserId,
+    location.state,
+    navigate,
+    searchParams,
+    sessions,
   ]);
 
   const handleAttachments = (next: AgentChatAttachment[]): void => {

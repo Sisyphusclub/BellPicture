@@ -3,6 +3,7 @@ import { useCallback, useSyncExternalStore } from 'react';
 import { createExternalStore } from '@/lib/externalStore';
 
 const STORAGE_KEY = 'nebulens-generation-sessions-v1';
+const ACTIVE_SESSION_STORAGE_KEY = 'nebulens-active-generation-session-by-user-v1';
 const DEFAULT_SESSION_TITLE = '未命名会话';
 
 export interface GenerationSession {
@@ -49,6 +50,52 @@ function persist(sessions: GenerationSession[]): void {
   } catch {
     // Persistence is best-effort; the session still works for the current tab.
   }
+}
+
+function readActiveSessionsByUser(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const parsed: unknown = JSON.parse(
+      window.sessionStorage.getItem(ACTIVE_SESSION_STORAGE_KEY) ?? '{}',
+    );
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return {};
+    return Object.fromEntries(
+      Object.entries(parsed).filter(
+        ([userId, sessionId]) => userId.length > 0 && typeof sessionId === 'string',
+      ),
+    );
+  } catch {
+    return {};
+  }
+}
+
+function persistActiveSessionsByUser(activeSessions: Record<string, string>): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, JSON.stringify(activeSessions));
+  } catch {
+    // Route continuity is best-effort and must not block generation.
+  }
+}
+
+export function getRememberedGenerationSession(userId: string): string | null {
+  const sessionId = readActiveSessionsByUser()[userId];
+  return typeof sessionId === 'string' ? sessionId : null;
+}
+
+export function rememberGenerationSession(userId: string, generationSessionId: string): void {
+  if (!userId || !generationSessionId) return;
+  persistActiveSessionsByUser({
+    ...readActiveSessionsByUser(),
+    [userId]: generationSessionId,
+  });
+}
+
+export function forgetRememberedGenerationSession(userId: string): void {
+  const activeSessions = readActiveSessionsByUser();
+  if (!Object.prototype.hasOwnProperty.call(activeSessions, userId)) return;
+  delete activeSessions[userId];
+  persistActiveSessionsByUser(activeSessions);
 }
 
 function setSessions(next: SessionState | ((current: SessionState) => SessionState)): void {
@@ -147,6 +194,9 @@ export function useGenerationSessions() {
 
 export function resetGenerationSessionsForTests(): void {
   setSessions({ sessions: [] });
+  if (typeof window !== 'undefined') {
+    window.sessionStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
+  }
 }
 
 if (typeof window !== 'undefined') {
