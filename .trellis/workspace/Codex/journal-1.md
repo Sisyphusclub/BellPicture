@@ -898,3 +898,37 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 28: 统一运营页面布局与标题
+
+**Date**: 2026-08-29
+**Task**: 统一运营页面布局与标题
+**Branch**: `dev`
+
+### Summary
+
+统一创作模板、资产和用户管理页面的 1580px 工作区、共享标题与工具栏规范；修复资产媒体比例、图标几何、默认选择框和跨页面响应式一致性，并完成 104 项前端测试、类型检查、Lint、构建及浏览器盒模型验证。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `15d18f6` | (see git log) |
+| `fab2964` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
