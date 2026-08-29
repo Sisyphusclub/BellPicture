@@ -867,7 +867,40 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 - None - task complete
 
 
-## Session 27: 修复生图页路由返回历史恢复
+## Session 27: 精简资产与用户数据表格边界
+
+**Date**: 2026-08-29
+**Task**: 精简资产与用户数据表格边界
+**Branch**: `dev`
+
+### Summary
+
+参考 beUI Data Table，移除资产筛选/选择区域与用户管理页头的重复横线；资产列表和用户列表统一为单一圆角表面、低对比分隔和 hover 层次。完成 390px 移动端与桌面浏览器检查，回归测试和构建通过。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1bf151c` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 28: 修复生图页路由返回历史恢复
 
 **Date**: 2026-08-29
 **Task**: 修复生图页路由返回历史恢复
@@ -900,7 +933,7 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 - None - task complete
 
 
-## Session 28: 统一运营页面布局与标题
+## Session 29: 统一运营页面布局与标题
 
 **Date**: 2026-08-29
 **Task**: 统一运营页面布局与标题
