@@ -1361,3 +1361,37 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 42: 改为永久额度并增加签到有效期
+
+**Date**: 2026-09-01
+**Task**: 改为永久额度并增加签到有效期
+**Branch**: `dev`
+
+### Summary
+
+将管理员额度改为永久额度，新增七天有效签到批次与双池事务预留/释放，更新管理员 API、前端文案、迁移和回归测试。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b133483` | (see git log) |
+| `77e060a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
