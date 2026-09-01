@@ -269,7 +269,13 @@ export function setUserPermanentQuota(userId: string, permanentTotal: number): A
     .get();
   const today = productDateKey();
   const usedToday = existingQuota?.quotaDate === today ? existingQuota.usedToday : 0;
-  const permanentUsed = Math.max(0, existingQuota?.permanentUsed ?? 0, usedToday);
+  const legacyUsageFallback =
+    existingQuota?.permanentUsed === null ||
+    existingQuota?.permanentUsed === undefined ||
+    (existingQuota.permanentUsed === 0 && usedToday > 0 && existingQuota.checkInDate === null);
+  const permanentUsed = legacyUsageFallback
+    ? Math.max(0, usedToday)
+    : Math.max(0, existingQuota?.permanentUsed ?? 0);
 
   db.insert(userQuota)
     .values({
