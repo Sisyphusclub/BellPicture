@@ -1097,3 +1097,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 34: 增强首页默认输入框辨识度
+
+**Date**: 2026-09-01
+**Task**: 增强首页默认输入框辨识度
+**Branch**: `dev`
+
+### Summary
+
+首页 Hero 输入框默认态改为单一外层石墨材质与语义描边，清除内层重复背景；聚焦时 BorderGlow 单独接管边界，并完成桌面与 390px 浏览器验证。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2738567` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
