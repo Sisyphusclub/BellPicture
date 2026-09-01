@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend completion commands and architectural checks."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Verify the outer composer remains the only painted surface."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Desktop/mobile, overflow, console, and test verification."}
+{"file":".trellis/spec/guides/index.md","reason":"Check token reuse and avoid duplicated visual patterns."}

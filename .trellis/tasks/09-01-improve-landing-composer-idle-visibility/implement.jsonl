@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend package conventions and required pre-development checks."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Discover Agent Chat Input and BorderGlow ownership contract."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Responsive visual QA and regression coverage requirements."}
+{"file":".trellis/spec/guides/index.md","reason":"Shared-token and consistency thinking checklist."}

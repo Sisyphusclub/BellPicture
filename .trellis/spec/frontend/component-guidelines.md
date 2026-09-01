@@ -128,7 +128,10 @@ prompt, and pending Edit is disabled without changing bubble child count.
   The shared `::before` is likewise a hollow structural ring, implemented as `border-box` minus
   `padding-box`; it must never include a solid `--card-bg` padding layer. Otherwise its focus opacity
   paints another full rectangle through the root's translucent surface even when all DOM children
-  are transparent.
+  are transparent. In the Discover hero idle state, the BorderGlow root owns one semantic static
+  border and the complete graphite fill while `.border-glow-inner` and `.agent-chat-input__surface`
+  remain transparent. Set that static border to transparent on `:focus-within` so the shared
+  `::before` gradient becomes the only visible focused boundary instead of producing a double ring.
   Route CSS may change the composer's surface material, but must not replace the shared ring algorithm
   or disable one of the shared glow layers. Browser QA must compare the computed gradient palette,
   hollow `::before` ring mask, edge-light direction mask and outer shadows, opacity, and root radius at

@@ -8803,13 +8803,16 @@ video {
 /* The hero and dock share the same beUI Agent Chat Input surface. The anchor
    and Motion boundaries remain visual-neutral positioning layers. */
 .landing-composer-anchor:not(.is-docked) .landing-composer {
-  --card-bg: color-mix(in oklch, var(--card) 76%, transparent) !important;
-  background: color-mix(in oklch, var(--card) 76%, transparent) !important;
-  box-shadow: 0 20px 54px -36px rgb(0 0 0 / 0.9);
+  --card-bg: color-mix(in oklch, var(--card) 88%, transparent) !important;
+  border-color: color-mix(in oklch, var(--border-strong) 82%, var(--border));
+  background: color-mix(in oklch, var(--card) 88%, transparent) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(236 248 255 / 0.08),
+    0 24px 60px -34px rgb(0 0 0 / 0.94);
 }
 .landing-composer-anchor:not(.is-docked) .landing-composer > .border-glow-inner,
 .landing-composer-anchor:not(.is-docked) .landing-composer .agent-chat-input__surface {
-  background: color-mix(in oklch, var(--card) 64%, transparent) !important;
+  background: transparent !important;
 }
 .landing-composer-anchor:not(.is-docked) .landing-composer .agent-chat-input__submit {
   min-width: 68px;
