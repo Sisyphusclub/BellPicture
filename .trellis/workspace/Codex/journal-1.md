@@ -1229,3 +1229,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 38: 移除签到成功重复提示
+
+**Date**: 2026-09-01
+**Task**: 移除签到成功重复提示
+**Branch**: `dev`
+
+### Summary
+
+移除桌面签到弹层与移动侧边栏的成功 Toast，仅保留签到卡片的已领取状态和失败错误提示，新增双端回归测试并完成全量测试、构建和规范更新。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `95d456a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
