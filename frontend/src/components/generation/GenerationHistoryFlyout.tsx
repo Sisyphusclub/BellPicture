@@ -1,4 +1,4 @@
-import { ChevronRight, Search, Sparkles, X } from 'lucide-react';
+import { ChevronRight, CircleAlert, Search, Sparkles, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -440,6 +440,8 @@ export function GenerationHistoryFlyout({
                         <span className="generation-history-item__thumb" aria-hidden="true">
                           {thumbnail ? (
                             <img src={thumbnail.imageUrl} alt="" loading="lazy" />
+                          ) : batch.error ? (
+                            <CircleAlert />
                           ) : (
                             <Sparkles />
                           )}
@@ -447,7 +449,8 @@ export function GenerationHistoryFlyout({
                         <span className="generation-history-item__content">
                           <strong>{batch.prompt.trim() || '未命名任务'}</strong>
                           <small>
-                            {formatClockTime(batch.createdAt)} · {batch.model}
+                            {batch.error ? '生成失败' : batch.model} ·{' '}
+                            {formatClockTime(batch.createdAt)}
                           </small>
                           <small>
                             {ASPECT_RATIO_LABELS[aspectRatio]} · {batch.settings.count} 张

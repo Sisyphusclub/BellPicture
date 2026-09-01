@@ -1,6 +1,13 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
 import { createExternalStore } from '@/lib/externalStore';
+import {
+  ASPECT_RATIOS,
+  IMAGE_RESOLUTIONS,
+  MAX_COUNT,
+  MIN_COUNT,
+  type GenerationSettingsSnapshot,
+} from '@/types/image';
 
 const STORAGE_KEY = 'nebulens-generation-sessions-v1';
 const ACTIVE_SESSION_STORAGE_KEY = 'nebulens-active-generation-session-by-user-v1';
@@ -12,30 +19,106 @@ export interface GenerationSession {
   createdAt: string;
   updatedAt: string;
   batchIds: string[];
+  transientTasks: PersistedGenerationTask[];
+}
+
+export interface PersistedGenerationTask {
+  id: string;
+  createdAt: string;
+  settings: GenerationSettingsSnapshot;
+  error?: string;
 }
 
 interface SessionState {
   sessions: GenerationSession[];
 }
 
-function isSession(value: unknown): value is GenerationSession {
-  if (typeof value !== 'object' || value === null) return false;
+function parseGenerationSettings(value: unknown): GenerationSettingsSnapshot | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const candidate = value as Partial<GenerationSettingsSnapshot>;
+  const aspectRatio = ASPECT_RATIOS.find((value) => value === candidate.aspectRatio);
+  const resolution = IMAGE_RESOLUTIONS.find((value) => value === candidate.resolution);
+  if (
+    typeof candidate.prompt !== 'string' ||
+    typeof candidate.model !== 'string' ||
+    typeof candidate.count !== 'number' ||
+    !Number.isInteger(candidate.count) ||
+    candidate.count < MIN_COUNT ||
+    candidate.count > MAX_COUNT ||
+    aspectRatio === undefined ||
+    resolution === undefined ||
+    typeof candidate.isPublic !== 'boolean' ||
+    !Array.isArray(candidate.referenceIds) ||
+    !candidate.referenceIds.every((referenceId) => typeof referenceId === 'string')
+  ) {
+    return null;
+  }
+  return {
+    prompt: candidate.prompt,
+    model: candidate.model,
+    count: candidate.count,
+    aspectRatio,
+    resolution,
+    isPublic: candidate.isPublic,
+    referenceIds: [...candidate.referenceIds],
+  };
+}
+
+function parsePersistedTask(value: unknown): PersistedGenerationTask | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const candidate = value as Partial<PersistedGenerationTask>;
+  const settings = parseGenerationSettings(candidate.settings);
+  if (
+    typeof candidate.id !== 'string' ||
+    typeof candidate.createdAt !== 'string' ||
+    settings === null ||
+    (candidate.error !== undefined && typeof candidate.error !== 'string')
+  ) {
+    return null;
+  }
+  return {
+    id: candidate.id,
+    createdAt: candidate.createdAt,
+    settings,
+    ...(candidate.error === undefined ? {} : { error: candidate.error }),
+  };
+}
+
+function parseSession(value: unknown): GenerationSession | null {
+  if (typeof value !== 'object' || value === null) return null;
   const candidate = value as Partial<GenerationSession>;
-  return (
-    typeof candidate.id === 'string' &&
-    typeof candidate.title === 'string' &&
-    typeof candidate.createdAt === 'string' &&
-    typeof candidate.updatedAt === 'string' &&
-    Array.isArray(candidate.batchIds) &&
-    candidate.batchIds.every((batchId) => typeof batchId === 'string')
-  );
+  if (
+    typeof candidate.id !== 'string' ||
+    typeof candidate.title !== 'string' ||
+    typeof candidate.createdAt !== 'string' ||
+    typeof candidate.updatedAt !== 'string' ||
+    !Array.isArray(candidate.batchIds) ||
+    !candidate.batchIds.every((batchId) => typeof batchId === 'string')
+  ) {
+    return null;
+  }
+  const transientTasks = Array.isArray(candidate.transientTasks)
+    ? candidate.transientTasks
+        .map(parsePersistedTask)
+        .filter((task): task is PersistedGenerationTask => task !== null)
+    : [];
+  return {
+    id: candidate.id,
+    title: candidate.title,
+    createdAt: candidate.createdAt,
+    updatedAt: candidate.updatedAt,
+    batchIds: [...candidate.batchIds],
+    transientTasks,
+  };
 }
 
 function readSessions(): GenerationSession[] {
   if (typeof window === 'undefined') return [];
   try {
     const parsed: unknown = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '[]');
-    return Array.isArray(parsed) ? parsed.filter(isSession) : [];
+    return Array.isArray(parsed)
+      ? parsed.map(parseSession).filter((session): session is GenerationSession => session !== null)
+      : [];
   } catch {
     return [];
   }
@@ -123,6 +206,7 @@ export function createGenerationSession(title = DEFAULT_SESSION_TITLE): Generati
     createdAt: now,
     updatedAt: now,
     batchIds: [],
+    transientTasks: [],
   };
   setSessions((current) => ({ sessions: [session, ...current.sessions] }));
   return session;
@@ -176,6 +260,54 @@ export function replaceGenerationBatch(id: string, previousBatchId: string, batc
         batchIds: [...new Set(batchIds)],
       };
     }),
+  }));
+}
+
+export function upsertGenerationTask(sessionId: string, task: PersistedGenerationTask): void {
+  setSessions((current) => ({
+    sessions: current.sessions.map((session) => {
+      if (session.id !== sessionId) return session;
+      const transientTasks = [
+        ...session.transientTasks.filter((candidate) => candidate.id !== task.id),
+        task,
+      ];
+      return {
+        ...session,
+        updatedAt: new Date().toISOString(),
+        batchIds: session.batchIds.includes(task.id)
+          ? session.batchIds
+          : [...session.batchIds, task.id],
+        transientTasks,
+      };
+    }),
+  }));
+}
+
+export function removeGenerationTask(sessionId: string, taskId: string): void {
+  setSessions((current) => ({
+    sessions: current.sessions.map((session) =>
+      session.id === sessionId
+        ? {
+            ...session,
+            transientTasks: session.transientTasks.filter((task) => task.id !== taskId),
+          }
+        : session,
+    ),
+  }));
+}
+
+export function removeGenerationBatch(sessionId: string, batchId: string): void {
+  setSessions((current) => ({
+    sessions: current.sessions.map((session) =>
+      session.id === sessionId
+        ? {
+            ...session,
+            updatedAt: new Date().toISOString(),
+            batchIds: session.batchIds.filter((candidate) => candidate !== batchId),
+            transientTasks: session.transientTasks.filter((task) => task.id !== batchId),
+          }
+        : session,
+    ),
   }));
 }
 

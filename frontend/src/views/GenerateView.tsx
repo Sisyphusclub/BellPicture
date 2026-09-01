@@ -44,8 +44,12 @@ import {
   forgetRememberedGenerationSession,
   getRememberedGenerationSession,
   rememberGenerationSession,
+  removeGenerationBatch,
+  removeGenerationTask,
   replaceGenerationBatch,
+  upsertGenerationTask,
   useGenerationSessions,
+  type PersistedGenerationTask,
 } from '@/hooks/useGenerationSessions';
 import { useImageGeneration } from '@/hooks/useImageGeneration';
 import { useImageHistory } from '@/hooks/useImageHistory';
@@ -82,6 +86,25 @@ function feedItemFromBatch(batch: GroupedBatch): FeedItem {
     createdAt: batch.createdAt,
     entries: [...batch.entries],
     settings: batch.settings,
+  };
+}
+
+function feedItemFromPersistedTask(task: PersistedGenerationTask): FeedItem {
+  return {
+    id: task.id,
+    createdAt: task.createdAt,
+    entries: [],
+    settings: task.settings,
+    ...(task.error === undefined ? {} : { error: task.error }),
+  };
+}
+
+function persistedTaskFromFeedItem(item: FeedItem): PersistedGenerationTask {
+  return {
+    id: item.id,
+    createdAt: item.createdAt,
+    settings: item.settings,
+    ...(item.error === undefined ? {} : { error: item.error }),
   };
 }
 
@@ -488,8 +511,41 @@ export function GenerateView() {
     const persisted = new Map(
       history.batches.map((batch) => [batch.batchId, feedItemFromBatch(batch)]),
     );
+    const persistedTransient = new Map(
+      session.transientTasks.map((task) => [task.id, feedItemFromPersistedTask(task)]),
+    );
+    const queryAspect = searchParams.get('aspect');
+    const legacyPendingTasks = session.batchIds
+      .filter(
+        (batchId) =>
+          batchId.startsWith('pending-') &&
+          !persisted.has(batchId) &&
+          !persistedTransient.has(batchId),
+      )
+      .map<PersistedGenerationTask>((batchId) => ({
+        id: batchId,
+        createdAt: session.updatedAt,
+        settings: {
+          prompt: searchParams.get('prompt')?.trim() || session.title,
+          model: 'gpt-image-2',
+          count: readCount(searchParams),
+          aspectRatio: isAspectRatio(queryAspect) ? queryAspect : DEFAULT_ASPECT_RATIO,
+          resolution: DEFAULT_IMAGE_RESOLUTION,
+          isPublic: searchParams.get('isPublic') === 'true',
+          referenceIds: [],
+        },
+        error: '上一条生成任务未能完成，请重试。',
+      }));
+    legacyPendingTasks.forEach((task) => {
+      persistedTransient.set(task.id, feedItemFromPersistedTask(task));
+      upsertGenerationTask(session.id, task);
+    });
     const transient = new Map(
-      [...(feedBySession.current.get(activeSessionId) ?? []), ...latestFeed.current]
+      [
+        ...persistedTransient.values(),
+        ...(feedBySession.current.get(activeSessionId) ?? []),
+        ...latestFeed.current,
+      ]
         .filter((item) => session.batchIds.includes(item.id) && !persisted.has(item.id))
         .map((item) => [item.id, item]),
     );
@@ -499,7 +555,7 @@ export function GenerateView() {
     feedSessionId.current = activeSessionId;
     feedBySession.current.set(activeSessionId, next);
     setFeed((current) => (sameFeed(current, next) ? current : next));
-  }, [activeSessionId, history.batches, sessions]);
+  }, [activeSessionId, history.batches, searchParams, sessions]);
 
   useEffect(() => {
     if (!feedSessionId.current) return;
@@ -547,6 +603,24 @@ export function GenerateView() {
     const batchIds = new Set(session.batchIds);
     return history.batches.filter((batch) => batchIds.has(batch.batchId));
   }, [activeSessionId, history.batches, sessions]);
+  const generationHistoryBatches = useMemo(() => {
+    const batches = new Map(sessionHistoryBatches.map((batch) => [batch.batchId, batch]));
+    feed.forEach((item) => {
+      if (!item.error) return;
+      batches.set(item.id, {
+        batchId: item.id,
+        createdAt: item.createdAt,
+        prompt: item.settings.prompt,
+        model: item.settings.model,
+        entries: [],
+        settings: item.settings,
+        error: item.error,
+      });
+    });
+    return [...batches.values()].sort((left, right) =>
+      right.createdAt.localeCompare(left.createdAt),
+    );
+  }, [feed, sessionHistoryBatches]);
   const visibleHistoryBatchIds = useMemo(() => feed.map((item) => item.id), [feed]);
   const latestBatch = feed[feed.length - 1];
   const latestBatchVisibilityKey = latestBatch
@@ -662,6 +736,7 @@ export function GenerateView() {
       settings: generationSettings,
     };
     if (replaceItem) {
+      removeGenerationTask(generationSessionId, replaceItem.id);
       if (generationSessionBatchIds.includes(replaceItem.id)) {
         replaceGenerationBatch(generationSessionId, replaceItem.id, pendingId);
       } else {
@@ -681,10 +756,15 @@ export function GenerateView() {
       pendingScrollId.current = pendingId;
       setFeed((current) => [...current, pendingItem]);
     }
+    upsertGenerationTask(generationSessionId, persistedTaskFromFeedItem(pendingItem));
 
     const restoreReplacedItem = (): void => {
       if (!replaceItem) return;
+      removeGenerationTask(generationSessionId, pendingId);
       replaceGenerationBatch(generationSessionId, pendingId, replaceItem.id);
+      if (replaceItem.error) {
+        upsertGenerationTask(generationSessionId, persistedTaskFromFeedItem(replaceItem));
+      }
       setFeed((current) => current.map((item) => (item.id === pendingId ? replaceItem : item)));
       setActiveHistoryBatchId(replaceItem.id);
     };
@@ -728,6 +808,7 @@ export function GenerateView() {
             : item,
         ),
       );
+      removeGenerationTask(generationSessionId, pendingId);
       replaceGenerationBatch(generationSessionId, pendingId, result.batchId);
       setActiveHistoryBatchId(result.batchId);
       let replacementCleanupFailed = false;
@@ -754,15 +835,18 @@ export function GenerateView() {
       const userMessage = splitGenerationError(message).message;
       if (message === '生成已停止。') {
         if (replaceItem) restoreReplacedItem();
-        else setFeed((current) => current.filter((item) => item.id !== pendingId));
+        else {
+          removeGenerationBatch(generationSessionId, pendingId);
+          setFeed((current) => current.filter((item) => item.id !== pendingId));
+        }
         notify(message);
         return;
       }
       if (replaceItem) restoreReplacedItem();
       else {
-        setFeed((current) =>
-          current.map((item) => (item.id === pendingId ? { ...item, error: message } : item)),
-        );
+        const failedItem = { ...pendingItem, error: message };
+        upsertGenerationTask(generationSessionId, persistedTaskFromFeedItem(failedItem));
+        setFeed((current) => current.map((item) => (item.id === pendingId ? failedItem : item)));
       }
       notify(userMessage, 'error');
     }
@@ -1043,7 +1127,7 @@ export function GenerateView() {
         onNotify={notify}
       />
       <GenerationHistoryFlyout
-        batches={sessionHistoryBatches}
+        batches={generationHistoryBatches}
         trackBatchIds={visibleHistoryBatchIds}
         activeBatchId={activeHistoryBatchId}
         hoveredBatchId={hoveredBatchId}

@@ -93,7 +93,11 @@ vi.mock('@/hooks/useImageHistory', () => ({
 vi.mock('@/hooks/usePublicGallery', () => publicGalleryMocks);
 
 import { ToastProvider } from '@/components/common/ToastProvider';
-import { resetGenerationSessionsForTests } from '@/hooks/useGenerationSessions';
+import {
+  attachGenerationBatch,
+  createGenerationSession,
+  resetGenerationSessionsForTests,
+} from '@/hooks/useGenerationSessions';
 import { GenerateView } from '@/views/GenerateView';
 
 function deferred<T>() {
@@ -185,6 +189,74 @@ it('keeps the composer neutral when a retryable result error is present', () => 
     'data-status',
     'ready',
   );
+});
+
+it('restores a failed generation task after the workspace remounts', async () => {
+  generation.generate.mockRejectedValueOnce(
+    new Error('上游生成服务响应超时，请稍后重试。（请求编号：timeout-request）'),
+  );
+  const user = userEvent.setup();
+  const firstRender = render(
+    <MemoryRouter initialEntries={['/generate?prompt=未来实验室&aspect=16%3A9&count=4']}>
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+
+  await user.click(screen.getByRole('button', { name: '生成图片' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('上游生成服务响应超时');
+
+  const stored = JSON.parse(
+    window.localStorage.getItem('nebulens-generation-sessions-v1') ?? '[]',
+  ) as Array<{ id?: string; transientTasks?: Array<{ error?: string }> }>;
+  const sessionId = stored[0]?.id;
+  expect(sessionId).toBeTruthy();
+  expect(stored[0]?.transientTasks?.[0]?.error).toContain('timeout-request');
+  firstRender.unmount();
+  window.dispatchEvent(new StorageEvent('storage', { key: 'nebulens-generation-sessions-v1' }));
+
+  render(
+    <MemoryRouter initialEntries={[`/generate?session=${sessionId}`]}>
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+
+  const restoredError = await screen.findByRole('alert');
+  expect(restoredError.closest('[data-generation-batch]')).toHaveTextContent('未来实验室');
+  expect(restoredError).toHaveTextContent('timeout-request');
+  await user.click(screen.getByRole('button', { name: '展开生成历史' }));
+  const historyPanel = await screen.findByRole('complementary', { name: '生成历史' });
+  expect(within(historyPanel).getByText('未来实验室')).toBeVisible();
+  expect(within(historyPanel).getByText(/生成失败/)).toBeVisible();
+});
+
+it('recovers a legacy pending task that was saved without feed details', async () => {
+  const session = createGenerationSession('旧失败任务');
+  attachGenerationBatch(session.id, 'pending-legacy-task', '旧失败任务');
+  const legacyStored = JSON.parse(
+    window.localStorage.getItem('nebulens-generation-sessions-v1') ?? '[]',
+  ) as Array<Record<string, unknown>>;
+  delete legacyStored[0]?.transientTasks;
+  window.localStorage.setItem('nebulens-generation-sessions-v1', JSON.stringify(legacyStored));
+  window.dispatchEvent(new StorageEvent('storage', { key: 'nebulens-generation-sessions-v1' }));
+
+  render(
+    <MemoryRouter
+      initialEntries={[`/generate?session=${session.id}&aspect=16%3A9&count=4&isPublic=false`]}
+    >
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+
+  const restoredError = await screen.findByRole('alert');
+  expect(restoredError.closest('[data-generation-batch]')).toHaveTextContent('旧失败任务');
+  expect(restoredError).toHaveTextContent('上一条生成任务未能完成，请重试。');
+  expect(restoredError.closest('[data-generation-batch]')).toHaveAttribute('data-count', '4');
 });
 
 it('supports up to four images per generation', async () => {

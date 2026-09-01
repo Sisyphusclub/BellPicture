@@ -36,6 +36,7 @@ export interface GroupedBatch {
   model: string;
   entries: HistoryEntry[];
   settings: GenerationSettingsSnapshot;
+  error?: string;
 }
 
 const store = createExternalStore<HistoryState>({
