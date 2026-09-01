@@ -46,7 +46,6 @@ export function ImageGalleryVertical({
     6,
     galleryImages.length,
   );
-  const columns = distribute(galleryImages, resolvedColumnCount);
   const galleryStyle: GalleryStyle = {
     '--gallery-columns': resolvedColumnCount,
   };
@@ -88,16 +87,10 @@ export function ImageGalleryVertical({
         ) : null}
 
         <GalleryColumns
-          columns={distribute(galleryImages, Math.min(2, galleryImages.length))}
+          images={galleryImages}
           onImageClick={onImageClick}
           hasHeader={hasHeader}
-          className="grid lg:hidden"
-        />
-        <GalleryColumns
-          columns={columns}
-          onImageClick={onImageClick}
-          hasHeader={hasHeader}
-          className="hidden lg:grid lg:[grid-template-columns:repeat(var(--gallery-columns),minmax(0,1fr))]"
+          className="columns-2 lg:[column-count:var(--gallery-columns)]"
           style={galleryStyle}
         />
       </div>
@@ -106,13 +99,13 @@ export function ImageGalleryVertical({
 }
 
 function GalleryColumns({
-  columns,
+  images,
   onImageClick,
   hasHeader,
   className,
   style,
 }: {
-  columns: GalleryImage[][];
+  images: GalleryImage[];
   onImageClick: ((image: GalleryImage) => void) | undefined;
   hasHeader: boolean;
   className?: string;
@@ -122,61 +115,45 @@ function GalleryColumns({
     <div
       className={cn(
         hasHeader ? 'mt-5' : 'mt-0',
-        'image-gallery-vertical__columns grid-cols-2 gap-2 sm:gap-3',
+        'image-gallery-vertical__columns gap-2 sm:gap-3',
         className,
       )}
       style={style}
     >
-      {columns.map((column) => (
-        <div key={column.map((image) => image.id).join('-')} className="overflow-hidden">
-          <div className="flex flex-col gap-2 pb-2 sm:gap-3 sm:pb-3">
-            {column.map((image) => (
-              <figure
-                key={image.id}
-                className="relative overflow-hidden bg-muted"
-                style={{ aspectRatio: image.aspectRatio ?? 0.8 }}
-              >
-                {onImageClick ? (
-                  <button
-                    type="button"
-                    className="image-gallery-vertical__image-button"
-                    onClick={() => onImageClick(image)}
-                    aria-label={`查看${image.alt}`}
-                  >
-                    <img
-                      src={image.src}
-                      alt={image.alt}
-                      width={900}
-                      height={1200}
-                      loading="lazy"
-                      className="h-full w-full object-cover"
-                    />
-                  </button>
-                ) : (
-                  <img
-                    src={image.src}
-                    alt={image.alt}
-                    width={900}
-                    height={1200}
-                    loading="lazy"
-                    className="h-full w-full object-cover"
-                  />
-                )}
-              </figure>
-            ))}
-          </div>
-        </div>
+      {images.map((image) => (
+        <figure
+          key={image.id}
+          className="relative mb-2 break-inside-avoid overflow-hidden bg-muted sm:mb-3"
+          style={{ aspectRatio: image.aspectRatio ?? 0.8 }}
+        >
+          {onImageClick ? (
+            <button
+              type="button"
+              className="image-gallery-vertical__image-button"
+              onClick={() => onImageClick(image)}
+              aria-label={`查看图片：${image.alt}`}
+            >
+              <img
+                src={image.src}
+                alt={image.alt}
+                width={900}
+                height={1200}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            </button>
+          ) : (
+            <img
+              src={image.src}
+              alt={image.alt}
+              width={900}
+              height={1200}
+              loading="lazy"
+              className="h-full w-full object-cover"
+            />
+          )}
+        </figure>
       ))}
     </div>
   );
-}
-
-function distribute(images: GalleryImage[], columnCount: number): GalleryImage[][] {
-  const columns = Array.from({ length: columnCount }, () => [] as GalleryImage[]);
-
-  images.forEach((image, index) => {
-    columns[index % columnCount]?.push(image);
-  });
-
-  return columns;
 }

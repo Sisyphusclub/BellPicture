@@ -138,6 +138,24 @@ video {
   width: 17px;
   height: 17px;
 }
+.route-loading {
+  display: grid;
+  min-height: 50vh;
+  place-items: center;
+}
+.route-loading > span {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--border);
+  border-top-color: var(--foreground);
+  border-radius: 50%;
+  animation: route-loading-spin 700ms linear infinite;
+}
+@keyframes route-loading-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
 
 .app-shell {
   min-height: 100vh;
@@ -4581,6 +4599,11 @@ video {
 }
 .template-tile__actions svg {
   width: 16px;
+}
+.template-gallery-more {
+  display: flex;
+  justify-content: center;
+  padding: 28px 0 8px;
 }
 .template-detail-modal {
   max-width: 980px !important;
@@ -10087,6 +10110,94 @@ video {
 
 @media (hover: none) and (pointer: coarse) {
   .template-tile__actions {
+    top: 4px;
+    right: 4px;
+    gap: 0;
     opacity: 1;
+  }
+  .button--icon,
+  .icon-button {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+  .template-tile__actions button,
+  .assets-page .image-tile__select,
+  .assets-page .image-tile__favorite,
+  .assets-page .image-tile__actions button {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    flex-basis: 44px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .assets-page .image-tile__select:hover,
+  .assets-page .image-tile__favorite:hover,
+  .assets-page .image-tile__actions button:hover,
+  .assets-page .image-tile.is-selected .image-tile__select {
+    border-color: transparent;
+    background: transparent;
+  }
+  .template-tile__actions button::before,
+  .assets-page .image-tile__select::before,
+  .assets-page .image-tile__favorite::before,
+  .assets-page .image-tile__actions button::before {
+    position: absolute;
+    inset: 6px;
+    border: 1px solid color-mix(in oklch, var(--border-strong) 72%, transparent);
+    background: color-mix(in oklch, var(--card) 78%, transparent);
+    box-shadow: var(--shadow-float);
+    content: '';
+  }
+  .template-tile__actions button::before,
+  .assets-page .image-tile__favorite::before {
+    border-radius: 50%;
+  }
+  .assets-page .image-tile__select::before {
+    border-radius: 6px;
+  }
+  .assets-page .image-tile__actions button::before {
+    border-radius: var(--radius-control);
+  }
+  .assets-page .image-tile__select:hover::before,
+  .assets-page .image-tile__favorite:hover::before,
+  .assets-page .image-tile__actions button:hover::before {
+    background: color-mix(in oklch, var(--surface-hover) 88%, transparent);
+  }
+  .template-tile__actions button svg,
+  .assets-page .image-tile__select svg,
+  .assets-page .image-tile__favorite svg,
+  .assets-page .image-tile__actions button svg {
+    position: relative;
+    z-index: 1;
+  }
+  .assets-page .image-tile__select {
+    top: 2px;
+    left: 2px;
+  }
+  .assets-page .image-tile.is-selected .image-tile__select::before {
+    border-color: color-mix(in oklch, var(--ring) 74%, transparent);
+    background: var(--primary);
+  }
+  .assets-page .image-tile__favorite-trigger {
+    top: 2px;
+    right: 2px;
+    width: 44px;
+    height: 44px;
+  }
+  .assets-page .image-tile__actions {
+    right: 4px;
+    bottom: 4px;
+    min-height: 44px;
+    gap: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-loading > span {
+    animation: none;
   }
 }

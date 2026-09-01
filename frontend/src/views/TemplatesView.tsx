@@ -1,5 +1,5 @@
 import { ArrowUpRight, Copy, ExternalLink, Heart, Search, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useToast } from '@/components/common/ToastProvider';
@@ -27,6 +27,8 @@ const SORT_OPTIONS: readonly { value: TemplateSort; label: string }[] = [
   { value: 'recent', label: '最近使用' },
   { value: 'title', label: '名称排序' },
 ];
+const INITIAL_TEMPLATE_COUNT = 24;
+const TEMPLATE_BATCH_SIZE = 24;
 
 function templateSearchParams(template: CreationTemplate): string {
   return new URLSearchParams({
@@ -47,6 +49,7 @@ export function TemplatesView() {
   const [sort, setSort] = useState<TemplateSort>('featured');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [selected, setSelected] = useState<CreationTemplate | null>(null);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_TEMPLATE_COUNT);
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase('zh-CN');
@@ -68,6 +71,11 @@ export function TemplatesView() {
     }
     return orderTemplatesWithAnimeLast(items);
   }, [category, favoriteIds, favoritesOnly, query, recent, sort]);
+  const visibleTemplates = filtered.slice(0, visibleCount);
+
+  useEffect(() => {
+    setVisibleCount(INITIAL_TEMPLATE_COUNT);
+  }, [category, favoritesOnly, query, sort]);
 
   const copyPrompt = async (template: CreationTemplate): Promise<void> => {
     try {
@@ -127,7 +135,7 @@ export function TemplatesView() {
 
       {filtered.length ? (
         <div className="template-gallery" aria-label="创作模板列表">
-          {filtered.map((template, index) => {
+          {visibleTemplates.map((template, index) => {
             const favorite = favoriteIds.includes(template.id);
             const used = recent[template.id] !== undefined;
             return (
@@ -197,6 +205,20 @@ export function TemplatesView() {
           </Button>
         </div>
       )}
+
+      {visibleTemplates.length < filtered.length ? (
+        <div className="template-gallery-more">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() =>
+              setVisibleCount((current) => Math.min(current + TEMPLATE_BATCH_SIZE, filtered.length))
+            }
+          >
+            加载更多
+          </Button>
+        </div>
+      ) : null}
 
       {selected ? (
         <MorphicCardModal

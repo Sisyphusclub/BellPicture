@@ -31,7 +31,7 @@ describe('imagesApi', () => {
 
     expect(result.remaining).toBe(98);
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:3000/api/images/quota',
+      '/api/images/quota',
       expect.objectContaining({ credentials: 'include' }),
     );
   });
@@ -55,7 +55,7 @@ describe('imagesApi', () => {
 
     expect(result).toMatchObject({ claimed: true, remaining: 103, checkedInToday: true });
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:3000/api/images/quota/check-in',
+      '/api/images/quota/check-in',
       expect.objectContaining({ method: 'POST', credentials: 'include' }),
     );
   });
@@ -78,7 +78,7 @@ describe('imagesApi', () => {
 
     expect(result.id).toBe('ref.png');
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:3000/api/images/upload',
+      '/api/images/upload',
       expect.objectContaining({ method: 'POST' }),
     );
   });
@@ -179,7 +179,7 @@ describe('imagesApi', () => {
 
     expect(result.images[0]?.width).toBe(3840);
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:3000/api/images/generate/high-res',
+      '/api/images/generate/high-res',
       expect.objectContaining({ method: 'POST' }),
     );
     expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toMatchObject({

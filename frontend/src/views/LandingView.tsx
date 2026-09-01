@@ -44,6 +44,8 @@ const HERO_SHINY_GRADIENT_STYLE: CSSProperties = {
 const LANDING_SCROLL_KEY = 'nebulens:landing-scroll';
 const LANDING_SCROLL_RESTORE_KEY = 'nebulens:landing-scroll-restore';
 const LANDING_COMPOSER_MORPH_EASE = [0.16, 1, 0.3, 1] as const;
+const DISCOVER_INITIAL_TEMPLATE_COUNT = 30;
+const DISCOVER_TEMPLATE_BATCH_SIZE = 30;
 const HERO_ENTRIES: HistoryEntry[] = [
   {
     record: {
@@ -132,6 +134,9 @@ const TODAY_CREATIONS = [
   HERO_ENTRIES[2]!,
   ...DISCOVERY_TEMPLATE_ENTRIES,
 ] as const;
+const TEMPLATE_LABELS = new Map(
+  CREATION_TEMPLATES.map((template) => [`nebulens-${template.id}`, template.title]),
+);
 export function LandingView() {
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading: authLoading, isAdmin, logout } = useAuth();
@@ -150,22 +155,25 @@ export function LandingView() {
   const [selected, setSelected] = useState<HistoryEntry | null>(null);
   const [composerDocked, setComposerDocked] = useState(false);
   const [composerExpanded, setComposerExpanded] = useState(false);
+  const [visibleTemplateCount, setVisibleTemplateCount] = useState(DISCOVER_INITIAL_TEMPLATE_COUNT);
   const composerHasContent = prompt.trim().length > 0 || attachments.length > 0;
   const composerIsExpanded = composerDocked && (composerExpanded || composerHasContent);
   const galleryEntries = useMemo(
-    () => [...publicGallery.entries, ...TODAY_CREATIONS],
-    [publicGallery.entries],
+    () => [...publicGallery.entries, ...TODAY_CREATIONS.slice(0, visibleTemplateCount)],
+    [publicGallery.entries, visibleTemplateCount],
   );
   const galleryImages = useMemo<GalleryImage[]>(
     () =>
       galleryEntries.map((entry) => ({
         id: entry.record.id,
         src: entry.imageUrl,
-        alt: entry.record.prompt,
+        alt: galleryLabel(entry),
         aspectRatio: entry.record.width / entry.record.height,
       })),
     [galleryEntries],
   );
+  const hasLocalGalleryEntries = visibleTemplateCount < TODAY_CREATIONS.length;
+  const hasMoreGalleryEntries = hasLocalGalleryEntries || publicGallery.hasMore;
 
   useEffect(() => {
     const savedScroll = Number(sessionStorage.getItem(LANDING_SCROLL_KEY));
@@ -431,15 +439,23 @@ export function LandingView() {
           if (entry) setSelected(entry);
         }}
       />
-      {publicGallery.hasMore ? (
+      {hasMoreGalleryEntries ? (
         <div className="flex justify-center pb-16">
           <Button
             type="button"
             variant="secondary"
-            disabled={publicGallery.isHydrating}
-            onClick={() => void publicGallery.loadMore()}
+            disabled={!hasLocalGalleryEntries && publicGallery.isHydrating}
+            onClick={() => {
+              if (hasLocalGalleryEntries) {
+                setVisibleTemplateCount((current) =>
+                  Math.min(current + DISCOVER_TEMPLATE_BATCH_SIZE, TODAY_CREATIONS.length),
+                );
+                return;
+              }
+              void publicGallery.loadMore();
+            }}
           >
-            {publicGallery.isHydrating ? '加载中' : '加载更多'}
+            {!hasLocalGalleryEntries && publicGallery.isHydrating ? '加载中' : '加载更多'}
           </Button>
         </div>
       ) : null}
@@ -450,4 +466,11 @@ export function LandingView() {
       />
     </div>
   );
+}
+
+function galleryLabel(entry: HistoryEntry): string {
+  const templateLabel = TEMPLATE_LABELS.get(entry.record.id);
+  if (templateLabel) return templateLabel;
+  const prompt = entry.record.prompt.replace(/\s+/g, ' ').trim();
+  return prompt.length > 32 ? `${prompt.slice(0, 32)}...` : prompt || '生成图片';
 }

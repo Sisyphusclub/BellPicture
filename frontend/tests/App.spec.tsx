@@ -199,10 +199,11 @@ beforeEach(() => {
 });
 
 describe('React application routes', () => {
-  it('renders the full GPT Image 2 vertical gallery through the paginated gallery boundary', () => {
+  it('renders one progressive GPT Image 2 gallery and keeps the full library reachable', async () => {
+    const user = userEvent.setup();
     const { container } = renderRoute('/');
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Turn your idea into images' }),
+      await screen.findByRole('heading', { level: 1, name: 'Turn your idea into images' }),
     ).toBeInTheDocument();
     const shinyHeadline = screen.getByText('into images');
     expect(shinyHeadline).toHaveClass('animate-shiny');
@@ -212,8 +213,10 @@ describe('React application routes', () => {
     expect(screen.queryByRole('heading', { level: 2, name: '今日创作' })).not.toBeInTheDocument();
     expect(container.querySelector('video.landing-hero__video')).toBeInTheDocument();
     expect(container.querySelector('.landing-hero')).toHaveAttribute('data-layout', 'media-stage');
-    const creationCards = container.querySelectorAll('.image-gallery-vertical__image-button');
-    const creationImages = container.querySelectorAll(
+    const initialCreationCards = container.querySelectorAll(
+      '.image-gallery-vertical__image-button',
+    );
+    const initialCreationImages = container.querySelectorAll(
       '.landing-creations .image-gallery-vertical__columns img',
     );
     const animatedGalleryTracks = container.querySelectorAll(
@@ -223,13 +226,26 @@ describe('React application routes', () => {
       '.landing-creations [style*="--gallery-columns"]',
     );
     expect(desktopGallery?.style.getPropertyValue('--gallery-columns')).toBe('6');
+    expect(initialCreationCards).toHaveLength(30);
+    expect(initialCreationImages).toHaveLength(30);
+    expect(container.querySelectorAll('.image-gallery-vertical__columns')).toHaveLength(1);
+    expect(initialCreationCards[0]).toHaveAccessibleName(
+      '查看图片：雾中的混凝土运动场与奔跑者，冷灰建筑、湿润空气与柔和晨光',
+    );
+    expect(animatedGalleryTracks).toHaveLength(0);
+    expect(container.querySelector('.landing-creations style')).not.toBeInTheDocument();
+    while (screen.queryByRole('button', { name: '加载更多' })) {
+      await user.click(screen.getByRole('button', { name: '加载更多' }));
+    }
+    const creationCards = container.querySelectorAll('.image-gallery-vertical__image-button');
+    const creationImages = container.querySelectorAll(
+      '.landing-creations .image-gallery-vertical__columns img',
+    );
     const creationSources = new Set(
       Array.from(creationCards).map((card) => card.querySelector('img')?.getAttribute('src')),
     );
     expect(creationSources).toHaveLength(169);
-    expect(creationImages).toHaveLength(338);
-    expect(animatedGalleryTracks).toHaveLength(0);
-    expect(container.querySelector('.landing-creations style')).not.toBeInTheDocument();
+    expect(creationImages).toHaveLength(169);
     expect(Array.from(creationSources)).toEqual(
       expect.arrayContaining([
         '/media/hero-card-left.jpg',
@@ -440,7 +456,7 @@ describe('React application routes', () => {
     await user.click(screen.getByRole('switch', { name: '公开作品' }));
     await user.click(screen.getByRole('button', { name: '带着提示词开始创作' }));
 
-    expect(screen.getByRole('region', { name: '图像生成工作区' })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: '图像生成工作区' })).toBeInTheDocument();
     await waitFor(() => expect(generation.generate).toHaveBeenCalledTimes(1));
     expect(generation.generate).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -723,7 +739,7 @@ describe('React application routes', () => {
     const user = userEvent.setup();
     renderRoute('/templates');
 
-    expect(screen.getByRole('region', { name: '创作模板' })).toHaveClass('workspace-page');
+    expect(await screen.findByRole('region', { name: '创作模板' })).toHaveClass('workspace-page');
     const templatesTitle = screen.getByRole('heading', { level: 1, name: '创作模板' });
     expect(templatesTitle.closest('header')).toHaveClass('operational-page-header');
     expect(within(templatesTitle.closest('header')!).getByText('163 个模板')).toHaveClass(
@@ -731,6 +747,10 @@ describe('React application routes', () => {
     );
     expect(screen.queryByText('NEBULENS / LIBRARY')).not.toBeInTheDocument();
     expect(screen.getByRole('searchbox', { name: '搜索创作模板' })).toBeInTheDocument();
+    expect(screen.getAllByRole('article')).toHaveLength(24);
+    while (screen.queryByRole('button', { name: '加载更多' })) {
+      await user.click(screen.getByRole('button', { name: '加载更多' }));
+    }
     expect(screen.getAllByRole('article')).toHaveLength(163);
     const templateImages = within(screen.getByRole('region', { name: '创作模板' })).getAllByRole(
       'img',
@@ -768,14 +788,15 @@ describe('React application routes', () => {
     expect(generation.generate).not.toHaveBeenCalled();
   });
 
-  it('keeps history and admin routes', () => {
+  it('keeps history and admin routes', async () => {
     const history = renderRoute('/history');
-    expect(screen.getByRole('region', { name: '个人资产' })).toHaveClass('workspace-page');
+    expect(await screen.findByRole('region', { name: '个人资产' })).toHaveClass('workspace-page');
     expect(screen.getByRole('heading', { level: 1, name: '资产' }).closest('header')).toHaveClass(
       'operational-page-header',
     );
     history.unmount();
     renderRoute('/admin/users');
+    await screen.findByRole('region', { name: '用户管理' });
     expect(
       screen.getByRole('heading', { level: 1, name: '用户管理' }).closest('header'),
     ).toHaveClass('operational-page-header');
