@@ -540,6 +540,9 @@ last-batch clearance at 1440 x 813 and 390 x 844.
 - On desktop, align the fixed account cluster to the collapsed sidebar brand's
   `50px` vertical center line. The `44px` cluster therefore starts at `28px`;
   do not independently anchor it to the viewport's original `16px` inset.
+- A successful daily check-in is acknowledged by the popover/sidebar changing to its claimed
+  state; do not add a second success Toast for the same action. Keep the error Toast for failed
+  check-ins so the user still receives recovery guidance when the mutation fails.
 - Popovers close on outside pointer interaction and Escape, preserve their
   trigger relationship through ARIA attributes, and reduce spatial motion to a
   short opacity transition under `prefers-reduced-motion`.

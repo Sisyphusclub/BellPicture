@@ -46,10 +46,7 @@ export function LandingAccountActions({
     if (checkedInToday || checkingIn) return;
     setCheckingIn(true);
     try {
-      const result = await onCheckIn();
-      onNotify(
-        result.claimed ? `签到成功，获得 ${result.dailyCheckInReward} 积分。` : '今日已签到。',
-      );
+      await onCheckIn();
     } catch {
       onNotify('签到失败，请稍后重试。', 'error');
     } finally {

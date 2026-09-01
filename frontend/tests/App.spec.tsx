@@ -383,6 +383,23 @@ describe('React application routes', () => {
 
     await waitFor(() => expect(quotaMocks.checkIn).toHaveBeenCalledTimes(1));
     expect(quotaMocks.checkIn).toHaveReturned();
+    expect(screen.queryByText(/签到成功/)).not.toBeInTheDocument();
+    expect(screen.queryByText('今日已签到。')).not.toBeInTheDocument();
+  });
+
+  it('does not show a success toast when checking in from the mobile sidebar', async () => {
+    const originalWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+    const user = userEvent.setup();
+    renderRoute('/');
+
+    await user.click(screen.getByRole('button', { name: '打开首页菜单' }));
+    await user.click(screen.getByRole('button', { name: '签到领 5 积分' }));
+
+    await waitFor(() => expect(quotaMocks.checkIn).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText(/签到成功/)).not.toBeInTheDocument();
+    expect(screen.queryByText('今日已签到。')).not.toBeInTheDocument();
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
   });
 
   it('keeps the React Bits border glow independent from homepage prompt focus', async () => {
