@@ -48,7 +48,7 @@ describe('config/env', () => {
     expect(env.IMAGE_MODEL).toBe('gpt-image-2');
     expect(env.HIGH_RES_IMAGE_MODEL).toBeUndefined();
     expect(env.PORT).toBe(3000);
-    expect(env.IMAGE_API_TIMEOUT_MS).toBe(120_000);
+    expect(env.IMAGE_API_TIMEOUT_MS).toBe(300_000);
     expect(env.UPLOAD_DIR).toBe('./tmp/uploads');
     expect(env.OUTPUT_DIR).toBe('./tmp/outputs');
     expect(env.LOG_LEVEL).toBe('info');

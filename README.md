@@ -216,7 +216,7 @@ http://localhost:5173
 | `BETTER_AUTH_SECRET`          | 是   | Better Auth 会话密钥                                                  |
 | `IMAGE_MODEL`                 | 否   | 默认图像模型，默认 `gpt-image-2`                                      |
 | `HIGH_RES_IMAGE_MODEL`        | 否   | 管理员 2K/4K 专用模型名，例如 `codex-gpt-image-2`；留空则沿用请求模型 |
-| `IMAGE_API_TIMEOUT_MS`        | 否   | 图像生成请求超时时间                                                  |
+| `IMAGE_API_TIMEOUT_MS`        | 否   | 图像生成请求超时时间，默认 `300000ms`（5 分钟）                       |
 | `UPLOAD_MAX_BYTES`            | 否   | 参考图上传大小上限；Compose 会同时传给后端与前端代理，代理自动增加 1 MiB multipart 余量 |
 | `DAILY_USER_QUOTA`            | 否   | 默认用户永久生图额度（兼容旧环境变量名）                              |
 | `GOOGLE_CLIENT_ID`            | 否   | Google OAuth Client ID                                                |
