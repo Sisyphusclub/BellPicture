@@ -177,6 +177,10 @@ export async function removeOutput(absolutePath: string): Promise<void> {
   }
 }
 
+export async function removeOutputByFilename(filename: string): Promise<void> {
+  await removeOutput(resolveOutputPath(filename));
+}
+
 export async function writeInternalOutputFile(
   filename: string,
   content: Buffer | string,

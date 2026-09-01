@@ -198,7 +198,7 @@ describe('POST /v1/images/generations', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(1);
     expect(res.body.data[0].url).toMatch(
-      /^https:\/\/compat\.test\/api\/outputs\/[0-9a-f-]{36}\.png$/u,
+      /^https:\/\/compat\.test\/api\/outputs\/[0-9a-f-]{36}\.png\?expires=\d{10}&signature=[0-9a-f]{64}$/u,
     );
     expect(res.body.data[0].b64_json).toBeUndefined();
   });

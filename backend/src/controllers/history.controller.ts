@@ -87,12 +87,12 @@ function validateIds(ids: readonly string[]): void {
 export function buildHistoryController(): {
   list: (req: Request, res: Response, next: NextFunction) => void;
   listPublic: (_req: Request, res: Response, next: NextFunction) => void;
-  removeOne: (req: Request, res: Response, next: NextFunction) => void;
+  removeOne: (req: Request, res: Response, next: NextFunction) => Promise<void>;
   removePublicAsAdmin: (req: Request, res: Response, next: NextFunction) => void;
-  removeBatch: (req: Request, res: Response, next: NextFunction) => void;
+  removeBatch: (req: Request, res: Response, next: NextFunction) => Promise<void>;
   updateOne: (req: Request, res: Response, next: NextFunction) => void;
   updateMany: (req: Request, res: Response, next: NextFunction) => void;
-  removeMany: (req: Request, res: Response, next: NextFunction) => void;
+  removeMany: (req: Request, res: Response, next: NextFunction) => Promise<void>;
 } {
   return {
     list(req, res, next) {
@@ -120,14 +120,14 @@ export function buildHistoryController(): {
       }
     },
 
-    removeOne(req, res, next) {
+    async removeOne(req, res, next) {
       try {
         const user = requireUser(req);
         const id = req.params.id;
         if (typeof id !== 'string' || !isUuidLike(id)) {
           throw new AppError('BAD_REQUEST', 'Invalid history id', 400);
         }
-        const removed = deleteImageRecordForUser(user.id, id);
+        const removed = await deleteImageRecordForUser(user.id, id);
         if (removed === 0) {
           throw new AppError('NOT_FOUND', 'History record not found', 404);
         }
@@ -157,14 +157,14 @@ export function buildHistoryController(): {
       }
     },
 
-    removeBatch(req, res, next) {
+    async removeBatch(req, res, next) {
       try {
         const user = requireUser(req);
         const batchId = req.params.batchId;
         if (typeof batchId !== 'string' || !isUuidLike(batchId)) {
           throw new AppError('BAD_REQUEST', 'Invalid batch id', 400);
         }
-        const removed = deleteImageRecordBatchForUser(user.id, batchId);
+        const removed = await deleteImageRecordBatchForUser(user.id, batchId);
         if (removed === 0) {
           throw new AppError('NOT_FOUND', 'History batch not found', 404);
         }
@@ -202,12 +202,12 @@ export function buildHistoryController(): {
       }
     },
 
-    removeMany(req, res, next) {
+    async removeMany(req, res, next) {
       try {
         const user = requireUser(req);
         const parsed = parseBody(bulkDeleteSchema, req.body);
         validateIds(parsed.ids);
-        const removed = deleteImageRecordsForUser(user.id, parsed.ids);
+        const removed = await deleteImageRecordsForUser(user.id, parsed.ids);
         res.status(200).json({ removed });
       } catch (err) {
         next(err);

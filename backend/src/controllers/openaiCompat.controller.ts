@@ -5,6 +5,7 @@ import { z, ZodError } from 'zod';
 
 import { env } from '../config/env.js';
 import { AppError } from '../errors/AppError.js';
+import { createSignedOutputPath } from '../services/outputAccess.service.js';
 import {
   generateImage,
   type GenerateImageInput,
@@ -427,7 +428,7 @@ async function buildImagesResponse(
 function absoluteOutputUrl(req: Request, filename: string): string {
   const protocol = firstHeaderSegment(req.get('x-forwarded-proto')) ?? req.protocol ?? 'http';
   const host = req.get('host') ?? `localhost:${env.PORT}`;
-  return `${protocol}://${host}/api/outputs/${encodeURIComponent(filename)}`;
+  return `${protocol}://${host}${createSignedOutputPath(filename)}`;
 }
 
 function firstHeaderSegment(value: string | undefined): string | undefined {

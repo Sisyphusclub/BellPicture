@@ -182,7 +182,7 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           if (requestAbort.signal.aborted) {
             await discardAbortedResult(result, requestAbort.signal);
           }
-          persistGeneratedImages({
+          await persistGeneratedImages({
             result,
             userId: user.id,
             prompt: parsed.prompt,
@@ -216,7 +216,7 @@ export function buildImagesController(deps: ImagesControllerDeps): {
             if (requestAbort.signal.aborted) {
               await discardAbortedResult(cachedResult, requestAbort.signal);
             }
-            persistGeneratedImages({
+            await persistGeneratedImages({
               result: cachedResult,
               userId: user.id,
               prompt: parsed.prompt,
@@ -249,7 +249,7 @@ export function buildImagesController(deps: ImagesControllerDeps): {
         if (requestAbort.signal.aborted) {
           await discardAbortedResult(result, requestAbort.signal);
         }
-        persistGeneratedImages({
+        await persistGeneratedImages({
           result,
           userId: user.id,
           prompt: parsed.prompt,
@@ -303,7 +303,7 @@ export function buildImagesController(deps: ImagesControllerDeps): {
         if (requestAbort.signal.aborted) {
           await discardAbortedResult(result, requestAbort.signal);
         }
-        persistGeneratedImages({
+        await persistGeneratedImages({
           result,
           userId: user.id,
           prompt: parsed.prompt,
@@ -337,7 +337,7 @@ function parseGenerateBody<T>(schema: z.ZodType<T>, body: unknown): T {
   }
 }
 
-function persistGeneratedImages(input: {
+async function persistGeneratedImages(input: {
   result: GenerateImageOutput;
   userId: string;
   prompt: string;
@@ -347,7 +347,7 @@ function persistGeneratedImages(input: {
   resolution: ImageResolution;
   isPublic: boolean;
   requestId: string;
-}): void {
+}): Promise<void> {
   const createdAt = new Date();
   const model = input.result.model ?? input.requestedModel ?? env.IMAGE_MODEL;
   const records: NewImageRecord[] = input.result.images.map((image) => ({
@@ -371,16 +371,26 @@ function persistGeneratedImages(input: {
   try {
     insertImageRecords(records);
   } catch (insertErr) {
-    // Quota may already be consumed by real generation. Demo mode also returns
-    // saved files, so keep the user-visible result consistent and log for ops.
+    const cleanupResults = await Promise.allSettled(
+      input.result.images.map((image) => removeOutput(image.absolutePath)),
+    );
+    const cleanupFailures = cleanupResults.filter((result) => result.status === 'rejected');
     logger.error(
       {
         requestId: input.requestId,
         userId: input.userId,
         batchId: input.result.batchId,
         err: insertErr,
+        cleanupFailureCount: cleanupFailures.length,
       },
       'images.generate: failed to persist image_records',
+    );
+    throw new AppError(
+      'INTERNAL',
+      'Generated images could not be saved to history',
+      500,
+      insertErr,
+      { batchId: input.result.batchId },
     );
   }
 }

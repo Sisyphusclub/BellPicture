@@ -19,6 +19,7 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file=.env -e \"import { runMigrations } from './src/db/drizzle.ts'; runMigrations();\"",
+    "storage:report-orphans": "tsx --env-file=.env src/scripts/reportOutputOrphans.ts",
     "prepare": "husky"
   },
   "lint-staged": {

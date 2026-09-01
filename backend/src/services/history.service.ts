@@ -5,6 +5,8 @@ import { and, desc, eq, inArray, lt, or } from 'drizzle-orm';
 import { db } from '../db/drizzle.js';
 import { imageRecords } from '../db/schema.js';
 import { AppError } from '../errors/AppError.js';
+import { logger } from '../logger.js';
+import { removeOutputByFilename } from '../storage/localStorage.js';
 import type { AspectRatio, ImageResolution } from '../types/image.js';
 
 export interface ImageRecordDTO {
@@ -127,6 +129,21 @@ export function insertImageRecords(records: NewImageRecord[]): void {
     .run();
 }
 
+export interface ImageRecordAccess {
+  userId: string;
+  isPublic: boolean;
+}
+
+export function findImageRecordAccess(filename: string): ImageRecordAccess | null {
+  return (
+    db
+      .select({ userId: imageRecords.userId, isPublic: imageRecords.isPublic })
+      .from(imageRecords)
+      .where(eq(imageRecords.filename, filename))
+      .get() ?? null
+  );
+}
+
 export interface ImageMetadataUpdate {
   isFavorite?: boolean | undefined;
   isPublic?: boolean | undefined;
@@ -170,12 +187,21 @@ export function updateImageRecordsForUser(
     .map(toDTO);
 }
 
-export function deleteImageRecordsForUser(userId: string, ids: readonly string[]): number {
+export async function deleteImageRecordsForUser(
+  userId: string,
+  ids: readonly string[],
+): Promise<number> {
   if (ids.length === 0) return 0;
-  return db
-    .delete(imageRecords)
-    .where(and(eq(imageRecords.userId, userId), inArray(imageRecords.id, [...ids])))
-    .run().changes;
+  const removed = db.transaction((tx) => {
+    const rows = tx
+      .delete(imageRecords)
+      .where(and(eq(imageRecords.userId, userId), inArray(imageRecords.id, [...ids])))
+      .returning({ filename: imageRecords.filename })
+      .all();
+    return rows;
+  });
+  await cleanupDeletedOutputs(removed.map((row) => row.filename));
+  return removed.length;
 }
 
 export function listImageRecordsForUser(userId: string): ImageRecordDTO[] {
@@ -256,12 +282,14 @@ function decodePublicCursor(cursor: string): { createdAt: number; id: string } {
 }
 
 /** Deletes one record. Returns number of rows deleted (0 if not owned by user). */
-export function deleteImageRecordForUser(userId: string, id: string): number {
-  const result = db
+export async function deleteImageRecordForUser(userId: string, id: string): Promise<number> {
+  const removed = db
     .delete(imageRecords)
     .where(and(eq(imageRecords.userId, userId), eq(imageRecords.id, id)))
-    .run();
-  return result.changes;
+    .returning({ filename: imageRecords.filename })
+    .all();
+  await cleanupDeletedOutputs(removed.map((row) => row.filename));
+  return removed.length;
 }
 
 /** Removes one public gallery record regardless of owner. Intended for admin moderation. */
@@ -281,10 +309,29 @@ function imageRecordIdCandidates(id: string): string[] {
 }
 
 /** Deletes every record in `batchId` owned by `userId`. */
-export function deleteImageRecordBatchForUser(userId: string, batchId: string): number {
-  const result = db
+export async function deleteImageRecordBatchForUser(
+  userId: string,
+  batchId: string,
+): Promise<number> {
+  const removed = db
     .delete(imageRecords)
     .where(and(eq(imageRecords.userId, userId), eq(imageRecords.batchId, batchId)))
-    .run();
-  return result.changes;
+    .returning({ filename: imageRecords.filename })
+    .all();
+  await cleanupDeletedOutputs(removed.map((row) => row.filename));
+  return removed.length;
+}
+
+async function cleanupDeletedOutputs(filenames: readonly string[]): Promise<void> {
+  const results = await Promise.allSettled(
+    filenames.map((filename) => removeOutputByFilename(filename)),
+  );
+  results.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      logger.error(
+        { filename: filenames[index], err: result.reason },
+        'history.delete: failed to remove output after deleting its record',
+      );
+    }
+  });
 }

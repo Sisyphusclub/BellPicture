@@ -3,6 +3,8 @@ import { pipeline } from 'node:stream/promises';
 import type { NextFunction, Request, Response } from 'express';
 
 import { AppError } from '../errors/AppError.js';
+import { findImageRecordAccess } from '../services/history.service.js';
+import { isValidSignedOutputRequest } from '../services/outputAccess.service.js';
 import { createOutputReadStream, mimeFromExt, statOutput } from '../storage/localStorage.js';
 
 const OUTPUT_FILENAME_RE =
@@ -20,6 +22,7 @@ export async function getOutput(req: Request, res: Response, next: NextFunction)
         { filename },
       );
     }
+    authorizeOutput(req, filename);
     const ext = (filename.split('.').pop() ?? '').toLowerCase();
     let size: number;
     try {
@@ -51,6 +54,22 @@ export async function getOutput(req: Request, res: Response, next: NextFunction)
   } catch (err) {
     if (!res.destroyed && !res.headersSent) next(err);
   }
+}
+
+function authorizeOutput(req: Request, filename: string): void {
+  const access = findImageRecordAccess(filename);
+  if (access?.isPublic === true) return;
+  if (access !== null && (req.user?.id === access.userId || req.user?.isAdmin === true)) return;
+  if (
+    isValidSignedOutputRequest({
+      filename,
+      expires: req.query['expires'],
+      signature: req.query['signature'],
+    })
+  ) {
+    return;
+  }
+  throw new AppError('NOT_FOUND', `Output not found: ${filename}`, 404);
 }
 
 function isNodeErrorCode(error: unknown, code: string): boolean {

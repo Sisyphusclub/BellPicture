@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer';
 import { randomUUID } from 'node:crypto';
+import { stat } from 'node:fs/promises';
 
 import type { RequestHandler } from 'express';
 import request from 'supertest';
@@ -7,7 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../src/app.js';
 import { db } from '../../src/db/drizzle.js';
-import { user, userQuota } from '../../src/db/schema.js';
+import { imageRecords, user, userQuota } from '../../src/db/schema.js';
 import { AppError } from '../../src/errors/AppError.js';
 import type { ImageGenerationProvider } from '../../src/services/providers/ImageGenerationProvider.js';
 import { saveOutput } from '../../src/storage/localStorage.js';
@@ -174,6 +175,41 @@ describe('POST /api/images/quota/check-in', () => {
 });
 
 describe('POST /api/images/generate', () => {
+  it('returns 500 and removes generated files when history persistence fails', async () => {
+    const userId = createDbUser({ userId: `persist-failure-${randomUUID()}` });
+    const saved = await saveOutput(Buffer.concat([PNG_PREFIX, Buffer.alloc(32)]), 'png');
+    db.insert(imageRecords)
+      .values({
+        id: saved.filename,
+        batchId: randomUUID(),
+        userId,
+        prompt: 'existing record',
+        model: 'test-model',
+        filename: saved.filename,
+        mime: 'image/png',
+        width: 1024,
+        height: 1024,
+        count: 1,
+        resolution: 'standard',
+        isPublic: false,
+        createdAt: new Date(),
+      })
+      .run();
+    const provider: ImageGenerationProvider = {
+      generate: vi.fn(async () => ({
+        images: [{ outputPath: saved.absolutePath, width: 1024, height: 1024 }],
+        aspectRatio: '1:1' as const,
+      })),
+    };
+    const app = buildApp(provider, stubAuth(userId));
+
+    const response = await request(app).post('/api/images/generate').send({ prompt: 'duplicate' });
+
+    expect(response.status).toBe(500);
+    expect(response.body.error.code).toBe('INTERNAL');
+    await expect(stat(saved.absolutePath)).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
   it('text-to-image happy path: returns 200 with batch + images array', async () => {
     const { provider } = fakeProvider();
     const app = buildApp(provider);

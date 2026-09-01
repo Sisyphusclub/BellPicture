@@ -13,7 +13,7 @@ import { buildHistoryRouter } from './routes/history.js';
 import { buildImagesRouter } from './routes/images.js';
 import { mediaRouter } from './routes/media.js';
 import { buildOpenAICompatRouter } from './routes/openaiCompat.js';
-import { outputsRouter } from './routes/outputs.js';
+import { buildOutputsRouter } from './routes/outputs.js';
 import type { DemoPromptCacheConfig } from './services/demoPromptCache.service.js';
 import type { ImageGenerationProvider } from './services/providers/ImageGenerationProvider.js';
 import { createUserQuotaService, type UserQuotaService } from './services/userQuota.service.js';
@@ -88,7 +88,7 @@ export function createApp(deps: AppDeps): Express {
       ...(deps.adminMiddleware !== undefined ? { adminMiddleware: deps.adminMiddleware } : {}),
     }),
   );
-  app.use('/api/outputs', outputsRouter);
+  app.use('/api/outputs', buildOutputsRouter(deps.authMiddleware));
 
   app.use(errorHandler);
   return app;

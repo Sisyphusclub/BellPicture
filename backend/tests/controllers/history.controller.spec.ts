@@ -1,11 +1,14 @@
 import { Buffer } from 'node:buffer';
 import { randomUUID } from 'node:crypto';
+import { stat } from 'node:fs/promises';
+import path from 'node:path';
 
 import type { RequestHandler } from 'express';
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../src/app.js';
+import { env } from '../../src/config/env.js';
 import { db } from '../../src/db/drizzle.js';
 import { user } from '../../src/db/schema.js';
 import { sqlite } from '../../src/db/sqlite.js';
@@ -442,6 +445,7 @@ describe('DELETE /api/history/:id', () => {
 
     const history = await request(app).get('/api/history');
     expect(history.body.records.some((r: { id: string }) => r.id === id)).toBe(false);
+    await expect(stat(path.resolve(env.OUTPUT_DIR, id))).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
   it('returns 404 when deleting a record that does not exist for this user', async () => {
