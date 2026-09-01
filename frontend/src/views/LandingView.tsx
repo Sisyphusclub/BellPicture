@@ -158,6 +158,7 @@ export function LandingView() {
   const [visibleTemplateCount, setVisibleTemplateCount] = useState(DISCOVER_INITIAL_TEMPLATE_COUNT);
   const composerHasContent = prompt.trim().length > 0 || attachments.length > 0;
   const composerIsExpanded = composerDocked && (composerExpanded || composerHasContent);
+  const composerMorphDuration = composerIsExpanded ? 0.38 : composerDocked ? 0.42 : 0.32;
   const galleryEntries = useMemo(
     () => [...publicGallery.entries, ...TODAY_CREATIONS.slice(0, visibleTemplateCount)],
     [publicGallery.entries, visibleTemplateCount],
@@ -334,11 +335,19 @@ export function LandingView() {
             </em>
           </h1>
           <p>用 GPT-IMAGE-2 将你的创意变为精美图片，只需描述你脑海中的画面。</p>
-          <div
+          <motion.div
             ref={composerAnchorRef}
             className={`landing-composer-anchor${composerDocked ? ' is-docked' : ''}${composerIsExpanded ? ' is-expanded' : ''}`}
             data-docked={composerDocked}
             data-expanded={composerIsExpanded}
+            layout={!reducedMotion}
+            layoutDependency={`${composerDocked}:${composerIsExpanded}`}
+            transition={{
+              layout: {
+                duration: composerMorphDuration,
+                ease: LANDING_COMPOSER_MORPH_EASE,
+              },
+            }}
             onPointerDownCapture={(event) => {
               const target = event.target as HTMLElement;
               if (composerDocked && target.closest('.agent-chat-input__textarea')) {
@@ -361,70 +370,48 @@ export function LandingView() {
               }
             }}
           >
-            <motion.div
-              className="landing-composer-layout"
-              layout={!reducedMotion}
-              layoutDependency={composerIsExpanded}
-              transition={{
-                layout: {
-                  duration: composerIsExpanded ? 0.36 : 0.24,
-                  ease: LANDING_COMPOSER_MORPH_EASE,
-                },
-              }}
-            >
-              <motion.div
-                className="landing-composer-content"
-                layout={reducedMotion ? false : 'position'}
-                layoutDependency={composerIsExpanded}
-                transition={{
-                  layout: {
-                    duration: composerIsExpanded ? 0.36 : 0.24,
-                    ease: LANDING_COMPOSER_MORPH_EASE,
-                  },
-                }}
-              >
-                <AgentChatInput
-                  value={prompt}
-                  onValueChange={updatePrompt}
-                  onSubmit={({ text, attachments: selectedAttachments }) =>
-                    submitPrompt(text, selectedAttachments)
-                  }
-                  skills={[]}
-                  models={[]}
-                  defaultModel="gpt-image-2"
-                  agents={[]}
-                  reasoningLevels={[]}
-                  speedModes={[]}
-                  streamingPlaceholders={IMAGE_PROMPT_EXAMPLES}
-                  placeholder="描述你想生成的画面..."
-                  ariaLabel="首页创作提示词"
-                  submitLabel="带着提示词开始创作"
-                  submitContent={<GenerationSubmitCost count={count} />}
-                  minRows={1}
-                  maxRows={4}
-                  allowFileUpload
-                  attachments={attachments}
-                  onAttachmentsChange={updateAttachments}
-                  acceptedFileTypes="image/png,image/jpeg,image/webp"
-                  toolbarContent={
-                    <LandingGenerationControls
-                      aspect={aspect}
-                      count={count}
-                      isPublic={isPublic}
-                      quotaLabel={quotaLabel}
-                      quotaAriaLabel={quotaAriaLabel}
-                      quotaIsAction={!authLoading && !isAuthenticated}
-                      onAspectChange={setAspect}
-                      onCountChange={setCount}
-                      onPublicChange={setIsPublic}
-                      onQuotaClick={openAuthModal}
-                    />
-                  }
-                  className="landing-composer"
-                />
-              </motion.div>
-            </motion.div>
-          </div>
+            <div className="landing-composer-content">
+              <AgentChatInput
+                value={prompt}
+                onValueChange={updatePrompt}
+                onSubmit={({ text, attachments: selectedAttachments }) =>
+                  submitPrompt(text, selectedAttachments)
+                }
+                skills={[]}
+                models={[]}
+                defaultModel="gpt-image-2"
+                agents={[]}
+                reasoningLevels={[]}
+                speedModes={[]}
+                streamingPlaceholders={IMAGE_PROMPT_EXAMPLES}
+                placeholder="描述你想生成的画面..."
+                ariaLabel="首页创作提示词"
+                submitLabel="带着提示词开始创作"
+                submitContent={<GenerationSubmitCost count={count} />}
+                minRows={1}
+                maxRows={4}
+                allowFileUpload
+                attachments={attachments}
+                onAttachmentsChange={updateAttachments}
+                acceptedFileTypes="image/png,image/jpeg,image/webp"
+                toolbarContent={
+                  <LandingGenerationControls
+                    aspect={aspect}
+                    count={count}
+                    isPublic={isPublic}
+                    quotaLabel={quotaLabel}
+                    quotaAriaLabel={quotaAriaLabel}
+                    quotaIsAction={!authLoading && !isAuthenticated}
+                    onAspectChange={setAspect}
+                    onCountChange={setCount}
+                    onPublicChange={setIsPublic}
+                    onQuotaClick={openAuthModal}
+                  />
+                }
+                className="landing-composer"
+              />
+            </div>
+          </motion.div>
         </div>
       </section>
       <ImageGalleryVertical

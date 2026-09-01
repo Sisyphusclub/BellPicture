@@ -378,6 +378,9 @@ image filename prefixes.
 - Discover renders one responsive CSS-column gallery DOM. Do not render hidden
   desktop and mobile copies because both copies still decode images and inflate
   layout work.
+- Discover uses one compact `6px` masonry gutter in both axes. Set the column
+  container gap and each direct child `figure` bottom margin to the same value;
+  do not target wrapper nodes that the gallery component does not render.
 - Discover initially renders 30 built-in items and adds 30 per request;
   Templates initially renders 24 and adds 24. Filtering or changing the
   template category/sort resets its visible count. The complete manifest must
@@ -400,6 +403,31 @@ Operational `.workspace-page` routes sit after the collapsed floating sidebar
 rail. Use the shared `--workspace-sidebar-rail` token for desktop `.app-main`
 padding and reset it to `0` at the mobile breakpoint where the sidebar is
 hidden; do not reuse the expanded `--sidebar-width` value for this canvas.
+
+Generate balances the collapsed desktop rail with the same space on the right,
+so the empty composer, fixed composer, and session feed share the viewport
+center axis. Use `--workspace-sidebar-rail` for this symmetric inset and reset
+to the route's compact padding at `<=860px`; do not center against the expanded
+`--sidebar-width` region.
+
+The final Generate canvas override uses the same operational dot field as
+Templates and Assets: `var(--border-strong)` mixed at `46%`, a `0.9px` dot that
+ends at `1px`, `4px 4px` positioning, `20px` desktop spacing, and `16px` spacing
+at `<=860px`. Keep a style contract test comparing these declarations so a
+later cascade override cannot make Generate visually denser than other tools.
+
+Template details use the route-scoped Morphic modal at up to `1360px` wide on
+desktop, with a `400px` minimum information rail and a viewport-bounded height.
+Keep the media on `object-fit: contain`, scroll only the information rail when
+copy exceeds the available height, and retain the full-screen single-column
+layout at `<=860px`.
+
+Discover composer docking and compact/full editing transitions are one Motion
+layout projection owned by `.landing-composer-anchor`. Include both docked and
+expanded state in `layoutDependency`; `.landing-composer-content` is an ordinary
+`div` and must not own `layout` or `layoutDependency`. Keep horizontal centering
+on the individual `translate` property so Motion can reserve `transform` for
+FLIP, and disable projection when reduced motion is requested.
 
 ## Responsive Layout
 
@@ -424,10 +452,10 @@ hidden; do not reuse the expanded `--sidebar-width` value for this canvas.
 - Use Motion or CSS transitions only when motion explains state or continuity.
 - Autoplay surfaces must pause on hover and keyboard focus. The Discover image gallery is intentionally static and unmasked: render each work once per responsive gallery at full opacity, without vertical loop tracks, animation timing styles, or top/bottom edge fades.
 - Discover uses one Agent Chat Input instance across hero and gallery browsing. When its reserved anchor leaves the viewport, the same component becomes a bottom-fixed compact prompt bar; prompt pointer or keyboard focus expands the full toolbar in place. Keep a pointer-transparent black-to-transparent backdrop behind the dock, preserve the anchor's document height so gallery results do not shift, and undock when scrolling back to the hero.
-- Animate the docked Discover composer with Motion layout projection on a wrapper that is enabled from
-  the component's first render. Keep `layoutDependency` scoped to the compact/expanded state so prompt
-  edits do not trigger extra measurements. React applies the final geometry once; the projection owns
-  the visible `transform`, while auxiliary controls may transition only `transform` and `opacity`.
+- Animate the docked Discover composer with Motion layout projection on `.landing-composer-anchor`,
+  enabled from the component's first render. Keep `layoutDependency` scoped to docked/expanded state so
+  prompt edits do not trigger extra measurements. React applies the final geometry once; the anchor
+  projection owns the visible `transform`, while auxiliary controls may transition only `transform` and `opacity`.
   Never transition `width`, height constraints, padding, positioning, `flex-basis`, radius, background,
   border, or shadow during this morph. Disable layout projection for `prefers-reduced-motion` and switch
   state immediately without remounting the underlying `AgentChatInput`.
@@ -435,7 +463,7 @@ hidden; do not reuse the expanded `--sidebar-width` value for this canvas.
 ```tsx
 <motion.div
   layout={!reducedMotion}
-  layoutDependency={composerIsExpanded}
+  layoutDependency={`${composerDocked}:${composerIsExpanded}`}
   transition={{
     layout: {
       duration: composerIsExpanded ? 0.36 : 0.24,
@@ -443,27 +471,19 @@ hidden; do not reuse the expanded `--sidebar-width` value for this canvas.
     },
   }}
 >
-  <AgentChatInput />
-</motion.div>
-```
-
-Because the surface projection scales the full outer box, place the existing `AgentChatInput` inside a
-nested `layout="position"` Motion boundary. The nested projection must counteract the parent's scale so
-text, icons, and `40px` toolbar controls keep their rendered size throughout both directions. Browser QA
-must sample a readable child/control over multiple animation frames, not only the outer transform or the
-settled frame. On desktop, center the fixed dock on the same `calc(50% + 64px)` line as
-`.landing-hero__content`; keep the `<=860px` override at `50%`.
-
-```tsx
-<motion.div layout={!reducedMotion} layoutDependency={composerIsExpanded}>
-  <motion.div
-    layout={reducedMotion ? false : "position"}
-    layoutDependency={composerIsExpanded}
-  >
+  <div className="landing-composer-content">
     <AgentChatInput />
-  </motion.div>
+  </div>
 </motion.div>
 ```
+
+Keep the existing `AgentChatInput` inside a plain `.landing-composer-content`
+`div`. A nested Motion layout boundary competes with the anchor's size
+projection and can make the rendered input dimensions snap during dock/expand.
+Browser QA must sample a readable child/control over multiple animation frames,
+not only the outer transform or settled frame. On desktop, center the fixed dock
+on the same `calc(50% + 64px)` line as `.landing-hero__content`; keep the
+`<=860px` override at `50%`.
 
 - Honor `prefers-reduced-motion`; disable autoplay video and remove nonessential
   transitions for reduced-motion users.

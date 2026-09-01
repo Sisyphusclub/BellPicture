@@ -1660,9 +1660,8 @@ video {
 .landing-creations .image-gallery-vertical__columns {
   gap: 6px;
 }
-.landing-creations .image-gallery-vertical__columns > div > div {
-  gap: 6px;
-  padding-bottom: 6px;
+.landing-creations .image-gallery-vertical__columns > figure {
+  margin-bottom: 6px;
 }
 .landing-creations figure {
   border: 0;
@@ -4606,7 +4605,8 @@ video {
   padding: 28px 0 8px;
 }
 .template-detail-modal {
-  max-width: 980px !important;
+  width: calc(100% - 32px) !important;
+  max-width: 1360px !important;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-lg) !important;
   background: var(--card);
@@ -4623,7 +4623,7 @@ video {
 .template-detail__media img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 .template-detail__body {
   position: relative;
@@ -4683,6 +4683,20 @@ video {
 }
 .template-settings dd {
   margin: 0;
+}
+
+@media (min-width: 861px) {
+  .template-detail {
+    height: min(760px, calc(100svh - 32px));
+    grid-template-columns: minmax(0, 1fr) minmax(400px, 0.48fr);
+  }
+  .template-detail__media {
+    min-height: 0;
+  }
+  .template-detail__body {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 /* Assets */
@@ -5106,6 +5120,13 @@ video {
   .template-gallery {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .template-detail-modal {
+    inset: 0 !important;
+    width: 100% !important;
+    max-height: 100svh !important;
+    border: 0;
+    border-radius: 0 !important;
+  }
   .template-detail {
     grid-template-columns: 1fr;
   }
@@ -5217,12 +5238,6 @@ video {
   .template-tile--wide .template-tile__preview {
     min-height: 360px;
     aspect-ratio: 4 / 5;
-  }
-  .template-detail-modal {
-    inset: 0 !important;
-    max-height: 100svh !important;
-    border: 0;
-    border-radius: 0 !important;
   }
   .template-detail__body {
     padding: 28px 18px 20px;
@@ -8460,12 +8475,12 @@ video {
   width: 100%;
   max-width: none;
   min-height: 100svh;
-  padding-left: calc(var(--sidebar-width) + 40px);
-  padding-right: 40px;
+  padding-right: calc(var(--workspace-sidebar-rail) + 40px);
+  padding-left: calc(var(--workspace-sidebar-rail) + 40px);
   background-color: var(--background);
   background-image: radial-gradient(
     circle,
-    color-mix(in oklch, var(--foreground) 12%, transparent) 1px,
+    color-mix(in oklch, var(--border-strong) 46%, transparent) 0.9px,
     transparent 1px
   );
   background-position: 4px 4px;
@@ -8481,6 +8496,13 @@ video {
   left: var(--sidebar-width);
 }
 @media (min-width: 861px) {
+  .app-shell--generate .generation-console.has-results .studio-create-bar {
+    left: 50%;
+    width: min(
+      1060px,
+      calc(100% - var(--workspace-sidebar-rail) - var(--workspace-sidebar-rail) - 80px)
+    );
+  }
   .app-shell--generate .generation-console.has-results .session-feed {
     padding-top: clamp(64px, 9svh, 112px);
   }
@@ -8559,7 +8581,8 @@ video {
   width: min(940px, calc(100vw - 210px));
   min-height: 0;
   margin: 0 !important;
-  transform: translateX(-50%);
+  translate: -50% 0;
+  transform: none;
 }
 .landing-composer-anchor.is-docked .landing-composer {
   position: relative !important;
@@ -8909,10 +8932,9 @@ video {
   }
 }
 
-/* Motion projects the dock surface while the nested content boundary corrects
-   inherited scale for text and controls. State styles switch immediately to
-   their final geometry, so the morph never animates layout or paint properties. */
-.landing-composer-layout,
+/* Motion projects only the state-owning dock anchor. The ordinary content
+   boundary keeps input dimensions out of a competing layout projection. State
+   styles switch immediately so the morph never animates layout or paint. */
 .landing-composer-content {
   position: relative;
   z-index: 1;

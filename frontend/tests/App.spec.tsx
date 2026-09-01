@@ -269,8 +269,8 @@ describe('React application routes', () => {
     const landingComposer = landingComposers?.item(0);
     expect(landingAnchor).toBeInTheDocument();
     expect(landingComposers).toHaveLength(1);
-    expect(landingAnchor?.querySelector('.landing-composer-layout')).toBeInTheDocument();
-    expect(landingAnchor?.querySelector('.landing-composer-content')).toBeInTheDocument();
+    expect(landingAnchor?.querySelector('.landing-composer-layout')).not.toBeInTheDocument();
+    expect(landingAnchor?.querySelectorAll(':scope > .landing-composer-content')).toHaveLength(1);
     expect(landingAnchor?.querySelector('.landing-liquidglass-target')).not.toBeInTheDocument();
     expect(landingAnchor?.querySelector('.landing-liquidglass-backdrop')).not.toBeInTheDocument();
     expect(landingAnchor?.querySelector('canvas')).not.toBeInTheDocument();
