@@ -393,7 +393,9 @@ describe('React application routes', () => {
     await user.click(prompt);
 
     expect(prompt).toHaveFocus();
-    expect(container.querySelector('.border-glow-card')).not.toHaveAttribute('data-glow-active');
+    const borderGlow = container.querySelector<HTMLElement>('.border-glow-card');
+    expect(borderGlow).not.toHaveAttribute('data-glow-active');
+    expect(borderGlow?.style.getPropertyValue('--fill-opacity')).toBe('0');
   });
 
   it('carries a homepage prompt into the generation workspace and starts generation', async () => {

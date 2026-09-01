@@ -20,13 +20,15 @@ function ruleFor(selector: string) {
 }
 
 describe('React Bits BorderGlow CSS contract', () => {
-  it('uses the official directional border and edge-fill layers', () => {
+  it('keeps the directional mesh inside the border ring and retains the optional fill layer', () => {
     const borderLayer = ruleFor('.border-glow-card::before');
     const fillLayer = ruleFor('.border-glow-card::after');
 
-    expect(borderLayer).toContain('border: 1px solid transparent;');
-    expect(borderLayer).toContain('linear-gradient(var(--card-bg, #120f17) 0 100%) padding-box');
-    expect(borderLayer).toContain('mask-image: conic-gradient(');
+    expect(borderLayer).toContain('padding: 1px;');
+    expect(borderLayer).toContain('mask-image:');
+    expect(borderLayer).toContain('mask-clip: border-box, border-box, content-box;');
+    expect(borderLayer).toContain('mask-composite: intersect, exclude;');
+    expect(borderLayer).not.toContain('var(--card-bg');
     expect(fillLayer).toContain('border: 1px solid transparent;');
     expect(fillLayer).toContain('mask-composite: subtract, add, add, add, add, add;');
     expect(borderGlowStyles).not.toContain('--border-width');

@@ -633,7 +633,7 @@ export function AgentChatInput({
       colors={['#ffb51b', '#12c8f4', '#1464ff']}
       coneSpread={22}
       edgeSensitivity={24}
-      fillOpacity={0.24}
+      fillOpacity={0}
       glowColor="198 96 70"
       glowIntensity={0.9}
       glowRadius={34}

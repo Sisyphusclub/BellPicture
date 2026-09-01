@@ -114,23 +114,44 @@ prompt, and pending Edit is disabled without changing bubble child count.
 - Discover keeps its docking anchor and both Motion layout boundaries visual-neutral. The existing
   beUI Agent Chat Input and its BorderGlow are the only painted composer surface in hero, compact
   docked, and expanded docked states; do not wrap it in another card, glass target, or canvas layer.
-- Discover and Generate must use the shared `BorderGlow` `::before`, `::after`, and `.edge-light`
-  rendering from the React Bits component so the orange, cyan, and blue palette has one interaction
-  model. Pointer movement writes `--edge-proximity` and `--cursor-angle`; `::before` renders the
-  directional mesh border, `::after` renders its soft edge fill, and `.edge-light` renders the outer
-  directional glow. The effect appears only while the pointer is near the edge, or during the
-  optional mount sweep. Do not add focus-forced activation attributes, structural-ring masks,
-  liquid-glass nodes, or route-specific replacements for these three layers.
-  In Generate, `.agent-chat-input__surface` is a structural layout container only: keep its
-  background transparent and let it inherit the inner radius. The `BorderGlow` root owns the sole
-  graphite fill; painting the inset surface creates a second rectangular card over the shared glow.
-  In the Discover hero idle state, the root owns one semantic static border and the complete graphite
-  fill while `.border-glow-inner` and `.agent-chat-input__surface` remain transparent. The static
-  border remains available for focus visibility; focus must not synthesize pointer proximity or force
-  the glow visible. Route CSS may change the composer's surface material, but must not replace the
-  shared React Bits algorithm or disable one of its layers. Browser QA must compare the computed
-  gradient palette, directional masks, edge-light shadows, opacity, and root radius at 1440px, 390px,
-  and both Discover docked states.
+- Discover and Generate must use the shared React Bits `BorderGlow` so the orange, cyan, and blue
+  palette has one interaction model. Pointer movement writes `--edge-proximity` and
+  `--cursor-angle`; `::before` renders the directional mesh border and `.edge-light` renders the
+  outer directional glow. Clip the `::before` mesh to its 1px border ring rather than repainting
+  `--card-bg` across the padding box: repeating a translucent surface color produces a dark rectangle
+  inside the composer. Keep the source-owned `::after` soft-fill layer in the reusable component,
+  but pass `fillOpacity={0}` from the shared beUI Agent Chat Input. On this unusually wide, shallow
+  composer, the multi-mask fill produces large rectangular color fields inside the text and toolbar
+  areas in Chromium. The effect appears only while the pointer is near the edge, or during the
+  optional mount sweep. Do not add focus-forced activation attributes, liquid-glass nodes, or
+  route-specific replacements for the shared edge layers.
+
+```tsx
+// The composer keeps the reusable React Bits component, but its content plane stays unpainted.
+<BorderGlow fillOpacity={0} colors={["#ffb51b", "#12c8f4", "#1464ff"]}>
+  <AgentChatInputSurface />
+</BorderGlow>
+```
+
+```css
+/* The mesh paints only the edge ring; never repeat a translucent card fill here. */
+.border-glow-card::before {
+  padding: 1px;
+  mask-clip: border-box, border-box, content-box;
+  mask-composite: intersect, exclude;
+}
+```
+
+In Generate, `.agent-chat-input__surface` is a structural layout container only: keep its
+background transparent and let it inherit the inner radius. The `BorderGlow` root owns the sole
+graphite fill; painting the inset surface creates a second rectangular card over the shared glow.
+In the Discover hero idle state, the root owns one semantic static border and the complete graphite
+fill while `.border-glow-inner` and `.agent-chat-input__surface` remain transparent. The static
+border remains available for focus visibility; focus must not synthesize pointer proximity or force
+the glow visible. Route CSS may change the composer's surface material, but must not replace the
+shared React Bits algorithm or re-enable the content fill on a composer route. Browser QA must
+compare the computed gradient palette, directional masks, edge-light shadows, content-fill
+opacity, and root radius at 1440px, 390px, and both Discover docked states.
 
 ```css
 /* Correct: customize only the route surface; shared pseudo-elements remain authoritative. */
