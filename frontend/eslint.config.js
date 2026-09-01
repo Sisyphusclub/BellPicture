@@ -42,6 +42,13 @@ export default tseslint.config(
     },
   },
   {
+    // The checksum-protected shadcn Sidebar registry source exports its context hook by contract.
+    files: ['src/components/ui/sidebar.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
     files: ['scripts/**/*.mjs'],
     ...tseslint.configs.disableTypeChecked,
     languageOptions: {
