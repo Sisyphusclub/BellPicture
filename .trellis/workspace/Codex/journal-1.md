@@ -1196,3 +1196,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 37: 修复输入框光效块状伪影
+
+**Date**: 2026-09-01
+**Task**: 修复输入框光效块状伪影
+**Branch**: `dev`
+
+### Summary
+
+定位 React Bits 在半透明创作输入框上的 padding-box 重复叠色与 soft-fill 块状伪影，将 mesh 裁剪到 1px 边缘环并关闭 composer 内容填充，补充回归测试、组件规范和桌面移动浏览器验证。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e99aaa1` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
