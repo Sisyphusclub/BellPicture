@@ -9962,6 +9962,20 @@ video {
 .admin-page .admin-table {
   border-top: 0;
 }
+@media (min-width: 1181px) {
+  .admin-page .admin-table {
+    --admin-table-columns: minmax(240px, 1.25fr) minmax(150px, 0.7fr) minmax(230px, 1fr) 180px;
+  }
+  .admin-page .admin-row {
+    grid-template-columns: var(--admin-table-columns);
+  }
+  .admin-page .admin-row--head > :last-child {
+    justify-self: end;
+  }
+  .admin-page .admin-actions {
+    justify-content: flex-end;
+  }
+}
 .admin-page .admin-pagination .icon-button {
   width: 40px;
   height: 40px;

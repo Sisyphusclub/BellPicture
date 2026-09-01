@@ -340,6 +340,12 @@ visible. On coarse-pointer devices, keep the control visible so per-item selecti
 }
 ```
 
+For the beUI Data Table adapter in the user-management view, define desktop column tracks once on
+the table container and reference them from both the header row and data rows. A content-sized
+action column in only the data rows shifts every preceding header boundary; reserve the action
+button group width explicitly, then override to the existing labelled record layout below the
+desktop breakpoint.
+
 ### GPT Image 2 Template Manifest
 
 When a prompt gallery is imported into the template route, keep the complete

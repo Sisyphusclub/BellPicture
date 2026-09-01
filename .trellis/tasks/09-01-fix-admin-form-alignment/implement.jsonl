@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend package scope and required verification commands."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Data Table, beUI controls, stable dimensions, and responsive layout conventions."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Required regression, responsive, accessibility, and build checks."}
+{"file":".trellis/spec/guides/index.md","reason":"Spacing, grid, and cross-layer thinking checklist."}

@@ -62,6 +62,13 @@ describe('operational workspace layout contract', () => {
     expect(operationalContract).toContain('padding-top: 0;');
     expect(operationalContract).toContain('.admin-page .admin-panel {');
     expect(operationalContract).toContain('margin-inline: 0;');
+    expect(operationalContract).toContain('@media (min-width: 1181px) {');
+    expect(operationalContract).toContain(
+      '--admin-table-columns: minmax(240px, 1.25fr) minmax(150px, 0.7fr) minmax(230px, 1fr) 180px;',
+    );
+    expect(operationalContract).toContain('grid-template-columns: var(--admin-table-columns);');
+    expect(operationalContract).toContain('.admin-page .admin-row--head > :last-child {');
+    expect(operationalContract).toContain('justify-content: flex-end;');
 
     const adminToolbarContract = operationalContract.slice(
       operationalContract.indexOf('.admin-page .admin-table-toolbar {'),
