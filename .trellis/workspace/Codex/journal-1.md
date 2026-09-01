@@ -1130,3 +1130,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 35: 加粗创作输入框光效描边
+
+**Date**: 2026-09-01
+**Task**: 加粗创作输入框光效描边
+**Branch**: `dev`
+
+### Summary
+
+将共享 BorderGlow 结构环提升到 2px，并统一描边、负 inset 与圆角补偿；新增样式契约测试，完成首页和生图页桌面及移动端浏览器验证。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8bebc9a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
