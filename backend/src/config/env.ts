@@ -26,6 +26,7 @@ export interface Env {
   SEED_DEFAULT_ADMIN: boolean;
   DEMO_PROMPTS: string[];
   DEMO_PROMPT_CACHE_DELAY_MS: number;
+  TRUST_PROXY_HOPS: number;
 }
 
 function readString(name: string, fallback?: string): string {
@@ -122,6 +123,7 @@ function loadEnv(): Env {
     SEED_DEFAULT_ADMIN: readBool('SEED_DEFAULT_ADMIN', false),
     DEMO_PROMPTS: readDelimitedStrings('DEMO_PROMPTS', '|||'),
     DEMO_PROMPT_CACHE_DELAY_MS: readNonNegativeInt('DEMO_PROMPT_CACHE_DELAY_MS', 4_000),
+    TRUST_PROXY_HOPS: readNonNegativeInt('TRUST_PROXY_HOPS', 0),
   };
 }
 

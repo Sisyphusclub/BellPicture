@@ -37,6 +37,7 @@ describe('config/env', () => {
     delete process.env.SEED_DEFAULT_ADMIN;
     delete process.env.DEMO_PROMPTS;
     delete process.env.DEMO_PROMPT_CACHE_DELAY_MS;
+    delete process.env.TRUST_PROXY_HOPS;
 
     const { env } = await import('../../src/config/env.js');
 
@@ -61,6 +62,7 @@ describe('config/env', () => {
     expect(env.SEED_DEFAULT_ADMIN).toBe(false);
     expect(env.DEMO_PROMPTS).toEqual([]);
     expect(env.DEMO_PROMPT_CACHE_DELAY_MS).toBe(4_000);
+    expect(env.TRUST_PROXY_HOPS).toBe(0);
     expect(env.GOOGLE_CLIENT_ID).toBeUndefined();
     expect(env.GOOGLE_CLIENT_SECRET).toBeUndefined();
   });

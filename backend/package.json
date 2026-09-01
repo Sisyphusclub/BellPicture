@@ -29,12 +29,14 @@
   "dependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/multer": "^2.1.0",
-    "better-auth": "^1.6.11",
+    "better-auth": "^1.7.2",
     "better-sqlite3": "^12.10.0",
     "cors": "^2.8.5",
     "drizzle-orm": "^0.45.2",
-    "express": "^4.21.1",
-    "multer": "^2.1.1",
+    "express": "^4.22.2",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.3.0",
+    "multer": "^2.3.0",
     "pino": "^9.5.0",
     "pino-pretty": "^11.3.0",
     "zod": "^4.4.3"

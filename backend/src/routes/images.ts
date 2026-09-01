@@ -11,6 +11,8 @@ import { uploadImageMiddleware } from '../middlewares/upload.js';
 export interface ImagesRouterDeps extends ImagesControllerDeps {
   /** Optional override for the auth middleware; defaults to `requireAuth`. */
   authMiddleware?: RequestHandler;
+  uploadRateLimiter?: RequestHandler;
+  generationRateLimiter?: RequestHandler;
 }
 
 export function buildImagesRouter(deps: ImagesRouterDeps): Router {
@@ -28,16 +30,28 @@ export function buildImagesRouter(deps: ImagesRouterDeps): Router {
   router.post('/quota/check-in', (req, res, next) => {
     void controller.checkIn(req, res, next);
   });
-  router.post('/upload', uploadImageMiddleware, (req, res, next) => {
-    void controller.upload(req, res, next);
-  });
-  router.post('/generate', (req, res, next) => {
+  router.post(
+    '/upload',
+    deps.uploadRateLimiter ?? passThrough,
+    uploadImageMiddleware,
+    (req, res, next) => {
+      void controller.upload(req, res, next);
+    },
+  );
+  router.post('/generate', deps.generationRateLimiter ?? passThrough, (req, res, next) => {
     void controller.generate(req, res, next);
   });
   // POST /api/images/generate/high-res (auth: admin, JSON body) -> 2K/4K image generation.
-  router.post('/generate/high-res', requireAdmin, (req, res, next) => {
-    void controller.generateHighRes(req, res, next);
-  });
+  router.post(
+    '/generate/high-res',
+    deps.generationRateLimiter ?? passThrough,
+    requireAdmin,
+    (req, res, next) => {
+      void controller.generateHighRes(req, res, next);
+    },
+  );
 
   return router;
 }
+
+const passThrough: RequestHandler = (_req, _res, next) => next();

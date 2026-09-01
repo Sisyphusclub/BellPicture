@@ -64,6 +64,13 @@
       "when": 1788237106683,
       "tag": "0008_previous_golden_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1788255104080,
+      "tag": "0009_better-auth-account-issuer",
+      "breakpoints": true
     }
   ]
 }

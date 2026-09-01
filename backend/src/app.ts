@@ -1,10 +1,12 @@
 import cors from 'cors';
 import express, { type Express, type RequestHandler } from 'express';
+import helmet from 'helmet';
 import { toNodeHandler } from 'better-auth/node';
 
 import { auth } from './config/auth.js';
 import { env } from './config/env.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import { createAppRateLimiters } from './middlewares/rateLimit.js';
 import { requestLogger } from './middlewares/requestLogger.js';
 import { buildAdminUsersRouter } from './routes/adminUsers.js';
 import { buildUsernameAuthRouter } from './routes/auth.js';
@@ -33,14 +35,25 @@ export interface AppDeps {
 
 export function createApp(deps: AppDeps): Express {
   const app = express();
+  if (env.TRUST_PROXY_HOPS > 0) app.set('trust proxy', env.TRUST_PROXY_HOPS);
 
   app.use(requestLogger);
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
   app.use(
     cors({
       origin: env.FRONTEND_ORIGIN,
       credentials: true,
     }),
   );
+
+  const rateLimiters = createAppRateLimiters();
+  app.use('/api/auth/sign-up', rateLimiters.signUp);
+  app.use('/api/auth', rateLimiters.auth);
 
   app.use('/api/auth', buildUsernameAuthRouter());
 
@@ -55,7 +68,13 @@ export function createApp(deps: AppDeps): Express {
 
   const userQuota = deps.userQuota ?? createUserQuotaService();
 
-  app.use('/v1', buildOpenAICompatRouter({ provider: deps.provider }));
+  app.use(
+    '/v1',
+    buildOpenAICompatRouter({
+      provider: deps.provider,
+      rateLimiter: rateLimiters.openAICompat,
+    }),
+  );
 
   app.use('/api', healthRouter);
   app.use('/api/media', mediaRouter);
@@ -79,6 +98,8 @@ export function createApp(deps: AppDeps): Express {
         prompts: env.DEMO_PROMPTS,
         delayMs: env.DEMO_PROMPT_CACHE_DELAY_MS,
       },
+      uploadRateLimiter: rateLimiters.upload,
+      generationRateLimiter: rateLimiters.generation,
     }),
   );
   app.use(
