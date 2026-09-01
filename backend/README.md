@@ -1,9 +1,9 @@
 # Nebulens backend
 
-Express + TypeScript backend for **Nebulens**. Proxies image generation
-requests to a 2API reverse proxy (OpenAI Images API–compatible). The backend
-is intentionally stateless — all persistent history lives on the frontend
-(IndexedDB for blobs, localStorage for metadata).
+Express + TypeScript backend for **Nebulens**. It proxies image generation
+requests to an OpenAI Images API-compatible provider and persists users,
+quotas, and image history in SQLite. Uploaded references and generated outputs
+are stored on disk and should use persistent volumes in production.
 
 ## Stack
 
@@ -32,15 +32,17 @@ cp .env.example .env   # then fill in IMAGE_API_KEY
 | `npm run format` / `format:check` | Prettier write / check-only                    |
 | `npm test`                        | Vitest one-shot                                |
 | `npm run test:watch`              | Vitest watch mode                              |
+| `npm run storage:report-orphans`  | Report output files without history records    |
 
 ## Endpoints
 
 | Method | Path                     | Notes                                                                                        |
 | ------ | ------------------------ | -------------------------------------------------------------------------------------------- |
-| GET    | `/api/health`            | `{ status, uptimeSec, version }`                                                             |
+| GET    | `/api/health/live`       | Process liveness                                                                             |
+| GET    | `/api/health/ready`      | SQLite and writable-storage readiness                                                        |
 | POST   | `/api/images/upload`     | multipart `image`; size cap `UPLOAD_MAX_BYTES`; magic-bytes MIME sniff (PNG/JPEG/WebP only)  |
 | POST   | `/api/images/generate`   | JSON `{ prompt, referenceId?, model? }`; routes to 2API edits when `referenceId` is provided |
-| GET    | `/api/outputs/:filename` | Streams a generated image; `<uuid>.<png\|jpeg\|webp>` only; 400/404 on bad input             |
+| GET    | `/api/outputs/:filename` | Streams public images anonymously; private images require owner/admin session or signed URL  |
 
 ### Upload response
 

@@ -1,0 +1,12 @@
+services:
+  backend:
+    networks:
+      default:
+      provider:
+        aliases:
+          - nebulens-backend
+
+networks:
+  provider:
+    name: ${PROVIDER_NETWORK:?Set PROVIDER_NETWORK to the provider Docker network}
+    external: true

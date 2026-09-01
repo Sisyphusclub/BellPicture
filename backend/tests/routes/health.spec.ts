@@ -24,6 +24,21 @@ describe('GET /api/health', () => {
     expect(res.body.version.length).toBeGreaterThan(0);
   });
 
+  it('reports liveness and checks database and writable storage readiness', async () => {
+    const app = createApp({ provider: fakeProvider });
+
+    const live = await request(app).get('/api/health/live');
+    const ready = await request(app).get('/api/health/ready');
+
+    expect(live.status).toBe(200);
+    expect(live.body.status).toBe('ok');
+    expect(ready.status).toBe(200);
+    expect(ready.body).toMatchObject({
+      status: 'ok',
+      checks: { database: 'ok', uploads: 'writable', outputs: 'writable' },
+    });
+  });
+
   it('does not invoke the provider for /api/health', async () => {
     const fake = vi.fn();
     const provider: ImageGenerationProvider = { generate: fake };

@@ -37,14 +37,14 @@ Nebulens 面向需要稳定创作、回看、复用和管理 AI 图像结果的�
 
 | 层         | 技术                                                           |
 | ---------- | -------------------------------------------------------------- |
-| Frontend   | Vue 3, Vue Router, TypeScript, Vite, Element Plus, Vitest      |
+| Frontend   | React 19, React Router, TypeScript, Vite, Tailwind CSS, Vitest |
 | Backend    | Node.js, Express, TypeScript, Better Auth, SQLite, Drizzle ORM |
 | Storage    | SQLite 数据库, 本地上传目录, 本地输出目录                      |
 | Deployment | Docker Compose, nginx, persistent Docker volumes               |
 
 ## Docker Compose 快速启动
 
-Docker Compose 适合单机本地或轻量生产式部署。后端容器运行编译后的 Express 服务，启动时自动执行 Drizzle migrations；前端容器使用 nginx 托管 Vite 静态产物，并代理 `/api`、`/v1` 和 `/outputs` 到后端。
+Docker Compose 适合单机本地或轻量生产式部署。后端容器运行编译后的 Express 服务，启动时自动执行 Drizzle migrations；前端容器使用 nginx 托管 Vite 静态产物，并同源代理 `/api` 和 `/v1` 到后端。后端端口默认不暴露到宿主机。
 
 > Compose 只读取仓库根目录 `.env` 进行变量插值，不读取 `backend/.env` 或 `frontend/.env`。
 
@@ -71,11 +71,11 @@ BETTER_AUTH_SECRET=replace-me-with-a-random-32-byte-secret
 
 ```env
 FRONTEND_PORT=5173
-BACKEND_PORT=3000
 FRONTEND_ORIGIN=http://localhost:5173
 CORS_ORIGIN=http://localhost:5173
 BETTER_AUTH_URL=http://localhost:5173
-VITE_API_BASE_URL=http://localhost:5173
+VITE_API_BASE_URL=
+TRUST_PROXY_HOPS=1
 ```
 
 如需启用 Google 登录，在 `.env` 中填写：
@@ -101,6 +101,12 @@ docker compose up --build
 
 ```bash
 docker compose up -d --build
+```
+
+如果上游生图服务运行在另一个 Docker 网络中，再显式叠加可选配置：
+
+```bash
+PROVIDER_NETWORK=your-provider-network docker compose -f docker-compose.yml -f docker-compose.provider.yml up -d --build
 ```
 
 启动后访问：
@@ -206,22 +212,22 @@ http://localhost:5173
 
 ## 环境变量
 
-| 变量                          | 必需 | 说明                                                                  |
-| ----------------------------- | ---- | --------------------------------------------------------------------- |
-| `IMAGE_API_BASE_URL`          | 是   | 图像生成服务地址                                                      |
-| `HIGH_RES_IMAGE_API_BASE_URL` | 否   | 管理员 2K/4K 专用图像生成服务地址；留空则复用 `IMAGE_API_BASE_URL`    |
-| `IMAGE_API_KEY`               | 是   | 图像生成服务密钥                                                      |
-| `HIGH_RES_IMAGE_API_KEY`      | 否   | 管理员 2K/4K 专用图像生成服务密钥；留空则复用 `IMAGE_API_KEY`         |
-| `OPENAI_COMPAT_API_KEY`       | 是   | OpenAI-compatible API 调用密钥                                        |
-| `BETTER_AUTH_SECRET`          | 是   | Better Auth 会话密钥                                                  |
-| `IMAGE_MODEL`                 | 否   | 默认图像模型，默认 `gpt-image-2`                                      |
-| `HIGH_RES_IMAGE_MODEL`        | 否   | 管理员 2K/4K 专用模型名，例如 `codex-gpt-image-2`；留空则沿用请求模型 |
-| `IMAGE_API_TIMEOUT_MS`        | 否   | 图像生成请求超时时间，默认 `300000ms`（5 分钟）                       |
+| 变量                          | 必需 | 说明                                                                                    |
+| ----------------------------- | ---- | --------------------------------------------------------------------------------------- |
+| `IMAGE_API_BASE_URL`          | 是   | 图像生成服务地址                                                                        |
+| `HIGH_RES_IMAGE_API_BASE_URL` | 否   | 管理员 2K/4K 专用图像生成服务地址；留空则复用 `IMAGE_API_BASE_URL`                      |
+| `IMAGE_API_KEY`               | 是   | 图像生成服务密钥                                                                        |
+| `HIGH_RES_IMAGE_API_KEY`      | 否   | 管理员 2K/4K 专用图像生成服务密钥；留空则复用 `IMAGE_API_KEY`                           |
+| `OPENAI_COMPAT_API_KEY`       | 是   | OpenAI-compatible API 调用密钥                                                          |
+| `BETTER_AUTH_SECRET`          | 是   | Better Auth 会话密钥                                                                    |
+| `IMAGE_MODEL`                 | 否   | 默认图像模型，默认 `gpt-image-2`                                                        |
+| `HIGH_RES_IMAGE_MODEL`        | 否   | 管理员 2K/4K 专用模型名，例如 `codex-gpt-image-2`；留空则沿用请求模型                   |
+| `IMAGE_API_TIMEOUT_MS`        | 否   | 图像生成请求超时时间，默认 `300000ms`（5 分钟）                                         |
 | `UPLOAD_MAX_BYTES`            | 否   | 参考图上传大小上限；Compose 会同时传给后端与前端代理，代理自动增加 1 MiB multipart 余量 |
-| `DAILY_USER_QUOTA`            | 否   | 默认用户永久生图额度（兼容旧环境变量名）                              |
-| `GOOGLE_CLIENT_ID`            | 否   | Google OAuth Client ID                                                |
-| `GOOGLE_CLIENT_SECRET`        | 否   | Google OAuth Client Secret                                            |
-| `SEED_DEFAULT_ADMIN`          | 否   | 是否启用默认管理员种子                                                |
+| `DAILY_USER_QUOTA`            | 否   | 默认用户永久生图额度（兼容旧环境变量名）                                                |
+| `GOOGLE_CLIENT_ID`            | 否   | Google OAuth Client ID                                                                  |
+| `GOOGLE_CLIENT_SECRET`        | 否   | Google OAuth Client Secret                                                              |
+| `SEED_DEFAULT_ADMIN`          | 否   | 是否启用默认管理员种子                                                                  |
 
 ## 页面入口
 
@@ -236,10 +242,10 @@ http://localhost:5173
 
 | 方法     | 路径                         | 说明                         |
 | -------- | ---------------------------- | ---------------------------- |
-| `GET`    | `/api/health`                | 健康检查                     |
-| `POST`   | `/api/images/generations`    | 应用内生图接口               |
+| `GET`    | `/api/health/live`           | 进程存活检查                 |
+| `GET`    | `/api/health/ready`          | SQLite 与存储就绪检查        |
+| `POST`   | `/api/images/generate`       | 应用内生图接口               |
 | `GET`    | `/api/history`               | 读取当前用户历史             |
-| `POST`   | `/api/history`               | 写入生成历史                 |
 | `GET`    | `/api/auth/me`               | 读取当前用户资料和管理员状态 |
 | `GET`    | `/api/admin/users`           | 管理员查看用户列表           |
 | `POST`   | `/api/admin/users`           | 管理员创建用户               |
@@ -255,7 +261,23 @@ http://localhost:5173
 | 上传参考图    | `backend/tmp/uploads`     | `backend-uploads` volume |
 | 生成结果      | `backend/tmp/outputs`     | `backend-outputs` volume |
 
-前端资产历史以浏览器本地状态为主，云端同步仍可继续扩展。
+资产元数据与用户历史统一保存在 SQLite，图片文件保存在输出目录。公开作品可匿名读取；私有作品只允许所有者或管理员读取。删除个人历史时会同步清理对应输出文件。
+
+## 生产部署与备份
+
+- 只向公网开放前端 nginx 或上层反向代理，后端 `3000` 端口保持容器网络内可见。
+- 在负载均衡器、Caddy、Traefik 或云网关终止 TLS，并把 `FRONTEND_ORIGIN`、`CORS_ORIGIN`、`BETTER_AUTH_URL` 改为同一个 `https://` 公网域名。
+- 根据实际反向代理层数设置 `TRUST_PROXY_HOPS`，并在防火墙中拒绝外部直接访问后端。
+- 生产环境保持 `SEED_DEFAULT_ADMIN=false`，使用高强度且互不相同的 `BETTER_AUTH_SECRET`、`OPENAI_COMPAT_API_KEY` 和上游密钥。
+- 备份前执行 SQLite checkpoint，再同时备份数据库卷与输出卷；恢复时必须把二者恢复到同一时间点。
+
+```bash
+docker compose exec backend node -e "const Database=require('better-sqlite3'); const db=new Database('/app/data/app.sqlite'); db.pragma('wal_checkpoint(TRUNCATE)'); db.close()"
+docker run --rm -v nebulens_backend-data:/source -v "$PWD/backups:/backup" alpine tar czf /backup/backend-data.tgz -C /source .
+docker run --rm -v nebulens_backend-outputs:/source -v "$PWD/backups:/backup" alpine tar czf /backup/backend-outputs.tgz -C /source .
+```
+
+恢复前先停止服务，分别解压到同名数据卷和输出卷，再启动并检查 `/api/health/ready`。卷名前缀随 Compose project name 变化，请先用 `docker volume ls` 确认实际名称。
 
 ## 额度与管理员
 
@@ -285,6 +307,7 @@ npm --prefix backend run lint
 npm --prefix backend run test
 npm --prefix backend run db:generate
 npm --prefix backend run db:migrate
+npm --prefix backend run storage:report-orphans
 ```
 
 ## 质量检查
@@ -311,5 +334,5 @@ npm --prefix frontend run test
 建议 topics：
 
 ```text
-vue, express, typescript, ai-image-generation, better-auth, sqlite, drizzle, vite
+react, express, typescript, ai-image-generation, better-auth, sqlite, drizzle, vite
 ```
