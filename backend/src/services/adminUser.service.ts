@@ -97,13 +97,7 @@ function quotaState(row: {
       expiresAt: quotaGrants.expiresAt,
     })
     .from(quotaGrants)
-    .where(
-      and(
-        eq(quotaGrants.userId, row.userId),
-        gt(quotaGrants.expiresAt, new Date()),
-        gt(quotaGrants.remaining, 0),
-      ),
-    )
+    .where(and(eq(quotaGrants.userId, row.userId), gt(quotaGrants.expiresAt, new Date())))
     .orderBy(asc(quotaGrants.expiresAt))
     .all();
   const bonusRemaining = grants.reduce((sum, grant) => sum + grant.remaining, 0);

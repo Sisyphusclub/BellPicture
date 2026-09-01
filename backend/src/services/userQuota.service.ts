@@ -128,13 +128,7 @@ function selectActiveGrants(userId: string, now = new Date()): GrantRow[] {
       checkInDate: quotaGrants.checkInDate,
     })
     .from(quotaGrants)
-    .where(
-      and(
-        eq(quotaGrants.userId, userId),
-        gt(quotaGrants.expiresAt, now),
-        gt(quotaGrants.remaining, 0),
-      ),
-    )
+    .where(and(eq(quotaGrants.userId, userId), gt(quotaGrants.expiresAt, now)))
     .orderBy(asc(quotaGrants.expiresAt), asc(quotaGrants.grantedAt), asc(quotaGrants.id))
     .all();
 }
