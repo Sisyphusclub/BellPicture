@@ -10121,9 +10121,19 @@ video {
     opacity: 1;
   }
   .button--icon,
-  .icon-button {
+  .icon-button,
+  .agent-chat-input__icon-button,
+  .agent-chat-input__submit {
     min-width: 44px !important;
     min-height: 44px !important;
+  }
+  .landing-count-stepper {
+    height: 44px;
+    grid-template-columns: 44px minmax(36px, 1fr) 44px;
+  }
+  .landing-count-stepper button {
+    width: 44px;
+    height: 44px;
   }
   .template-tile__actions button,
   .assets-page .image-tile__select,

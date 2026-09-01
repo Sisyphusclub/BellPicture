@@ -38,6 +38,7 @@ describe('config/env', () => {
     delete process.env.DEMO_PROMPTS;
     delete process.env.DEMO_PROMPT_CACHE_DELAY_MS;
     delete process.env.TRUST_PROXY_HOPS;
+    delete process.env.APP_VERSION;
 
     const { env } = await import('../../src/config/env.js');
 
@@ -63,8 +64,21 @@ describe('config/env', () => {
     expect(env.DEMO_PROMPTS).toEqual([]);
     expect(env.DEMO_PROMPT_CACHE_DELAY_MS).toBe(4_000);
     expect(env.TRUST_PROXY_HOPS).toBe(0);
+    expect(env.APP_VERSION).toBe('0.0.0');
     expect(env.GOOGLE_CLIENT_ID).toBeUndefined();
     expect(env.GOOGLE_CLIENT_SECRET).toBeUndefined();
+  });
+
+  it('reads the deployed application version', async () => {
+    process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
+    process.env.IMAGE_API_KEY = 'sk-test';
+    process.env.OPENAI_COMPAT_API_KEY = 'compat-test';
+    process.env.BETTER_AUTH_SECRET = 'test-secret-padding';
+    process.env.APP_VERSION = '2026.09.01+7bac27d';
+
+    const { env } = await import('../../src/config/env.js');
+
+    expect(env.APP_VERSION).toBe('2026.09.01+7bac27d');
   });
 
   it('parses configured demo prompts and cache delay', async () => {

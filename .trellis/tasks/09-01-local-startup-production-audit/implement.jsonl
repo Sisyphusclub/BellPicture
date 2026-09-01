@@ -1,0 +1,3 @@
+{"file":".trellis/spec/backend/deployment-readiness.md","reason":"Defines production deployment and operational readiness expectations."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Defines backend verification and quality gates."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Defines frontend verification and quality gates."}

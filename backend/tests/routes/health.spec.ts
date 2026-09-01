@@ -2,7 +2,13 @@ import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../src/app.js';
+import type { Env } from '../../src/config/env.js';
 import type { ImageGenerationProvider } from '../../src/services/providers/ImageGenerationProvider.js';
+
+vi.mock('../../src/config/env.js', async (importOriginal) => {
+  const actual = await importOriginal<{ env: Env }>();
+  return { env: { ...actual.env, APP_VERSION: '2026.09.01-test' } };
+});
 
 const fakeProvider: ImageGenerationProvider = {
   generate: vi.fn(async () => ({
@@ -20,8 +26,7 @@ describe('GET /api/health', () => {
     expect(res.body).toMatchObject({ status: 'ok' });
     expect(typeof res.body.uptimeSec).toBe('number');
     expect(res.body.uptimeSec).toBeGreaterThanOrEqual(0);
-    expect(typeof res.body.version).toBe('string');
-    expect(res.body.version.length).toBeGreaterThan(0);
+    expect(res.body.version).toBe('2026.09.01-test');
   });
 
   it('reports liveness and checks database and writable storage readiness', async () => {

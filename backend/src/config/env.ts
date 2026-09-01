@@ -2,6 +2,7 @@ import process from 'node:process';
 
 export interface Env {
   PORT: number;
+  APP_VERSION: string;
   IMAGE_API_BASE_URL: string;
   HIGH_RES_IMAGE_API_BASE_URL: string | undefined;
   IMAGE_API_KEY: string;
@@ -99,6 +100,7 @@ function readDelimitedStrings(name: string, delimiter: string): string[] {
 function loadEnv(): Env {
   return {
     PORT: readInt('PORT', 3000),
+    APP_VERSION: readString('APP_VERSION', '0.0.0'),
     IMAGE_API_BASE_URL: readString('IMAGE_API_BASE_URL'),
     HIGH_RES_IMAGE_API_BASE_URL: readOptionalString('HIGH_RES_IMAGE_API_BASE_URL'),
     IMAGE_API_KEY: readString('IMAGE_API_KEY'),

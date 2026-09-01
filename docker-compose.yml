@@ -7,6 +7,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
+      APP_VERSION: ${APP_VERSION:?Set APP_VERSION to the release tag or commit}
       IMAGE_API_BASE_URL: ${IMAGE_API_BASE_URL:?Set IMAGE_API_BASE_URL in the root .env file}
       HIGH_RES_IMAGE_API_BASE_URL: ${HIGH_RES_IMAGE_API_BASE_URL:-}
       IMAGE_API_KEY: ${IMAGE_API_KEY:?Set IMAGE_API_KEY in the root .env file}
