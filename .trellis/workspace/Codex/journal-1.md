@@ -1328,3 +1328,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 41: 修复用户管理表单列错位
+
+**Date**: 2026-09-01
+**Task**: 修复用户管理表单列错位
+**Branch**: `dev`
+
+### Summary
+
+为用户管理 Data Table 增加桌面端共享列轨道和固定操作列宽，修复表头与数据行错位；保留平板和移动端记录布局，并补充布局契约测试与浏览器验证。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f291cca` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

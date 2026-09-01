@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 40
+- **Total Sessions**: 41
 - **Last Active**: 2026-09-01
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1330 | Active |
+| `journal-1.md` | ~1363 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 41 | 2026-09-01 | 修复用户管理表单列错位 | `f291cca` | `dev` |
 | 40 | 2026-09-01 | 移除额度更新成功提示 | `c219df1` | `dev` |
 | 39 | 2026-09-01 | 同步管理员更新后的当前用户额度 | `1526781` | `dev` |
 | 38 | 2026-09-01 | 移除签到成功重复提示 | `95d456a` | `dev` |
