@@ -21,6 +21,12 @@ npm run format:check
 
 Run `git diff --check` from the repository root before handoff.
 
+GitHub Actions repeats the release gate independently for `frontend/` and
+`backend/` on Node 22. Each job must run `npm ci`,
+`npm audit --omit=dev --audit-level=high`, format, lint, typecheck, tests, and
+build. Do not weaken the workflow to make a failing local check green; fix the
+source or update the documented contract with review.
+
 ## Test Strategy
 
 | Layer        | Tool                        | Primary assertions                                                  |

@@ -370,6 +370,32 @@ user choices such as recent-use or title sorting remain authoritative. Route
 tests must assert the category boundary rather than inferring category from
 image filename prefixes.
 
+### Progressive Galleries and Route Loading
+
+- Route views are loaded through `React.lazy` behind one accessible
+  `role="status"` fallback. Keep the fallback stable and respect
+  `prefers-reduced-motion`.
+- Discover renders one responsive CSS-column gallery DOM. Do not render hidden
+  desktop and mobile copies because both copies still decode images and inflate
+  layout work.
+- Discover initially renders 30 built-in items and adds 30 per request;
+  Templates initially renders 24 and adds 24. Filtering or changing the
+  template category/sort resets its visible count. The complete manifest must
+  remain reachable through `加载更多`.
+- The Discover pagination container reserves at least `160px` plus the bottom
+  safe area after its button so the fixed composer cannot cover the action at
+  maximum scroll.
+- For coarse pointers, primary icon controls expose a 44px hit box while their
+  visible beUI surface may remain 32px. Do not enlarge hover-capable desktop
+  controls solely to satisfy the touch target.
+- Gallery accessible names use the template title or a whitespace-normalized
+  prompt snippet capped at 32 characters, not the complete production prompt.
+
+Route tests must assert one Discover gallery container, the initial batch size,
+and that repeated loading reaches all manifest entries. Browser QA at 1440px
+and 390 x 844 must verify no horizontal overflow, two mobile columns, a usable
+pagination button above the dock, and a clean console.
+
 Operational `.workspace-page` routes sit after the collapsed floating sidebar
 rail. Use the shared `--workspace-sidebar-rail` token for desktop `.app-main`
 padding and reset it to `0` at the mobile breakpoint where the sidebar is

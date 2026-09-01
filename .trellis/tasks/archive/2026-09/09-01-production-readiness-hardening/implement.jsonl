@@ -1,0 +1,9 @@
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"生成文件、历史记录和删除操作需要遵循数据库一致性规范"}
+{"file":".trellis/spec/backend/error-handling.md","reason":"持久化失败、鉴权和限流必须返回统一错误结构"}
+{"file":".trellis/spec/backend/logging-guidelines.md","reason":"文件回滚、孤立文件和删除失败需要可追踪日志"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"后端安全和回归测试需要满足项目质量规范"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"路由拆分、渐进加载和移动端交互需保持现有组件约定"}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"动态导入与分页状态必须保持严格类型"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"前端性能、可访问性与测试需要满足发布标准"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"输出鉴权、同源 API 与历史删除涉及前后端契约"}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"复用现有限流、错误和媒体组件模式，避免重复实现"}

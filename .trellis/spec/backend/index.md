@@ -12,13 +12,14 @@ This directory contains guidelines for backend development. Fill in each file wi
 
 ## Guidelines Index
 
-| Guide | Description | Status |
-|-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | Express + TS layout, env vars, folder rules | Verified (task 05-11) |
-| [Database Guidelines](./database-guidelines.md) | No-DB MVP rule + local fs storage rules | Verified (task 05-11) |
-| [Error Handling](./error-handling.md) | `AppError` hierarchy, error response shape, provider mapping | Verified (task 05-11) |
-| [Quality Guidelines](./quality-guidelines.md) | TS strict, ESLint, Vitest, pre-commit, review checklist | Verified (task 05-09) |
-| [Logging Guidelines](./logging-guidelines.md) | pino singleton, log levels, redact rules | Verified (task 05-09) |
+| Guide                                             | Description                                                    | Status                |
+| ------------------------------------------------- | -------------------------------------------------------------- | --------------------- |
+| [Directory Structure](./directory-structure.md)   | Express + TS layout, env vars, folder rules                    | Verified (task 05-11) |
+| [Database Guidelines](./database-guidelines.md)   | SQLite, migrations, ownership, and file-record consistency     | Verified (task 09-01) |
+| [Error Handling](./error-handling.md)             | `AppError`, output authorization, rate and provider mapping    | Verified (task 09-01) |
+| [Deployment Readiness](./deployment-readiness.md) | Health probes, proxy trust, Compose exposure, and CI contracts | Verified (task 09-01) |
+| [Quality Guidelines](./quality-guidelines.md)     | TS strict, ESLint, Vitest, pre-commit, review checklist        | Verified (task 05-09) |
+| [Logging Guidelines](./logging-guidelines.md)     | pino singleton, log levels, redact rules                       | Verified (task 05-09) |
 
 > **Status note**: "Verified" guides have been reconciled against
 > `backend/src/` after the named task — code and spec match. "Planning
@@ -27,8 +28,9 @@ This directory contains guidelines for backend development. Fill in each file wi
 > exercises that area.
 
 **Stack snapshot**: Node.js 21.5+ · TypeScript (strict) · Express 4 · pino ·
-Vitest · No DB (frontend owns history). AI provider: 2API reverse proxy
-via `TwoApiImageProvider`, called server-side only.
+Vitest · SQLite WAL + drizzle-orm. Authentication, quota, reference ownership,
+and image history are server-backed. AI provider: 2API reverse proxy via
+`TwoApiImageProvider`, called server-side only.
 
 ---
 

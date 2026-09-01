@@ -1,10 +1,10 @@
 # Database Guidelines
 
-> **Status**: Updated for task `08-28-fix-security-races-resources`. \*\*drizzle-orm
+> **Status**: Updated for task `09-01-production-readiness-hardening`.
 >
-> - drizzle-kit own all 7 tables.\*\* Better Auth runs on its `drizzleAdapter`;
->   `user_quota`, `reference_uploads`, and `image_records` are app-owned tables. Migrations
->   live in `backend/drizzle/` and run on every boot.
+> drizzle-kit owns all tables. Better Auth runs on its `drizzleAdapter`;
+> quota, upload ownership, and image history are app-owned tables. Migrations
+> live in `backend/drizzle/` and run on every boot.
 
 ---
 
@@ -80,6 +80,7 @@ file.
 | `account`           | `src/db/schema.ts` | only Better Auth                                                                                           |
 | `verification`      | `src/db/schema.ts` | only Better Auth                                                                                           |
 | `user_quota`        | `src/db/schema.ts` | `services/userQuota.service.ts` only                                                                       |
+| `quota_grants`      | `src/db/schema.ts` | `services/userQuota.service.ts` only                                                                       |
 | `reference_uploads` | `src/db/schema.ts` | `services/referenceUpload.service.ts` only (insert from authenticated upload, read before generation)      |
 | `image_records`     | `src/db/schema.ts` | `services/history.service.ts` only (insert from images.controller, list/delete from history.controller)    |
 
@@ -129,14 +130,15 @@ password hashing and session semantics stay library-owned.
 - **Better Auth core** — `user` / `session` / `account` / `verification` per
   Better Auth docs (sqlite + ms timestamps), with project-owned username
   extension columns on `user`: `username` (unique, normalized login key) and
-  `display_username` (normalized display value). See
+  `display_username` (normalized display value). `account.issuer` is required by
+  Better Auth 1.7 and is added non-destructively by migration `0009`. See
   https://www.better-auth.com/docs/concepts/database for base field semantics.
 - **`user_quota`** — legacy daily counters plus `permanent_total int?` and
   `permanent_used int?`. The permanent pool is configured by administrators and
   never resets at a product-day boundary; legacy counters remain for migration
   compatibility and analytics.
 - **`quota_grants`** — `(id PK, user_id FK → user.id cascade, source,
-  amount, remaining, granted_at, expires_at, check_in_date)` with a unique
+amount, remaining, granted_at, expires_at, check_in_date)` with a unique
   `(user_id, source, check_in_date)` constraint and `(user_id, expires_at)` index.
   Check-in grants are independent seven-day batches and are consumed earliest
   expiry first.
@@ -678,7 +680,100 @@ try {
 }
 ```
 
-## Local filesystem storage rules (unchanged)
+## Scenario: generated output and history consistency
+
+### 1. Scope / Trigger
+
+- Trigger: generated files and `image_records` form one user-visible asset. A
+  partial success must never be reported as a completed generation, and history
+  deletion must not leave newly orphaned outputs.
+
+### 2. Signatures
+
+```ts
+persistGeneratedImages(input): Promise<void>;
+deleteImageRecord(userId: string, recordId: string): Promise<boolean>;
+deleteImageRecords(userId: string, recordIds: string[]): Promise<number>;
+deleteImageBatch(userId: string, batchId: string): Promise<number>;
+
+// Non-destructive operator command
+npm run storage:report-orphans
+```
+
+### 3. Contracts
+
+- Generation success is returned only after every output row is inserted.
+- If persistence fails, remove every file created for that response and return
+  a typed 500 error. Cleanup failure is logged with the original request id but
+  does not replace the persistence failure.
+- Single, bulk, and batch history deletion first capture the authorized rows,
+  delete those rows, then remove their output filenames through
+  `storage/localStorage.ts`.
+- A missing file during history deletion is idempotent; other filesystem
+  failures are logged for operator follow-up because the database deletion is
+  already authoritative.
+- Existing orphan files are never deleted automatically. The report command
+  compares output filenames with `image_records` and emits a read-only report.
+- Internal `demo-prompt-*` cache files are excluded from record-orphan cleanup.
+
+### 4. Validation & Error Matrix
+
+| Condition                                    | Result                                            |
+| -------------------------------------------- | ------------------------------------------------- |
+| Provider files saved, record insert succeeds | Return generation success                         |
+| Any record insert fails                      | Remove all new files; return 500 `INTERNAL`       |
+| Authorized history delete finds rows         | Delete rows and matching files                    |
+| History delete targets no owned rows         | Return the route's existing not-found/zero result |
+| Matching output is already absent            | Keep deletion successful                          |
+| Output cleanup fails for another I/O reason  | Log filename/error; do not restore deleted rows   |
+| Orphan report finds files                    | Report only; do not mutate storage                |
+
+### 5. Good/Base/Bad Cases
+
+- Good: two provider files are saved, the second row insert fails, both files
+  are removed, and the request returns 500 with a request id.
+- Base: deleting an old record whose file is already absent still removes the
+  row and returns success.
+- Bad: returning 200 before `persistGeneratedImages()` settles; the client can
+  show an asset that disappears from history on refresh.
+- Bad: scanning and deleting all unreferenced files during boot; pre-existing
+  files may be recoverable user data.
+
+### 6. Tests Required
+
+- Controller tests force history persistence failure and assert 500 plus cleanup
+  of every newly generated output.
+- History service/controller tests cover single, bulk, and batch file cleanup,
+  ownership boundaries, absent files, and logged cleanup failures.
+- The orphan-report command must be exercised against known records, orphan
+  outputs, and internal cache filenames without deleting any fixture.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+void persistGeneratedImages(result);
+res.json(toResponse(result));
+```
+
+#### Correct
+
+```ts
+try {
+  await persistGeneratedImages(result);
+} catch (error) {
+  await Promise.all(
+    result.images.map((image) => removeOutput(image.absolutePath)),
+  );
+  throw error;
+}
+res.json(toResponse(result));
+```
+
+---
+
+## Local filesystem storage rules
 
 The backend writes three storage classes (a future task may introduce per-user
 output directories):
@@ -695,9 +790,11 @@ of this file in git history. Key points still in force:
 - Magic-bytes sniffing decides extension (not Content-Type)
 - All filesystem helpers in `src/storage/localStorage.ts`; no direct `fs` use
   elsewhere
-- `OUTPUT_DIR/<filename>` files are **not** deleted when the matching
-  `image_records` row is deleted. Provider outputs are deleted when generation
-  is cancelled or quota settlement fails before persistence.
+- Normal `OUTPUT_DIR/<filename>` files are deleted when their authorized
+  `image_records` row is deleted. They are also deleted when generation is
+  cancelled, quota settlement fails, or record persistence fails.
+- Pre-existing files with no matching record are report-only and must not be
+  deleted automatically.
 
 ---
 

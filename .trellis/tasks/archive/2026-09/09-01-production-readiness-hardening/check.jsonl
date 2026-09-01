@@ -1,0 +1,6 @@
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"验收生成记录、文件清理和数据库事务边界"}
+{"file":".trellis/spec/backend/error-handling.md","reason":"验收 401/404/429/持久化错误响应的一致性"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"验收后端测试、类型、lint 与构建"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"验收 UI 结构、交互和渐进加载实现"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"验收前端测试、性能、可访问性与构建"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"验收前后端 API、权限和部署契约"}

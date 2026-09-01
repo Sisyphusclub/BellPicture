@@ -32,6 +32,7 @@ export type ErrorCode =
   | "PROVIDER_RATE_LIMITED" // 2API returned 429
   | "REQUEST_ABORTED" // caller disconnected/cancelled; internal status 499
   | "QUOTA_EXHAUSTED" // per-user daily image quota would overflow
+  | "RATE_LIMITED" // application endpoint request rate exceeded
   | "STORAGE_ERROR" // local fs read/write failed
   | "INTERNAL";
 
@@ -182,6 +183,7 @@ messages:
 | `auth.api.getSession` throws unexpectedly                           | `UNAUTHORIZED`    | 401 (cause attached; logged at `error`)           |
 | Authenticated non-admin calls admin-only endpoint                   | `FORBIDDEN`       | 403                                               |
 | Per-user daily quota would overflow on atomic `reserve`             | `QUOTA_EXHAUSTED` | 429 (`details = { requested, remaining, total }`) |
+| Application endpoint rate limit is exceeded                         | `RATE_LIMITED`    | 429, standard rate-limit headers + request id     |
 
 The `openaiCompatAuth` middleware (mounted on `/v1/*`) translates inbound API-key
 failures into the same error envelope:
@@ -199,6 +201,26 @@ The frontend's `imagesApi` wrapper recognises 401 and triggers the
 registered unauthorized handler — keep the error envelope shape
 (`{ error: { code, message, requestId } }`) so the SPA can branch on
 `code === 'UNAUTHORIZED'` without parsing message text.
+
+## Output authorization failure mapping
+
+`GET /api/outputs/:filename` deliberately returns 404 for denied or unknown
+outputs so callers cannot probe private filenames.
+
+| Trigger                                              | HTTP behavior                        |
+| ---------------------------------------------------- | ------------------------------------ |
+| Matching public `image_records` row                  | Anonymous 200 allowed                |
+| Matching private row + owner session                 | 200 allowed                          |
+| Matching private row + admin session                 | 200 allowed                          |
+| Matching private row + anonymous/other user          | 404 `NOT_FOUND`                      |
+| No matching row + valid unexpired HMAC query         | 200 allowed for OpenAI compatibility |
+| No matching row + missing/expired/invalid HMAC query | 404 `NOT_FOUND`                      |
+
+Signed query strings use `expires=<10 digit epoch>&signature=<64 hex HMAC>`.
+The HMAC input is `filename + "\\n" + expires`, the key is
+`BETTER_AUTH_SECRET`, comparison is timing-safe, and the default TTL is one
+hour. Never return 403 for a private filename and never include ownership data
+in the error details.
 
 ---
 
