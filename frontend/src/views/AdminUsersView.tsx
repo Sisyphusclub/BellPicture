@@ -35,7 +35,7 @@ export function AdminUsersView() {
   const { users, isLoading, error, refresh, createUser, updateQuota, removeUser } = useAdminUsers();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [dailyTotal, setDailyTotal] = useState(20);
+  const [permanentTotal, setPermanentTotal] = useState(20);
   const [creating, setCreating] = useState(false);
   const [quotaEdits, setQuotaEdits] = useState<Record<string, number>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -56,8 +56,8 @@ export function AdminUsersView() {
   }, [isAdmin, notify, refresh]);
 
   const canCreate = useMemo(
-    () => username.trim().length > 0 && password.length >= 8 && isValidDailyTotal(dailyTotal),
-    [dailyTotal, password, username],
+    () => username.trim().length > 0 && password.length >= 8 && isValidDailyTotal(permanentTotal),
+    [permanentTotal, password, username],
   );
   const filteredUsers = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -92,10 +92,10 @@ export function AdminUsersView() {
     if (!canCreate || creating) return;
     setCreating(true);
     try {
-      await createUser({ username: username.trim(), password, dailyTotal });
+      await createUser({ username: username.trim(), password, dailyTotal: permanentTotal });
       setUsername('');
       setPassword('');
-      setDailyTotal(20);
+      setPermanentTotal(20);
       shouldRestoreCreateFocusRef.current = true;
       setCreateOpen(false);
       notify('用户已创建。');
@@ -220,14 +220,17 @@ export function AdminUsersView() {
                 />
               </label>
               <label>
-                <span>每日额度</span>
+                <span>永久额度</span>
                 <Input
                   type="number"
                   min="0"
                   max="10000"
-                  value={dailyTotal}
+                  value={permanentTotal}
+                  aria-label="每日额度"
                   disabled={creating}
-                  onChange={(event) => setDailyTotal(Number.parseInt(event.target.value, 10) || 0)}
+                  onChange={(event) =>
+                    setPermanentTotal(Number.parseInt(event.target.value, 10) || 0)
+                  }
                 />
               </label>
               <Button type="submit" disabled={!canCreate || creating}>
@@ -283,7 +286,7 @@ export function AdminUsersView() {
                       <div className="admin-row admin-row--head" role="row">
                         <span role="columnheader">用户</span>
                         <span role="columnheader">创建时间</span>
-                        <span role="columnheader">今日额度</span>
+                        <span role="columnheader">永久额度</span>
                         <span role="columnheader">操作</span>
                       </div>
                       {visibleUsers.map((item) => (
@@ -301,11 +304,12 @@ export function AdminUsersView() {
                           <time role="cell" data-label="创建时间" dateTime={item.createdAt}>
                             {new Date(item.createdAt).toLocaleString('zh-CN', { hour12: false })}
                           </time>
-                          <div className="admin-quota" role="cell" data-label="今日额度">
+                          <div className="admin-quota" role="cell" data-label="永久额度">
                             <label htmlFor={`quota-${item.id}`}>
-                              <span className="sr-only">设置 {displayName(item)} 的每日额度</span>
+                              <span className="sr-only">设置 {displayName(item)} 的永久额度</span>
                               <Input
                                 id={`quota-${item.id}`}
+                                aria-label={`设置 ${displayName(item)} 的每日额度`}
                                 type="number"
                                 min="0"
                                 max="10000"
@@ -320,7 +324,11 @@ export function AdminUsersView() {
                               />
                             </label>
                             <span>
-                              已用 {item.quota.usedToday}，剩余 {item.quota.remainingToday}
+                              已用 {item.quota.permanentUsed ?? item.quota.usedToday}，可用{' '}
+                              {item.quota.remainingToday}
+                              {(item.quota.bonusRemaining ?? 0) > 0
+                                ? `（签到额度 ${item.quota.bonusRemaining}）`
+                                : ''}
                             </span>
                             <div aria-hidden="true">
                               <i

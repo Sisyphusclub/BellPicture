@@ -74,6 +74,11 @@ service results into React state and user actions.
 
 ## Persistence
 
+Quota snapshots represent the sum of a non-expiring administrator-configured
+permanent pool and active seven-day check-in grant batches. Keep aggregate
+`total`/`remaining` fields as the shared display source; optional pool detail
+fields are informational and must not be recomputed independently in views.
+
 The backend is the source of truth for generated records and quota. Browser
 storage is permitted only for explicitly local preferences or compatibility
 caches. Treat persisted JSON as `unknown`, validate versions and fields, and

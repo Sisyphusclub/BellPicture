@@ -218,7 +218,7 @@ http://localhost:5173
 | `HIGH_RES_IMAGE_MODEL`        | 否   | 管理员 2K/4K 专用模型名，例如 `codex-gpt-image-2`；留空则沿用请求模型 |
 | `IMAGE_API_TIMEOUT_MS`        | 否   | 图像生成请求超时时间                                                  |
 | `UPLOAD_MAX_BYTES`            | 否   | 参考图上传大小上限；Compose 会同时传给后端与前端代理，代理自动增加 1 MiB multipart 余量 |
-| `DAILY_USER_QUOTA`            | 否   | 默认用户每日生图额度                                                  |
+| `DAILY_USER_QUOTA`            | 否   | 默认用户永久生图额度（兼容旧环境变量名）                              |
 | `GOOGLE_CLIENT_ID`            | 否   | Google OAuth Client ID                                                |
 | `GOOGLE_CLIENT_SECRET`        | 否   | Google OAuth Client Secret                                            |
 | `SEED_DEFAULT_ADMIN`          | 否   | 是否启用默认管理员种子                                                |
@@ -243,7 +243,7 @@ http://localhost:5173
 | `GET`    | `/api/auth/me`               | 读取当前用户资料和管理员状态 |
 | `GET`    | `/api/admin/users`           | 管理员查看用户列表           |
 | `POST`   | `/api/admin/users`           | 管理员创建用户               |
-| `PATCH`  | `/api/admin/users/:id/quota` | 管理员设置用户每日额度       |
+| `PATCH`  | `/api/admin/users/:id/quota` | 管理员设置用户永久额度       |
 | `DELETE` | `/api/admin/users/:id`       | 管理员删除普通用户           |
 | `POST`   | `/v1/images/generations`     | OpenAI-compatible 生图接口   |
 
@@ -259,9 +259,9 @@ http://localhost:5173
 
 ## 额度与管理员
 
-每个用户有独立的每日生图额度。后端使用 `user_quota` 表记录当天已用额度和可选的用户级每日总额度；未设置用户级额度时使用 `DAILY_USER_QUOTA`。
+每个用户有独立的永久额度，管理员设置的总额不会随日期重置；每日签到奖励按领取批次保存并在 7 天后过期。未设置用户级额度时使用 `DAILY_USER_QUOTA` 作为永久额度默认值。
 
-管理员能力由后端校验，前端隐藏入口只作为体验优化。当前管理员可创建用户、设置每日额度和删除普通用户，不能删除自己或受保护管理员账号。
+管理员能力由后端校验，前端隐藏入口只作为体验优化。当前管理员可创建用户、设置永久额度和删除普通用户，不能删除自己或受保护管理员账号。
 
 ## 常用脚本
 

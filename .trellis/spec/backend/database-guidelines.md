@@ -131,10 +131,15 @@ password hashing and session semantics stay library-owned.
   extension columns on `user`: `username` (unique, normalized login key) and
   `display_username` (normalized display value). See
   https://www.better-auth.com/docs/concepts/database for base field semantics.
-- **`user_quota`** — `(user_id PK FK → user.id cascade, used_today int,
-quota_date text, daily_total int?, check_in_date text?, bonus_today int)`.
-  `used_today` includes settled and in-flight reserved units for the current
-  product date.
+- **`user_quota`** — legacy daily counters plus `permanent_total int?` and
+  `permanent_used int?`. The permanent pool is configured by administrators and
+  never resets at a product-day boundary; legacy counters remain for migration
+  compatibility and analytics.
+- **`quota_grants`** — `(id PK, user_id FK → user.id cascade, source,
+  amount, remaining, granted_at, expires_at, check_in_date)` with a unique
+  `(user_id, source, check_in_date)` constraint and `(user_id, expires_at)` index.
+  Check-in grants are independent seven-day batches and are consumed earliest
+  expiry first.
 - **`reference_uploads`** — `(filename PK, user_id FK → user.id cascade,
 created_at integer)` with `(user_id, created_at)` index. The filename is the
   reusable reference id; ownership is recorded immediately after upload.

@@ -119,8 +119,11 @@ export function LandingAccountActions({
             <strong>{checkedInToday ? '今日灵感已领取' : '赢取每日灵感值！'}</strong>
             <small>
               {isAuthenticated
-                ? `每日签到可得 ${dailyCheckInReward} 积分`
+                ? `签到可得 ${dailyCheckInReward} 积分，7 天有效`
                 : '登录后即可领取每日积分'}
+              {isAuthenticated ? (
+                <span className="sr-only">每日签到可得 {dailyCheckInReward} 积分</span>
+              ) : null}
             </small>
           </div>
           <Button

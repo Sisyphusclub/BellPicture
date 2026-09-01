@@ -85,7 +85,14 @@ function isAdminQuotaState(value: unknown): value is AdminUser['quota'] {
   return (
     isNumber(readNumber(value, 'total')) &&
     isNumber(readNumber(value, 'usedToday')) &&
-    isNumber(readNumber(value, 'remainingToday'))
+    isNumber(readNumber(value, 'remainingToday')) &&
+    (value.permanentTotal === undefined || isNumber(readNumber(value, 'permanentTotal'))) &&
+    (value.permanentUsed === undefined || isNumber(readNumber(value, 'permanentUsed'))) &&
+    (value.permanentRemaining === undefined || isNumber(readNumber(value, 'permanentRemaining'))) &&
+    (value.bonusRemaining === undefined || isNumber(readNumber(value, 'bonusRemaining'))) &&
+    (value.bonusExpiresAt === undefined ||
+      value.bonusExpiresAt === null ||
+      typeof value.bonusExpiresAt === 'string')
   );
 }
 

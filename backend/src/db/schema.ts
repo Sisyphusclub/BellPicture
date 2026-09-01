@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 // --- Better Auth core tables ---
 // Schema mirrors better-auth.com/docs/concepts/database (sqlite + ms timestamps).
@@ -97,7 +97,35 @@ export const userQuota = sqliteTable('user_quota', {
   dailyTotal: integer('daily_total'),
   checkInDate: text('check_in_date'),
   bonusToday: integer('bonus_today').notNull().default(0),
+  /** Lifetime quota configured by an administrator. Kept nullable for old rows. */
+  permanentTotal: integer('permanent_total'),
+  /** Lifetime quota consumed (including active reservations). */
+  permanentUsed: integer('permanent_used'),
 });
+
+export const quotaGrants = sqliteTable(
+  'quota_grants',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    source: text('source').notNull().default('check_in'),
+    amount: integer('amount').notNull(),
+    remaining: integer('remaining').notNull(),
+    grantedAt: integer('granted_at', { mode: 'timestamp_ms' }).notNull(),
+    expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
+    checkInDate: text('check_in_date').notNull(),
+  },
+  (t) => ({
+    byUserExpiry: index('quota_grants_user_expiry_idx').on(t.userId, t.expiresAt),
+    byUserSourceDate: uniqueIndex('quota_grants_user_source_date_idx').on(
+      t.userId,
+      t.source,
+      t.checkInDate,
+    ),
+  }),
+);
 
 export const referenceUploads = sqliteTable(
   'reference_uploads',

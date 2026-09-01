@@ -21,7 +21,7 @@ export function buildImagesRouter(deps: ImagesRouterDeps): Router {
   // authenticated user from `req.user.id` for per-user quota tracking.
   router.use(deps.authMiddleware ?? requireAuth);
 
-  // GET /api/images/quota -> { total, remaining } for the current user's daily quota.
+  // GET /api/images/quota -> { total, remaining } for the current user's effective quota.
   router.get('/quota', (req, res, next) => {
     void controller.quota(req, res, next);
   });

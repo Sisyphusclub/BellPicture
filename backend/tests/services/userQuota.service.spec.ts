@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { eq } from 'drizzle-orm';
 
 import { db } from '../../src/db/drizzle.js';
-import { user, userQuota } from '../../src/db/schema.js';
+import { quotaGrants, user, userQuota } from '../../src/db/schema.js';
 import { createUserQuotaService } from '../../src/services/userQuota.service.js';
 import { productDateKey } from '../../src/utils/date.js';
 
@@ -27,6 +28,8 @@ function createQuotaUser(dailyTotal: number): string {
 }
 
 describe('user quota reservations', () => {
+  afterEach(() => vi.useRealTimers());
+
   it('atomically blocks a second reservation when only one credit remains', () => {
     const pool = createUserQuotaService().forUser(createQuotaUser(1));
 
@@ -47,5 +50,47 @@ describe('user quota reservations', () => {
 
     expect(pool.snapshot().remaining).toBe(3);
     expect(() => reservation.release()).toThrowError(expect.objectContaining({ code: 'INTERNAL' }));
+  });
+
+  it('keeps permanent credits after the product date changes', () => {
+    const userId = createQuotaUser(4);
+    db.update(userQuota)
+      .set({ permanentTotal: 4, permanentUsed: 2, quotaDate: '2000-01-01', usedToday: 2 })
+      .where(eq(userQuota.userId, userId))
+      .run();
+    vi.setSystemTime(new Date('2030-01-02T00:00:00.000Z'));
+    expect(createUserQuotaService().forUser(userId).snapshot().remaining).toBe(2);
+  });
+
+  it('accumulates check-in grants and expires each batch independently', () => {
+    const userId = createQuotaUser(0);
+    const first = new Date('2030-01-01T01:00:00.000Z');
+    const second = new Date('2030-01-02T01:00:00.000Z');
+    db.insert(quotaGrants)
+      .values([
+        {
+          id: randomUUID(),
+          userId,
+          source: 'check_in',
+          amount: 5,
+          remaining: 5,
+          grantedAt: first,
+          expiresAt: new Date(first.getTime() + 7 * 24 * 60 * 60 * 1000),
+          checkInDate: '2030-01-01',
+        },
+        {
+          id: randomUUID(),
+          userId,
+          source: 'check_in',
+          amount: 5,
+          remaining: 5,
+          grantedAt: second,
+          expiresAt: new Date(second.getTime() + 7 * 24 * 60 * 60 * 1000),
+          checkInDate: '2030-01-02',
+        },
+      ])
+      .run();
+    vi.setSystemTime(new Date('2030-01-08T01:00:00.000Z'));
+    expect(createUserQuotaService().forUser(userId).snapshot().remaining).toBe(5);
   });
 });

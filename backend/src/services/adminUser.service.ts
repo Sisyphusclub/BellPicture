@@ -1,9 +1,9 @@
-import { asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, gt, sql } from 'drizzle-orm';
 
 import { auth } from '../config/auth.js';
 import { env } from '../config/env.js';
 import { db } from '../db/drizzle.js';
-import { user, userQuota } from '../db/schema.js';
+import { quotaGrants, user, userQuota } from '../db/schema.js';
 import { AppError } from '../errors/AppError.js';
 import { productDateKey } from '../utils/date.js';
 import { internalEmailForUsername, isValidUsername, normalizeUsername } from '../utils/username.js';
@@ -22,16 +22,23 @@ export interface AdminUserDTO {
     total: number;
     usedToday: number;
     remainingToday: number;
+    permanentTotal: number;
+    permanentUsed: number;
+    permanentRemaining: number;
+    bonusRemaining: number;
+    bonusExpiresAt: string | null;
   };
 }
 
 export interface CreateAdminUserInput {
   username: string;
   password: string;
+  permanentTotal?: number;
   dailyTotal?: number;
 }
 
 export interface UpdateUserQuotaInput {
+  permanentTotal?: number;
   dailyTotal: number;
 }
 
@@ -39,6 +46,11 @@ interface EffectiveQuotaState {
   total: number;
   usedToday: number;
   remainingToday: number;
+  permanentTotal: number;
+  permanentUsed: number;
+  permanentRemaining: number;
+  bonusRemaining: number;
+  bonusExpiresAt: string | null;
 }
 
 function normalizeAndValidateUsername(raw: string): string {
@@ -51,35 +63,67 @@ function normalizeAndValidateUsername(raw: string): string {
   return username;
 }
 
-function assertValidDailyTotal(dailyTotal: number): void {
-  if (!Number.isInteger(dailyTotal) || dailyTotal < 0 || dailyTotal > 10_000) {
-    throw new AppError('BAD_REQUEST', '每日额度需为 0 到 10000 之间的整数。', 400, undefined, {
-      field: 'dailyTotal',
+function assertValidPermanentTotal(permanentTotal: number): void {
+  if (!Number.isInteger(permanentTotal) || permanentTotal < 0 || permanentTotal > 10_000) {
+    throw new AppError('BAD_REQUEST', '永久额度需为 0 到 10000 之间的整数。', 400, undefined, {
+      field: 'permanentTotal',
     });
   }
 }
 
 function quotaState(row: {
+  userId: string;
   usedToday: number | null;
   quotaDate: string | null;
   dailyTotal: number | null;
   checkInDate: string | null;
   bonusToday: number | null;
+  permanentTotal: number | null;
+  permanentUsed: number | null;
 }): EffectiveQuotaState {
   const today = productDateKey();
-  const total =
-    (row.dailyTotal ?? env.DAILY_USER_QUOTA) +
-    (row.checkInDate === today ? (row.bonusToday ?? 0) : 0);
-  const usedToday = row.quotaDate === today ? (row.usedToday ?? 0) : 0;
+  const permanentTotal = row.permanentTotal ?? row.dailyTotal ?? env.DAILY_USER_QUOTA;
+  const useLegacyCounter =
+    row.permanentUsed === null ||
+    row.permanentUsed === undefined ||
+    (row.permanentUsed === 0 && (row.usedToday ?? 0) > 0 && row.checkInDate === null);
+  const permanentUsed = useLegacyCounter
+    ? Math.max(0, row.quotaDate === today ? (row.usedToday ?? 0) : 0)
+    : Math.max(0, row.permanentUsed ?? 0);
+  const grants = db
+    .select({
+      remaining: quotaGrants.remaining,
+      amount: quotaGrants.amount,
+      expiresAt: quotaGrants.expiresAt,
+    })
+    .from(quotaGrants)
+    .where(
+      and(
+        eq(quotaGrants.userId, row.userId),
+        gt(quotaGrants.expiresAt, new Date()),
+        gt(quotaGrants.remaining, 0),
+      ),
+    )
+    .orderBy(asc(quotaGrants.expiresAt))
+    .all();
+  const bonusRemaining = grants.reduce((sum, grant) => sum + grant.remaining, 0);
+  const total = permanentTotal + grants.reduce((sum, grant) => sum + grant.amount, 0);
+  const remaining = Math.max(0, permanentTotal - permanentUsed) + bonusRemaining;
   return {
     total,
-    usedToday,
-    remainingToday: Math.max(0, total - usedToday),
+    usedToday: row.quotaDate === today ? (row.usedToday ?? 0) : 0,
+    remainingToday: remaining,
+    permanentTotal,
+    permanentUsed,
+    permanentRemaining: Math.max(0, permanentTotal - permanentUsed),
+    bonusRemaining,
+    bonusExpiresAt: grants[0]?.expiresAt.toISOString() ?? null,
   };
 }
 
 function toAdminUserDTO(row: {
   id: string;
+  userId: string;
   username: string | null;
   name: string;
   email: string;
@@ -90,6 +134,8 @@ function toAdminUserDTO(row: {
   dailyTotal: number | null;
   checkInDate: string | null;
   bonusToday: number | null;
+  permanentTotal: number | null;
+  permanentUsed: number | null;
 }): AdminUserDTO {
   return {
     id: row.id,
@@ -103,11 +149,7 @@ function toAdminUserDTO(row: {
 }
 
 export function isUserAdmin(userId: string): boolean {
-  const row = db
-    .select({ isAdmin: user.isAdmin })
-    .from(user)
-    .where(eq(user.id, userId))
-    .get();
+  const row = db.select({ isAdmin: user.isAdmin }).from(user).where(eq(user.id, userId)).get();
   return row?.isAdmin === true;
 }
 
@@ -115,6 +157,7 @@ export function listAdminUsers(): AdminUserDTO[] {
   const rows = db
     .select({
       id: user.id,
+      userId: user.id,
       username: user.username,
       name: user.name,
       email: user.email,
@@ -125,6 +168,8 @@ export function listAdminUsers(): AdminUserDTO[] {
       dailyTotal: userQuota.dailyTotal,
       checkInDate: userQuota.checkInDate,
       bonusToday: userQuota.bonusToday,
+      permanentTotal: userQuota.permanentTotal,
+      permanentUsed: userQuota.permanentUsed,
     })
     .from(user)
     .leftJoin(userQuota, eq(user.id, userQuota.userId))
@@ -140,8 +185,9 @@ export async function createAdminManagedUser(input: CreateAdminUserInput): Promi
       field: 'password',
     });
   }
-  if (input.dailyTotal !== undefined) {
-    assertValidDailyTotal(input.dailyTotal);
+  const configuredTotal = input.permanentTotal ?? input.dailyTotal;
+  if (configuredTotal !== undefined) {
+    assertValidPermanentTotal(configuredTotal);
   }
 
   const existingUser = db
@@ -166,17 +212,13 @@ export async function createAdminManagedUser(input: CreateAdminUserInput): Promi
     },
   });
 
-  const created = db
-    .select({ id: user.id })
-    .from(user)
-    .where(eq(user.username, username))
-    .get();
+  const created = db.select({ id: user.id }).from(user).where(eq(user.username, username)).get();
   if (!created) {
     throw new AppError('INTERNAL', '用户创建后未能读取，请稍后重试。', 500);
   }
 
-  if (input.dailyTotal !== undefined) {
-    setUserDailyQuota(created.id, input.dailyTotal);
+  if (configuredTotal !== undefined) {
+    setUserPermanentQuota(created.id, configuredTotal);
   }
 
   return getAdminUser(created.id);
@@ -186,6 +228,7 @@ export function getAdminUser(userId: string): AdminUserDTO {
   const row = db
     .select({
       id: user.id,
+      userId: user.id,
       username: user.username,
       name: user.name,
       email: user.email,
@@ -196,6 +239,8 @@ export function getAdminUser(userId: string): AdminUserDTO {
       dailyTotal: userQuota.dailyTotal,
       checkInDate: userQuota.checkInDate,
       bonusToday: userQuota.bonusToday,
+      permanentTotal: userQuota.permanentTotal,
+      permanentUsed: userQuota.permanentUsed,
     })
     .from(user)
     .leftJoin(userQuota, eq(user.id, userQuota.userId))
@@ -208,29 +253,49 @@ export function getAdminUser(userId: string): AdminUserDTO {
   return toAdminUserDTO(row);
 }
 
-export function setUserDailyQuota(userId: string, dailyTotal: number): AdminUserDTO {
-  assertValidDailyTotal(dailyTotal);
+export function setUserPermanentQuota(userId: string, permanentTotal: number): AdminUserDTO {
+  assertValidPermanentTotal(permanentTotal);
   const exists = db.select({ id: user.id }).from(user).where(eq(user.id, userId)).get();
   if (!exists) {
     throw new AppError('NOT_FOUND', '用户不存在。', 404, undefined, { userId });
   }
 
   const existingQuota = db
-    .select({ usedToday: userQuota.usedToday, quotaDate: userQuota.quotaDate })
+    .select({
+      usedToday: userQuota.usedToday,
+      quotaDate: userQuota.quotaDate,
+      permanentUsed: userQuota.permanentUsed,
+      dailyTotal: userQuota.dailyTotal,
+      permanentTotal: userQuota.permanentTotal,
+      checkInDate: userQuota.checkInDate,
+      bonusToday: userQuota.bonusToday,
+    })
     .from(userQuota)
     .where(eq(userQuota.userId, userId))
     .get();
   const today = productDateKey();
   const usedToday = existingQuota?.quotaDate === today ? existingQuota.usedToday : 0;
+  const permanentUsed = Math.max(0, existingQuota?.permanentUsed ?? 0, usedToday);
 
   db.insert(userQuota)
-    .values({ userId, usedToday, quotaDate: today, dailyTotal })
+    .values({
+      userId,
+      usedToday,
+      quotaDate: today,
+      dailyTotal: permanentTotal,
+      checkInDate: existingQuota?.checkInDate ?? null,
+      bonusToday: existingQuota?.bonusToday ?? 0,
+      permanentTotal,
+      permanentUsed,
+    })
     .onConflictDoUpdate({
       target: userQuota.userId,
       set: {
         usedToday: sql`excluded.used_today`,
         quotaDate: sql`excluded.quota_date`,
         dailyTotal: sql`excluded.daily_total`,
+        permanentTotal: sql`excluded.permanent_total`,
+        permanentUsed: sql`COALESCE(${userQuota.permanentUsed}, excluded.permanent_used)`,
       },
     })
     .run();
@@ -238,7 +303,13 @@ export function setUserDailyQuota(userId: string, dailyTotal: number): AdminUser
   return getAdminUser(userId);
 }
 
-export async function deleteAdminManagedUser(targetUserId: string, currentAdminId: string): Promise<void> {
+/** @deprecated Kept for older callers while the API transitions to permanentTotal. */
+export const setUserDailyQuota = setUserPermanentQuota;
+
+export async function deleteAdminManagedUser(
+  targetUserId: string,
+  currentAdminId: string,
+): Promise<void> {
   const target = db
     .select({ id: user.id, username: user.username, isAdmin: user.isAdmin })
     .from(user)

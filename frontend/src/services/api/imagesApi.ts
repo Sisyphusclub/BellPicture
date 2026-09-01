@@ -135,7 +135,14 @@ function isQuotaResponse(value: unknown): value is QuotaResponse {
     isNumber(readNumber(value, 'total')) &&
     isNumber(readNumber(value, 'remaining')) &&
     typeof value.checkedInToday === 'boolean' &&
-    isNumber(readNumber(value, 'dailyCheckInReward'))
+    isNumber(readNumber(value, 'dailyCheckInReward')) &&
+    (value.permanentTotal === undefined || isNumber(readNumber(value, 'permanentTotal'))) &&
+    (value.permanentUsed === undefined || isNumber(readNumber(value, 'permanentUsed'))) &&
+    (value.permanentRemaining === undefined || isNumber(readNumber(value, 'permanentRemaining'))) &&
+    (value.bonusRemaining === undefined || isNumber(readNumber(value, 'bonusRemaining'))) &&
+    (value.bonusExpiresAt === undefined ||
+      value.bonusExpiresAt === null ||
+      typeof value.bonusExpiresAt === 'string')
   );
 }
 

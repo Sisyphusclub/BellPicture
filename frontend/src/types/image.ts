@@ -129,6 +129,11 @@ export interface QuotaResponse {
   remaining: number;
   checkedInToday: boolean;
   dailyCheckInReward: number;
+  permanentTotal?: number;
+  permanentUsed?: number;
+  permanentRemaining?: number;
+  bonusRemaining?: number;
+  bonusExpiresAt?: string | null;
 }
 
 export interface DailyCheckInResponse extends QuotaResponse {

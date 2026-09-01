@@ -3,6 +3,11 @@ export interface QuotaSnapshot {
   remaining: number;
   checkedInToday: boolean;
   dailyCheckInReward: number;
+  permanentTotal?: number;
+  permanentUsed?: number;
+  permanentRemaining?: number;
+  bonusRemaining?: number;
+  bonusExpiresAt?: string | null;
 }
 
 export interface DailyCheckInResult extends QuotaSnapshot {
