@@ -1295,3 +1295,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 40: 移除额度更新成功提示
+
+**Date**: 2026-09-01
+**Task**: 移除额度更新成功提示
+**Branch**: `dev`
+
+### Summary
+
+管理员更新额度成功后不再显示右上角成功 Toast，保留失败提示、当前用户额度刷新，并补充成功静默与错误通知回归测试。确认当前仓库没有独立的 Be UI Toast/Notification 组件。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c219df1` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
