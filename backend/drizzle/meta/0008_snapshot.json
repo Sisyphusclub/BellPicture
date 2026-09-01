@@ -104,17 +104,12 @@
       "indexes": {
         "account_user_idx": {
           "name": "account_user_idx",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         },
         "account_provider_account_idx": {
           "name": "account_provider_account_idx",
-          "columns": [
-            "provider_id",
-            "account_id"
-          ],
+          "columns": ["provider_id", "account_id"],
           "isUnique": false
         }
       },
@@ -123,12 +118,8 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -281,26 +272,17 @@
       "indexes": {
         "image_records_user_created_idx": {
           "name": "image_records_user_created_idx",
-          "columns": [
-            "user_id",
-            "created_at"
-          ],
+          "columns": ["user_id", "created_at"],
           "isUnique": false
         },
         "image_records_batch_idx": {
           "name": "image_records_batch_idx",
-          "columns": [
-            "batch_id"
-          ],
+          "columns": ["batch_id"],
           "isUnique": false
         },
         "image_records_public_created_id_idx": {
           "name": "image_records_public_created_id_idx",
-          "columns": [
-            "is_public",
-            "created_at",
-            "id"
-          ],
+          "columns": ["is_public", "created_at", "id"],
           "isUnique": false
         }
       },
@@ -309,12 +291,8 @@
           "name": "image_records_user_id_user_id_fk",
           "tableFrom": "image_records",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -387,19 +365,12 @@
       "indexes": {
         "quota_grants_user_expiry_idx": {
           "name": "quota_grants_user_expiry_idx",
-          "columns": [
-            "user_id",
-            "expires_at"
-          ],
+          "columns": ["user_id", "expires_at"],
           "isUnique": false
         },
         "quota_grants_user_source_date_idx": {
           "name": "quota_grants_user_source_date_idx",
-          "columns": [
-            "user_id",
-            "source",
-            "check_in_date"
-          ],
+          "columns": ["user_id", "source", "check_in_date"],
           "isUnique": true
         }
       },
@@ -408,12 +379,8 @@
           "name": "quota_grants_user_id_user_id_fk",
           "tableFrom": "quota_grants",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -450,10 +417,7 @@
       "indexes": {
         "reference_uploads_user_created_idx": {
           "name": "reference_uploads_user_created_idx",
-          "columns": [
-            "user_id",
-            "created_at"
-          ],
+          "columns": ["user_id", "created_at"],
           "isUnique": false
         }
       },
@@ -462,12 +426,8 @@
           "name": "reference_uploads_user_id_user_id_fk",
           "tableFrom": "reference_uploads",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -541,16 +501,12 @@
       "indexes": {
         "session_token_unique": {
           "name": "session_token_unique",
-          "columns": [
-            "token"
-          ],
+          "columns": ["token"],
           "isUnique": true
         },
         "session_user_idx": {
           "name": "session_user_idx",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         }
       },
@@ -559,12 +515,8 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -654,16 +606,12 @@
       "indexes": {
         "user_email_unique": {
           "name": "user_email_unique",
-          "columns": [
-            "email"
-          ],
+          "columns": ["email"],
           "isUnique": true
         },
         "user_username_unique": {
           "name": "user_username_unique",
-          "columns": [
-            "username"
-          ],
+          "columns": ["username"],
           "isUnique": true
         }
       },
@@ -740,12 +688,8 @@
           "name": "user_quota_user_id_user_id_fk",
           "tableFrom": "user_quota",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }

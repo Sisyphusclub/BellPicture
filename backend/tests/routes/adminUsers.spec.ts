@@ -158,7 +158,11 @@ describe('/api/admin/users', () => {
       .set({ usedToday: 2, quotaDate: productDateKey() })
       .where(eq(userQuota.userId, memberId))
       .run();
-    const memberApp = createApp({ provider: fakeProvider, authMiddleware: stubAuth(memberId), adminMiddleware: allowAdmin() });
+    const memberApp = createApp({
+      provider: fakeProvider,
+      authMiddleware: stubAuth(memberId),
+      adminMiddleware: allowAdmin(),
+    });
     const quota = await request(memberApp).get('/api/images/quota');
 
     expect(quota.status).toBe(200);

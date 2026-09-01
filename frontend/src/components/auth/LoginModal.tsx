@@ -23,30 +23,27 @@ export function LoginModal() {
   const dialogRef = useRef<HTMLElement>(null);
   const usernameRef = useRef<HTMLInputElement>(null);
 
-  const validation = useMemo(
-    () => {
-      const normalizedUsername = username.trim().toLowerCase();
-      return {
-        username:
-          touched.username && normalizedUsername.length > 0
-            ? USERNAME_PATTERN.test(normalizedUsername)
-              ? null
-              : '仅支持 3-32 位小写字母、数字或下划线。'
-            : hasSubmitted && normalizedUsername.length === 0
-              ? '请输入用户名。'
-              : null,
-        password:
-          touched.password && password.length > 0
-            ? password.length >= 8
-              ? null
-              : '密码至少为 8 个字符。'
-            : hasSubmitted && password.length === 0
-              ? '请输入密码。'
-              : null,
-      };
-    },
-    [hasSubmitted, password, touched, username],
-  );
+  const validation = useMemo(() => {
+    const normalizedUsername = username.trim().toLowerCase();
+    return {
+      username:
+        touched.username && normalizedUsername.length > 0
+          ? USERNAME_PATTERN.test(normalizedUsername)
+            ? null
+            : '仅支持 3-32 位小写字母、数字或下划线。'
+          : hasSubmitted && normalizedUsername.length === 0
+            ? '请输入用户名。'
+            : null,
+      password:
+        touched.password && password.length > 0
+          ? password.length >= 8
+            ? null
+            : '密码至少为 8 个字符。'
+          : hasSubmitted && password.length === 0
+            ? '请输入密码。'
+            : null,
+    };
+  }, [hasSubmitted, password, touched, username]);
 
   const resetAndClose = useCallback((): void => {
     setUsername('');

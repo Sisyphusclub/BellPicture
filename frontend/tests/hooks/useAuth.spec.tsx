@@ -9,15 +9,17 @@ interface SessionState {
   refetch: ReturnType<typeof vi.fn>;
 }
 
-const session = vi.hoisted((): SessionState => ({
-  user: {
-    id: 'user-a',
-    email: 'a@example.test',
-    name: 'Session A',
-  },
-  isPending: false,
-  refetch: vi.fn(),
-}));
+const session = vi.hoisted(
+  (): SessionState => ({
+    user: {
+      id: 'user-a',
+      email: 'a@example.test',
+      name: 'Session A',
+    },
+    isPending: false,
+    refetch: vi.fn(),
+  }),
+);
 const profileApi = vi.hoisted(() => ({ fetchAuthProfile: vi.fn() }));
 
 vi.mock('@/lib/authClient', () => ({

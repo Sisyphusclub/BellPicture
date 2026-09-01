@@ -46,9 +46,7 @@ describe('LoginModal', () => {
     expect(password).toHaveAttribute('placeholder', '至少 8 个字符');
     await user.click(password);
     expect(screen.queryByText('请输入用户名。')).not.toBeInTheDocument();
-    expect(
-      screen.queryByText('仅支持 3-32 位小写字母、数字或下划线。'),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText('仅支持 3-32 位小写字母、数字或下划线。')).not.toBeInTheDocument();
 
     await user.click(username);
     await user.type(username, 'creator@example.com');

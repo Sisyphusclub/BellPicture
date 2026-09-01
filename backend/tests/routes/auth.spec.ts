@@ -78,7 +78,11 @@ describe('username/password auth', () => {
     expect(admin.status).toBe(403);
     expect(admin.body.error.code).toBe('FORBIDDEN');
 
-    const blur = db.select({ isAdmin: user.isAdmin }).from(user).where(eq(user.username, 'blur')).get();
+    const blur = db
+      .select({ isAdmin: user.isAdmin })
+      .from(user)
+      .where(eq(user.username, 'blur'))
+      .get();
     expect(blur?.isAdmin).toBe(false);
   });
 
