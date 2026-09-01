@@ -64,6 +64,8 @@ service results into React state and user actions.
 - When an admin mutation changes the currently authenticated user's server-backed quota, call the
   shared quota refresh action so every mounted quota consumer observes the new snapshot. Mutations
   for another user must not overwrite the current user's quota cache.
+- Admin quota saves are intentionally silent on success because the updated table row and shared
+  quota consumers provide immediate confirmation; keep the ToastProvider notification for failures.
 - Preserve owner-scoped private-history identifiers such as `referenceIds` for
   regeneration rather than reconstructing them from visual state. Public
   gallery payloads must not carry reusable reference ids.

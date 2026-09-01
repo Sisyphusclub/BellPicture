@@ -1,0 +1,3 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend quality-check command list and package scope."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Required test, lint, typecheck, build, formatting, and accessibility checks."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Visible feedback and shared component compliance review."}

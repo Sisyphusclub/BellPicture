@@ -202,6 +202,7 @@ describe('AdminUsersView workbench', () => {
     await user.click(within(memberRow as HTMLElement).getByRole('button', { name: '保存额度' }));
 
     await waitFor(() => expect(adminMocks.updateQuota).toHaveBeenCalledWith('user-1', 42));
+    expect(screen.queryByText('额度已更新。')).not.toBeInTheDocument();
     expect(quotaMocks.refresh).not.toHaveBeenCalled();
 
     const adminRow = screen.getByText('member0').closest('[role="row"]');
@@ -215,6 +216,24 @@ describe('AdminUsersView workbench', () => {
 
     await waitFor(() => expect(adminMocks.updateQuota).toHaveBeenCalledWith('user-0', 1000));
     await waitFor(() => expect(quotaMocks.refresh).toHaveBeenCalledOnce());
+    expect(screen.queryByText('额度已更新。')).not.toBeInTheDocument();
+  });
+
+  it('keeps quota update errors visible without showing a success toast', async () => {
+    const user = userEvent.setup();
+    adminMocks.updateQuota.mockRejectedValueOnce(new Error('额度更新失败，请稍后重试。'));
+    renderView();
+
+    const memberRow = screen.getByText('member1').closest('[role="row"]');
+    expect(memberRow).not.toBeNull();
+    const quotaInput = within(memberRow as HTMLElement).getByLabelText('设置 member1 的每日额度');
+    await user.clear(quotaInput);
+    await user.type(quotaInput, '42');
+    await user.click(within(memberRow as HTMLElement).getByRole('button', { name: '保存额度' }));
+
+    await waitFor(() => expect(screen.getByText('额度更新失败，请稍后重试。')).toBeInTheDocument());
+    expect(screen.queryByText('额度已更新。')).not.toBeInTheDocument();
+    expect(quotaMocks.refresh).not.toHaveBeenCalled();
   });
 
   it('protects admin accounts and confirms deletion of a regular user', async () => {

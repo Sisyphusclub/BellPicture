@@ -1,0 +1,5 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend package scope, required checks, and architecture rules."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Shared component, notification, accessibility, and interaction conventions."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Regression testing and verification requirements for the view change."}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"ToastProvider and shared state behavior conventions."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Toast state ownership and server-backed mutation feedback rules."}

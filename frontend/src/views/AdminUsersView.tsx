@@ -117,7 +117,6 @@ export function AdminUsersView() {
         delete next[target.id];
         return next;
       });
-      notify('额度已更新。');
     } catch (caught) {
       notify(caught instanceof Error ? caught.message : '更新额度失败。', 'error');
     } finally {
