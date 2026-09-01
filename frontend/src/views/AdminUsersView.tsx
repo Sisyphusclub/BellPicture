@@ -12,6 +12,7 @@ import { SelectMenu } from '@/components/ui/select-menu';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 import { useAuth } from '@/hooks/useAuth';
 import { openAuthModal } from '@/hooks/useAuthModal';
+import { refreshImageQuota } from '@/hooks/useImageQuota';
 import type { AdminUser } from '@/types/admin';
 
 function displayName(user: AdminUser): string {
@@ -110,6 +111,7 @@ export function AdminUsersView() {
     setSavingId(target.id);
     try {
       await updateQuota(target.id, dailyQuota);
+      if (target.id === currentUser?.id) await refreshImageQuota();
       setQuotaEdits((current) => {
         const next = { ...current };
         delete next[target.id];

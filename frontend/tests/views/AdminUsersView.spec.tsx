@@ -34,11 +34,19 @@ const adminMocks = vi.hoisted(() => ({
   removeUser: vi.fn(),
 }));
 
+const quotaMocks = vi.hoisted(() => ({
+  refresh: vi.fn(),
+}));
+
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => authMocks,
 }));
 
 vi.mock('@/hooks/useAuthModal', () => authModalMocks);
+
+vi.mock('@/hooks/useImageQuota', () => ({
+  refreshImageQuota: quotaMocks.refresh,
+}));
 
 vi.mock('@/hooks/useAdminUsers', () => ({
   useAdminUsers: () => adminMocks,
@@ -97,6 +105,7 @@ beforeEach(() => {
     }),
   );
   adminMocks.removeUser.mockResolvedValue(undefined);
+  quotaMocks.refresh.mockResolvedValue(undefined);
 });
 
 describe('AdminUsersView workbench', () => {
@@ -193,6 +202,19 @@ describe('AdminUsersView workbench', () => {
     await user.click(within(memberRow as HTMLElement).getByRole('button', { name: '保存额度' }));
 
     await waitFor(() => expect(adminMocks.updateQuota).toHaveBeenCalledWith('user-1', 42));
+    expect(quotaMocks.refresh).not.toHaveBeenCalled();
+
+    const adminRow = screen.getByText('member0').closest('[role="row"]');
+    expect(adminRow).not.toBeNull();
+    const adminQuotaInput = within(adminRow as HTMLElement).getByLabelText(
+      '设置 member0 的每日额度',
+    );
+    await user.clear(adminQuotaInput);
+    await user.type(adminQuotaInput, '1000');
+    await user.click(within(adminRow as HTMLElement).getByRole('button', { name: '保存额度' }));
+
+    await waitFor(() => expect(adminMocks.updateQuota).toHaveBeenCalledWith('user-0', 1000));
+    await waitFor(() => expect(quotaMocks.refresh).toHaveBeenCalledOnce());
   });
 
   it('protects admin accounts and confirms deletion of a regular user', async () => {

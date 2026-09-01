@@ -88,6 +88,9 @@ components. Route-local data should stay in the route's hook.
 - `useAuthModal` and `useImageDetailModalState` own shared modal state.
 - Image generation, quota, history, public gallery, upload, and admin-user hooks
   call the corresponding API services and expose UI-ready state.
+- `refreshImageQuota()` is the imperative bridge for non-quota views that mutate the current user's
+  daily quota (for example, admin user management). It must reuse `useImageQuota`'s request-generation
+  guard and update the shared external store; never copy quota values into a second local cache.
 - `useMediaQuery` owns browser media-query subscription and cleanup.
 
 ## Testing Hooks

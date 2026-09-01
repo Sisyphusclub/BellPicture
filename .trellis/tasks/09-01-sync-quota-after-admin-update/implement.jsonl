@@ -1,0 +1,5 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/frontend/index.md", "reason": "前端实现入口与检查清单"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "共享额度缓存刷新和异步请求约束"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "服务端数据成功变更后的缓存同步规则"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "管理员额度更新回归测试要求"}

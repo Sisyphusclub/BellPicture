@@ -38,6 +38,10 @@ async function loadQuota(authenticated: boolean): Promise<void> {
   }
 }
 
+export function refreshImageQuota(): Promise<void> {
+  return loadQuota(true);
+}
+
 export function useImageQuota() {
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
