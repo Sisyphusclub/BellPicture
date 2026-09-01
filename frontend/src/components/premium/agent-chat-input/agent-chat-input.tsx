@@ -15,14 +15,7 @@ import {
   WandSparkles,
 } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import {
-  type ChangeEvent,
-  type FocusEvent,
-  type ReactNode,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { type ChangeEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 
 import {
   MorphPopover,
@@ -520,7 +513,6 @@ export function AgentChatInput({
   allowFileUpload = true,
   acceptedFileTypes = 'image/*',
   toolbarContent,
-  liquidGlass = false,
   className,
   classNames,
 }: AgentChatInputProps) {
@@ -528,7 +520,6 @@ export function AgentChatInput({
   const composerRef = useRef<AgentChatComposerHandle>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewAttachmentId, setPreviewAttachmentId] = useState<string | null>(null);
-  const [glowActive, setGlowActive] = useState(false);
   const [text, setText] = useControllableString({
     value,
     defaultValue,
@@ -587,18 +578,6 @@ export function AgentChatInput({
     setSelectedSkillIds(next.skillIds);
   }
 
-  function handleFocusCapture(event: FocusEvent<HTMLDivElement>) {
-    const target = event.target as HTMLElement;
-    if (target.closest('.agent-chat-input__textarea')) setGlowActive(true);
-  }
-
-  function handleBlurCapture(event: FocusEvent<HTMLDivElement>) {
-    const editor = event.currentTarget.querySelector('.agent-chat-input__textarea');
-    if (!event.relatedTarget || !editor?.contains(event.relatedTarget)) {
-      setGlowActive(false);
-    }
-  }
-
   function submit() {
     if (!canSubmit) return;
     const composed = composerRef.current?.serialize() ?? {
@@ -648,10 +627,9 @@ export function AgentChatInput({
     <BorderGlow
       data-slot="agent-chat-input"
       data-status={status}
-      active={glowActive}
       animated={false}
       backgroundColor="var(--muted)"
-      borderRadius={liquidGlass ? 30 : 20}
+      borderRadius={20}
       colors={['#ffb51b', '#12c8f4', '#1464ff']}
       coneSpread={22}
       edgeSensitivity={24}
@@ -659,10 +637,6 @@ export function AgentChatInput({
       glowColor="198 96 70"
       glowIntensity={0.9}
       glowRadius={34}
-      liquidGlass={liquidGlass}
-      reducedMotion={reduce}
-      onFocusCapture={handleFocusCapture}
-      onBlurCapture={handleBlurCapture}
       className={cn(
         'agent-chat-input',
         status === 'error' && 'agent-chat-input--error',

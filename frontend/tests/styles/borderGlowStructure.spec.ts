@@ -10,22 +10,43 @@ const borderGlowStyles = readFileSync(
 
 function ruleFor(selector: string) {
   const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const match = borderGlowStyles.match(new RegExp(`${escapedSelector} \\{([\\s\\S]*?)\\n\\}`));
+  const matches = [
+    ...borderGlowStyles.matchAll(new RegExp(`${escapedSelector} \\{([\\s\\S]*?)\\n\\}`, 'g')),
+  ];
+  const match = matches.at(-1);
 
-  expect(match, `missing CSS rule: ${selector}`).not.toBeNull();
+  expect(match, `missing CSS rule: ${selector}`).toBeDefined();
   return match?.[1] ?? '';
 }
 
-describe('BorderGlow structural ring contract', () => {
-  it('uses one 2px geometry token for both structural glow layers', () => {
-    expect(ruleFor('.border-glow-card')).toContain('--border-width: 2px;');
+describe('React Bits BorderGlow CSS contract', () => {
+  it('uses the official directional border and edge-fill layers', () => {
+    const borderLayer = ruleFor('.border-glow-card::before');
+    const fillLayer = ruleFor('.border-glow-card::after');
 
-    for (const selector of ['.border-glow-card::before', '.border-glow-card::after']) {
-      const rule = ruleFor(selector);
+    expect(borderLayer).toContain('border: 1px solid transparent;');
+    expect(borderLayer).toContain('linear-gradient(var(--card-bg, #120f17) 0 100%) padding-box');
+    expect(borderLayer).toContain('mask-image: conic-gradient(');
+    expect(fillLayer).toContain('border: 1px solid transparent;');
+    expect(fillLayer).toContain('mask-composite: subtract, add, add, add, add, add;');
+    expect(borderGlowStyles).not.toContain('--border-width');
+    expect(borderGlowStyles).not.toContain('mask-composite: exclude');
+  });
 
-      expect(rule).toContain('inset: calc(var(--border-width) * -1);');
-      expect(rule).toContain('border: var(--border-width) solid transparent;');
-      expect(rule).toContain('border-radius: calc(var(--border-radius) + var(--border-width));');
-    }
+  it('reveals every glow layer only from hover or the optional sweep', () => {
+    expect(borderGlowStyles).toContain('.border-glow-card:not(:hover):not(.sweep-active)::before,');
+    expect(borderGlowStyles).not.toContain('data-glow-active');
+    expect(borderGlowStyles).not.toContain('data-liquid-glass');
+  });
+
+  it('keeps the official inner and outer glow shadows and disables transitions for reduced motion', () => {
+    const glowSource = ruleFor('.border-glow-card > .edge-light::before');
+
+    expect(borderGlowStyles).toContain(
+      '.border-glow-card > .edge-light {\n  inset: calc(var(--glow-padding) * -1);',
+    );
+    expect(borderGlowStyles).toContain('mix-blend-mode: plus-lighter;');
+    expect(glowSource).toContain('inset 0 0 0 1px var(--glow-color, hsl(40deg 80% 80% / 100%))');
+    expect(borderGlowStyles).toContain('@media (prefers-reduced-motion: reduce)');
   });
 });

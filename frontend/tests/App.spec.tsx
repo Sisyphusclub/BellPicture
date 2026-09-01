@@ -385,18 +385,15 @@ describe('React application routes', () => {
     expect(quotaMocks.checkIn).toHaveReturned();
   });
 
-  it('activates the ReactBits border glow while the homepage prompt is focused', async () => {
+  it('keeps the React Bits border glow independent from homepage prompt focus', async () => {
     const user = userEvent.setup();
     const { container } = renderRoute('/');
+    const prompt = screen.getByRole('textbox', { name: '首页创作提示词' });
 
-    await user.click(screen.getByRole('textbox', { name: '首页创作提示词' }));
+    await user.click(prompt);
 
-    await waitFor(() => {
-      expect(container.querySelector('.border-glow-card')).toHaveAttribute(
-        'data-glow-active',
-        'true',
-      );
-    });
+    expect(prompt).toHaveFocus();
+    expect(container.querySelector('.border-glow-card')).not.toHaveAttribute('data-glow-active');
   });
 
   it('carries a homepage prompt into the generation workspace and starts generation', async () => {

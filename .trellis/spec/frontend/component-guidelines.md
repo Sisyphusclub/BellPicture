@@ -115,29 +115,22 @@ prompt, and pending Edit is disabled without changing bubble child count.
   beUI Agent Chat Input and its BorderGlow are the only painted composer surface in hero, compact
   docked, and expanded docked states; do not wrap it in another card, glass target, or canvas layer.
 - Discover and Generate must use the shared `BorderGlow` `::before`, `::after`, and `.edge-light`
-  rendering so the orange, cyan, and blue palette has one intensity model. The `::before` layer owns
-  an uninterrupted 2px structural ring and must not use a directional mask; pointer direction belongs
-  only to the soft outer `.edge-light` glow, whose shadow stack must not add a second inset stroke.
-  Both structural pseudo-elements must use `--border-width` for their transparent border and negative
-  inset; changing only the inset moves a 1px line outward and creates a gap instead of a thicker ring.
-  Keep the three layers on one corner geometry: if `.edge-light` is expanded to make room for its
-  shadow, its radius must increase by the same expansion; its `::before` source must use the root
-  radius explicitly. Move structural pseudo-elements by the root border width when the root has a
-  visible border, otherwise the static border and gradient ring form offset arcs at each corner.
+  rendering from the React Bits component so the orange, cyan, and blue palette has one interaction
+  model. Pointer movement writes `--edge-proximity` and `--cursor-angle`; `::before` renders the
+  directional mesh border, `::after` renders its soft edge fill, and `.edge-light` renders the outer
+  directional glow. The effect appears only while the pointer is near the edge, or during the
+  optional mount sweep. Do not add focus-forced activation attributes, structural-ring masks,
+  liquid-glass nodes, or route-specific replacements for these three layers.
   In Generate, `.agent-chat-input__surface` is a structural layout container only: keep its
   background transparent and let it inherit the inner radius. The `BorderGlow` root owns the sole
-  graphite fill; painting the inset surface creates a second rectangular card over the shared ring.
-  The shared `::before` is likewise a hollow structural ring, implemented as `border-box` minus
-  `padding-box`; it must never include a solid `--card-bg` padding layer. Otherwise its focus opacity
-  paints another full rectangle through the root's translucent surface even when all DOM children
-  are transparent. In the Discover hero idle state, the BorderGlow root owns one semantic static
-  border and the complete graphite fill while `.border-glow-inner` and `.agent-chat-input__surface`
-  remain transparent. Set that static border to transparent on `:focus-within` so the shared
-  `::before` gradient becomes the only visible focused boundary instead of producing a double ring.
-  Route CSS may change the composer's surface material, but must not replace the shared ring algorithm
-  or disable one of the shared glow layers. Browser QA must compare the computed gradient palette,
-  hollow `::before` ring mask, edge-light direction mask and outer shadows, opacity, and root radius at
-  1440px, 390px, and both Discover docked states.
+  graphite fill; painting the inset surface creates a second rectangular card over the shared glow.
+  In the Discover hero idle state, the root owns one semantic static border and the complete graphite
+  fill while `.border-glow-inner` and `.agent-chat-input__surface` remain transparent. The static
+  border remains available for focus visibility; focus must not synthesize pointer proximity or force
+  the glow visible. Route CSS may change the composer's surface material, but must not replace the
+  shared React Bits algorithm or disable one of its layers. Browser QA must compare the computed
+  gradient palette, directional masks, edge-light shadows, opacity, and root radius at 1440px, 390px,
+  and both Discover docked states.
 
 ```css
 /* Correct: customize only the route surface; shared pseudo-elements remain authoritative. */

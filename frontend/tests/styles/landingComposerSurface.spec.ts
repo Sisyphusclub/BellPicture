@@ -26,15 +26,10 @@ describe('landing composer surface contract', () => {
     expect(idleContract).not.toContain('.agent-chat-input__surface {\n  background: color-mix');
   });
 
-  it('lets focus remove the static border before BorderGlow becomes visible', () => {
-    const focusStart = baseStyles.indexOf(
+  it('does not replace React Bits pointer proximity with a route focus override', () => {
+    expect(baseStyles).not.toContain(
       '.agent-chat-input.landing-composer.border-glow-card:focus-within',
     );
-    const focusContract = baseStyles.slice(
-      focusStart,
-      baseStyles.indexOf('.landing-composer .agent-chat-input__surface', focusStart),
-    );
-
-    expect(focusContract).toContain('border-color: transparent;');
+    expect(baseStyles).not.toContain('border-glow-liquid-glass');
   });
 });

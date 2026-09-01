@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "核对组件来源、输入框集成和跨页面一致性"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "执行测试、可访问性、响应式和构建质量门"}
+{"file": ".trellis/tasks/09-01-replace-composer-border-glow-reactbits/research/reactbits-border-glow.md", "reason": "对照官方 DOM、props 和 hover 行为"}

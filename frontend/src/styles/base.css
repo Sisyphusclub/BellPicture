@@ -1086,6 +1086,11 @@ video {
   box-shadow: var(--shadow-float);
   padding: 6px;
 }
+/* React Bits scrolls generic card content, while the beUI composer owns menus
+   and attachment previews that must remain visible outside its frame. */
+.agent-chat-input.border-glow-card > .border-glow-inner {
+  overflow: visible;
+}
 /* Keep an open beUI menu above the composer's gradient edge layers. */
 .agent-chat-input.border-glow-card:has(.agent-chat-input__agent-menu) > .border-glow-inner,
 .agent-chat-input.border-glow-card:has(.agent-chat-input__settings-menu) > .border-glow-inner,
@@ -6648,56 +6653,15 @@ video {
   }
 }
 
-/* Discover keeps its route-specific hero material while the beUI Agent Chat
-   Input continues to own the shared BorderGlow focus treatment. */
+/* Discover keeps its route-specific surface material without replacing the
+   shared React Bits edge algorithm. */
 .agent-chat-input.landing-composer.border-glow-card {
-  --card-bg: transparent !important;
-  --liquid-glass-tint-center: rgb(56 78 102 / 0.14);
-  --liquid-glass-tint-edge: rgb(7 17 29 / 0.08);
-  --liquid-glass-sheen: rgb(207 231 250 / 0.075);
-  --liquid-glass-highlight: rgb(235 247 255 / 0.3);
-  --liquid-glass-rim: rgb(205 231 251 / 0.18);
-  --liquid-glass-shadow-rim: rgb(94 163 219 / 0.14);
-  --liquid-glass-side-highlight: rgb(235 247 255 / 0.1);
-  --liquid-glass-side-shadow: rgb(94 163 219 / 0.08);
-  --liquid-glass-blur: 20px;
-  --liquid-glass-saturation: 1.14;
-  --liquid-glass-chrome-saturation: 1.2;
-
-  border-color: transparent;
-  background: transparent;
-  box-shadow:
-    0 28px 70px -34px rgb(0 3 10 / 0.9),
-    0 0 0 1px rgb(192 223 247 / 0.04);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-}
-.agent-chat-input.landing-composer.border-glow-card:focus-within {
-  border-color: transparent;
-  box-shadow: 0 26px 70px -34px rgb(0 4 12 / 0.94);
 }
 .landing-composer .agent-chat-input__surface {
   background: transparent;
   box-shadow: none;
-}
-/* Give the hero composer a visible refractive glass plane instead of a flat
-   translucent fill while keeping the existing BorderGlow edge treatment. */
-.landing-composer .border-glow-liquid-glass__effect {
-  backdrop-filter: var(--liquid-glass-filter) blur(12px) saturate(1.42) contrast(1.08);
-  -webkit-backdrop-filter: var(--liquid-glass-filter) blur(12px) saturate(1.42) contrast(1.08);
-}
-.landing-composer .border-glow-liquid-glass__chrome {
-  background: linear-gradient(
-    180deg,
-    rgb(226 243 255 / 0.14) 0%,
-    transparent 24%,
-    transparent 76%,
-    rgb(47 116 177 / 0.16) 100%
-  );
-  box-shadow:
-    inset 0 1px 0 rgb(236 248 255 / 0.18),
-    inset 0 -1px 0 rgb(76 151 207 / 0.2);
-  opacity: 0.86;
 }
 .landing-composer .agent-chat-input__toolbar-content {
   border-top-color: rgb(214 232 250 / 0.09);
@@ -6710,50 +6674,6 @@ video {
 .landing-composer .landing-public-toggle:hover,
 .landing-composer .landing-quota:hover {
   background: rgb(224 239 255 / 0.09);
-}
-
-@media (max-width: 560px) {
-  .agent-chat-input.landing-composer.border-glow-card {
-    --card-bg: transparent !important;
-    --liquid-glass-tint-center: rgb(46 68 90 / 0.16);
-    --liquid-glass-tint-edge: rgb(7 15 27 / 0.12);
-    --liquid-glass-sheen: rgb(207 231 250 / 0.06);
-    --liquid-glass-blur: 18px;
-
-    background: transparent;
-  }
-  .landing-composer .agent-chat-input__surface {
-    background: rgb(202 226 248 / 0.02);
-  }
-}
-
-@media (prefers-contrast: more) {
-  .agent-chat-input.landing-composer.border-glow-card {
-    --card-bg: transparent !important;
-    --liquid-glass-tint-center: rgb(7 15 27 / 0.9);
-    --liquid-glass-tint-edge: rgb(7 15 27 / 0.84);
-
-    border-color: transparent;
-    background: transparent;
-  }
-  .landing-composer .agent-chat-input__surface {
-    background: rgb(10 20 34 / 0.7);
-  }
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .agent-chat-input.landing-composer.border-glow-card {
-    --card-bg: rgb(7 15 27 / 0.9) !important;
-
-    background: rgb(7 15 27 / 0.9);
-  }
-  .landing-composer .border-glow-liquid-glass__effect,
-  .landing-composer .border-glow-liquid-glass__chrome {
-    display: none;
-  }
-  .landing-composer .agent-chat-input__surface {
-    background: rgb(10 20 34 / 0.84);
-  }
 }
 
 /* Generation workspace contract: keep the canvas quiet and the creation bar
