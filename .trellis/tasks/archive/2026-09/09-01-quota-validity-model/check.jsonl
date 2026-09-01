@@ -1,0 +1,5 @@
+{"file":".trellis/spec/backend/index.md","reason":"Backend quality-check scope and required database/service checks."}
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"Review migration safety, transaction integrity, expiration handling, and legacy data compatibility."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Run backend typecheck, lint, tests, build, and formatting checks."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Run frontend regression, type, lint, build, and formatting checks."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Review labels, shared controls, table layout, and responsive quota UI."}

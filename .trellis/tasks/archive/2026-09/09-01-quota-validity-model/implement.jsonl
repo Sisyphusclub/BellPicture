@@ -1,0 +1,8 @@
+{"file":".trellis/spec/backend/index.md","reason":"Backend database, service, error, and quality conventions for quota ledger changes."}
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"Existing user quota schema, migration, transaction, and data consistency contracts."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Required backend type, lint, test, and migration verification."}
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend package scope and required checks."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Admin table, shared controls, and user-facing quota display conventions."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Shared quota snapshot and mutation synchronization rules."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Frontend regression and responsive verification requirements."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Map the quota data flow across database, API, hooks, and views."}
