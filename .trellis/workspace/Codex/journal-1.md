@@ -1163,3 +1163,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 36: 替换为 ReactBits 输入框边缘光效
+
+**Date**: 2026-09-01
+**Task**: 替换为 ReactBits 输入框边缘光效
+**Branch**: `dev`
+
+### Summary
+
+使用用户提供的 React Bits 官方 BorderGlow 替换扩展版光效，移除 focus 强制激活、液态玻璃和自定义 2px 结构环，并完成首页与生图页响应式及指针交互验证。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7e8d95d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
