@@ -236,7 +236,7 @@ export function createUserQuotaService(): UserQuotaService {
             dailyTotal: row?.dailyTotal ?? null,
             checkInDate: row?.checkInDate ?? null,
             bonusToday: row?.bonusToday ?? 0,
-            permanentTotal: row?.permanentTotal ?? row?.dailyTotal ?? null,
+            permanentTotal: row?.permanentTotal ?? row?.dailyTotal ?? env.DAILY_USER_QUOTA,
             permanentUsed: baseUsed + left,
           })
           .onConflictDoUpdate({
@@ -420,7 +420,7 @@ export function createUserQuotaService(): UserQuotaService {
             dailyTotal: row?.dailyTotal ?? null,
             checkInDate: today,
             bonusToday: row?.bonusToday ?? env.DAILY_CHECK_IN_REWARD,
-            permanentTotal: row?.permanentTotal ?? row?.dailyTotal ?? null,
+            permanentTotal: row?.permanentTotal ?? row?.dailyTotal ?? env.DAILY_USER_QUOTA,
             permanentUsed: row?.permanentUsed ?? (row?.quotaDate === today ? row.usedToday : 0),
           })
           .onConflictDoUpdate({
