@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "核对共享光效结构、表面所有权和跨页面一致性"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "执行前端测试、lint、类型检查与构建质量门"}

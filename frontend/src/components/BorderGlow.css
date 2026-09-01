@@ -4,7 +4,7 @@
   --edge-sensitivity: 30;
   --color-sensitivity: calc(var(--edge-sensitivity) + 20);
   --border-radius: 28px;
-  --border-width: 1px;
+  --border-width: 2px;
   --glow-padding: 40px;
   --cone-spread: 25;
 
@@ -39,7 +39,7 @@
 /* colored mesh-gradient border */
 .border-glow-card::before {
   inset: calc(var(--border-width) * -1);
-  border: 1px solid transparent;
+  border: var(--border-width) solid transparent;
   border-radius: calc(var(--border-radius) + var(--border-width));
   background:
     var(--gradient-one, radial-gradient(at 80% 55%, hsla(268, 100%, 76%, 1) 0px, transparent 50%))
@@ -75,7 +75,7 @@
 /* colored mesh-gradient background fill near edges */
 .border-glow-card::after {
   inset: calc(var(--border-width) * -1);
-  border: 1px solid transparent;
+  border: var(--border-width) solid transparent;
   border-radius: calc(var(--border-radius) + var(--border-width));
   background:
     var(--gradient-one, radial-gradient(at 80% 55%, hsla(268, 100%, 76%, 1) 0px, transparent 50%))

@@ -116,8 +116,10 @@ prompt, and pending Edit is disabled without changing bubble child count.
   docked, and expanded docked states; do not wrap it in another card, glass target, or canvas layer.
 - Discover and Generate must use the shared `BorderGlow` `::before`, `::after`, and `.edge-light`
   rendering so the orange, cyan, and blue palette has one intensity model. The `::before` layer owns
-  an uninterrupted 1px structural ring and must not use a directional mask; pointer direction belongs
+  an uninterrupted 2px structural ring and must not use a directional mask; pointer direction belongs
   only to the soft outer `.edge-light` glow, whose shadow stack must not add a second inset stroke.
+  Both structural pseudo-elements must use `--border-width` for their transparent border and negative
+  inset; changing only the inset moves a 1px line outward and creates a gap instead of a thicker ring.
   Keep the three layers on one corner geometry: if `.edge-light` is expanded to make room for its
   shadow, its radius must increase by the same expansion; its `::before` source must use the root
   radius explicitly. Move structural pseudo-elements by the root border width when the root has a
