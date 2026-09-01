@@ -32,4 +32,18 @@ describe('landing composer surface contract', () => {
     );
     expect(baseStyles).not.toContain('border-glow-liquid-glass');
   });
+
+  it('keeps gallery pagination above the fixed composer', () => {
+    const paginationStart = baseStyles.indexOf('.landing-gallery-pagination {');
+    const paginationContract = baseStyles.slice(
+      paginationStart,
+      baseStyles.indexOf('/* The hero and dock share', paginationStart),
+    );
+
+    expect(paginationContract).toContain('display: flex;');
+    expect(paginationContract).toContain('justify-content: center;');
+    expect(paginationContract).toContain(
+      'padding: 28px 0 calc(160px + env(safe-area-inset-bottom));',
+    );
+  });
 });

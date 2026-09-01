@@ -440,7 +440,7 @@ export function LandingView() {
         }}
       />
       {hasMoreGalleryEntries ? (
-        <div className="flex justify-center pb-16">
+        <div className="landing-gallery-pagination">
           <Button
             type="button"
             variant="secondary"
