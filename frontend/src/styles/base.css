@@ -8812,6 +8812,24 @@ video {
   width: auto;
   min-width: 0;
 }
+.studio-agent-input .studio-toolbar-meta {
+  height: 40px;
+  min-height: 40px;
+  align-items: center;
+  line-height: 1;
+}
+.studio-agent-input .studio-toolbar-status,
+.studio-agent-input .studio-toolbar-quota {
+  height: 100%;
+  align-items: center;
+  line-height: 1;
+}
+.studio-agent-input .studio-toolbar-status__dot {
+  flex: 0 0 auto;
+}
+.studio-agent-input .studio-toolbar-quota {
+  font-variant-numeric: tabular-nums;
+}
 .studio-agent-input .agent-chat-input__submit {
   width: auto;
   min-width: 68px;
