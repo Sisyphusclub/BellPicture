@@ -1262,3 +1262,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 39: 同步管理员更新后的当前用户额度
+
+**Date**: 2026-09-01
+**Task**: 同步管理员更新后的当前用户额度
+**Branch**: `dev`
+
+### Summary
+
+管理员修改当前账号额度后刷新共享额度缓存，修复顶部积分与用户管理表格不同步，并补充当前用户与其他用户回归测试。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1526781` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
