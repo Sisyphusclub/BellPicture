@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const baseStyles = readFileSync(resolve(process.cwd(), 'src/styles/base.css'), 'utf8');
+const landingView = readFileSync(resolve(process.cwd(), 'src/views/LandingView.tsx'), 'utf8');
 
 function lastRuleBody(selector: string) {
   const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -15,6 +16,12 @@ function lastRuleBody(selector: string) {
 }
 
 describe('landing gallery spacing contract', () => {
+  it('keeps the gallery unlabeled while preserving its separation from the composer', () => {
+    expect(landingView).toContain('title=""');
+    expect(landingView).not.toContain('title="画廊"');
+    expect(baseStyles).toContain('margin: calc(-100svh + clamp(590px, 36svh, 620px)) auto 0;');
+  });
+
   it('uses the same compact gutter between columns and stacked figures', () => {
     const columnsRule = lastRuleBody('.landing-creations .image-gallery-vertical__columns');
     const figuresRule = lastRuleBody(

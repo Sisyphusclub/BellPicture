@@ -77,6 +77,20 @@ export function TemplatesView() {
     setVisibleCount(INITIAL_TEMPLATE_COUNT);
   }, [category, favoritesOnly, query, sort]);
 
+  useEffect(() => {
+    if (!selected) return;
+
+    const previousDocumentOverflow = document.documentElement.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.documentElement.style.overflow = previousDocumentOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+    };
+  }, [selected]);
+
   const copyPrompt = async (template: CreationTemplate): Promise<void> => {
     try {
       await navigator.clipboard.writeText(template.prompt);
@@ -283,7 +297,11 @@ export function TemplatesView() {
                   <Copy aria-hidden="true" />
                   复制提示词
                 </Button>
-                <Button type="button" variant="ghost" onClick={() => toggleFavorite(selected.id)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => toggleFavorite(selected.id)}
+                >
                   <Heart
                     aria-hidden="true"
                     fill={favoriteIds.includes(selected.id) ? 'currentColor' : 'none'}
