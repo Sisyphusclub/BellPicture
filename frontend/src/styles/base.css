@@ -3935,11 +3935,27 @@ video {
 .auth-backdrop {
   background: var(--overlay);
 }
+.auth-modal-surface {
+  width: min(100%, 420px) !important;
+  max-width: 420px !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: var(--radius-lg) !important;
+  background: var(--card) !important;
+  box-shadow: var(--shadow-modal) !important;
+}
+/* Keep the MorphicCard shell responsible for viewport bounds; the inner
+   dialog should size to its form instead of inheriting the generic full-screen
+   mobile dialog contract. */
+.auth-modal-surface .login-dialog {
+  min-height: 0;
+}
 .login-dialog {
-  width: min(100%, 420px);
+  width: 100%;
   gap: 18px;
-  border-color: var(--border-strong);
-  border-radius: var(--radius-lg);
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  box-shadow: none;
   padding: 28px;
 }
 .auth-brand {
@@ -3960,6 +3976,9 @@ video {
   font-weight: 550;
 }
 .auth-mode-tabs {
+  width: 100%;
+}
+.beui-tabs-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 3px;
@@ -3968,17 +3987,86 @@ video {
   background: var(--muted);
   padding: 3px;
 }
-.auth-mode-tabs button {
+.beui-tabs-trigger-wrap {
+  position: relative;
+  min-width: 0;
+}
+.beui-tabs-indicator {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  background: var(--card);
+}
+.beui-tabs-trigger {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  width: 100%;
   min-height: 38px;
+  align-items: center;
+  justify-content: center;
   border: 0;
   border-radius: 6px;
   background: transparent;
   color: var(--muted-foreground);
   font-size: 13px;
+  font-weight: 600;
+  transition: color 0.18s ease;
 }
-.auth-mode-tabs button[aria-selected='true'] {
-  background: var(--card);
+.beui-tabs-trigger:hover:not(:disabled) {
   color: var(--foreground);
+}
+.beui-tabs-trigger.is-active {
+  color: var(--foreground);
+}
+.beui-tabs-trigger:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.beui-tabs-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+.alert {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface-raised);
+  padding: 9px 12px;
+  color: var(--foreground);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.alert--destructive {
+  border-color: color-mix(in oklch, var(--destructive) 34%, var(--border));
+  background: color-mix(in oklch, var(--destructive) 9%, var(--card));
+  color: var(--destructive);
+}
+.form-error {
+  margin: 0;
+}
+.auth-form > button[type='submit'] {
+  width: 100%;
+}
+.auth-modal-surface .dialog__close {
+  top: 12px;
+  right: 12px;
+}
+.auth-modal-surface .dialog__close:hover {
+  background: var(--surface-hover);
+}
+.auth-modal-surface .dialog__close:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.auth-modal-surface .dialog-separator {
+  margin-block: 2px;
+}
+.auth-modal-surface .password-field {
+  display: flex;
+  align-items: center;
 }
 .auth-form {
   gap: 15px;
@@ -5176,10 +5264,13 @@ video {
   }
   .login-dialog {
     width: 100%;
-    min-height: 100svh;
-    align-content: center;
+    min-height: 0;
     border-radius: 0;
     padding: 24px 18px;
+  }
+  .auth-modal-surface {
+    width: calc(100% - 32px) !important;
+    max-width: 420px !important;
   }
   .generation-console {
     padding: 10px 14px 82px;

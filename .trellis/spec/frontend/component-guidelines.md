@@ -560,6 +560,37 @@ last-batch clearance at 1440 x 813 and 390 x 844.
 - Loading, empty, error, unauthorized, and forbidden states are first-class UI
   states, not blank containers.
 
+### Authentication Modal Contract
+
+The shared account surface composes the existing beUI `MorphicCardModal`, segment `Tabs`, `Input`,
+`Alert`, and `Button` components. Keep username sign-in and sign-up in one dialog so switching mode
+does not create a second authentication flow or duplicate validation state. Use `sharedLayout={false}`
+because authentication has no collapsed source card, and ignore close requests while a submission is
+pending.
+
+```tsx
+<MorphicCardModal
+  id="auth-login"
+  open={open}
+  onClose={close}
+  sharedLayout={false}
+>
+  <section role="dialog" aria-labelledby={titleId}>
+    <Tabs value={mode} onValueChange={setMode}>
+      ...
+    </Tabs>
+    <Input aria-invalid={Boolean(fieldError)} />
+    {requestError ? <Alert variant="destructive">{requestError}</Alert> : null}
+  </section>
+</MorphicCardModal>
+```
+
+Keep cheap username/password validation inline and reserve the shared destructive Alert for request
+failures. Tests must cover both modes, password visibility, initial field focus, Escape close, inline
+validation, and an accessible server-error Alert. At the mobile breakpoint, subtract the Morphic
+shell's two `16px` viewport insets from any explicit full width; `width: 100%` plus fixed insets clips
+the right edge.
+
 ### Assets Empty-State Contract
 
 - Determine a truly empty asset library from `history.entries.length === 0`, after authentication

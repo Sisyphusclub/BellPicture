@@ -91,6 +91,19 @@ describe('LoginModal', () => {
     });
   });
 
+  it('keeps authentication failures inside the dialog as an accessible alert', async () => {
+    auth.signInWithUsername.mockRejectedValueOnce(new Error('用户名或密码不正确。'));
+    const user = userEvent.setup();
+    render(<LoginModal />);
+
+    await user.type(screen.getByLabelText('用户名'), 'studio_user');
+    await user.type(screen.getByLabelText('密码'), 'password123');
+    await user.click(screen.getByRole('button', { name: '登录' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('用户名或密码不正确。');
+    expect(screen.getByRole('dialog')).toContainElement(screen.getByRole('alert'));
+  });
+
   it('closes on Escape', async () => {
     const user = userEvent.setup();
     render(<LoginModal />);

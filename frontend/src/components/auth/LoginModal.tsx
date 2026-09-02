@@ -1,7 +1,10 @@
 import { Eye, EyeOff, LoaderCircle, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { FormEvent, MouseEvent } from 'react';
+import type { FormEvent } from 'react';
 
+import { MorphicCardModal } from '@/components/premium/morphic-card-modal';
+import { Tabs, TabsList, TabsTrigger } from '@/components/premium/tabs/tabs';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,7 +23,6 @@ export function LoginModal() {
   const [error, setError] = useState<string | null>(null);
   const [touched, setTouched] = useState({ username: false, password: false });
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  const dialogRef = useRef<HTMLElement>(null);
   const usernameRef = useRef<HTMLInputElement>(null);
 
   const validation = useMemo(() => {
@@ -58,33 +60,8 @@ export function LoginModal() {
 
   useEffect(() => {
     if (!isOpen) return;
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        resetAndClose();
-        return;
-      }
-      if (event.key !== 'Tab') return;
-      const focusable = Array.from(
-        dialogRef.current?.querySelectorAll<HTMLElement>(
-          'button:not(:disabled), input:not(:disabled), [href], [tabindex]:not([tabindex="-1"])',
-        ) ?? [],
-      );
-      const first = focusable[0];
-      const last = focusable.at(-1);
-      if (!first || !last) return;
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener('keydown', onKeyDown);
     window.requestAnimationFrame(() => usernameRef.current?.focus());
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [isOpen, resetAndClose]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isAuthenticated && isOpen) void complete();
@@ -92,8 +69,8 @@ export function LoginModal() {
 
   if (!isOpen) return null;
 
-  const backdropClose = (event: MouseEvent<HTMLDivElement>): void => {
-    if (event.target === event.currentTarget && !pending) resetAndClose();
+  const closeModal = (): void => {
+    if (!pending) resetAndClose();
   };
   const submit = async (event: FormEvent): Promise<void> => {
     event.preventDefault();
@@ -128,9 +105,15 @@ export function LoginModal() {
   };
 
   return (
-    <div className="dialog-backdrop auth-backdrop" onMouseDown={backdropClose}>
+    <MorphicCardModal
+      id="auth-login"
+      open={isOpen}
+      onClose={closeModal}
+      sharedLayout={false}
+      className="auth-modal-surface"
+      backdropClassName="auth-backdrop"
+    >
       <section
-        ref={dialogRef}
         className="dialog login-dialog"
         role="dialog"
         aria-modal="true"
@@ -152,38 +135,26 @@ export function LoginModal() {
           <span>Nebulens</span>
         </div>
         <h2 id="login-title">{mode === 'signin' ? '登录' : '创建账户'}</h2>
-        <div className="auth-mode-tabs" role="tablist" aria-label="账户操作">
-          <Button
-            type="button"
-            variant="ghost"
-            role="tab"
-            aria-selected={mode === 'signin'}
-            disabled={pending}
-            onClick={() => {
-              setMode('signin');
-              setError(null);
-              setTouched({ username: false, password: false });
-              setHasSubmitted(false);
-            }}
-          >
-            登录
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            role="tab"
-            aria-selected={mode === 'signup'}
-            disabled={pending}
-            onClick={() => {
-              setMode('signup');
-              setError(null);
-              setTouched({ username: false, password: false });
-              setHasSubmitted(false);
-            }}
-          >
-            注册
-          </Button>
-        </div>
+        <Tabs
+          value={mode}
+          onValueChange={(next) => {
+            if (next !== 'signin' && next !== 'signup') return;
+            setMode(next);
+            setError(null);
+            setTouched({ username: false, password: false });
+            setHasSubmitted(false);
+          }}
+          className="auth-mode-tabs"
+        >
+          <TabsList aria-label="账户操作">
+            <TabsTrigger value="signin" disabled={pending}>
+              登录
+            </TabsTrigger>
+            <TabsTrigger value="signup" disabled={pending}>
+              注册
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
         <form className="form-stack auth-form" noValidate onSubmit={(event) => void submit(event)}>
           <label>
             <span>用户名</span>
@@ -238,9 +209,9 @@ export function LoginModal() {
             ) : null}
           </label>
           {error ? (
-            <p className="form-error" role="alert">
+            <Alert variant="destructive" className="form-error">
               {error}
-            </p>
+            </Alert>
           ) : null}
           <Button type="submit" disabled={pending}>
             {pending ? <LoaderCircle className="spin" aria-hidden="true" /> : null}
@@ -254,6 +225,6 @@ export function LoginModal() {
           使用 Google 继续
         </Button>
       </section>
-    </div>
+    </MorphicCardModal>
   );
 }

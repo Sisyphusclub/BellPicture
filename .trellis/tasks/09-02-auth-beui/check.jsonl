@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"检查所有可见控件均通过共享 beUI/ui 组件边界实现。"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"检查测试、类型、构建、可访问性与响应式视觉质量。"}
