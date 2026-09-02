@@ -27,6 +27,7 @@
 - [x] 关闭按钮、Escape、背景点击和密码显示按钮可用且有可访问名称。
 - [x] 相关组件测试、lint、typecheck、build 与本次文件格式检查通过。
 - [x] 在 1440px 和 390px 视口检查弹窗的对齐、可读性和无水平溢出。
+- [x] Google OAuth 显式回到发起登录的前端页面，后端未配置 provider 时按钮显示不可用状态。
 
 ## Definition of Done
 
@@ -40,7 +41,7 @@
 
 ## Out of Scope
 
-- 不改变 Better Auth API、后端认证协议或用户名规则。
+- 不改变用户名认证规则或数据库认证结构。
 - 不新增邮箱验证、找回密码、条款勾选等账户能力。
 - 不改动其他页面的登录入口或业务权限判断。
 
@@ -48,3 +49,4 @@
 
 - 参考 beUI registry：`@beui/signup-form` 提供字段错误、密码显示和提交状态的交互原则；`@beui/morphing-modal` 提供深色 modal 的动效方向，但其内容字段不适合直接复用。
 - 相关文件：`frontend/src/components/auth/LoginModal.tsx`、`frontend/src/components/ui/*`、`frontend/src/styles/base.css`、`frontend/tests/components/LoginModal.spec.tsx`。
+- Google OAuth 运行链路额外涉及 `backend/src/routes/auth.ts`、`frontend/src/hooks/useAuth.tsx` 与 `frontend/src/services/api/authApi.ts`；真实登录仍要求部署环境提供 Google Web OAuth Client ID/Secret。

@@ -1,3 +1,5 @@
 {"file":".trellis/spec/frontend/component-guidelines.md","reason":"认证弹窗需要遵循 beUI 组件边界、表单、Dialog 与响应式规范。"}
 {"file":".trellis/spec/frontend/quality-guidelines.md","reason":"实现后需要覆盖认证交互、可访问性、桌面与移动端视觉检查。"}
 {"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"优先复用现有 Morphic modal、Button 与 Input，避免重复组件。"}
+{"file":"backend/src/routes/auth.ts","reason":"新增不泄露凭据的 provider 可用性接口，并由前端据此禁用未配置的 Google 登录。"}
+{"file":"frontend/src/hooks/useAuth.tsx","reason":"Google OAuth 显式携带当前页面的成功与错误回跳 URL，避免完成授权后落到后端空白路由。"}

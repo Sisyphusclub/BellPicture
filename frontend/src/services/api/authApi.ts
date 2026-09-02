@@ -5,6 +5,7 @@ import {
   authedFetch,
   buildApiError,
   buildApiUrl,
+  publicFetch,
   parseJsonResponse,
 } from './httpClient';
 
@@ -19,6 +20,26 @@ export interface AuthUserProfile {
 
 interface AuthMeResponse {
   user: AuthUserProfile;
+}
+
+interface AuthProvidersResponse {
+  providers: {
+    google: boolean;
+  };
+}
+
+export async function fetchAuthProviders(): Promise<AuthProvidersResponse['providers']> {
+  const response = await publicFetch(buildApiUrl('/api/auth/providers'));
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw buildApiError(response.status, payload);
+  if (!isAuthProvidersResponse(payload)) {
+    throw new ImageApiError(
+      response.status,
+      'INVALID_RESPONSE',
+      '登录方式接口返回了无法识别的响应。',
+    );
+  }
+  return payload.providers;
 }
 
 export async function fetchAuthProfile(): Promise<AuthUserProfile> {
@@ -55,4 +76,9 @@ function isAuthUserProfile(value: unknown): value is AuthUserProfile {
 function isAuthMeResponse(value: unknown): value is AuthMeResponse {
   if (!isRecord(value)) return false;
   return isAuthUserProfile(value.user);
+}
+
+function isAuthProvidersResponse(value: unknown): value is AuthProvidersResponse {
+  if (!isRecord(value) || !isRecord(value.providers)) return false;
+  return typeof value.providers.google === 'boolean';
 }

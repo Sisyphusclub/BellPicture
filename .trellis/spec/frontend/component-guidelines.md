@@ -591,6 +591,10 @@ validation, and an accessible server-error Alert. At the mobile breakpoint, subt
 shell's two `16px` viewport insets from any explicit full width; `width: 100%` plus fixed insets clips
 the right edge.
 
+The Google action reflects `GET /api/auth/providers`: keep it disabled with explicit unavailable
+copy when the backend has not registered Google. Do not let an optional-provider configuration
+failure become a misleading active button or a raw `PROVIDER_NOT_FOUND` response.
+
 ### Assets Empty-State Contract
 
 - Determine a truly empty asset library from `history.entries.length === 0`, after authentication

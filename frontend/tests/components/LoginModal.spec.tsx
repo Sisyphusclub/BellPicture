@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const auth = vi.hoisted(() => ({
+  isGoogleEnabled: true,
   signInWithGoogle: vi.fn(),
   signInWithUsername: vi.fn(),
   signUpWithUsername: vi.fn(),
@@ -13,6 +14,7 @@ const auth = vi.hoisted(() => ({
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
     isAuthenticated: false,
+    isGoogleEnabled: auth.isGoogleEnabled,
     signInWithGoogle: auth.signInWithGoogle,
     signInWithUsername: auth.signInWithUsername,
     signUpWithUsername: auth.signUpWithUsername,
@@ -31,9 +33,17 @@ import { LoginModal } from '@/components/auth/LoginModal';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  auth.isGoogleEnabled = true;
 });
 
 describe('LoginModal', () => {
+  it('disables Google sign-in when the backend provider is not configured', () => {
+    auth.isGoogleEnabled = false;
+    render(<LoginModal />);
+
+    expect(screen.getByRole('button', { name: 'Google 登录未配置' })).toBeDisabled();
+  });
+
   it('validates credentials inline and exposes password visibility', async () => {
     const user = userEvent.setup();
     render(<LoginModal />);

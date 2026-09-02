@@ -26,6 +26,16 @@ function cookiesFrom(response: Response): string[] {
 }
 
 describe('username/password auth', () => {
+  it('GET /api/auth/providers reports optional social providers without secrets', async () => {
+    const app = createApp({ provider: fakeProvider });
+
+    const res = await request(app).get('/api/auth/providers');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ providers: { google: false } });
+    expect(JSON.stringify(res.body)).not.toContain('GOOGLE_CLIENT_SECRET');
+  });
+
   it('POST /api/auth/sign-up/username creates a user and a credential account', async () => {
     const app = createApp({ provider: fakeProvider });
     const rawUsername = `User_${uniqueUsername('signup')}`;

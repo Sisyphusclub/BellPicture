@@ -84,7 +84,9 @@ components. Route-local data should stay in the route's hook.
 
 ## Domain Boundaries
 
-- `useAuth` owns session/profile state and exposes authentication actions.
+- `useAuth` owns session/profile state, provider availability, and authentication actions. Google
+  OAuth uses the current page as both `callbackURL` and `errorCallbackURL` so success and provider
+  failures return to the app route that initiated authentication.
 - `useAuthModal` and `useImageDetailModalState` own shared modal state.
 - Image generation, quota, history, public gallery, upload, and admin-user hooks
   call the corresponding API services and expose UI-ready state.

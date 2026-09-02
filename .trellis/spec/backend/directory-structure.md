@@ -859,6 +859,17 @@ export const auth = betterAuth({
 in the Notes column. The corresponding spec env table row uses `no` in the
 Required column.
 
+Expose availability, never credentials, through `GET /api/auth/providers`:
+
+```json
+{ "providers": { "google": true } }
+```
+
+The frontend uses this public response to disable unavailable provider actions.
+OAuth initiation must include a trusted frontend `callbackURL` and
+`errorCallbackURL`; the Google redirect URI remains
+`${BETTER_AUTH_URL}/api/auth/callback/google`.
+
 ---
 
 ## Forbidden patterns

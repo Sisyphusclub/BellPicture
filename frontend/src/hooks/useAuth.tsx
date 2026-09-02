@@ -10,7 +10,7 @@ import {
 import type { PropsWithChildren } from 'react';
 
 import { authClient, signIn, signOut, useSession } from '@/lib/authClient';
-import { fetchAuthProfile, type AuthUserProfile } from '@/services/api/authApi';
+import { fetchAuthProfile, fetchAuthProviders, type AuthUserProfile } from '@/services/api/authApi';
 
 const NETWORK_ERROR_MESSAGE = '无法连接到服务器，请检查网络或稍后重试。';
 const USERNAME_REQUIREMENTS_MESSAGE = '用户名需为 3-32 位小写字母、数字或下划线。';
@@ -27,6 +27,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   isAdmin: boolean;
+  isGoogleEnabled: boolean;
   refreshProfile: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signInWithUsername: (credentials: Credentials) => Promise<void>;
@@ -128,8 +129,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const session = useSession();
   const sessionUser = normalizeSessionUser(session.data?.user);
   const [profile, setProfile] = useState<AuthUserProfile | null>(null);
+  const [isGoogleEnabled, setIsGoogleEnabled] = useState(false);
   const requestId = useRef(0);
   const isAuthenticated = sessionUser !== null;
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchAuthProviders()
+      .then((providers) => {
+        if (!cancelled) setIsGoogleEnabled(providers.google);
+      })
+      .catch(() => {
+        if (!cancelled) setIsGoogleEnabled(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const refreshProfile = useCallback(async (): Promise<void> => {
     if (!session.data?.user) {
@@ -160,7 +176,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const refetchSession = session.refetch;
   const signInWithGoogle = useCallback(async (): Promise<void> => {
     try {
-      const result: unknown = await signIn.social({ provider: 'google' });
+      // Keep the OAuth callback on the page where the user started. Better Auth
+      // uses this URL after it has created the backend session cookie, while
+      // the error callback keeps provider failures inside the app shell.
+      const callbackURL = typeof window === 'undefined' ? '/' : window.location.href;
+      const result: unknown = await signIn.social({
+        provider: 'google',
+        callbackURL,
+        errorCallbackURL: callbackURL,
+      });
       const error = extractError(result);
       if (error) throw new Error(safeChineseMessage(error, 'Google 登录暂不可用，请稍后再试。'));
       await refetchSession();
@@ -223,6 +247,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isAuthenticated,
       isLoading: session.isPending,
       isAdmin: currentProfile?.isAdmin === true,
+      isGoogleEnabled,
       refreshProfile,
       signInWithGoogle,
       signInWithUsername,
@@ -233,6 +258,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       currentProfile,
       isAuthenticated,
       session.isPending,
+      isGoogleEnabled,
       refreshProfile,
       signInWithGoogle,
       signInWithUsername,

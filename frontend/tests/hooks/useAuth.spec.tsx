@@ -20,11 +20,15 @@ const session = vi.hoisted(
     refetch: vi.fn(),
   }),
 );
-const profileApi = vi.hoisted(() => ({ fetchAuthProfile: vi.fn() }));
+const profileApi = vi.hoisted(() => ({
+  fetchAuthProfile: vi.fn(),
+  fetchAuthProviders: vi.fn(),
+}));
+const socialSignIn = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/authClient', () => ({
   authClient: { $fetch: vi.fn() },
-  signIn: { social: vi.fn(), username: vi.fn() },
+  signIn: { social: socialSignIn, username: vi.fn() },
   signOut: vi.fn(),
   useSession: () => ({
     data: session.user === null ? null : { user: session.user },
@@ -53,9 +57,28 @@ beforeEach(() => {
   session.isPending = false;
   session.refetch.mockReset();
   profileApi.fetchAuthProfile.mockReset();
+  profileApi.fetchAuthProviders.mockReset();
+  profileApi.fetchAuthProviders.mockResolvedValue({ google: true });
+  socialSignIn.mockReset();
 });
 
 describe('AuthProvider', () => {
+  it('starts Google OAuth with an explicit page callback URL', async () => {
+    socialSignIn.mockResolvedValueOnce(undefined);
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await act(async () => {
+      await result.current.signInWithGoogle();
+    });
+
+    expect(socialSignIn).toHaveBeenCalledWith({
+      provider: 'google',
+      callbackURL: window.location.href,
+      errorCallbackURL: window.location.href,
+    });
+    expect(session.refetch).toHaveBeenCalledTimes(1);
+  });
+
   it('does not expose the previous profile after the session switches accounts', async () => {
     const profileB = deferred<{
       id: string;

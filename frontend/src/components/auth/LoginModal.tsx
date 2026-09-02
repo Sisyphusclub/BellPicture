@@ -14,7 +14,13 @@ const USERNAME_PATTERN = /^[a-z0-9_]{3,32}$/;
 
 export function LoginModal() {
   const { isOpen, close, complete } = useAuthModal();
-  const { isAuthenticated, signInWithGoogle, signInWithUsername, signUpWithUsername } = useAuth();
+  const {
+    isAuthenticated,
+    isGoogleEnabled = false,
+    signInWithGoogle,
+    signInWithUsername,
+    signUpWithUsername,
+  } = useAuth();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -221,8 +227,13 @@ export function LoginModal() {
         <div className="dialog-separator">
           <span>或</span>
         </div>
-        <Button type="button" variant="secondary" disabled={pending} onClick={() => void google()}>
-          使用 Google 继续
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={pending || !isGoogleEnabled}
+          onClick={() => void google()}
+        >
+          {isGoogleEnabled ? '使用 Google 继续' : 'Google 登录未配置'}
         </Button>
       </section>
     </MorphicCardModal>
