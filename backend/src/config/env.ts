@@ -98,6 +98,14 @@ function readDelimitedStrings(name: string, delimiter: string): string[] {
 }
 
 function loadEnv(): Env {
+  const googleClientId = readOptionalString('GOOGLE_CLIENT_ID');
+  const googleClientSecret = readOptionalString('GOOGLE_CLIENT_SECRET');
+  if ((googleClientId === undefined) !== (googleClientSecret === undefined)) {
+    throw new Error(
+      'GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must either both be set or both be unset.',
+    );
+  }
+
   return {
     PORT: readInt('PORT', 3000),
     APP_VERSION: readString('APP_VERSION', '0.0.0'),
@@ -116,8 +124,8 @@ function loadEnv(): Env {
     CORS_ORIGIN: readString('CORS_ORIGIN', 'http://localhost:5173'),
     BETTER_AUTH_URL: readString('BETTER_AUTH_URL', 'http://localhost:3000'),
     BETTER_AUTH_SECRET: readString('BETTER_AUTH_SECRET'),
-    GOOGLE_CLIENT_ID: readOptionalString('GOOGLE_CLIENT_ID'),
-    GOOGLE_CLIENT_SECRET: readOptionalString('GOOGLE_CLIENT_SECRET'),
+    GOOGLE_CLIENT_ID: googleClientId,
+    GOOGLE_CLIENT_SECRET: googleClientSecret,
     FRONTEND_ORIGIN: readString('FRONTEND_ORIGIN', 'http://localhost:5173'),
     SQLITE_PATH: readString('SQLITE_PATH', './data/app.sqlite'),
     DAILY_USER_QUOTA: readInt('DAILY_USER_QUOTA', 20),

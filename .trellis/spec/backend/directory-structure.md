@@ -821,20 +821,90 @@ const used = !row || row.quotaDate !== productDateKey() ? 0 : row.usedToday;
 const remaining = Math.max(0, env.DAILY_USER_QUOTA - used);
 ```
 
-### Convention: Soft-hide optional integrations via env presence
+## Scenario: Optional Google OAuth configuration
 
-**What**: When an integration (OAuth provider, third-party API, etc.) is
-optional for the MVP but kept in source for future re-enable, gate its
-registration on whether its env vars are populated. Do NOT register the
-integration with empty / placeholder values, and do NOT remove the code.
+### 1. Scope / Trigger
 
-**Why**: Better Auth and similar libraries reject registration with empty
-strings at boot time. Registering with `{}` is also wrong — it may pass
-type checks but fail at first request with an unhelpful runtime error.
-Source-gating keeps the integration trivially re-enableable (one env edit)
-without code review.
+- Trigger: adding, changing, or deploying the optional Better Auth Google
+  provider and its public availability signal.
+- Scope: `config/env.ts`, `config/auth.ts`, `routes/auth.ts`, deployment env
+  files, and the frontend Google sign-in action.
 
-**Example** (the locked pattern from `config/auth.ts`):
+### 2. Signatures
+
+- Environment: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
+  `BETTER_AUTH_URL`, `FRONTEND_ORIGIN`, and `CORS_ORIGIN`.
+- Public capability API: `GET /api/auth/providers` returns
+  `{ "providers": { "google": boolean } }` and no credential values.
+- Better Auth callback: `${BETTER_AUTH_URL}/api/auth/callback/google`.
+
+### 3. Contracts
+
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are optional as a pair. Both
+  unset means Google is disabled; both set means the provider is registered.
+- Setting exactly one credential is an invalid deployment configuration and
+  must fail during `config/env.ts` import.
+- Gate provider registration on the typed `env` values. Do not register an
+  empty or placeholder provider, and do not read `process.env` outside
+  `config/env.ts`.
+- The frontend obtains availability from `GET /api/auth/providers`; it never
+  receives the client secret.
+- OAuth initiation supplies the current trusted frontend URL as both
+  `callbackURL` and `errorCallbackURL`.
+- Local development may use `http://localhost`; production uses one HTTPS
+  domain for `BETTER_AUTH_URL`, `FRONTEND_ORIGIN`, and `CORS_ORIGIN`. Google
+  does not accept a raw public IP as a Web OAuth redirect host.
+- Google-created users retain the schema default `isAdmin: false`. The `Blur`
+  administrator continues to authenticate with username/password and is not
+  inferred or linked from Google profile fields.
+
+### 4. Validation & Error Matrix
+
+| Condition | Expected behavior |
+| --- | --- |
+| Both Google credentials unset | Backend boots; capability API reports `google: false`; button is disabled |
+| Both Google credentials set | Provider registers; capability API reports `google: true`; button is enabled |
+| Only one Google credential set | Backend fails at startup with the paired-credential error |
+| Callback differs by scheme, host, port, path, case, or trailing slash | Google rejects the request with `redirect_uri_mismatch` |
+| Production callback uses a public HTTP IP | Google rejects the redirect registration |
+| Google profile resembles `Blur` | User remains non-admin unless persistent backend state explicitly says otherwise |
+
+### 5. Good/Base/Bad Cases
+
+- Good: production uses `https://app.example.com` for all public origins,
+  registers `https://app.example.com/api/auth/callback/google`, and injects
+  both credentials from a server-side secret store.
+- Base: local development leaves both credentials unset and presents a clear
+  disabled Google action without preventing application startup.
+- Bad: deploy one credential, expose the secret through the capability API,
+  register a raw public IP callback, or promote a user based on Google name or
+  email prefix.
+
+### 6. Tests Required
+
+- Unit: importing `config/env.ts` rejects either single-credential state.
+- Integration: `GET /api/auth/providers` exposes only the availability boolean.
+- Frontend hook: `signIn.social` receives provider `google`, the current page
+  callback URL, and the same error callback URL.
+- Frontend component: the Google button is enabled only when the backend
+  reports availability.
+- Runtime smoke: with real credentials injected, the capability API reports
+  `google: true` and a browser completes the provider callback.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+const socialProviders = {
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID ?? '',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+  },
+};
+```
+
+#### Correct
 
 ```ts
 const socialProviders =
@@ -853,22 +923,6 @@ export const auth = betterAuth({
   ...(socialProviders ? { socialProviders } : {}),
 });
 ```
-
-**Caller-side rule**: The env vars MUST be marked optional in `config/env.ts`
-(typed `string | undefined`) and their `.env.example` row must say `Optional`
-in the Notes column. The corresponding spec env table row uses `no` in the
-Required column.
-
-Expose availability, never credentials, through `GET /api/auth/providers`:
-
-```json
-{ "providers": { "google": true } }
-```
-
-The frontend uses this public response to disable unavailable provider actions.
-OAuth initiation must include a trusted frontend `callbackURL` and
-`errorCallbackURL`; the Google redirect URI remains
-`${BETTER_AUTH_URL}/api/auth/callback/google`.
 
 ---
 

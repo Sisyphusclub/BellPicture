@@ -78,7 +78,7 @@ VITE_API_BASE_URL=
 TRUST_PROXY_HOPS=1
 ```
 
-如需启用 Google 登录，在 `.env` 中填写：
+如需启用 Google 登录，在 Google Cloud Console 创建“Web 应用”OAuth 客户端，并在 `.env` 中同时填写：
 
 ```env
 GOOGLE_CLIENT_ID=...
@@ -90,6 +90,16 @@ Google OAuth 回调地址配置为：
 ```text
 http://localhost:5173/api/auth/callback/google
 ```
+
+生产环境必须使用 HTTPS 域名，并将回调地址精确配置为：
+
+```text
+https://你的域名/api/auth/callback/google
+```
+
+Google 不接受公网 HTTP IP 作为 Web OAuth 回调地址。生产环境还需把
+`FRONTEND_ORIGIN`、`CORS_ORIGIN`、`BETTER_AUTH_URL` 统一设为上述 HTTPS origin；
+只填写一个 Google 凭据会让后端启动失败，两个都留空则安全禁用 Google 登录。
 
 ### 2. 启动服务
 
@@ -225,8 +235,8 @@ http://localhost:5173
 | `IMAGE_API_TIMEOUT_MS`        | 否   | 图像生成请求超时时间，默认 `300000ms`（5 分钟）                                         |
 | `UPLOAD_MAX_BYTES`            | 否   | 参考图上传大小上限；Compose 会同时传给后端与前端代理，代理自动增加 1 MiB multipart 余量 |
 | `DAILY_USER_QUOTA`            | 否   | 默认用户永久生图额度（兼容旧环境变量名）                                                |
-| `GOOGLE_CLIENT_ID`            | 否   | Google OAuth Client ID                                                                  |
-| `GOOGLE_CLIENT_SECRET`        | 否   | Google OAuth Client Secret                                                              |
+| `GOOGLE_CLIENT_ID`            | 否   | Google Web OAuth Client ID；启用时必须和 Secret 同时填写                                 |
+| `GOOGLE_CLIENT_SECRET`        | 否   | Google Web OAuth Client Secret；仅保存在服务端                                           |
 | `SEED_DEFAULT_ADMIN`          | 否   | 是否启用默认管理员种子                                                                  |
 
 ## 页面入口
