@@ -163,7 +163,9 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 
 ### Main Changes
 
-(Add details)
+- 在 Better Auth `databaseHooks.user.create.after` 中为每个新用户幂等创建 `user_quota` 默认记录。
+- 默认写入 `DAILY_USER_QUOTA` 永久额度、0 已用额度、当前产品日期和未签到状态。
+- 认证路由回归测试验证用户名注册后额度记录完整，Google 等其他 Better Auth 创建路径共用同一钩子。
 
 ### Git Commits
 
@@ -173,7 +175,10 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 
 ### Testing
 
-- [OK] (Add test results)
+- [OK] 后端认证路由测试：10 个测试通过。
+- [OK] 后端完整测试：18 个文件、199 个测试通过。
+- [OK] `npm run typecheck`、`npm run lint`、`npm run build`、`npm run format:check`、`git diff --check`。
+- [OK] 容器健康检查通过，`/api/health` 和 `/api/auth/providers` 正常响应。
 
 ### Status
 
@@ -1703,6 +1708,38 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 | Hash | Message |
 |------|---------|
 | `7097072` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 52: 修复新注册用户初始额度
+
+**Date**: 2026-09-05
+**Task**: 修复新注册用户初始额度
+
+### Summary
+
+在 Better Auth 用户创建后幂等初始化 user_quota 默认记录，覆盖用户名注册、管理员创建和 Google 新用户；补充认证回归测试并重建后端容器。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5efcf36` | (see git log) |
 
 ### Testing
 

@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 51
+- **Total Sessions**: 52
 - **Last Active**: 2026-09-05
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1712 | Active |
+| `journal-1.md` | ~1749 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 52 | 2026-09-05 | 修复新注册用户初始额度 | `5efcf36` | `-` |
 | 51 | 2026-09-05 | 修复光标与流式提示文字对齐 | `7097072` | `-` |
 | 50 | 2026-09-05 | 修复展开态流式提示文字位置 | `00dedbf` | `-` |
 | 49 | 2026-09-05 | 收紧发现页展开输入框文字间距 | `ee70752` | `-` |
