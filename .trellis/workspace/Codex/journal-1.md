@@ -1434,3 +1434,36 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 44: 优化账户入口并修复发现页输入框居中
+
+**Date**: 2026-09-05
+**Task**: 优化账户入口并修复发现页输入框居中
+
+### Summary
+
+未登录入口改为明确登录按钮，接入 Google 头像与首字母回退；修复发现页输入框下滑后受 Motion 影响右偏的问题，并完成桌面移动端部署验收。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6a1b93f` | (see git log) |
+| `682d04e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
