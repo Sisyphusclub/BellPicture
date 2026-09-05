@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"验证类型检查、lint、测试、构建、格式和浏览器 QA"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"复核展开态 composer 的响应式文字对齐契约"}
