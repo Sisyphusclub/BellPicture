@@ -1862,3 +1862,39 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 56: 对齐模板详情顶部文字
+
+**Date**: 2026-09-05
+**Task**: 对齐模板详情顶部文字
+
+### Summary
+
+移除模板详情桌面右侧额外的 58px 顶部空白，让分类、标题和提示词与关闭按钮处于同一顶部区域；完整前端测试和构建通过并已部署。
+
+### Main Changes
+
+- 移除模板详情桌面右侧详情栏的 `margin-top: 58px` 预留空白。
+- 分类、标题和提示词改为从详情栏顶部内边距开始，与关闭按钮保持同一顶部区域。
+- 增加样式契约断言，确保详情独立滚动和原图比例布局不回归。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7e993b4` | (see git log) |
+
+### Testing
+
+- [OK] 前端完整测试：34 个套件、137 项通过；定向模板回归 27 项通过。
+- [OK] 前端 `typecheck`、`lint`、`format:check`、`build`、`git diff --check`。
+- [OK] 前端容器已重建，线上模板页返回新构建资源。
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
