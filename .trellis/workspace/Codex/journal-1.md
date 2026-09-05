@@ -1546,3 +1546,35 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 47: 修复生产登录与发现页交互
+
+**Date**: 2026-09-05
+**Task**: 修复生产登录与发现页交互
+
+### Summary
+
+修复 provider 检查限流导致 Google 登录误显示未配置，生产 OAuth 来源切换到 pic.apioctiva.com；稳定发现页尺寸选择布局并移除首次白框，登录字段提交后才显示校验错误。完成前后端测试、构建、容器重建和移动端 Playwright 回归。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c844c16` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 46
+- **Total Sessions**: 47
 - **Last Active**: 2026-09-05
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1541 | Active |
+| `journal-1.md` | ~1580 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 47 | 2026-09-05 | 修复生产登录与发现页交互 | `c844c16` | `-` |
 | 46 | 2026-09-05 | 修复发现页输入框并展开画廊 | `07ee47e`, `4aee0df` | `-` |
 | 45 | 2026-09-05 | 重做发现页对话框滚动切换 | `ae1bf0c` | `-` |
 | 44 | 2026-09-05 | 优化账户入口并修复发现页输入框居中 | `6a1b93f`, `682d04e` | `-` |
