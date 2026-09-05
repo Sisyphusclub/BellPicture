@@ -29,7 +29,6 @@ import {
 import { buildApiUrl } from '@/services/api/imagesApi';
 import type { AspectChoice, HistoryEntry } from '@/types/image';
 import { DEFAULT_ASPECT_CHOICE, DEFAULT_COUNT, MAX_REFERENCE_IMAGES } from '@/types/image';
-import { Button } from '@/components/ui/button';
 
 const HERO_VIDEO = buildApiUrl('/api/media/liquid-glass.mp4');
 const HERO_SHINY_GRADIENT_STYLE: CSSProperties = {
@@ -46,8 +45,6 @@ const LANDING_SCROLL_RESTORE_KEY = 'nebulens:landing-scroll-restore';
 const LANDING_COMPOSER_TRANSITION_EASE = [0.16, 1, 0.3, 1] as const;
 const LANDING_COMPOSER_CLOSED_CLIP = 'inset(0 50% 0 50% round 20px)';
 const LANDING_COMPOSER_OPEN_CLIP = 'inset(0 0% 0 0% round 20px)';
-const DISCOVER_INITIAL_TEMPLATE_COUNT = 30;
-const DISCOVER_TEMPLATE_BATCH_SIZE = 30;
 const HERO_ENTRIES: HistoryEntry[] = [
   {
     record: {
@@ -145,7 +142,13 @@ export function LandingView() {
   const { quota, isLoading: quotaLoading, checkIn } = useImageQuota();
   const { notify } = useToast();
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
-  const publicGallery = usePublicGallery();
+  const {
+    entries: publicGalleryEntries,
+    isHydrating: publicGalleryIsHydrating,
+    hydrateError: publicGalleryError,
+    hasMore: publicGalleryHasMore,
+    loadMore: loadMorePublicGallery,
+  } = usePublicGallery();
   const composerAnchorRef = useRef<HTMLDivElement>(null);
   const composerDockedRef = useRef(false);
   const [videoFailed, setVideoFailed] = useState(false);
@@ -157,13 +160,12 @@ export function LandingView() {
   const [selected, setSelected] = useState<HistoryEntry | null>(null);
   const [composerDocked, setComposerDocked] = useState(false);
   const [composerExpanded, setComposerExpanded] = useState(false);
-  const [visibleTemplateCount, setVisibleTemplateCount] = useState(DISCOVER_INITIAL_TEMPLATE_COUNT);
   const composerHasContent = prompt.trim().length > 0 || attachments.length > 0;
   const composerIsExpanded = composerDocked && (composerExpanded || composerHasContent);
   const composerPresentation = composerDocked ? 'dock' : 'hero';
   const galleryEntries = useMemo(
-    () => [...publicGallery.entries, ...TODAY_CREATIONS.slice(0, visibleTemplateCount)],
-    [publicGallery.entries, visibleTemplateCount],
+    () => [...publicGalleryEntries, ...TODAY_CREATIONS],
+    [publicGalleryEntries],
   );
   const galleryImages = useMemo<GalleryImage[]>(
     () =>
@@ -175,9 +177,6 @@ export function LandingView() {
       })),
     [galleryEntries],
   );
-  const hasLocalGalleryEntries = visibleTemplateCount < TODAY_CREATIONS.length;
-  const hasMoreGalleryEntries = hasLocalGalleryEntries || publicGallery.hasMore;
-
   useEffect(() => {
     const savedScroll = Number(sessionStorage.getItem(LANDING_SCROLL_KEY));
     const shouldRestoreScroll = sessionStorage.getItem(LANDING_SCROLL_RESTORE_KEY) === 'true';
@@ -225,6 +224,13 @@ export function LandingView() {
       window.removeEventListener('resize', updateComposerDock);
     };
   }, []);
+
+  useEffect(() => {
+    if (!publicGalleryHasMore || publicGalleryIsHydrating || publicGalleryError !== null) {
+      return;
+    }
+    void loadMorePublicGallery();
+  }, [loadMorePublicGallery, publicGalleryError, publicGalleryHasMore, publicGalleryIsHydrating]);
 
   const copyPrompt = async (entry: HistoryEntry): Promise<void> => {
     try {
@@ -465,26 +471,6 @@ export function LandingView() {
           if (entry) setSelected(entry);
         }}
       />
-      {hasMoreGalleryEntries ? (
-        <div className="landing-gallery-pagination">
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={!hasLocalGalleryEntries && publicGallery.isHydrating}
-            onClick={() => {
-              if (hasLocalGalleryEntries) {
-                setVisibleTemplateCount((current) =>
-                  Math.min(current + DISCOVER_TEMPLATE_BATCH_SIZE, TODAY_CREATIONS.length),
-                );
-                return;
-              }
-              void publicGallery.loadMore();
-            }}
-          >
-            {!hasLocalGalleryEntries && publicGallery.isHydrating ? '加载中' : '加载更多'}
-          </Button>
-        </div>
-      ) : null}
       <ImageDetailModal
         entry={selected}
         onClose={() => setSelected(null)}

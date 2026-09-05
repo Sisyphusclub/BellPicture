@@ -8946,10 +8946,10 @@ video {
 .landing-composer-dock::before {
   display: none;
 }
-.landing-gallery-pagination {
-  display: flex;
-  justify-content: center;
-  padding: 28px 0 calc(160px + env(safe-area-inset-bottom));
+/* All Discover items render without pagination; preserve enough end clearance
+   for the fixed composer so the final row remains inspectable. */
+.landing-creations {
+  padding-bottom: calc(160px + env(safe-area-inset-bottom));
 }
 
 /* The hero and dock share the same beUI Agent Chat Input surface. The anchor

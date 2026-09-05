@@ -22,6 +22,13 @@ const historyMocks = vi.hoisted(() => ({
   batches: [] as unknown[],
 }));
 
+const publicGalleryMocks = vi.hoisted(() => ({
+  hasMore: false,
+  isHydrating: false,
+  hydrateError: null as Error | null,
+  loadMore: vi.fn(),
+}));
+
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
     user: { id: 'admin', email: 'admin@example.com', username: 'admin', isAdmin: true },
@@ -75,11 +82,11 @@ vi.mock('@/hooks/useImageHistory', () => ({
 vi.mock('@/hooks/usePublicGallery', () => ({
   usePublicGallery: () => ({
     entries: [],
-    isHydrating: false,
-    hydrateError: null,
-    hasMore: false,
+    isHydrating: publicGalleryMocks.isHydrating,
+    hydrateError: publicGalleryMocks.hydrateError,
+    hasMore: publicGalleryMocks.hasMore,
     refresh: vi.fn(),
-    loadMore: vi.fn(),
+    loadMore: publicGalleryMocks.loadMore,
     add: vi.fn(),
     removeAsAdmin: vi.fn(),
   }),
@@ -172,6 +179,10 @@ beforeEach(() => {
   vi.clearAllMocks();
   resetGenerationSessionsForTests();
   historyMocks.batches = [];
+  publicGalleryMocks.hasMore = false;
+  publicGalleryMocks.isHydrating = false;
+  publicGalleryMocks.hydrateError = null;
+  publicGalleryMocks.loadMore.mockResolvedValue(undefined);
   generation.generate.mockResolvedValue({
     batchId: 'landing-batch',
     aspectRatio: '16:9',
@@ -199,8 +210,7 @@ beforeEach(() => {
 });
 
 describe('React application routes', () => {
-  it('renders one progressive GPT Image 2 gallery and keeps the full library reachable', async () => {
-    const user = userEvent.setup();
+  it('renders the complete GPT Image 2 gallery without pagination', async () => {
     const { container } = renderRoute('/');
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Turn your idea into images' }),
@@ -227,17 +237,15 @@ describe('React application routes', () => {
       '.landing-creations [style*="--gallery-columns"]',
     );
     expect(desktopGallery?.style.getPropertyValue('--gallery-columns')).toBe('6');
-    expect(initialCreationCards).toHaveLength(30);
-    expect(initialCreationImages).toHaveLength(30);
+    expect(initialCreationCards).toHaveLength(169);
+    expect(initialCreationImages).toHaveLength(169);
     expect(container.querySelectorAll('.image-gallery-vertical__columns')).toHaveLength(1);
     expect(initialCreationCards[0]).toHaveAccessibleName(
       '查看图片：雾中的混凝土运动场与奔跑者，冷灰建筑、湿润空气与柔和晨光',
     );
     expect(animatedGalleryTracks).toHaveLength(0);
     expect(container.querySelector('.landing-creations style')).not.toBeInTheDocument();
-    while (screen.queryByRole('button', { name: '加载更多' })) {
-      await user.click(screen.getByRole('button', { name: '加载更多' }));
-    }
+    expect(screen.queryByRole('button', { name: '加载更多' })).not.toBeInTheDocument();
     const creationCards = container.querySelectorAll('.image-gallery-vertical__image-button');
     const creationImages = container.querySelectorAll(
       '.landing-creations .image-gallery-vertical__columns img',
@@ -292,6 +300,15 @@ describe('React application routes', () => {
     expect(screen.getByRole('switch', { name: '公开作品' })).toBeInTheDocument();
     expect(screen.getByRole('status', { name: '剩余额度 16，总额度 20' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: '正在发生的想象' })).not.toBeInTheDocument();
+  });
+
+  it('automatically loads remaining public gallery pages without pagination', async () => {
+    publicGalleryMocks.hasMore = true;
+    renderRoute('/');
+
+    await screen.findByRole('textbox', { name: '首页创作提示词' });
+    await waitFor(() => expect(publicGalleryMocks.loadMore).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole('button', { name: '加载更多' })).not.toBeInTheDocument();
   });
 
   it('docks the landing composer while browsing the gallery and expands it on focus', async () => {

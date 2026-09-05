@@ -439,23 +439,21 @@ image filename prefixes.
 - Discover uses one compact `6px` masonry gutter in both axes. Set the column
   container gap and each direct child `figure` bottom margin to the same value;
   do not target wrapper nodes that the gallery component does not render.
-- Discover initially renders 30 built-in items and adds 30 per request;
-  Templates initially renders 24 and adds 24. Filtering or changing the
-  template category/sort resets its visible count. The complete manifest must
-  remain reachable through `加载更多`.
-- The Discover pagination container reserves at least `160px` plus the bottom
-  safe area after its button so the fixed composer cannot cover the action at
-  maximum scroll.
+- Discover renders its complete built-in manifest immediately and does not show a `加载更多`
+  control. If the public gallery API reports another cursor, request subsequent pages automatically
+  until complete, stopping after an error. Templates still renders 24 items initially and adds 24
+  per request; filtering or changing its category/sort resets that visible count.
+- Keep at least `160px` plus the bottom safe area after the Discover gallery so the fixed composer
+  cannot cover its final row.
 - For coarse pointers, primary icon controls expose a 44px hit box while their
   visible beUI surface may remain 32px. Do not enlarge hover-capable desktop
   controls solely to satisfy the touch target.
 - Gallery accessible names use the template title or a whitespace-normalized
   prompt snippet capped at 32 characters, not the complete production prompt.
 
-Route tests must assert one Discover gallery container, the initial batch size,
-and that repeated loading reaches all manifest entries. Browser QA at 1440px
-and 390 x 844 must verify no horizontal overflow, two mobile columns, a usable
-pagination button above the dock, and a clean console.
+Route tests must assert one Discover gallery container, the complete manifest, and no Discover
+pagination control. Browser QA at 1440px and 390 x 844 must verify no horizontal overflow, two
+mobile columns, an inspectable final row above the dock, and a clean console.
 
 Operational `.workspace-page` routes sit after the collapsed floating sidebar
 rail. Use the shared `--workspace-sidebar-rail` token for desktop `.app-main`
