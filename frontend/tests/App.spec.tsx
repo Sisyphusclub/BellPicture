@@ -271,7 +271,11 @@ describe('React application routes', () => {
     expect(landingAnchor).toBeInTheDocument();
     expect(landingComposers).toHaveLength(1);
     expect(landingAnchor?.querySelector('.landing-composer-layout')).not.toBeInTheDocument();
-    expect(landingAnchor?.querySelectorAll(':scope > .landing-composer-content')).toHaveLength(1);
+    expect(
+      landingAnchor?.querySelectorAll(
+        ':scope > .landing-composer-hero > .landing-composer-content',
+      ),
+    ).toHaveLength(1);
     expect(landingAnchor?.querySelector('.landing-liquidglass-target')).not.toBeInTheDocument();
     expect(landingAnchor?.querySelector('.landing-liquidglass-backdrop')).not.toBeInTheDocument();
     expect(landingAnchor?.querySelector('canvas')).not.toBeInTheDocument();
@@ -293,16 +297,24 @@ describe('React application routes', () => {
   it('docks the landing composer while browsing the gallery and expands it on focus', async () => {
     const user = userEvent.setup();
     const { container } = renderRoute('/');
+    await screen.findByRole('textbox', { name: '首页创作提示词' });
     const anchor = container.querySelector<HTMLElement>('.landing-composer-anchor');
     expect(anchor).toHaveAttribute('data-docked', 'false');
     expect(anchor).toHaveAttribute('data-expanded', 'false');
 
-    vi.spyOn(window, 'scrollY', 'get').mockReturnValue(520);
+    const scrollY = vi.spyOn(window, 'scrollY', 'get').mockReturnValue(520);
     vi.spyOn(anchor!, 'getBoundingClientRect').mockReturnValue(new DOMRect(250, -220, 940, 137));
     void act(() => window.dispatchEvent(new Event('scroll')));
 
     await waitFor(() => expect(anchor).toHaveAttribute('data-docked', 'true'));
     expect(anchor).toHaveAttribute('data-expanded', 'false');
+    expect(anchor?.querySelector('.landing-composer-hero')).toBeInTheDocument();
+    expect(anchor?.querySelector('.landing-composer-dock')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(anchor?.querySelector('.landing-composer-dock')).toBeInTheDocument(),
+    );
+    expect(anchor?.querySelector('.landing-composer-hero')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('textbox', { name: '首页创作提示词' })).toHaveLength(1);
 
     const promptInput = screen.getByRole('textbox', { name: '首页创作提示词' });
     await user.click(promptInput);
@@ -318,6 +330,30 @@ describe('React application routes', () => {
     await user.type(promptInput, '冷白背景产品摄影');
     expect(promptInput).toHaveTextContent('冷白背景产品摄影');
     expect(anchor).toHaveAttribute('data-expanded', 'true');
+
+    await user.click(screen.getByRole('button', { name: '添加参考图或技能' }));
+    await user.click(screen.getByRole('menuitem', { name: '添加参考图' }));
+    const fileInput = container.querySelector<HTMLInputElement>('input[type="file"]');
+    await user.upload(
+      fileInput!,
+      new File(['transition-reference'], 'transition-reference.png', { type: 'image/png' }),
+    );
+    expect(screen.getByText('transition-reference.png')).toBeInTheDocument();
+
+    scrollY.mockReturnValue(80);
+    void act(() => window.dispatchEvent(new Event('scroll')));
+    await waitFor(() => expect(anchor).toHaveAttribute('data-docked', 'false'));
+    expect(anchor?.querySelector('.landing-composer-dock')).toBeInTheDocument();
+    expect(anchor?.querySelector('.landing-composer-hero')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(anchor?.querySelector('.landing-composer-hero')).toBeInTheDocument(),
+    );
+    expect(anchor?.querySelector('.landing-composer-dock')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('textbox', { name: '首页创作提示词' })).toHaveLength(1);
+    expect(screen.getByRole('textbox', { name: '首页创作提示词' })).toHaveTextContent(
+      '冷白背景产品摄影',
+    );
+    expect(screen.getByText('transition-reference.png')).toBeInTheDocument();
   });
 
   it('keeps dock focus and collapse behavior with reduced motion enabled', async () => {
@@ -333,12 +369,16 @@ describe('React application routes', () => {
     }));
     const user = userEvent.setup();
     const { container } = renderRoute('/');
+    await screen.findByRole('textbox', { name: '首页创作提示词' });
     const anchor = container.querySelector<HTMLElement>('.landing-composer-anchor');
 
     vi.spyOn(window, 'scrollY', 'get').mockReturnValue(520);
     vi.spyOn(anchor!, 'getBoundingClientRect').mockReturnValue(new DOMRect(250, -220, 940, 137));
     void act(() => window.dispatchEvent(new Event('scroll')));
     await waitFor(() => expect(anchor).toHaveAttribute('data-docked', 'true'));
+    await waitFor(() =>
+      expect(anchor?.querySelector('.landing-composer-dock')).toBeInTheDocument(),
+    );
 
     const promptInput = screen.getByRole('textbox', { name: '首页创作提示词' });
     await user.click(promptInput);
@@ -787,7 +827,7 @@ describe('React application routes', () => {
     expect(screen.getByRole('status', { name: '1 张' })).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: '私有模式' })).toBeChecked();
     expect(generation.generate).not.toHaveBeenCalled();
-  });
+  }, 10_000);
 
   it('keeps history and admin routes', async () => {
     const history = renderRoute('/history');

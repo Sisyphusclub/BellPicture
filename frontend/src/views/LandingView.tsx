@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
@@ -43,7 +43,9 @@ const HERO_SHINY_GRADIENT_STYLE: CSSProperties = {
 };
 const LANDING_SCROLL_KEY = 'nebulens:landing-scroll';
 const LANDING_SCROLL_RESTORE_KEY = 'nebulens:landing-scroll-restore';
-const LANDING_COMPOSER_MORPH_EASE = [0.16, 1, 0.3, 1] as const;
+const LANDING_COMPOSER_TRANSITION_EASE = [0.16, 1, 0.3, 1] as const;
+const LANDING_COMPOSER_CLOSED_CLIP = 'inset(0 50% 0 50% round 20px)';
+const LANDING_COMPOSER_OPEN_CLIP = 'inset(0 0% 0 0% round 20px)';
 const DISCOVER_INITIAL_TEMPLATE_COUNT = 30;
 const DISCOVER_TEMPLATE_BATCH_SIZE = 30;
 const HERO_ENTRIES: HistoryEntry[] = [
@@ -158,7 +160,7 @@ export function LandingView() {
   const [visibleTemplateCount, setVisibleTemplateCount] = useState(DISCOVER_INITIAL_TEMPLATE_COUNT);
   const composerHasContent = prompt.trim().length > 0 || attachments.length > 0;
   const composerIsExpanded = composerDocked && (composerExpanded || composerHasContent);
-  const composerMorphDuration = composerIsExpanded ? 0.38 : composerDocked ? 0.42 : 0.32;
+  const composerPresentation = composerDocked ? 'dock' : 'hero';
   const galleryEntries = useMemo(
     () => [...publicGallery.entries, ...TODAY_CREATIONS.slice(0, visibleTemplateCount)],
     [publicGallery.entries, visibleTemplateCount],
@@ -337,19 +339,11 @@ export function LandingView() {
             </em>
           </h1>
           <p>用 GPT-IMAGE-2 将你的创意变为精美图片，只需描述你脑海中的画面。</p>
-          <motion.div
+          <div
             ref={composerAnchorRef}
             className={`landing-composer-anchor${composerDocked ? ' is-docked' : ''}${composerIsExpanded ? ' is-expanded' : ''}`}
             data-docked={composerDocked}
             data-expanded={composerIsExpanded}
-            layout={!reducedMotion}
-            layoutDependency={`${composerDocked}:${composerIsExpanded}`}
-            transition={{
-              layout: {
-                duration: composerMorphDuration,
-                ease: LANDING_COMPOSER_MORPH_EASE,
-              },
-            }}
             onPointerDownCapture={(event) => {
               const target = event.target as HTMLElement;
               if (composerDocked && target.closest('.agent-chat-input__textarea')) {
@@ -372,48 +366,91 @@ export function LandingView() {
               }
             }}
           >
-            <div className="landing-composer-content">
-              <AgentChatInput
-                value={prompt}
-                onValueChange={updatePrompt}
-                onSubmit={({ text, attachments: selectedAttachments }) =>
-                  submitPrompt(text, selectedAttachments)
+            <AnimatePresence initial={false} mode="wait">
+              <motion.div
+                key={composerPresentation}
+                className={`landing-composer-presentation landing-composer-${composerPresentation}${composerIsExpanded ? ' is-expanded' : ''}`}
+                data-composer-presentation={composerPresentation}
+                initial={
+                  reducedMotion
+                    ? false
+                    : composerDocked
+                      ? { opacity: 0, clipPath: LANDING_COMPOSER_CLOSED_CLIP }
+                      : { opacity: 0 }
                 }
-                skills={[]}
-                models={[]}
-                defaultModel="gpt-image-2"
-                agents={[]}
-                reasoningLevels={[]}
-                speedModes={[]}
-                streamingPlaceholders={IMAGE_PROMPT_EXAMPLES}
-                placeholder="描述你想生成的画面..."
-                ariaLabel="首页创作提示词"
-                submitLabel="带着提示词开始创作"
-                submitContent={<GenerationSubmitCost count={count} />}
-                minRows={1}
-                maxRows={4}
-                allowFileUpload
-                attachments={attachments}
-                onAttachmentsChange={updateAttachments}
-                acceptedFileTypes="image/png,image/jpeg,image/webp"
-                toolbarContent={
-                  <LandingGenerationControls
-                    aspect={aspect}
-                    count={count}
-                    isPublic={isPublic}
-                    quotaLabel={quotaLabel}
-                    quotaAriaLabel={quotaAriaLabel}
-                    quotaIsAction={!authLoading && !isAuthenticated}
-                    onAspectChange={setAspect}
-                    onCountChange={setCount}
-                    onPublicChange={setIsPublic}
-                    onQuotaClick={openAuthModal}
+                animate={
+                  reducedMotion
+                    ? { opacity: 1 }
+                    : composerDocked
+                      ? {
+                          opacity: 1,
+                          clipPath: LANDING_COMPOSER_OPEN_CLIP,
+                          transition: { duration: 0.28, ease: LANDING_COMPOSER_TRANSITION_EASE },
+                        }
+                      : {
+                          opacity: 1,
+                          transition: { duration: 0.18, ease: LANDING_COMPOSER_TRANSITION_EASE },
+                        }
+                }
+                exit={
+                  reducedMotion
+                    ? { opacity: 0, transition: { duration: 0 } }
+                    : composerDocked
+                      ? {
+                          opacity: 0,
+                          clipPath: LANDING_COMPOSER_CLOSED_CLIP,
+                          transition: { duration: 0.18, ease: LANDING_COMPOSER_TRANSITION_EASE },
+                        }
+                      : {
+                          opacity: 0,
+                          transition: { duration: 0.14, ease: LANDING_COMPOSER_TRANSITION_EASE },
+                        }
+                }
+              >
+                <div className="landing-composer-content">
+                  <AgentChatInput
+                    value={prompt}
+                    onValueChange={updatePrompt}
+                    onSubmit={({ text, attachments: selectedAttachments }) =>
+                      submitPrompt(text, selectedAttachments)
+                    }
+                    skills={[]}
+                    models={[]}
+                    defaultModel="gpt-image-2"
+                    agents={[]}
+                    reasoningLevels={[]}
+                    speedModes={[]}
+                    streamingPlaceholders={IMAGE_PROMPT_EXAMPLES}
+                    placeholder="描述你想生成的画面..."
+                    ariaLabel="首页创作提示词"
+                    submitLabel="带着提示词开始创作"
+                    submitContent={<GenerationSubmitCost count={count} />}
+                    minRows={1}
+                    maxRows={4}
+                    allowFileUpload
+                    attachments={attachments}
+                    onAttachmentsChange={updateAttachments}
+                    acceptedFileTypes="image/png,image/jpeg,image/webp"
+                    toolbarContent={
+                      <LandingGenerationControls
+                        aspect={aspect}
+                        count={count}
+                        isPublic={isPublic}
+                        quotaLabel={quotaLabel}
+                        quotaAriaLabel={quotaAriaLabel}
+                        quotaIsAction={!authLoading && !isAuthenticated}
+                        onAspectChange={setAspect}
+                        onCountChange={setCount}
+                        onPublicChange={setIsPublic}
+                        onQuotaClick={openAuthModal}
+                      />
+                    }
+                    className="landing-composer"
                   />
-                }
-                className="landing-composer"
-              />
-            </div>
-          </motion.div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </section>
       <ImageGalleryVertical

@@ -111,9 +111,10 @@ prompt, and pending Edit is disabled without changing bubble child count.
   `--workspace-page-gutter` for both the section and its inner gallery. Reset
   the rail offset and reuse the 20px/14px gutter values at the mobile
   breakpoints so gallery media aligns with Templates, Assets, and Users.
-- Discover keeps its docking anchor and both Motion layout boundaries visual-neutral. The existing
-  beUI Agent Chat Input and its BorderGlow are the only painted composer surface in hero, compact
-  docked, and expanded docked states; do not wrap it in another card, glass target, or canvas layer.
+- Discover keeps its docking anchor and both keyed Motion presentation boundaries visual-neutral.
+  The existing beUI Agent Chat Input and its BorderGlow are the only painted composer surface in
+  hero, compact docked, and expanded docked states; do not wrap it in another card, glass target, or
+  canvas layer.
 - Discover and Generate must use the shared React Bits `BorderGlow` so the orange, cyan, and blue
   palette has one interaction model. Pointer movement writes `--edge-proximity` and
   `--cursor-angle`; `::before` renders the directional mesh border and `.edge-light` renders the
@@ -187,28 +188,27 @@ multiline content keeps its natural growth and scrolling behavior. The desktop e
 tall, while the `<=860px` editor is `86px`; do not reuse desktop vertical padding or placeholder
 offsets at the mobile breakpoint.
 
-The Motion-projected `.landing-composer-anchor` owns the `transform` channel. Do not center its
-fixed state with either `transform: translateX(-50%)` or the individual `translate` property:
-Motion can resolve the latter to `none` when it writes its inline projection transform, leaving the
-composer's left edge on the intended center point. On desktop, pair the center `left` coordinate
-with a negative `margin-left` equal to half of the active compact or expanded width. At `<=860px`,
-anchor the fixed element with equal physical `left` and `right` values and clear that margin.
+The flow `.landing-composer-anchor` only detects the scroll threshold and reserves hero space. The
+fixed `.landing-composer-dock` is a separate keyed presentation. On desktop, pair its center `left`
+coordinate with a negative `margin-left` equal to half of the active compact or expanded width. At
+`<=860px`, anchor the dock with equal physical `left` and `right` values and clear that margin.
 
 ```css
-/* Wrong: the dock starts at the center when Motion clears translate. */
+/* Wrong: moving the flow anchor makes the hero composer fly to the dock. */
 .landing-composer-anchor.is-docked {
-  left: calc(50% + 64px);
-  translate: -50% 0;
+  position: fixed;
+  bottom: 16px;
 }
 
-/* Correct: centering does not compete with Motion's transform channel. */
-.landing-composer-anchor.is-docked:not(.is-expanded) {
+/* Correct: the dock has independent fixed geometry. */
+.landing-composer-dock:not(.is-expanded) {
+  left: calc(50% + 64px);
   width: min(560px, calc(100vw - var(--sidebar-width) - 64px));
   margin-left: calc(-1 * min(280px, (100vw - var(--sidebar-width) - 64px) / 2));
 }
 
 @media (max-width: 860px) {
-  .landing-composer-anchor.is-docked {
+  .landing-composer-dock {
     right: 16px;
     left: 16px;
     width: auto;
@@ -219,12 +219,12 @@ anchor the fixed element with equal physical `left` and `right` values and clear
 
 ```css
 /* Correct: preserve total padding while calibrating each editor height. */
-.is-docked.is-expanded .agent-chat-input__textarea {
+.landing-composer-dock.is-expanded .agent-chat-input__textarea {
   padding-block: 27px 10px;
 }
 
 @media (max-width: 860px) {
-  .is-docked.is-expanded .agent-chat-input__textarea {
+  .landing-composer-dock.is-expanded .agent-chat-input__textarea {
     padding-block: 31px 6px;
   }
 }
@@ -454,12 +454,11 @@ Keep the media on `object-fit: contain`, scroll only the information rail when
 copy exceeds the available height, and retain the full-screen single-column
 layout at `<=860px`.
 
-Discover composer docking and compact/full editing transitions are one Motion
-layout projection owned by `.landing-composer-anchor`. Include both docked and
-expanded state in `layoutDependency`; `.landing-composer-content` is an ordinary
-`div` and must not own `layout` or `layoutDependency`. Keep horizontal centering
-on the individual `translate` property so Motion can reserve `transform` for
-FLIP, and disable projection when reduced motion is requested.
+Discover composer docking uses two keyed, mutually exclusive presentations. The flow
+`.landing-composer-hero` stays at the hero and only fades; `.landing-composer-dock` owns the fixed
+bottom geometry and reveals or hides with a center-symmetric `clip-path`. Both render the same
+controlled prompt, attachments, and generation settings from `LandingView`, but only one
+`AgentChatInput` is mounted at a time.
 
 ## Responsive Layout
 
@@ -483,39 +482,44 @@ FLIP, and disable projection when reduced motion is requested.
 - Links use React Router `Link`/`NavLink` for in-app navigation.
 - Use Motion or CSS transitions only when motion explains state or continuity.
 - Autoplay surfaces must pause on hover and keyboard focus. The Discover image gallery is intentionally static and unmasked: render each work once per responsive gallery at full opacity, without vertical loop tracks, animation timing styles, or top/bottom edge fades.
-- Discover uses one Agent Chat Input instance across hero and gallery browsing. When its reserved anchor leaves the viewport, the same component becomes a bottom-fixed compact prompt bar; prompt pointer or keyboard focus expands the full toolbar in place. Keep a pointer-transparent black-to-transparent backdrop behind the dock, preserve the anchor's document height so gallery results do not shift, and undock when scrolling back to the hero.
-- Animate the docked Discover composer with Motion layout projection on `.landing-composer-anchor`,
-  enabled from the component's first render. Keep `layoutDependency` scoped to docked/expanded state so
-  prompt edits do not trigger extra measurements. React applies the final geometry once; the anchor
-  projection owns the visible `transform`, while auxiliary controls may transition only `transform` and `opacity`.
-  Never transition `width`, height constraints, padding, positioning, `flex-basis`, radius, background,
-  border, or shadow during this morph. Disable layout projection for `prefers-reduced-motion` and switch
-  state immediately without remounting the underlying `AgentChatInput`.
+- Discover keeps exactly one accessible Agent Chat Input while switching between hero and gallery browsing. When the reserved anchor leaves the viewport, finish the hero exit before mounting the bottom-fixed compact prompt bar; pointer or keyboard focus expands the full toolbar in place. Preserve the anchor's document height so gallery results do not shift, and reverse the ordered transition when scrolling back to the hero.
+- Use `AnimatePresence initial={false} mode="wait"` for the two presentations. The hero exits with
+  opacity only. The dock enters from `clip-path: inset(0 50% 0 50%)` to a fully open inset and exits
+  through the inverse path. Do not add `layout`, `layoutId`, or `layoutDependency`; those properties
+  imply spatial continuity and make the hero appear to fly to the bottom. Under
+  `prefers-reduced-motion`, use zero-duration opacity state changes without clip animation.
 
 ```tsx
-<motion.div
-  layout={!reducedMotion}
-  layoutDependency={`${composerDocked}:${composerIsExpanded}`}
-  transition={{
-    layout: {
-      duration: composerIsExpanded ? 0.36 : 0.24,
-      ease: [0.16, 1, 0.3, 1],
-    },
-  }}
->
-  <div className="landing-composer-content">
-    <AgentChatInput />
-  </div>
-</motion.div>
+<div ref={composerAnchorRef} className="landing-composer-anchor">
+  <AnimatePresence initial={false} mode="wait">
+    <motion.div
+      key={composerDocked ? "dock" : "hero"}
+      className={
+        composerDocked ? "landing-composer-dock" : "landing-composer-hero"
+      }
+      initial={
+        composerDocked ? { opacity: 0, clipPath: CLOSED_CLIP } : { opacity: 0 }
+      }
+      animate={
+        composerDocked ? { opacity: 1, clipPath: OPEN_CLIP } : { opacity: 1 }
+      }
+      exit={
+        composerDocked ? { opacity: 0, clipPath: CLOSED_CLIP } : { opacity: 0 }
+      }
+    >
+      <div className="landing-composer-content">
+        <AgentChatInput value={prompt} onValueChange={setPrompt} />
+      </div>
+    </motion.div>
+  </AnimatePresence>
+</div>
 ```
 
-Keep the existing `AgentChatInput` inside a plain `.landing-composer-content`
-`div`. A nested Motion layout boundary competes with the anchor's size
-projection and can make the rendered input dimensions snap during dock/expand.
-Browser QA must sample a readable child/control over multiple animation frames,
-not only the outer transform or settled frame. On desktop, center the fixed dock
-on the same `calc(50% + 64px)` line as `.landing-hero__content`; keep the
-`<=860px` override at `50%`.
+Keep `AgentChatInput` inside a plain `.landing-composer-content` `div`. Browser QA must verify the
+outgoing presentation remains alone during its exit, the incoming presentation appears only after
+that exit, and prompt/attachment state survives both directions. On desktop, center the fixed dock
+on the same `calc(50% + 64px)` line as `.landing-hero__content`; at `<=860px`, use equal `16px`
+layout-viewport margins.
 
 - Honor `prefers-reduced-motion`; disable autoplay video and remove nonessential
   transitions for reduced-motion users.

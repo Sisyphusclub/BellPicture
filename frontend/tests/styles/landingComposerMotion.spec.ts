@@ -7,33 +7,35 @@ const landingView = readFileSync(resolve(process.cwd(), 'src/views/LandingView.t
 const baseStyles = readFileSync(resolve(process.cwd(), 'src/styles/base.css'), 'utf8');
 
 describe('landing composer motion contract', () => {
-  it('projects docking and expansion only from the state-owning anchor', () => {
+  it('switches independent hero and dock presentations without layout projection', () => {
     const composerStart = landingView.indexOf('ref={composerAnchorRef}');
     const composerEnd = landingView.indexOf('<AgentChatInput', composerStart);
     const composerContract = landingView.slice(composerStart - 200, composerEnd);
 
     expect(composerStart).toBeGreaterThanOrEqual(0);
-    expect(composerContract).toContain('<motion.div');
-    expect(composerContract).toContain('layout={!reducedMotion}');
-    expect(composerContract).toContain(
-      'layoutDependency={`${composerDocked}:${composerIsExpanded}`}',
-    );
-    expect(composerContract).toContain('duration: composerMorphDuration');
+    expect(composerContract).toContain('<AnimatePresence initial={false} mode="wait">');
+    expect(composerContract).toContain('key={composerPresentation}');
+    expect(composerContract).toContain('data-composer-presentation={composerPresentation}');
+    expect(composerContract).toContain('landing-composer-${composerPresentation}');
     expect(composerContract.match(/<motion\.div/g)).toHaveLength(1);
-    expect(composerContract.match(/\blayout=/g)).toHaveLength(1);
-    expect(composerContract.match(/\blayoutDependency=/g)).toHaveLength(1);
     expect(composerContract).toContain('<div className="landing-composer-content">');
-    expect(composerContract).not.toContain(
-      '<motion.div\n              className="landing-composer-content"',
+    expect(composerContract).not.toContain('layout=');
+    expect(composerContract).not.toContain('layoutDependency=');
+    expect(landingView).toContain(
+      "const LANDING_COMPOSER_CLOSED_CLIP = 'inset(0 50% 0 50% round 20px)';",
     );
+    expect(landingView).toContain(
+      "const LANDING_COMPOSER_OPEN_CLIP = 'inset(0 0% 0 0% round 20px)';",
+    );
+    expect(landingView).toContain('<AnimatePresence initial={false} mode="wait">');
 
     const dockSection = baseStyles.indexOf(
       '/* Discover composer: the compact dock is a single, quiet pill.',
     );
-    const dockStart = baseStyles.indexOf('.landing-composer-anchor.is-docked {', dockSection);
+    const dockStart = baseStyles.indexOf('.landing-composer-dock {', dockSection);
     const dockContract = baseStyles.slice(
       dockStart,
-      baseStyles.indexOf('.landing-composer-anchor.is-docked .landing-composer {', dockStart),
+      baseStyles.indexOf('.landing-composer-dock .landing-composer {', dockStart),
     );
 
     expect(dockContract).toContain(
@@ -45,13 +47,13 @@ describe('landing composer motion contract', () => {
     expect(dockContract).not.toContain('translate: -50% 0;');
 
     const compactDockStart = baseStyles.indexOf(
-      '.landing-composer-anchor.is-docked:not(.is-expanded) {',
+      '.landing-composer-dock:not(.is-expanded) {',
       dockStart,
     );
     const compactDockContract = baseStyles.slice(
       compactDockStart,
       baseStyles.indexOf(
-        '.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer',
+        '.landing-composer-dock:not(.is-expanded) .landing-composer',
         compactDockStart,
       ),
     );
@@ -67,5 +69,7 @@ describe('landing composer motion contract', () => {
     expect(mobileDockContract).toContain('right: 16px !important;');
     expect(mobileDockContract).toContain('left: 16px;');
     expect(mobileDockContract).toContain('margin-left: 0 !important;');
+    expect(baseStyles).toContain('.landing-composer-hero .landing-composer {');
+    expect(baseStyles).not.toContain('.landing-composer-anchor.is-docked');
   });
 });

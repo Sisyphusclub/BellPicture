@@ -1389,7 +1389,7 @@ video {
   box-shadow: 0 18px 54px -38px rgb(0 0 0 / 0.82);
   container-type: inline-size;
 }
-.landing-composer-anchor.is-docked::before {
+.landing-composer-dock::before {
   position: fixed;
   z-index: 46;
   right: 0;
@@ -1406,8 +1406,8 @@ video {
   content: '';
   pointer-events: none;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer,
-.landing-composer-anchor.is-docked.is-expanded .landing-composer {
+.landing-composer-dock:not(.is-expanded) .landing-composer,
+.landing-composer-dock.is-expanded .landing-composer {
   position: fixed;
   z-index: 48;
   bottom: 22px;
@@ -1416,20 +1416,20 @@ video {
   margin: 0;
   transform: translateX(-50%);
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer {
+.landing-composer-dock:not(.is-expanded) .landing-composer {
   width: min(700px, calc(100vw - 210px));
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__surface {
+.landing-composer-dock:not(.is-expanded) .agent-chat-input__surface {
   padding: 4px 8px;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__textarea {
+.landing-composer-dock:not(.is-expanded) .agent-chat-input__textarea {
   min-height: 54px !important;
   max-height: 54px !important;
   padding: 15px 96px 10px 18px !important;
   overflow: hidden !important;
   white-space: nowrap;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__streaming-placeholder {
+.landing-composer-dock:not(.is-expanded) .agent-chat-input__streaming-placeholder {
   top: 19px;
   right: 104px;
   left: 26px;
@@ -1437,7 +1437,7 @@ video {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__toolbar {
+.landing-composer-dock:not(.is-expanded) .agent-chat-input__toolbar {
   position: absolute;
   z-index: 3;
   top: 50%;
@@ -1447,16 +1447,16 @@ video {
   padding: 0;
   transform: translateY(-50%);
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__toolbar-group:first-child,
-.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__toolbar-content,
-.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__model-trigger {
+.landing-composer-dock:not(.is-expanded) .agent-chat-input__toolbar-group:first-child,
+.landing-composer-dock:not(.is-expanded) .agent-chat-input__toolbar-content,
+.landing-composer-dock:not(.is-expanded) .agent-chat-input__model-trigger {
   display: none;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__toolbar-group--end {
+.landing-composer-dock:not(.is-expanded) .agent-chat-input__toolbar-group--end {
   display: flex;
   margin: 0;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__submit {
+.landing-composer-dock:not(.is-expanded) .agent-chat-input__submit {
   min-width: 70px;
 }
 .landing-composer:focus-within {
@@ -6796,24 +6796,24 @@ video {
   .landing-composer-anchor {
     min-height: 174px;
   }
-  .landing-composer-anchor.is-docked::before {
+  .landing-composer-dock::before {
     height: 210px;
   }
-  .landing-composer-anchor.is-docked .landing-composer,
-  .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer {
+  .landing-composer-dock .landing-composer,
+  .landing-composer-dock:not(.is-expanded) .landing-composer {
     right: 12px;
     bottom: 14px;
     left: 12px;
     width: auto;
     transform: none;
   }
-  .landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__toolbar {
+  .landing-composer-dock:not(.is-expanded) .agent-chat-input__toolbar {
     top: 50%;
     right: 10px;
     width: auto;
     transform: translateY(-50%);
   }
-  .landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__textarea {
+  .landing-composer-dock:not(.is-expanded) .agent-chat-input__textarea {
     min-height: 54px !important;
     max-height: 54px !important;
     padding: 15px 90px 10px 14px !important;
@@ -6856,7 +6856,7 @@ video {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .landing-composer-anchor.is-docked .landing-composer {
+  .landing-composer-dock .landing-composer {
     transition: none;
   }
   .landing-composer .agent-chat-input__submit {
@@ -8729,7 +8729,7 @@ video {
 
 /* Discover composer: the compact dock is a single, quiet pill. A prompt or
    reference image promotes it back to the full two-row composer. */
-.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer {
+.landing-composer-dock:not(.is-expanded) .landing-composer {
   width: min(560px, calc(100vw - var(--sidebar-width) - 64px));
   border-radius: 999px;
   --border-radius: 999px !important;
@@ -8741,7 +8741,7 @@ video {
   backdrop-filter: blur(18px) saturate(1.16);
   -webkit-backdrop-filter: blur(18px) saturate(1.16);
 }
-.landing-composer-anchor.is-docked {
+.landing-composer-dock {
   position: fixed !important;
   z-index: 48;
   top: auto !important;
@@ -8755,7 +8755,7 @@ video {
   translate: none;
   transform: none;
 }
-.landing-composer-anchor.is-docked .landing-composer {
+.landing-composer-dock .landing-composer {
   position: relative !important;
   inset: auto !important;
   width: 100% !important;
@@ -8763,22 +8763,22 @@ video {
   margin: 0;
   transform: none !important;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) {
+.landing-composer-dock:not(.is-expanded) {
   width: min(560px, calc(100vw - var(--sidebar-width) - 64px));
   margin-left: calc(-1 * min(280px, (100vw - var(--sidebar-width) - 64px) / 2)) !important;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer > .border-glow-inner,
-.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer__surface,
-.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__surface {
+.landing-composer-dock:not(.is-expanded) .landing-composer > .border-glow-inner,
+.landing-composer-dock:not(.is-expanded) .landing-composer__surface,
+.landing-composer-dock:not(.is-expanded) .agent-chat-input__surface {
   border-radius: 999px;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__textarea {
+.landing-composer-dock:not(.is-expanded) .agent-chat-input__textarea {
   min-height: 54px !important;
   max-height: 54px !important;
   padding: 15px 92px 10px 58px !important;
   white-space: nowrap;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__streaming-placeholder {
+.landing-composer-dock:not(.is-expanded) .agent-chat-input__streaming-placeholder {
   top: 19px;
   right: 96px;
   left: 64px;
@@ -8786,7 +8786,7 @@ video {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__toolbar {
+.landing-composer-dock:not(.is-expanded) .agent-chat-input__toolbar {
   position: absolute;
   top: 50%;
   right: 8px;
@@ -8798,23 +8798,23 @@ video {
   transform: translateY(-50%);
   pointer-events: none;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__toolbar-group:first-child {
+.landing-composer-dock:not(.is-expanded) .agent-chat-input__toolbar-group:first-child {
   display: flex;
   margin: 0;
   pointer-events: auto;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded)
+.landing-composer-dock:not(.is-expanded)
   .agent-chat-input__toolbar-group:first-child
   .agent-chat-input__agent-trigger,
-.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__toolbar-content {
+.landing-composer-dock:not(.is-expanded) .agent-chat-input__toolbar-content {
   display: none;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__toolbar-group--end {
+.landing-composer-dock:not(.is-expanded) .agent-chat-input__toolbar-group--end {
   display: flex;
   margin: 0 0 0 auto;
   pointer-events: auto;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .agent-chat-input__submit {
+.landing-composer-dock:not(.is-expanded) .agent-chat-input__submit {
   width: 52px;
   min-width: 52px;
   height: 40px;
@@ -8823,25 +8823,25 @@ video {
   background: rgb(210 226 244 / 0.14);
   color: rgb(230 240 251 / 0.78);
 }
-.landing-composer-anchor.is-docked.is-expanded .landing-composer {
+.landing-composer-dock.is-expanded .landing-composer {
   border-color: rgb(205 231 251 / 0.16) !important;
   background: linear-gradient(180deg, rgb(73 87 95 / 0.64) 0%, rgb(42 54 62 / 0.7) 100%) !important;
   box-shadow: 0 20px 54px -36px rgb(0 3 10 / 0.9);
   backdrop-filter: blur(20px) saturate(1.18);
   -webkit-backdrop-filter: blur(20px) saturate(1.18);
 }
-.landing-composer-anchor.is-docked.is-expanded .landing-composer .agent-chat-input__surface {
+.landing-composer-dock.is-expanded .landing-composer .agent-chat-input__surface {
   background: transparent;
 }
 @media (max-width: 860px) {
-  .landing-composer-anchor.is-docked,
-  .landing-composer-anchor.is-docked:not(.is-expanded) {
+  .landing-composer-dock,
+  .landing-composer-dock:not(.is-expanded) {
     right: 16px !important;
     left: 16px;
     width: auto;
     margin-left: 0 !important;
   }
-  .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer {
+  .landing-composer-dock:not(.is-expanded) .landing-composer {
     width: calc(100vw - 32px);
   }
 }
@@ -8849,8 +8849,8 @@ video {
 /* Keep the fixed discover composer on the beUI Agent Chat Input contract. The
    dock only changes its footprint; the surface, tokens, and control sizes stay
    aligned with the source component. */
-.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer,
-.landing-composer-anchor.is-docked.is-expanded .landing-composer {
+.landing-composer-dock:not(.is-expanded) .landing-composer,
+.landing-composer-dock.is-expanded .landing-composer {
   --card-bg: var(--card) !important;
   --border-radius: 20px !important;
   border: 1px solid var(--border-strong) !important;
@@ -8860,42 +8860,38 @@ video {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer > .border-glow-inner,
-.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer .agent-chat-input__surface,
-.landing-composer-anchor.is-docked.is-expanded .landing-composer > .border-glow-inner,
-.landing-composer-anchor.is-docked.is-expanded .landing-composer .agent-chat-input__surface {
+.landing-composer-dock:not(.is-expanded) .landing-composer > .border-glow-inner,
+.landing-composer-dock:not(.is-expanded) .landing-composer .agent-chat-input__surface,
+.landing-composer-dock.is-expanded .landing-composer > .border-glow-inner,
+.landing-composer-dock.is-expanded .landing-composer .agent-chat-input__surface {
   border-radius: 17px;
   background: var(--card) !important;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer .agent-chat-input__surface {
+.landing-composer-dock:not(.is-expanded) .landing-composer .agent-chat-input__surface {
   padding: 6px 8px;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer .agent-chat-input__textarea {
+.landing-composer-dock:not(.is-expanded) .landing-composer .agent-chat-input__textarea {
   min-height: 52px !important;
   max-height: 52px !important;
   padding: 15px 78px 5px 52px !important;
   color: var(--foreground);
   caret-color: var(--foreground);
 }
-.landing-composer-anchor.is-docked.is-expanded .landing-composer .agent-chat-input__textarea {
+.landing-composer-dock.is-expanded .landing-composer .agent-chat-input__textarea {
   padding: 27px 18px 10px !important;
 }
-.landing-composer-anchor.is-docked.is-expanded
-  .landing-composer
-  .agent-chat-input__streaming-placeholder {
+.landing-composer-dock.is-expanded .landing-composer .agent-chat-input__streaming-placeholder {
   top: 30px;
 }
 @media (max-width: 860px) {
-  .landing-composer-anchor.is-docked.is-expanded .landing-composer .agent-chat-input__textarea {
+  .landing-composer-dock.is-expanded .landing-composer .agent-chat-input__textarea {
     padding: 31px 14px 6px !important;
   }
-  .landing-composer-anchor.is-docked.is-expanded
-    .landing-composer
-    .agent-chat-input__streaming-placeholder {
+  .landing-composer-dock.is-expanded .landing-composer .agent-chat-input__streaming-placeholder {
     top: 35px;
   }
 }
-.landing-composer-anchor.is-docked:not(.is-expanded)
+.landing-composer-dock:not(.is-expanded)
   .landing-composer
   .agent-chat-input__streaming-placeholder {
   top: 20px;
@@ -8903,7 +8899,7 @@ video {
   left: 58px;
   font-size: 15px;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded)
+.landing-composer-dock:not(.is-expanded)
   .landing-composer
   .agent-chat-input__streaming-placeholder-text {
   color: transparent;
@@ -8912,12 +8908,12 @@ video {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded)
+.landing-composer-dock:not(.is-expanded)
   .landing-composer
   .agent-chat-input__textarea[data-empty='true']::before {
   color: var(--muted-foreground) !important;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer .agent-chat-input__submit {
+.landing-composer-dock:not(.is-expanded) .landing-composer .agent-chat-input__submit {
   width: 68px;
   min-width: 68px;
   flex: 0 0 68px;
@@ -8929,17 +8925,15 @@ video {
   padding: 0 10px;
   box-shadow: none;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer .generation-submit-cost {
+.landing-composer-dock:not(.is-expanded) .landing-composer .generation-submit-cost {
   gap: 6px;
   white-space: nowrap;
 }
-.landing-composer-anchor.is-docked:not(.is-expanded)
-  .landing-composer
-  .agent-chat-input__submit:disabled {
+.landing-composer-dock:not(.is-expanded) .landing-composer .agent-chat-input__submit:disabled {
   background: var(--muted);
   color: var(--muted-foreground);
 }
-.landing-composer-anchor.is-docked::before {
+.landing-composer-dock::before {
   display: none;
 }
 .landing-gallery-pagination {
@@ -8950,7 +8944,7 @@ video {
 
 /* The hero and dock share the same beUI Agent Chat Input surface. The anchor
    and Motion boundaries remain visual-neutral positioning layers. */
-.landing-composer-anchor:not(.is-docked) .landing-composer {
+.landing-composer-hero .landing-composer {
   --card-bg: color-mix(in oklch, var(--card) 88%, transparent) !important;
   border-color: color-mix(in oklch, var(--border-strong) 82%, var(--border));
   background: color-mix(in oklch, var(--card) 88%, transparent) !important;
@@ -8958,24 +8952,22 @@ video {
     inset 0 1px 0 rgb(236 248 255 / 0.08),
     0 24px 60px -34px rgb(0 0 0 / 0.94);
 }
-.landing-composer-anchor:not(.is-docked) .landing-composer > .border-glow-inner,
-.landing-composer-anchor:not(.is-docked) .landing-composer .agent-chat-input__surface {
+.landing-composer-hero .landing-composer > .border-glow-inner,
+.landing-composer-hero .landing-composer .agent-chat-input__surface {
   background: transparent !important;
 }
-.landing-composer-anchor:not(.is-docked) .landing-composer .agent-chat-input__submit {
+.landing-composer-hero .landing-composer .agent-chat-input__submit {
   min-width: 68px;
   height: 36px;
   border-radius: var(--radius-full);
   background: var(--primary);
   color: var(--primary-foreground);
 }
-.landing-composer-anchor:not(.is-docked) .landing-composer .agent-chat-input__submit:disabled {
+.landing-composer-hero .landing-composer .agent-chat-input__submit:disabled {
   background: var(--muted);
   color: var(--muted-foreground);
 }
-.landing-composer-anchor:not(.is-docked)
-  .landing-composer
-  .agent-chat-input__streaming-placeholder-text {
+.landing-composer-hero .landing-composer .agent-chat-input__streaming-placeholder-text {
   color: transparent;
   background: linear-gradient(90deg, #f3f5fa 0%, #c5d9f2 52%, #efc9ac 100%);
   background-clip: text;
@@ -9106,31 +9098,37 @@ video {
   }
 }
 
-/* Motion projects only the state-owning dock anchor. The ordinary content
-   boundary keeps input dimensions out of a competing layout projection. State
-   styles switch immediately so the morph never animates layout or paint. */
+/* Hero and dock are separate keyed presentations. The flow anchor never moves;
+   AnimatePresence finishes one surface before mounting the other. */
+.landing-composer-presentation {
+  width: 100%;
+  transform-origin: center;
+}
+.landing-composer-dock {
+  will-change: clip-path, opacity;
+}
 .landing-composer-content {
   position: relative;
   z-index: 1;
   width: 100%;
 }
-.landing-composer-anchor.is-docked {
+.landing-composer-dock {
   --landing-composer-aux-duration: 160ms;
 }
-.landing-composer-anchor.is-docked.is-expanded {
+.landing-composer-dock.is-expanded {
   --landing-composer-aux-duration: 220ms;
 }
-.landing-composer-anchor.is-docked .landing-composer .agent-chat-input__toolbar {
+.landing-composer-dock .landing-composer .agent-chat-input__toolbar {
   transition:
     opacity var(--landing-composer-aux-duration) var(--ease-out-expo),
     transform var(--landing-composer-aux-duration) var(--ease-out-expo);
 }
-.landing-composer-anchor.is-docked .landing-composer .agent-chat-input__submit {
+.landing-composer-dock .landing-composer .agent-chat-input__submit {
   transition:
     opacity var(--landing-composer-aux-duration) var(--ease-out-expo),
     transform var(--landing-composer-aux-duration) var(--ease-out-expo);
 }
-.landing-composer-anchor.is-docked .landing-composer .agent-chat-input__toolbar-content {
+.landing-composer-dock .landing-composer .agent-chat-input__toolbar-content {
   flex: 1 1 0%;
   min-width: 0;
   overflow: hidden;
@@ -9138,9 +9136,7 @@ video {
     opacity var(--landing-composer-aux-duration) var(--ease-out-expo),
     transform var(--landing-composer-aux-duration) var(--ease-out-expo);
 }
-.landing-composer-anchor.is-docked:not(.is-expanded)
-  .landing-composer
-  .agent-chat-input__toolbar-content {
+.landing-composer-dock:not(.is-expanded) .landing-composer .agent-chat-input__toolbar-content {
   display: flex;
   flex: 0 0 0%;
   width: 0;
@@ -9150,7 +9146,7 @@ video {
   pointer-events: none;
   transform: translateY(-4px) scale(0.96);
 }
-.landing-composer-anchor.is-docked:not(.is-expanded)
+.landing-composer-dock:not(.is-expanded)
   .landing-composer
   .agent-chat-input__toolbar-group:first-child
   .agent-chat-input__agent-trigger {
@@ -9163,7 +9159,7 @@ video {
     opacity var(--landing-composer-aux-duration) var(--ease-out-expo),
     transform var(--landing-composer-aux-duration) var(--ease-out-expo);
 }
-.landing-composer-anchor.is-docked.is-expanded
+.landing-composer-dock.is-expanded
   .landing-composer
   .agent-chat-input__toolbar-group:first-child
   .agent-chat-input__agent-trigger {
@@ -9175,10 +9171,10 @@ video {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .landing-composer-anchor.is-docked .landing-composer .agent-chat-input__toolbar,
-  .landing-composer-anchor.is-docked .landing-composer .agent-chat-input__submit,
-  .landing-composer-anchor.is-docked .landing-composer .agent-chat-input__toolbar-content,
-  .landing-composer-anchor.is-docked
+  .landing-composer-dock .landing-composer .agent-chat-input__toolbar,
+  .landing-composer-dock .landing-composer .agent-chat-input__submit,
+  .landing-composer-dock .landing-composer .agent-chat-input__toolbar-content,
+  .landing-composer-dock
     .landing-composer
     .agent-chat-input__toolbar-group:first-child
     .agent-chat-input__agent-trigger {
@@ -9190,8 +9186,8 @@ video {
    beUI's compact icon-button geometry instead of inheriting that pill width. */
 .agent-chat-input__submit.agent-chat-input__submit--stop,
 :is(
-    .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer,
-    .landing-composer-anchor:not(.is-docked) .landing-composer,
+    .landing-composer-dock:not(.is-expanded) .landing-composer,
+    .landing-composer-hero .landing-composer,
     .studio-agent-input
   )
   .agent-chat-input__submit.agent-chat-input__submit--stop {
