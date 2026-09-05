@@ -7,8 +7,8 @@
 ## Current Status
 
 <!-- @@@auto:current-status -->
-- **Active File**: `journal-1.md`
-- **Total Sessions**: 58
+- **Active File**: `journal-2.md`
+- **Total Sessions**: 59
 - **Last Active**: 2026-09-06
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,8 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1969 | Active |
+| `journal-2.md` | ~40 | Active |
+| `journal-1.md` | ~1974 | Archived |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 59 | 2026-09-06 | 修正提示词修改按钮视觉高度 | `33ede5a`, `b167b6a` | `-` |
 | 58 | 2026-09-06 | 调整提示词编辑按钮间距 | `d49cdda`, `174724b` | `-` |
 | 57 | 2026-09-05 | 下移发现页视频背景 | `23a3f0c` | `-` |
 | 56 | 2026-09-05 | 对齐模板详情顶部文字 | `7e993b4` | `-` |
