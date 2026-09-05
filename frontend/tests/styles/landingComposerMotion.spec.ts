@@ -83,5 +83,7 @@ describe('landing composer motion contract', () => {
     expect(presentationSection).toMatch(/\.landing-composer-hero\s*{[^}]*width:\s*100%;/s);
     expect(baseStyles).toContain('.landing-composer-hero .landing-composer {');
     expect(baseStyles).not.toContain('.landing-composer-anchor.is-docked');
+    expect(baseStyles).toContain('padding: 21px 14px 10px !important;');
+    expect(baseStyles).toContain('padding: 25px 12px 6px !important;');
   });
 });
