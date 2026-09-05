@@ -416,6 +416,14 @@ prompt array. This keeps the landing gallery, template route, and generation
 handoff synchronized while allowing the catalog to grow without duplicating
 route code.
 
+Template previews derive their media ratio from manifest `width / height`, not generation settings.
+On desktop, cap the media width by available viewport width and height, then derive dialog height
+from that width and ratio. Keep the 420px detail rail independently scrollable; its content must
+never stretch the image. On mobile, render intrinsic image height above the details with one modal
+scroller. Portal the template modal to `document.body` so page stacking contexts cannot put
+navigation above it. Keep the close button outside the desktop scroller and fixed on mobile.
+Verify landscape, portrait, and square images against natural dimensions at desktop/mobile widths.
+
 ```ts
 const entries = CREATION_TEMPLATES.map(templateToHistoryEntry);
 ```

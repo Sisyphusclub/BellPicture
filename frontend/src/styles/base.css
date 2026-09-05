@@ -4773,7 +4773,7 @@ video {
   padding: 28px 0 8px;
 }
 .template-detail-modal {
-  width: calc(100% - 64px) !important;
+  width: fit-content !important;
   max-width: 1660px !important;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-lg) !important;
@@ -4785,22 +4785,29 @@ video {
   display: none;
 }
 .template-detail {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+  grid-template-columns: minmax(0, 1fr);
 }
 .template-detail__media {
-  min-height: 620px;
-  background: var(--surface-media);
+  min-width: 0;
+  min-height: 0;
 }
 .template-detail__media img {
+  display: block;
   width: 100%;
-  height: 100%;
+  height: auto;
   object-fit: contain;
+}
+.template-detail > .dialog__close {
+  z-index: 2;
+  background: var(--card);
 }
 .template-detail__body {
   position: relative;
   display: flex;
   min-width: 0;
+  min-height: 0;
   flex-direction: column;
   gap: 10px;
   padding: 34px 24px 20px;
@@ -4861,21 +4868,33 @@ video {
 
 @media (min-width: 861px) {
   .template-detail-modal {
-    height: min(900px, calc(100svh - 144px)) !important;
-    max-height: min(900px, calc(100svh - 144px)) !important;
-  }
-  .template-detail-modal > div {
-    height: 100%;
+    overflow: hidden;
   }
   .template-detail {
-    height: 100%;
-    grid-template-columns: minmax(0, 1fr) minmax(420px, 0.48fr);
+    /* Reserve the 420px detail rail, 64px viewport gutters, and 2px border. */
+    --template-media-width: min(
+      1238px,
+      calc(100vw - 486px),
+      calc(min(900px, 100svh - 144px) * var(--template-image-ratio))
+    );
+    width: calc(var(--template-media-width) + 420px);
+    height: calc(var(--template-media-width) / var(--template-image-ratio));
+    grid-template-columns: minmax(0, 1fr) 420px;
   }
-  .template-detail__media {
-    min-height: 0;
+  .template-detail__body {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    margin-top: 58px;
+    padding-top: 0;
   }
   .template-detail__body .detail-actions {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .template-detail__body .detail-actions .button {
+    gap: 6px;
+    padding-inline: 8px;
+    white-space: nowrap;
   }
 }
 
@@ -5311,8 +5330,10 @@ video {
     grid-template-columns: 1fr;
   }
   .template-detail__media {
-    min-height: 46vh;
-    max-height: 52vh;
+    aspect-ratio: var(--template-image-ratio);
+  }
+  .template-detail > .dialog__close {
+    position: fixed;
   }
   .asset-toolbar .asset-search {
     width: 100%;

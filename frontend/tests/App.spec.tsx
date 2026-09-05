@@ -835,7 +835,19 @@ describe('React application routes', () => {
     await user.click(screen.getByRole('button', { name: '模板排序' }));
     await user.click(screen.getByRole('menuitemradio', { name: '精选排序' }));
 
-    await user.click(screen.getAllByRole('button', { name: /使用模板 / })[0]!);
+    await user.click(screen.getAllByRole('button', { name: /预览模板：/ })[0]!);
+    const preview = await screen.findByRole('dialog');
+    expect(screen.getByRole('region', { name: '创作模板' })).not.toContainElement(preview);
+    const previewImage = within(preview).getByRole('img');
+    const width = Number(previewImage.getAttribute('width'));
+    const height = Number(previewImage.getAttribute('height'));
+    expect(width).toBeGreaterThan(0);
+    expect(height).toBeGreaterThan(0);
+    expect(preview.style.getPropertyValue('--template-image-ratio')).toBe(String(width / height));
+    await waitFor(() =>
+      expect(within(preview).getByRole('button', { name: '关闭模板预览' })).toHaveFocus(),
+    );
+    await user.click(within(preview).getByRole('button', { name: '使用模板' }));
     expect(screen.getByRole('region', { name: '图像生成工作区' })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: '图像提示词' })).toHaveTextContent(
       'Generate a high-end photorealistic render of a future-facing biotech laboratory',

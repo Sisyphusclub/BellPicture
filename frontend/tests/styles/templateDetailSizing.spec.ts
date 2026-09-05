@@ -41,18 +41,26 @@ describe('template detail sizing contract', () => {
     const normalizedStyles = normalizeCss(baseStyles);
     expect(normalizedStyles).toContain('html::-webkit-scrollbar { width: 10px; height: 10px; }');
     expect(normalizedStyles).toContain('html::-webkit-scrollbar-button { display: none;');
-    expect(desktopModalRule).toContain('width: calc(100% - 64px) !important;');
+    expect(desktopModalRule).toContain('width: fit-content !important;');
     expect(desktopModalRule).toContain('max-width: 1660px !important;');
     expect(desktopModalRule).toContain('scrollbar-width: none;');
     expect(mobileStart).toBeGreaterThanOrEqual(0);
     expect(mobileModalRule).toContain('width: 100% !important;');
     expect(contract).toContain('@media (min-width: 861px)');
-    expect(contract).toContain('height: min(900px, calc(100svh - 144px)) !important;');
-    expect(contract).toContain('.template-detail-modal > div { height: 100%; }');
-    expect(contract).toContain('.template-detail { height: 100%;');
-    expect(contract).toContain('grid-template-columns: minmax(0, 1fr) minmax(420px, 0.48fr);');
+    expect(contract).toContain('calc(min(900px, 100svh - 144px) * var(--template-image-ratio))');
+    expect(contract).toContain('calc(100vw - 486px)');
+    expect(contract).toContain('width: calc(var(--template-media-width) + 420px);');
+    expect(contract).toContain(
+      'height: calc(var(--template-media-width) / var(--template-image-ratio));',
+    );
+    expect(contract).toContain('grid-template-columns: minmax(0, 1fr) 420px;');
     expect(contract).toContain('object-fit: contain;');
-    expect(contract).not.toContain('overflow-y: auto;');
+    expect(ruleBody(contract, '.template-detail__media img')).toContain('height: auto;');
+    expect(contract).toContain('overflow-y: auto;');
+    expect(ruleBody(mobileContract, '.template-detail__media')).toBe(
+      'aspect-ratio: var(--template-image-ratio);',
+    );
+    expect(contract).not.toContain('min-height: 620px;');
     expect(contract).not.toContain('line-clamp:');
     expect(contract).not.toContain('-webkit-line-clamp:');
     expect(contract).not.toContain('text-overflow: ellipsis;');
