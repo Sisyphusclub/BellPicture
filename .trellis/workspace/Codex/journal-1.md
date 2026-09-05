@@ -1898,3 +1898,39 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 57: 下移发现页视频背景
+
+**Date**: 2026-09-05
+**Task**: 下移发现页视频背景
+
+### Summary
+
+将发现页首屏视频背景 object-position 下移，补充桌面与移动端样式契约并完成全量质量检查。
+
+### Main Changes
+
+- 将默认视口的 `.landing-hero__video` 垂直取景从 `58%` 调整为 `50%`。
+- 将桌面视口覆盖位置从 `60%` 调整为 `52%`，保持水平偏移、cover 铺满和叠加层行为不变。
+- 新增 `landingVideoPosition.spec.ts` 样式契约，锁定桌面与移动端的垂直位置。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `23a3f0c` | (see git log) |
+
+### Testing
+
+- [OK] 前端完整测试：35 个套件、138 项通过。
+- [OK] 前端 `typecheck`、`lint`、`format:check`、`build`、`git diff --check`。
+- [OK] Chromium 桌面与移动端线上检查：视频保持 cover，无额外水平溢出，页面错误为 0；前端容器已重建。
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
