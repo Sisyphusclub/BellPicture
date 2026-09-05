@@ -1101,6 +1101,7 @@ export function GenerateView() {
       aria-label="图像生成工作区"
     >
       <LandingSidebar
+        accountImage={user?.image}
         accountName={accountName}
         brandLabel="Nebulens"
         creditsRemaining={quota?.remaining ?? '—'}
@@ -1116,6 +1117,7 @@ export function GenerateView() {
         onNotify={notify}
       />
       <LandingAccountActions
+        accountImage={user?.image}
         accountName={accountName}
         checkedInToday={quota?.checkedInToday ?? false}
         creditsRemaining={quota?.remaining ?? '—'}

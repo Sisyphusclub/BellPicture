@@ -1,7 +1,8 @@
-import { Check, Sparkles, UserRound, X, type LucideIcon } from 'lucide-react';
+import { Check, LogIn, Sparkles, X, type LucideIcon } from 'lucide-react';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
+import { AccountAvatar } from '@/components/common/AccountAvatar';
 import { Button } from '@/components/ui/button';
 import type { DailyCheckInResponse } from '@/types/image';
 import {
@@ -26,6 +27,7 @@ export interface LandingSidebarItem {
 }
 
 interface LandingSidebarProps {
+  accountImage: string | null | undefined;
   accountName: string;
   brandHref?: string;
   brandLabel: string;
@@ -52,6 +54,7 @@ function isItemActive(pathname: string, to: string): boolean {
 }
 
 function LandingSidebarContent({
+  accountImage,
   accountName,
   brandHref = '/',
   brandLabel,
@@ -152,13 +155,13 @@ function LandingSidebarContent({
         <SidebarFooter className="landing-sidebar__mobile-footer">
           {!isAuthenticated ? (
             <Button type="button" variant="ghost" onClick={handleLogin}>
-              <UserRound aria-hidden="true" />
+              <LogIn aria-hidden="true" />
               登录
             </Button>
           ) : (
             <>
               <span className="landing-sidebar__mobile-account">
-                <b>{accountName.slice(0, 1).toUpperCase()}</b>
+                <AccountAvatar image={accountImage} name={accountName} />
                 <span>{accountName}</span>
                 <strong>{creditsRemaining} 积分</strong>
               </span>

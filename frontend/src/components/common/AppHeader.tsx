@@ -15,6 +15,7 @@ export function AppHeader() {
   return (
     <>
       <LandingSidebar
+        accountImage={user?.image}
         accountName={accountName}
         brandLabel="Nebulens"
         creditsRemaining={quota?.remaining ?? '—'}
@@ -30,6 +31,7 @@ export function AppHeader() {
         onNotify={notify}
       />
       <LandingAccountActions
+        accountImage={user?.image}
         accountName={accountName}
         checkedInToday={quota?.checkedInToday ?? false}
         creditsRemaining={quota?.remaining ?? '—'}

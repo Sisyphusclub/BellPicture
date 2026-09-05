@@ -302,6 +302,7 @@ export function LandingView() {
         ) : null}
         <div className="landing-hero__overlay" aria-hidden="true" />
         <LandingSidebar
+          accountImage={user?.image}
           accountName={accountName}
           brandLabel="Nebulens"
           creditsRemaining={quota?.remaining ?? '—'}
@@ -317,6 +318,7 @@ export function LandingView() {
           onNotify={notify}
         />
         <LandingAccountActions
+          accountImage={user?.image}
           accountName={accountName}
           checkedInToday={quota?.checkedInToday ?? false}
           creditsRemaining={quota?.remaining ?? '—'}

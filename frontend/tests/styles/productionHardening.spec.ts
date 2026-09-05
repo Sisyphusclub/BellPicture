@@ -28,7 +28,7 @@ describe('production frontend hardening', () => {
       expect(policy).toContain("default-src 'self'");
       expect(policy).toContain("script-src 'self'");
       expect(policy).toContain(
-        "img-src 'self' data: blob: https://upload.wikimedia.org https://cdn.simpleicons.org",
+        "img-src 'self' data: blob: https://upload.wikimedia.org https://cdn.simpleicons.org https://lh3.googleusercontent.com",
       );
       expect(policy).toContain("connect-src 'self'");
       expect(policy).toContain("frame-ancestors 'self'");

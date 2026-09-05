@@ -282,6 +282,37 @@ video {
   font-size: 11px;
   font-style: normal;
 }
+.user-avatar {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid color-mix(in oklch, var(--border-strong) 72%, transparent);
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--surface-raised) 88%, var(--foreground) 12%);
+  color: color-mix(in oklch, var(--foreground) 92%, var(--background));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1;
+}
+.user-avatar__image,
+.user-avatar__fallback {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+}
+.user-avatar__image {
+  display: block;
+  object-fit: cover;
+}
+.user-avatar__fallback {
+  display: grid;
+  place-items: center;
+}
 .account-menu {
   position: absolute;
   bottom: 52px;
@@ -700,20 +731,40 @@ video {
 }
 .landing-account-actions .landing-account-actions__avatar {
   margin-left: 8px;
-  border-color: rgb(255 255 255 / 0.22);
-  background: linear-gradient(145deg, rgb(225 239 255 / 0.98), rgb(173 200 244 / 0.9));
-  color: rgb(18 28 44 / 0.9);
-  box-shadow:
-    0 0 0 2px rgb(5 8 14 / 0.58),
-    0 8px 22px -14px rgb(69 142 225 / 0.8);
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 700;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
 }
 .landing-account-actions .landing-account-actions__avatar:hover {
-  border-color: rgb(255 255 255 / 0.42);
-  background: linear-gradient(145deg, rgb(238 247 255 / 1), rgb(188 211 249 / 0.96));
-  color: rgb(12 22 38 / 1);
+  border-color: transparent;
+  background: rgb(19 19 20 / 0.62);
+  color: inherit;
+}
+.landing-account-actions .landing-account-actions__avatar .user-avatar {
+  width: 34px;
+  height: 34px;
+}
+.landing-account-actions .landing-account-actions__login {
+  height: 40px;
+  min-height: 40px;
+  margin-left: 8px;
+  gap: 7px;
+  border-color: rgb(255 255 255 / 0.13);
+  border-radius: var(--radius-pill);
+  background: rgb(24 25 29 / 0.78);
+  color: rgb(245 246 249 / 0.94);
+  padding: 0 14px;
+  box-shadow: 0 12px 28px -22px rgb(0 0 0 / 0.96);
+  backdrop-filter: blur(18px) saturate(1.1);
+  -webkit-backdrop-filter: blur(18px) saturate(1.1);
+}
+.landing-account-actions .landing-account-actions__login:hover {
+  border-color: rgb(255 255 255 / 0.22);
+  background: rgb(34 35 40 / 0.9);
+}
+.landing-account-actions__login svg {
+  width: 17px;
+  height: 17px;
 }
 .landing-account-popover {
   width: 302px;
@@ -814,17 +865,9 @@ video {
   gap: 10px;
   padding: 5px;
 }
-.landing-profile-popover > div > b {
-  display: grid;
+.landing-profile-popover > div > .user-avatar {
   width: 34px;
   height: 34px;
-  flex: 0 0 auto;
-  place-items: center;
-  border-radius: 50%;
-  background: rgb(225 239 255 / 0.92);
-  color: rgb(19 30 47);
-  font-family: var(--font-display);
-  font-size: 13px;
 }
 .landing-profile-popover > div > span {
   display: grid;
@@ -3027,14 +3070,10 @@ video {
     color: var(--muted-foreground);
     font-size: 12px;
   }
-  .landing-sidebar__mobile-account b {
-    display: grid;
+  .landing-sidebar__mobile-account .user-avatar {
     width: 28px;
     height: 28px;
-    place-items: center;
-    border-radius: 50%;
-    background: var(--surface-raised);
-    color: var(--foreground);
+    font-size: 11px;
   }
   .landing-sidebar__mobile-account strong {
     color: var(--foreground);
