@@ -1412,7 +1412,7 @@ video {
   z-index: 48;
   bottom: 22px;
   left: calc(50% + 64px);
-  width: min(940px, calc(100vw - 210px));
+  width: min(940px, calc(100% - 144px));
   margin: 0;
   transform: translateX(-50%);
 }
@@ -8748,10 +8748,10 @@ video {
   right: auto !important;
   bottom: 16px !important;
   left: calc(50% + 64px);
-  width: min(940px, calc(100vw - 210px));
+  width: min(940px, calc(100% - 144px));
   min-height: 0;
   margin: 0 !important;
-  margin-left: calc(-1 * min(470px, (100vw - 210px) / 2)) !important;
+  margin-left: calc(-1 * min(470px, (100vw - 144px) / 2)) !important;
   translate: none;
   transform: none;
 }
@@ -8843,6 +8843,16 @@ video {
   }
   .landing-composer-dock:not(.is-expanded) .landing-composer {
     width: calc(100vw - 32px);
+  }
+  .landing-composer-dock.is-expanded {
+    right: 20px !important;
+    left: 20px;
+  }
+}
+@media (max-width: 560px) {
+  .landing-composer-dock.is-expanded {
+    right: 14px !important;
+    left: 14px;
   }
 }
 
@@ -9101,8 +9111,10 @@ video {
 /* Hero and dock are separate keyed presentations. The flow anchor never moves;
    AnimatePresence finishes one surface before mounting the other. */
 .landing-composer-presentation {
-  width: 100%;
   transform-origin: center;
+}
+.landing-composer-hero {
+  width: 100%;
 }
 .landing-composer-dock {
   will-change: clip-path, opacity;

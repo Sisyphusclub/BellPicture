@@ -38,8 +38,9 @@ describe('landing composer motion contract', () => {
       baseStyles.indexOf('.landing-composer-dock .landing-composer {', dockStart),
     );
 
+    expect(dockContract).toContain('width: min(940px, calc(100% - 144px));');
     expect(dockContract).toContain(
-      'margin-left: calc(-1 * min(470px, (100vw - 210px) / 2)) !important;',
+      'margin-left: calc(-1 * min(470px, (100vw - 144px) / 2)) !important;',
     );
     expect(dockContract).toContain('translate: none;');
     expect(dockContract).toContain('transform: none;');
@@ -69,6 +70,17 @@ describe('landing composer motion contract', () => {
     expect(mobileDockContract).toContain('right: 16px !important;');
     expect(mobileDockContract).toContain('left: 16px;');
     expect(mobileDockContract).toContain('margin-left: 0 !important;');
+    expect(mobileDockContract).toContain('right: 20px !important;');
+    expect(mobileDockContract).toContain('left: 20px;');
+    expect(mobileDockContract).toContain('@media (max-width: 560px)');
+    expect(mobileDockContract).toContain('right: 14px !important;');
+    expect(mobileDockContract).toContain('left: 14px;');
+    const presentationSection = baseStyles.slice(
+      baseStyles.indexOf('.landing-composer-presentation {'),
+      baseStyles.indexOf('.landing-composer-content {'),
+    );
+    expect(presentationSection).not.toMatch(/\.landing-composer-presentation\s*{[^}]*width:/s);
+    expect(presentationSection).toMatch(/\.landing-composer-hero\s*{[^}]*width:\s*100%;/s);
     expect(baseStyles).toContain('.landing-composer-hero .landing-composer {');
     expect(baseStyles).not.toContain('.landing-composer-anchor.is-docked');
   });

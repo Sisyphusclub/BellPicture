@@ -190,8 +190,16 @@ offsets at the mobile breakpoint.
 
 The flow `.landing-composer-anchor` only detects the scroll threshold and reserves hero space. The
 fixed `.landing-composer-dock` is a separate keyed presentation. On desktop, pair its center `left`
-coordinate with a negative `margin-left` equal to half of the active compact or expanded width. At
-`<=860px`, anchor the dock with equal physical `left` and `right` values and clear that margin.
+coordinate with a negative `margin-left` equal to half of the active compact or expanded width. Cap
+the compact state at `560px`. The expanded state must reuse the hero composer's responsive width:
+`min(940px, calc(100% - 144px))` on desktop, equal `20px` sides at `<=860px`, and equal `14px`
+sides at `<=560px`. At mobile breakpoints, clear the desktop negative margin.
+
+Do not put `width: 100%` on the shared `.landing-composer-presentation` boundary. Because that rule
+comes after the dock geometry, it overrides the expanded fixed width and makes the dock span its
+containing block from an already offset `left` coordinate. Apply full width only to
+`.landing-composer-hero`; the dock must retain its explicit desktop width or mobile `left`/`right`
+auto width.
 
 ```css
 /* Wrong: moving the flow anchor makes the hero composer fly to the dock. */
@@ -201,6 +209,12 @@ coordinate with a negative `margin-left` equal to half of the active compact or 
 }
 
 /* Correct: the dock has independent fixed geometry. */
+.landing-composer-dock {
+  left: calc(50% + 64px);
+  width: min(940px, calc(100% - 144px));
+  margin-left: calc(-1 * min(470px, (100vw - 144px) / 2));
+}
+
 .landing-composer-dock:not(.is-expanded) {
   left: calc(50% + 64px);
   width: min(560px, calc(100vw - var(--sidebar-width) - 64px));
@@ -213,6 +227,18 @@ coordinate with a negative `margin-left` equal to half of the active compact or 
     left: 16px;
     width: auto;
     margin-left: 0;
+  }
+
+  .landing-composer-dock.is-expanded {
+    right: 20px;
+    left: 20px;
+  }
+}
+
+@media (max-width: 560px) {
+  .landing-composer-dock.is-expanded {
+    right: 14px;
+    left: 14px;
   }
 }
 ```
