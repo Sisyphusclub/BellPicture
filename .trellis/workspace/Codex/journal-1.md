@@ -18,7 +18,9 @@ Renamed all active product branding and runtime identifiers to Nebulens, removed
 
 ### Main Changes
 
-(Add details)
+- Replaced cross-position Motion layout projection with keyed hero and dock presentations using `AnimatePresence mode="wait"`.
+- Added center-symmetric dock reveal/collapse animation, preserved controlled prompt and attachment state, and kept reduced-motion switching immediate.
+- Updated regression tests and frontend component guidance for the new transition contract.
 
 ### Git Commits
 
@@ -1459,6 +1461,43 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Testing
 
 - [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 45: 重做发现页对话框滚动切换
+
+**Date**: 2026-09-05
+**Task**: 重做发现页对话框滚动切换
+
+### Summary
+
+将发现页上方与底部创作框改为互斥顺序切换，下方窄框由中心向两侧展开并支持反向收拢；补齐内容、附件、移动端及减少动态效果回归。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ae1bf0c` | `fix: 重做发现页对话框滚动切换` |
+
+### Testing
+
+- [OK] `npm run typecheck`
+- [OK] `npm run lint`
+- [OK] `npm test` (34 files, 135 tests)
+- [OK] `npm run build`
+- [OK] `npm run format:check`
+- [OK] Playwright at 1440x813 and 390x844, including reduced motion
 
 ### Status
 
