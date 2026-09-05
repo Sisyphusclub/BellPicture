@@ -193,18 +193,18 @@ describe('username/password auth', () => {
     });
   });
 
-  it('seeds admin/admin123 only when the explicit gate is enabled', async () => {
+  it('seeds blur/admin123 only when the explicit gate is enabled', async () => {
     const app = createApp({ provider: fakeProvider });
-    db.delete(user).where(eq(user.username, 'admin')).run();
+    db.delete(user).where(eq(user.username, 'blur')).run();
 
     const disabled = await seedDefaultAdminIfEnabled(false);
-    expect(disabled).toMatchObject({ created: false, reason: 'disabled', username: 'admin' });
-    expect(db.select().from(user).where(eq(user.username, 'admin')).all()).toHaveLength(0);
+    expect(disabled).toMatchObject({ created: false, reason: 'disabled', username: 'blur' });
+    expect(db.select().from(user).where(eq(user.username, 'blur')).all()).toHaveLength(0);
 
     const enabled = await seedDefaultAdminIfEnabled(true);
-    expect(enabled).toMatchObject({ created: true, reason: 'created', username: 'admin' });
+    expect(enabled).toMatchObject({ created: true, reason: 'created', username: 'blur' });
 
-    const adminUsers = db.select().from(user).where(eq(user.username, 'admin')).all();
+    const adminUsers = db.select().from(user).where(eq(user.username, 'blur')).all();
     expect(adminUsers).toHaveLength(1);
     const adminUser = adminUsers[0]!;
     expect(adminUser.isAdmin).toBe(true);
@@ -216,12 +216,12 @@ describe('username/password auth', () => {
     const signIn = await request(app)
       .post('/api/auth/sign-in/username')
       .set('Content-Type', 'application/json')
-      .send({ username: 'admin', password: 'admin123' });
+      .send({ username: 'Blur', password: 'admin123' });
 
     expect(signIn.status).toBeLessThan(400);
     expect(cookiesFrom(signIn).some((c) => /session/i.test(c))).toBe(true);
 
     const secondSeed = await seedDefaultAdminIfEnabled(true);
-    expect(secondSeed).toMatchObject({ created: false, reason: 'exists', username: 'admin' });
+    expect(secondSeed).toMatchObject({ created: false, reason: 'exists', username: 'blur' });
   });
 });

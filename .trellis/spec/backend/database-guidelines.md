@@ -419,9 +419,10 @@ body: { username: string; password: string; rememberMe?: boolean }
   needed by the library, but this value must not become user-facing UI copy.
   `internalEmailForUsername(username)` must return
   `${username}@users.nebulens.local`.
-- `SEED_DEFAULT_ADMIN=true` is the only switch that creates `admin` / `admin123`
-  on boot; the default is disabled. The seed must call Better Auth APIs, not
-  insert rows directly.
+- `SEED_DEFAULT_ADMIN=true` is the only switch that creates or promotes the
+  normalized `blur` administrator on boot; a fresh local/demo database uses
+  `blur` / `admin123`. The default is disabled. New credential rows must be
+  created through Better Auth APIs rather than direct inserts.
 - Admin authorization must read the persisted `user.is_admin` flag only. A
   username such as `admin` or `blur` must never be treated as an admin by
   naming convention or promoted during `isUserAdmin()` checks.
@@ -436,14 +437,15 @@ body: { username: string; password: string; rememberMe?: boolean }
 | Email auth route called                                                 | 400 `BAD_REQUEST`, message `请使用用户名和密码登录或注册。`                                                      |
 | Wrong username/password on sign-in                                      | Chinese frontend message `用户名或密码错误。`                                                                    |
 | `SEED_DEFAULT_ADMIN` absent/false                                       | No default admin user is created                                                                                 |
-| `SEED_DEFAULT_ADMIN=true` and admin exists                              | No duplicate user; seed is idempotent                                                                            |
+| `SEED_DEFAULT_ADMIN=true` and `blur` exists                             | No duplicate user; the persisted row is promoted and the seed is idempotent                                      |
 | User self-registers `blur` or `admin` while no seed/admin promotion ran | User remains `is_admin=false` and `/api/admin/*` returns 403                                                     |
 | Existing database contains a legacy internal email domain               | Do not rewrite silently at runtime; use a reviewed data migration before deploying the renamed identity contract |
 
 ### 5. Good/Base/Bad Cases
 
 - Good: fresh local demo database + `SEED_DEFAULT_ADMIN=true` can sign in with
-  `admin` / `admin123`; `account.password` is a hash, not `admin123`.
+  `Blur` / `admin123`; the normalized username is `blur`, and
+  `account.password` is a hash rather than `admin123`.
 - Base: registering `New_User` stores and signs in as `new_user`.
 - Bad: enabling a production deployment with an unconditional weak default admin
   account, deriving admin status from a username, or writing directly to
@@ -469,7 +471,7 @@ body: { username: string; password: string; rememberMe?: boolean }
 #### Wrong
 
 ```ts
-await db.insert(user).values({ username: "admin" });
+await db.insert(user).values({ username: "blur", isAdmin: true });
 await db.insert(account).values({ password: "admin123" });
 ```
 
@@ -479,11 +481,11 @@ await db.insert(account).values({ password: "admin123" });
 if (env.SEED_DEFAULT_ADMIN) {
   await auth.api.signUpEmail({
     body: {
-      email: internalEmailForUsername("admin"),
-      username: "admin",
-      displayUsername: "admin",
+      email: internalEmailForUsername("blur"),
+      username: "blur",
+      displayUsername: "blur",
       password: "admin123",
-      name: "admin",
+      name: "blur",
     },
   });
 }
