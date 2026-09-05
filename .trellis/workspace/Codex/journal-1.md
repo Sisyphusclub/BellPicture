@@ -125,7 +125,10 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 
 ### Main Changes
 
-(Add details)
+- 让展开态流式提示层复用 textarea 的实际字体和行高，并按 surface 内边距加 textarea padding 对齐内容起点。
+- 桌面端提示层调整为 `top: 25px`、左右 `22px`，移动端调整为 `top: 29px`、左右 `20px`。
+- 空提示状态隐藏 textarea 原生光标，仅保留流式自定义光标；输入文字后恢复原生光标。
+- 扩展 landing composer 样式契约测试，覆盖响应式排版和光标显隐规则。
 
 ### Git Commits
 
@@ -135,7 +138,9 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 
 ### Testing
 
-- [OK] (Add test results)
+- [OK] `npm test`：34 个测试文件、137 个测试通过。
+- [OK] `npm run check:components`、`npm run typecheck`、`npm run lint`、`npm run build`、`npm run format:check`、`git diff --check`。
+- [OK] Chromium QA：390x844 与 1440x813 的文字内容起点重合，空提示光标透明，输入后恢复原生光标。
 
 ### Status
 
@@ -1666,6 +1671,38 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 | Hash | Message |
 |------|---------|
 | `00dedbf` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 51: 修复光标与流式提示文字对齐
+
+**Date**: 2026-09-05
+**Task**: 修复光标与流式提示文字对齐
+
+### Summary
+
+同步 Discover 展开态流式提示与 textarea 内容区的字体、行高、水平起点和垂直基线；空提示隐藏原生光标，输入后恢复，并完成全套测试、构建及 Chromium QA。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7097072` | (see git log) |
 
 ### Testing
 
