@@ -12,22 +12,22 @@
 * Docker Compose 从根目录 `.env` 注入 `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、`BETTER_AUTH_URL`、`FRONTEND_ORIGIN` 与 `CORS_ORIGIN`。
 * 当前根目录 `.env` 的 Google 凭据为空，现状会让 Google 按钮保持禁用。
 * 管理员账号为用户名 `Blur`（系统按规范化用户名 `blur` 识别），管理员状态存储在后端 `user.isAdmin` 字段中。
-* 当前部署 origin 为公网 `http://` 原始 IP；Google Web OAuth 生产回调要求 HTTPS 域名，原始公网 IP 不能登记为回调 host。
+* 原公网 `http://` IP 已迁移到 `https://pic.apioctiva.com`，Caddy 负责 TLS 与反向代理。
 * Google OAuth 的前后端代码链路已由提交 `3e36fd4` 接通，包括 provider 状态接口、登录按钮、当前页回调和测试。
 * 用户明确要求将 Google 账号登录纳入本次交付。
 
 ## Assumptions (temporary)
 
-* 最终 HTTPS 域名和真实 Google OAuth 凭据由部署方提供，不进入 Git 历史。
+* 真实 Google OAuth 凭据由部署方提供，不进入 Git 历史。
 
 ## Open Questions
 
-* 目标部署的 HTTPS 域名与 Google OAuth Client ID/Secret 尚待部署方提供。
+* Google OAuth Client ID/Secret 尚待部署方提供，并需在 Google Cloud Console 登记精确回调 URI。
 
 ## Requirements
 
 * 配置目标环境的 Google Web OAuth Client ID 与 Client Secret。
-* 将 Google Cloud Console 的授权重定向 URI 设置为 `${BETTER_AUTH_URL}/api/auth/callback/google`。
+* 将 Google Cloud Console 的授权重定向 URI 设置为 `https://pic.apioctiva.com/api/auth/callback/google`。
 * 保证 `BETTER_AUTH_URL`、`FRONTEND_ORIGIN`、`CORS_ORIGIN` 使用同一可访问 origin，避免 OAuth state/cookie 与 CORS 不匹配。
 * 启动后验证 `/api/auth/providers` 返回 `{"providers":{"google":true}}`，并验证前端按钮可用、回调能回到发起登录的页面。
 * 不把 Client Secret 写入前端代码、提交历史或日志。
@@ -40,6 +40,7 @@
 * [ ] 目标环境已填写 `GOOGLE_CLIENT_ID` 与 `GOOGLE_CLIENT_SECRET`。
 * [ ] Google Cloud OAuth 客户端包含精确回调 URI。
 * [ ] `/api/auth/providers` 在配置完成后返回 `google: true`。
+* [x] 生产 HTTPS 域名已启用，三个公开 origin 均为 `https://pic.apioctiva.com`。
 * [x] 未配置凭据时应用仍能启动，Google 按钮保持禁用。
 * [x] 配置变更通过必要的后端/前端测试与启动检查。
 * [x] Google OAuth 登录不会基于昵称、姓名或邮箱前缀授予管理员权限。
@@ -100,3 +101,6 @@
 * Compose 配置校验通过；重建后 `/api/health/ready` 返回 `status: ok`。
 * 当前未配置 Google 凭据，`/api/auth/providers` 按设计返回 `google: false`。
 * 运行数据库已在线备份至数据卷 `app.sqlite.pre-blur-admin-20260905`，现有规范化用户名 `blur` 已回读确认为 `isAdmin=1`。
+* DNS `pic.apioctiva.com` 解析到当前服务器；Caddy 配置 `/etc/caddy/sites/pic.apioctiva.com.caddy` 已验证并热重载，Let's Encrypt 证书签发成功。
+* `http://pic.apioctiva.com` 返回 308 到 HTTPS；HTTPS 首页和 `/api/health/ready` 返回 200。
+* 后端容器已使用 `https://pic.apioctiva.com` 作为 `BETTER_AUTH_URL`、`FRONTEND_ORIGIN`、`CORS_ORIGIN` 重建。
