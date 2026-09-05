@@ -7400,10 +7400,13 @@ video {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  column-gap: 16px;
+  column-gap: 8px;
 }
 .session-batch__prompt-edit-actions .button {
-  flex: 0 0 auto;
+  width: 72px;
+  min-width: 72px;
+  flex: 0 0 72px;
+  justify-content: center;
 }
 .session-result-grid,
 .generation-error-grid,
