@@ -102,7 +102,9 @@ prompt, and pending Edit is disabled without changing bubble child count.
 
 The inline prompt editor keeps its cancel/submit action pair visually balanced: use an 8px gap and
 a shared 72px width for both compact buttons. Preserve the route's mobile 40px minimum height so
-the equal-width treatment does not reduce touch targets.
+the equal-width treatment does not reduce touch targets. Because the primary button's transparent
+border otherwise lets its fill appear taller than the secondary button's bordered fill, clip the
+prompt editor's primary background to its padding box without shrinking the shared click target.
 
 - Use the layered dark workbench canvas and restrained graphite surfaces defined
   by the project. Do not flatten operational pages into one full-black canvas.
