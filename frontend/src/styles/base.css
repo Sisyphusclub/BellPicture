@@ -7408,6 +7408,9 @@ video {
   flex: 0 0 72px;
   justify-content: center;
 }
+.session-batch__prompt-regenerate {
+  background-clip: padding-box;
+}
 .session-result-grid,
 .generation-error-grid,
 .generation-skeleton {

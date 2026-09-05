@@ -32,4 +32,12 @@ describe('generate prompt editor action contract', () => {
 
     expect(mobileRule).toContain('min-height: 40px;');
   });
+
+  it('clips the primary fill inside its transparent border for optical alignment', () => {
+    const regenerateStart = baseStyles.indexOf('.session-batch__prompt-regenerate {');
+    const regenerateEnd = baseStyles.indexOf('}', regenerateStart);
+    const regenerateRule = baseStyles.slice(regenerateStart, regenerateEnd);
+
+    expect(regenerateRule).toContain('background-clip: padding-box;');
+  });
 });
