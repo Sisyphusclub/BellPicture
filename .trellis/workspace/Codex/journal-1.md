@@ -1826,3 +1826,39 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 55: 模板详情按原图比例显示
+
+**Date**: 2026-09-05
+**Task**: 模板详情按原图比例显示
+
+### Summary
+
+模板详情按原图宽高约束桌面尺寸，详情独立滚动，手机自然比例上下布局；Portal 修复导航遮挡。前端 137 项测试和四种视口共 12 个 Chromium 比例组合验证通过。
+
+### Main Changes
+
+- 使用模板原图宽高计算桌面媒体区域，详情栏独立滚动；手机使用自然图片高度。
+- 模板详情通过 Portal 避免导航遮挡，关闭按钮独立于详情滚动区。
+- 补充路由/样式回归断言与模板弹窗规范。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7c8b40d` | (see git log) |
+
+### Testing
+
+- [OK] 前端 34 个套件、137 项测试；最终定向回归 27 项。
+- [OK] typecheck、lint、build、format:check、git diff --check。
+- [OK] Chromium 四种视口各检查横图/竖图/方图，无裁切、额外黑边或水平溢出；关闭与滚动操作正常。
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
