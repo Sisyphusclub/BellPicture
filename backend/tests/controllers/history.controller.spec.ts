@@ -10,13 +10,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../src/app.js';
 import { env } from '../../src/config/env.js';
 import { db } from '../../src/db/drizzle.js';
-import { user } from '../../src/db/schema.js';
+import { user, userQuota } from '../../src/db/schema.js';
 import { sqlite } from '../../src/db/sqlite.js';
 import { AppError } from '../../src/errors/AppError.js';
 import { insertImageRecords } from '../../src/services/history.service.js';
 import type { ImageGenerationProvider } from '../../src/services/providers/ImageGenerationProvider.js';
 import { saveOutput } from '../../src/storage/localStorage.js';
 import type { GenerateInput, GenerateOutput } from '../../src/types/image.js';
+import { productDateKey } from '../../src/utils/date.js';
 
 const PNG_PREFIX = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -47,6 +48,17 @@ function ensureUser(userId: string): void {
       updatedAt: now,
     })
     .onConflictDoNothing()
+    .run();
+  db.insert(userQuota)
+    .values({
+      userId,
+      usedToday: 0,
+      quotaDate: productDateKey(),
+      dailyTotal: 20,
+      permanentTotal: 20,
+      permanentUsed: 0,
+    })
+    .onConflictDoNothing({ target: userQuota.userId })
     .run();
 }
 

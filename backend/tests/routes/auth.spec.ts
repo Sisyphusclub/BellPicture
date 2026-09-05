@@ -66,20 +66,9 @@ describe('username/password auth', () => {
     expect(createdUser.name).toBe(username);
     expect(createdUser.email).toBe(internalEmailForUsername(username));
 
-    const createdQuota = db
-      .select()
-      .from(userQuota)
-      .where(eq(userQuota.userId, createdUser.id))
-      .get();
-    expect(createdQuota).toMatchObject({
-      usedToday: 0,
-      quotaDate: expect.any(String),
-      dailyTotal: null,
-      checkInDate: null,
-      bonusToday: 0,
-      permanentTotal: 20,
-      permanentUsed: 0,
-    });
+    expect(
+      db.select().from(userQuota).where(eq(userQuota.userId, createdUser.id)).all(),
+    ).toHaveLength(0);
 
     const accounts = db.select().from(account).where(eq(account.userId, createdUser.id)).all();
     expect(accounts.length).toBeGreaterThanOrEqual(1);

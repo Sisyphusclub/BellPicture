@@ -3,9 +3,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { username } from 'better-auth/plugins/username';
 
 import { db } from '../db/drizzle.js';
-import { userQuota } from '../db/schema.js';
 import * as schema from '../db/schema.js';
-import { productDateKey } from '../utils/date.js';
 import { normalizeUsername } from '../utils/username.js';
 
 import { env } from './env.js';
@@ -40,27 +38,6 @@ export const auth = betterAuth({
         defaultValue: false,
         required: false,
         input: false,
-      },
-    },
-  },
-  databaseHooks: {
-    user: {
-      create: {
-        async after(createdUser) {
-          db.insert(userQuota)
-            .values({
-              userId: createdUser.id,
-              usedToday: 0,
-              quotaDate: productDateKey(),
-              dailyTotal: null,
-              checkInDate: null,
-              bonusToday: 0,
-              permanentTotal: env.DAILY_USER_QUOTA,
-              permanentUsed: 0,
-            })
-            .onConflictDoNothing({ target: userQuota.userId })
-            .run();
-        },
       },
     },
   },

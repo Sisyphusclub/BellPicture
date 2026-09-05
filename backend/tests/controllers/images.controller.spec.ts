@@ -59,6 +59,17 @@ function createDbUser(input: { userId?: string; isAdmin?: boolean } = {}): strin
       set: { isAdmin: input.isAdmin ?? false, updatedAt: now },
     })
     .run();
+  db.insert(userQuota)
+    .values({
+      userId,
+      usedToday: 0,
+      quotaDate: productDateKey(),
+      dailyTotal: 20,
+      permanentTotal: 20,
+      permanentUsed: 0,
+    })
+    .onConflictDoNothing({ target: userQuota.userId })
+    .run();
   return userId;
 }
 
@@ -751,7 +762,10 @@ describe('POST /api/images/generate', () => {
     const app = buildApp(provider, stubAuth(userId));
     db.insert(userQuota)
       .values({ userId, usedToday: 0, quotaDate: productDateKey(), dailyTotal: 1 })
-      .onConflictDoUpdate({ target: userQuota.userId, set: { usedToday: 0, dailyTotal: 1 } })
+      .onConflictDoUpdate({
+        target: userQuota.userId,
+        set: { usedToday: 0, dailyTotal: 1, permanentTotal: 1, permanentUsed: 0 },
+      })
       .run();
 
     const firstPromise = request(app).post('/api/images/generate').send({ prompt: 'first' });
@@ -777,7 +791,10 @@ describe('POST /api/images/generate', () => {
     const app = buildApp(provider, stubAuth(userId));
     db.insert(userQuota)
       .values({ userId, usedToday: 0, quotaDate: productDateKey(), dailyTotal: 1 })
-      .onConflictDoUpdate({ target: userQuota.userId, set: { usedToday: 0, dailyTotal: 1 } })
+      .onConflictDoUpdate({
+        target: userQuota.userId,
+        set: { usedToday: 0, dailyTotal: 1, permanentTotal: 1, permanentUsed: 0 },
+      })
       .run();
 
     expect(
