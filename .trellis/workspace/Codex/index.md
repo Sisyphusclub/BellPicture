@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 53
+- **Total Sessions**: 54
 - **Last Active**: 2026-09-05
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1787 | Active |
+| `journal-1.md` | ~1825 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 54 | 2026-09-05 | 修复发现页顶部重复光标 | `b49fff4`, `7cd191d` | `-` |
 | 53 | 2026-09-05 | 取消新用户默认额度 | `a566500`, `f503255` | `-` |
 | 52 | 2026-09-05 | 修复新注册用户初始额度 | `5efcf36` | `-` |
 | 51 | 2026-09-05 | 修复光标与流式提示文字对齐 | `7097072` | `-` |

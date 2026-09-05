@@ -1790,3 +1790,39 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 54: 修复发现页顶部重复光标
+
+**Date**: 2026-09-05
+**Task**: 修复发现页顶部重复光标
+
+### Summary
+
+发现页顶部 hero 输入框空态隐藏原生白色 caret，仅保留蓝色流式 caret；输入文字后自动恢复原生 caret。前端测试、构建和容器部署均通过。
+
+### Main Changes
+
+- 为发现页 hero 空态 `contentEditable` 增加 `caret-color: transparent`，避免与流式蓝色 caret 重叠。
+- 保留非空输入的原生 caret，并增加 landing composer 样式契约断言。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b49fff4` | (see git log) |
+| `7cd191d` | (see git log) |
+
+### Testing
+
+- [OK] 前端完整测试：34 个套件、137 项通过
+- [OK] 前端 `typecheck`、`lint`、`build`、`format:check`
+- [OK] `docker compose up -d --build frontend`
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
