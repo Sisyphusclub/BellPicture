@@ -12,14 +12,17 @@
 * Docker Compose 从根目录 `.env` 注入 `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、`BETTER_AUTH_URL`、`FRONTEND_ORIGIN` 与 `CORS_ORIGIN`。
 * 当前根目录 `.env` 的 Google 凭据为空，现状会让 Google 按钮保持禁用。
 * 管理员账号为用户名 `Blur`（系统按规范化用户名 `blur` 识别），管理员状态存储在后端 `user.isAdmin` 字段中。
+* 当前部署 origin 为公网 `http://` 原始 IP；Google Web OAuth 生产回调要求 HTTPS 域名，原始公网 IP 不能登记为回调 host。
+* Google OAuth 的前后端代码链路已由提交 `3e36fd4` 接通，包括 provider 状态接口、登录按钮、当前页回调和测试。
+* 用户明确要求将 Google 账号登录纳入本次交付。
 
 ## Assumptions (temporary)
 
-* Google OAuth 新用户默认是普通用户，不因 Google 昵称、姓名或邮箱前缀为 `Blur` 而自动获得管理员权限。
+* 最终 HTTPS 域名和真实 Google OAuth 凭据由部署方提供，不进入 Git 历史。
 
 ## Open Questions
 
-* `Blur` 是否也必须能通过 Google OAuth 登录到同一个管理员身份，还是仅继续使用现有用户名/密码登录。
+* 目标部署的 HTTPS 域名与 Google OAuth Client ID/Secret 尚待部署方提供。
 
 ## Requirements
 
@@ -29,6 +32,8 @@
 * 启动后验证 `/api/auth/providers` 返回 `{"providers":{"google":true}}`，并验证前端按钮可用、回调能回到发起登录的页面。
 * 不把 Client Secret 写入前端代码、提交历史或日志。
 * 启用 Google OAuth 不得改变 `Blur` 的管理员权限，也不得把其他 Google 账号自动提升为管理员。
+* `Blur` 继续使用现有用户名/密码登录；Google OAuth 新用户一律作为普通用户，不与 `Blur` 管理员身份自动绑定。
+* 本地开发允许使用 `http://localhost:5173`，生产部署必须使用 HTTPS 域名，并将三个公开 origin 配置为同一个地址。
 
 ## Acceptance Criteria
 
@@ -38,6 +43,8 @@
 * [ ] 未配置凭据时应用仍能启动，Google 按钮保持禁用。
 * [ ] 配置变更通过必要的后端/前端测试与启动检查。
 * [ ] Google OAuth 登录不会基于昵称、姓名或邮箱前缀授予管理员权限。
+* [ ] Google 登录按钮在 provider 已配置时可用，未配置时明确禁用。
+* [ ] 自动化测试覆盖 provider 状态、前端按钮状态和 OAuth 回调参数。
 
 ## Definition of Done
 
@@ -45,13 +52,41 @@
 * 相关测试、lint、typecheck 通过。
 * 只提交本任务相关文件。
 
+## Technical Approach
+
+* 沿用 Better Auth 的 `socialProviders.google`，仅在 Client ID 与 Client Secret 同时存在时注册 provider。
+* 通过公开的 `/api/auth/providers` 返回布尔能力状态，不向浏览器暴露 Secret。
+* 前端通过 Better Auth `signIn.social({ provider: 'google' })` 发起 OAuth，并显式把成功和错误回调设为当前页面。
+* 继续由后端持久化的 `user.isAdmin` 判定权限；Google 用户使用默认 `false`。
+* 部署时把 HTTPS origin 同步写入 `FRONTEND_ORIGIN`、`CORS_ORIGIN`、`BETTER_AUTH_URL`，并在 Google Cloud Console 登记 `${BETTER_AUTH_URL}/api/auth/callback/google`。
+
 ## Out of Scope
 
 * 不创建或代管 Google Cloud 项目、OAuth 客户端或真实凭据。
 * 不改变 Better Auth 数据库 schema、用户名登录规则或权限模型。
+* 不实现 `Blur` 管理员账号与 Google 账号的绑定、合并或 Google 管理员登录。
+
+## Decision (ADR-lite)
+
+**Context**: Google OAuth 账号可独立创建用户，但管理员 `Blur` 已通过持久化的 `isAdmin` 状态和用户名/密码登录建立明确权限边界。
+
+**Decision**: `Blur` 仅使用用户名/密码登录；Google OAuth 只创建或登录普通用户，不通过昵称、姓名、邮箱前缀或其他可伪造资料推断管理员身份。
+
+**Consequences**: 本次配置无需引入账号绑定或身份合并逻辑；管理员不能使用 Google 按钮进入 `Blur` 身份。
 
 ## Technical Notes
 
 * 本地 Compose 回调通常为 `http://localhost:5173/api/auth/callback/google`。
 * 直接本地开发后端时回调通常为 `http://localhost:3000/api/auth/callback/google`，但浏览器入口和 cookie origin 应与实际代理拓扑保持一致。
 * 相关代码：`backend/src/config/auth.ts`、`backend/src/routes/auth.ts`、`frontend/src/hooks/useAuth.tsx`、`frontend/src/components/auth/LoginModal.tsx`、`docker-compose.yml`、`.env.docker.example`。
+
+## Research References
+
+* [`research/google-oauth-redirect-requirements.md`](research/google-oauth-redirect-requirements.md) — Google Web OAuth 回调必须精确匹配，生产环境要求 HTTPS 且不接受原始公网 IP。
+
+## Implementation Plan
+
+1. 核对并补齐 Google provider、能力状态接口和登录交互。
+2. 补齐生产 HTTPS 回调与凭据配置说明，避免误用公网 HTTP IP。
+3. 运行后端/前端定向测试及完整质量检查。
+4. 使用运行中服务验证未配置凭据时的禁用状态；真实凭据到位后重建服务并验证 `google: true` 与完整回调。
