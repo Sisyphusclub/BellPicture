@@ -4885,8 +4885,6 @@ video {
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
-    margin-top: 58px;
-    padding-top: 0;
   }
   .template-detail__body .detail-actions {
     grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -56,6 +56,9 @@ describe('template detail sizing contract', () => {
     expect(contract).toContain('grid-template-columns: minmax(0, 1fr) 420px;');
     expect(contract).toContain('object-fit: contain;');
     expect(ruleBody(contract, '.template-detail__media img')).toContain('height: auto;');
+    const desktopBodyRule = ruleBody(contract, '.template-detail__body');
+    expect(desktopBodyRule).not.toContain('margin-top: 58px;');
+    expect(contract).toMatch(/\.template-detail__body\s*{[^}]*overflow-y:\s*auto;/s);
     expect(contract).toContain('overflow-y: auto;');
     expect(ruleBody(mobileContract, '.template-detail__media')).toBe(
       'aspect-ratio: var(--template-image-ratio);',
