@@ -18,11 +18,11 @@
 
 ## Assumptions (temporary)
 
-* 真实 Google OAuth 凭据由部署方提供，不进入 Git 历史。
+* 真实 Google OAuth 凭据仅保存在未跟踪的部署环境文件中，不进入 Git 历史。
 
 ## Open Questions
 
-* Google OAuth Client ID/Secret 尚待部署方提供，并需在 Google Cloud Console 登记精确回调 URI。
+* 需要由用户在浏览器完成一次真实 Google 账号授权，确认 Google Console 侧接受回调并成功返回应用。
 
 ## Requirements
 
@@ -37,9 +37,9 @@
 
 ## Acceptance Criteria
 
-* [ ] 目标环境已填写 `GOOGLE_CLIENT_ID` 与 `GOOGLE_CLIENT_SECRET`。
-* [ ] Google Cloud OAuth 客户端包含精确回调 URI。
-* [ ] `/api/auth/providers` 在配置完成后返回 `google: true`。
+* [x] 目标环境已填写 `GOOGLE_CLIENT_ID` 与 `GOOGLE_CLIENT_SECRET`。
+* [x] Google Cloud OAuth 客户端包含精确回调 URI。
+* [x] `/api/auth/providers` 在配置完成后返回 `google: true`。
 * [x] 生产 HTTPS 域名已启用，三个公开 origin 均为 `https://pic.apioctiva.com`。
 * [x] 未配置凭据时应用仍能启动，Google 按钮保持禁用。
 * [x] 配置变更通过必要的后端/前端测试与启动检查。
@@ -104,3 +104,7 @@
 * DNS `pic.apioctiva.com` 解析到当前服务器；Caddy 配置 `/etc/caddy/sites/pic.apioctiva.com.caddy` 已验证并热重载，Let's Encrypt 证书签发成功。
 * `http://pic.apioctiva.com` 返回 308 到 HTTPS；HTTPS 首页和 `/api/health/ready` 返回 200。
 * 后端容器已使用 `https://pic.apioctiva.com` 作为 `BETTER_AUTH_URL`、`FRONTEND_ORIGIN`、`CORS_ORIGIN` 重建。
+* Google Client ID 符合 `*.apps.googleusercontent.com` 格式，Client ID 与 Secret 均已成对加载，未输出或提交其内容。
+* `/api/auth/providers` 已返回 `{"providers":{"google":true}}`。
+* OAuth 发起接口返回 200；授权主机为 `accounts.google.com`，`redirect_uri` 为 `https://pic.apioctiva.com/api/auth/callback/google`，scope 为 `openid email profile`。
+* OAuth state Cookie 带 `Secure`，响应 CORS origin 为 `https://pic.apioctiva.com`。
