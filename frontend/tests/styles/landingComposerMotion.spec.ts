@@ -85,5 +85,32 @@ describe('landing composer motion contract', () => {
     expect(baseStyles).not.toContain('.landing-composer-anchor.is-docked');
     expect(baseStyles).toContain('padding: 21px 14px 10px !important;');
     expect(baseStyles).toContain('padding: 25px 12px 6px !important;');
+
+    const expandedPlaceholderSelector =
+      '.landing-composer-dock.is-expanded .landing-composer .agent-chat-input__streaming-placeholder';
+    const expandedPlaceholderStart = baseStyles.indexOf(`${expandedPlaceholderSelector} {`);
+    const expandedPlaceholderEnd = baseStyles.indexOf('}', expandedPlaceholderStart);
+    const expandedPlaceholderContract = baseStyles.slice(
+      expandedPlaceholderStart,
+      expandedPlaceholderEnd + 1,
+    );
+    expect(expandedPlaceholderContract).toContain('top: 21px;');
+    expect(expandedPlaceholderContract).toContain('right: 14px;');
+    expect(expandedPlaceholderContract).toContain('left: 14px;');
+    expect(expandedPlaceholderContract).toContain('font-size: 15px;');
+    expect(expandedPlaceholderContract).toContain('line-height: 1.5;');
+
+    const mobileExpandedPlaceholderStart = baseStyles.indexOf(
+      `${expandedPlaceholderSelector} {`,
+      expandedPlaceholderEnd + 1,
+    );
+    const mobileExpandedPlaceholderEnd = baseStyles.indexOf('}', mobileExpandedPlaceholderStart);
+    const mobileExpandedPlaceholderContract = baseStyles.slice(
+      mobileExpandedPlaceholderStart,
+      mobileExpandedPlaceholderEnd + 1,
+    );
+    expect(mobileExpandedPlaceholderContract).toContain('top: 25px;');
+    expect(mobileExpandedPlaceholderContract).toContain('right: 12px;');
+    expect(mobileExpandedPlaceholderContract).toContain('left: 12px;');
   });
 });

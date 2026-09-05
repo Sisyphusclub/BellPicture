@@ -8904,14 +8904,20 @@ video {
   padding: 21px 14px 10px !important;
 }
 .landing-composer-dock.is-expanded .landing-composer .agent-chat-input__streaming-placeholder {
-  top: 30px;
+  top: 21px;
+  right: 14px;
+  left: 14px;
+  font-size: 15px;
+  line-height: 1.5;
 }
 @media (max-width: 860px) {
   .landing-composer-dock.is-expanded .landing-composer .agent-chat-input__textarea {
     padding: 25px 12px 6px !important;
   }
   .landing-composer-dock.is-expanded .landing-composer .agent-chat-input__streaming-placeholder {
-    top: 35px;
+    top: 25px;
+    right: 12px;
+    left: 12px;
   }
 }
 .landing-composer-dock:not(.is-expanded)
