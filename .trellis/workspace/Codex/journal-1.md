@@ -88,7 +88,9 @@ Replaced the first generated logo with a lighter two-shape Nebulens N mark, vali
 
 ### Main Changes
 
-(Add details)
+- 将 Discover dock 展开态流式提示层桌面端调整为 `top: 21px`、左右 `14px`，同步 `15px/1.5` 文字排版。
+- 将移动端提示层调整为 `top: 25px`、左右 `12px`，与响应式 textarea padding 对齐。
+- 扩展 landing composer 样式契约测试，覆盖桌面与移动端定位声明。
 
 ### Git Commits
 
@@ -98,7 +100,9 @@ Replaced the first generated logo with a lighter two-shape Nebulens N mark, vali
 
 ### Testing
 
-- [OK] (Add test results)
+- [OK] `npm test`：34 个测试文件、137 个测试通过。
+- [OK] `npm run check:components`、`npm run typecheck`、`npm run lint`、`npm run build`、`npm run format:check`、`git diff --check`。
+- [OK] Chromium QA：390x844 与 1440x813 均验证提示层计算样式和无水平溢出。
 
 ### Status
 
@@ -1630,6 +1634,38 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 | Hash | Message |
 |------|---------|
 | `ee70752` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 50: 修复展开态流式提示文字位置
+
+**Date**: 2026-09-05
+**Task**: 修复展开态流式提示文字位置
+
+### Summary
+
+将 Discover 展开态流式提示层与 textarea 的桌面/移动端内边距对齐，补充样式契约测试并完成前端质量与浏览器 QA。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `00dedbf` | (see git log) |
 
 ### Testing
 
