@@ -22,7 +22,7 @@
 
 ## Open Questions
 
-* 需要由用户在浏览器完成一次真实 Google 账号授权，确认 Google Console 侧接受回调并成功返回应用。
+* None.
 
 ## Requirements
 
@@ -99,7 +99,7 @@
 * 后端：lint、typecheck、build、format 均通过；全量测试 `197/197` 通过，新增配置测试后定向测试 `13/13` 通过。
 * 前端：组件来源检查、lint、typecheck、build、format 均通过；全量测试 `131/131` 通过。
 * Compose 配置校验通过；重建后 `/api/health/ready` 返回 `status: ok`。
-* 当前未配置 Google 凭据，`/api/auth/providers` 按设计返回 `google: false`。
+* 凭据配置前 `/api/auth/providers` 返回 `google: false`；成对配置后返回 `google: true`。
 * 运行数据库已在线备份至数据卷 `app.sqlite.pre-blur-admin-20260905`，现有规范化用户名 `blur` 已回读确认为 `isAdmin=1`。
 * DNS `pic.apioctiva.com` 解析到当前服务器；Caddy 配置 `/etc/caddy/sites/pic.apioctiva.com.caddy` 已验证并热重载，Let's Encrypt 证书签发成功。
 * `http://pic.apioctiva.com` 返回 308 到 HTTPS；HTTPS 首页和 `/api/health/ready` 返回 200。
@@ -108,3 +108,4 @@
 * `/api/auth/providers` 已返回 `{"providers":{"google":true}}`。
 * OAuth 发起接口返回 200；授权主机为 `accounts.google.com`，`redirect_uri` 为 `https://pic.apioctiva.com/api/auth/callback/google`，scope 为 `openid email profile`。
 * OAuth state Cookie 带 `Secure`，响应 CORS origin 为 `https://pic.apioctiva.com`。
+* Google 授权端点接受当前 Client 与回调并 302 到 `/v3/signin/identifier`，未返回 `redirect_uri_mismatch` 或 `invalid_client`。
