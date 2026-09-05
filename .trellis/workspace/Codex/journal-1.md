@@ -1610,3 +1610,35 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 49: 收紧发现页展开输入框文字间距
+
+**Date**: 2026-09-05
+**Task**: 收紧发现页展开输入框文字间距
+
+### Summary
+
+调整发现页下滑展开态输入框文字的顶部与左侧留白，桌面/移动端分别收紧为 21px 14px 与 25px 12px；新增样式契约，完成类型、lint、测试、构建、容器重建和移动端浏览器回归。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ee70752` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
