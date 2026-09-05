@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 42
-- **Last Active**: 2026-09-01
+- **Total Sessions**: 43
+- **Last Active**: 2026-09-05
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1397 | Active |
+| `journal-1.md` | ~1436 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 43 | 2026-09-05 | 启用谷歌登录生产配置 | `4d2471f`, `a95fd6e`, `3c3b9a0`, `5d16ba8`, `6d3fda2`, `a6eec79`, `9875dbd`, `330a0ba` | `-` |
 | 42 | 2026-09-01 | 改为永久额度并增加签到有效期 | `b133483`, `77e060a` | `dev` |
 | 41 | 2026-09-01 | 修复用户管理表单列错位 | `f291cca` | `dev` |
 | 40 | 2026-09-01 | 移除额度更新成功提示 | `c219df1` | `dev` |

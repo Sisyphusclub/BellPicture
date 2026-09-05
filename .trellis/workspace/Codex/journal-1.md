@@ -1395,3 +1395,42 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 43: 启用谷歌登录生产配置
+
+**Date**: 2026-09-05
+**Task**: 启用谷歌登录生产配置
+
+### Summary
+
+完成 Google OAuth 配置校验、pic.apioctiva.com HTTPS 与回调部署，确认 Google 接受客户端和回调；同时将 Blur 持久化为管理员并完成全量测试。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4d2471f` | (see git log) |
+| `a95fd6e` | (see git log) |
+| `3c3b9a0` | (see git log) |
+| `5d16ba8` | (see git log) |
+| `6d3fda2` | (see git log) |
+| `a6eec79` | (see git log) |
+| `9875dbd` | (see git log) |
+| `330a0ba` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
