@@ -100,6 +100,10 @@ Pending-state CSS must target `.session-batch__prompt` for surface paint and
 toolbar is not a bubble descendant, prompt metadata and Share are absent, Copy writes the complete
 prompt, and pending Edit is disabled without changing bubble child count.
 
+The inline prompt editor keeps its cancel/submit action pair visually balanced: use an 8px gap and
+a shared 72px width for both compact buttons. Preserve the route's mobile 40px minimum height so
+the equal-width treatment does not reduce touch targets.
+
 - Use the layered dark workbench canvas and restrained graphite surfaces defined
   by the project. Do not flatten operational pages into one full-black canvas.
 - Landing-page measurements follow the prompt-first beUI composition in
