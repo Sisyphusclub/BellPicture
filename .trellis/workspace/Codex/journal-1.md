@@ -1752,3 +1752,41 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 53: 取消新用户默认额度
+
+**Date**: 2026-09-05
+**Task**: 取消新用户默认额度
+
+### Summary
+
+移除注册后自动创建 20 点额度记录；无额度记录用户返回 0，保留管理员分配、签到奖励及既有额度数据，并完成后端重建部署。
+
+### Main Changes
+
+- 删除 Better Auth 用户创建后的 `user_quota` 自动初始化钩子。
+- 将无额度记录的永久额度兜底改为 0，并让前端认证请求失败时显示 0 而不是伪造 20 点。
+- 为认证、额度、图片生成和历史接口测试补充明确额度夹具与回归断言。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a566500` | (see git log) |
+| `f503255` | (see git log) |
+
+### Testing
+
+- [OK] `npm test -- --no-file-parallelism`（18 个套件，200 项）
+- [OK] 后端 `typecheck`、`lint`、`format:check`、`build`
+- [OK] 前端 `typecheck`、`lint`、`format:check`
+- [OK] `docker compose up -d --build backend`，`https://pic.apioctiva.com/api/health`
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
