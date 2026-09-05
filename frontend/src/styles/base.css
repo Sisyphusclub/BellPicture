@@ -9010,6 +9010,9 @@ video {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+.landing-composer-hero .landing-composer .agent-chat-input__textarea[data-empty='true'] {
+  caret-color: transparent;
+}
 
 /* Composer parity: Generate keeps its workbench canvas, but the input follows
    the same beUI geometry and toolbar rhythm as Discover. The fixed create bar

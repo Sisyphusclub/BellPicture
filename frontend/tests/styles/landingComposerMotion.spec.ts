@@ -118,5 +118,8 @@ describe('landing composer motion contract', () => {
     expect(baseStyles).toMatch(
       /\.landing-composer-dock\.is-expanded\s+\.landing-composer\s+\.agent-chat-input__textarea\[data-empty='true'\]\s*{\s*caret-color: transparent;/,
     );
+    expect(baseStyles).toMatch(
+      /\.landing-composer-hero\s+\.landing-composer\s+\.agent-chat-input__textarea\[data-empty='true'\]\s*{\s*caret-color: transparent;/,
+    );
   });
 });
