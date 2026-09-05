@@ -1934,3 +1934,41 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 58: 调整提示词编辑按钮间距
+
+**Date**: 2026-09-06
+**Task**: 调整提示词编辑按钮间距
+
+### Summary
+
+将生图页提示词编辑操作按钮收紧为 8px 间距，并统一为 72px 宽度，保留移动端 40px 触控高度。
+
+### Main Changes
+
+- 将提示词编辑操作组的按钮间距从 16px 收紧为 8px。
+- 将“取消”和“修改”按钮统一为 72px 宽度，桌面高度保持 36px，移动端触控高度保持 40px。
+- 增加样式契约测试，并在前端组件规范中记录操作组尺寸约束。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d49cdda` | (see git log) |
+| `174724b` | (see git log) |
+
+### Testing
+
+- [OK] 前端定向回归：2 个测试文件、22 项测试通过。
+- [OK] 前端完整测试：36 个测试文件、140 项测试通过。
+- [OK] `typecheck`、`lint`、`format:check`、`build`、`git diff --check` 全部通过。
+- [OK] Chromium 桌面与移动端计算样式检查：间距 8px，按钮分别为 72×36px 和 72×40px，无页面错误或水平溢出。
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
