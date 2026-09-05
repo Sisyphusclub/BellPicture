@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const auth = vi.hoisted(() => ({
   isGoogleEnabled: true,
+  isGoogleLoading: false,
   signInWithGoogle: vi.fn(),
   signInWithUsername: vi.fn(),
   signUpWithUsername: vi.fn(),
@@ -15,6 +16,7 @@ vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
     isAuthenticated: false,
     isGoogleEnabled: auth.isGoogleEnabled,
+    isGoogleLoading: auth.isGoogleLoading,
     signInWithGoogle: auth.signInWithGoogle,
     signInWithUsername: auth.signInWithUsername,
     signUpWithUsername: auth.signUpWithUsername,
@@ -34,6 +36,7 @@ import { LoginModal } from '@/components/auth/LoginModal';
 beforeEach(() => {
   vi.clearAllMocks();
   auth.isGoogleEnabled = true;
+  auth.isGoogleLoading = false;
 });
 
 describe('LoginModal', () => {
@@ -44,7 +47,7 @@ describe('LoginModal', () => {
     expect(screen.getByRole('button', { name: 'Google 登录未配置' })).toBeDisabled();
   });
 
-  it('validates credentials inline and exposes password visibility', async () => {
+  it('waits until submit before showing field validation and exposes password visibility', async () => {
     const user = userEvent.setup();
     render(<LoginModal />);
 
@@ -61,10 +64,14 @@ describe('LoginModal', () => {
     await user.click(username);
     await user.type(username, 'creator@example.com');
     await user.tab();
-    expect(screen.getByText('仅支持 3-32 位小写字母、数字或下划线。')).toBeInTheDocument();
+    expect(screen.queryByText('仅支持 3-32 位小写字母、数字或下划线。')).not.toBeInTheDocument();
 
     await user.type(password, '123');
     await user.tab();
+    expect(screen.queryByText('密码至少为 8 个字符。')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '登录' }));
+    expect(screen.getByText('仅支持 3-32 位小写字母、数字或下划线。')).toBeInTheDocument();
     expect(screen.getByText('密码至少为 8 个字符。')).toBeInTheDocument();
 
     expect(password).toHaveAttribute('type', 'password');
@@ -81,6 +88,14 @@ describe('LoginModal', () => {
     expect(screen.getByText('请输入用户名。')).toBeInTheDocument();
     expect(screen.getByText('请输入密码。')).toBeInTheDocument();
     expect(auth.signInWithUsername).not.toHaveBeenCalled();
+  });
+
+  it('keeps Google status neutral while the provider check is pending', () => {
+    auth.isGoogleLoading = true;
+    render(<LoginModal />);
+
+    expect(screen.getByRole('button', { name: '正在检查 Google 登录' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Google 登录未配置' })).not.toBeInTheDocument();
   });
 
   it('submits sign-up credentials and completes the pending command', async () => {

@@ -1498,6 +1498,7 @@ video {
 }
 .landing-generation-controls .landing-aspect-select {
   width: 120px;
+  flex: 0 0 120px;
   height: 40px;
   border: 0;
   border-radius: var(--radius-full);
@@ -1505,6 +1506,12 @@ video {
   padding: 0 8px;
   color: var(--muted-foreground);
   font-size: 12px;
+  outline: none;
+  box-shadow: none;
+}
+.landing-generation-controls .landing-aspect-select:focus-visible {
+  outline: 1px solid color-mix(in oklch, var(--ring) 72%, transparent);
+  outline-offset: 1px;
 }
 .landing-generation-controls .landing-aspect-select:hover:not(:disabled),
 .landing-count-stepper:hover,
@@ -3404,6 +3411,7 @@ video {
     width: 100%;
   }
   .landing-generation-controls .landing-aspect-select {
+    flex: 1 1 0;
     padding: 0 5px;
   }
   .landing-count-stepper {
@@ -4005,7 +4013,7 @@ video {
 .auth-modal-surface {
   width: min(100%, 420px) !important;
   max-width: 420px !important;
-  border: 1px solid var(--border-strong) !important;
+  border: 0 !important;
   border-radius: var(--radius-lg) !important;
   background: var(--card) !important;
   box-shadow: var(--shadow-modal) !important;

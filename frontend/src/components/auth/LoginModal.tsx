@@ -17,6 +17,7 @@ export function LoginModal() {
   const {
     isAuthenticated,
     isGoogleEnabled = false,
+    isGoogleLoading = false,
     signInWithGoogle,
     signInWithUsername,
     signUpWithUsername,
@@ -27,7 +28,6 @@ export function LoginModal() {
   const [showPassword, setShowPassword] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [touched, setTouched] = useState({ username: false, password: false });
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const usernameRef = useRef<HTMLInputElement>(null);
 
@@ -35,7 +35,7 @@ export function LoginModal() {
     const normalizedUsername = username.trim().toLowerCase();
     return {
       username:
-        touched.username && normalizedUsername.length > 0
+        hasSubmitted && normalizedUsername.length > 0
           ? USERNAME_PATTERN.test(normalizedUsername)
             ? null
             : '仅支持 3-32 位小写字母、数字或下划线。'
@@ -43,7 +43,7 @@ export function LoginModal() {
             ? '请输入用户名。'
             : null,
       password:
-        touched.password && password.length > 0
+        hasSubmitted && password.length > 0
           ? password.length >= 8
             ? null
             : '密码至少为 8 个字符。'
@@ -51,7 +51,7 @@ export function LoginModal() {
             ? '请输入密码。'
             : null,
     };
-  }, [hasSubmitted, password, touched, username]);
+  }, [hasSubmitted, password, username]);
 
   const resetAndClose = useCallback((): void => {
     setUsername('');
@@ -59,7 +59,6 @@ export function LoginModal() {
     setShowPassword(false);
     setError(null);
     setPending(false);
-    setTouched({ username: false, password: false });
     setHasSubmitted(false);
     close();
   }, [close]);
@@ -81,7 +80,6 @@ export function LoginModal() {
   const submit = async (event: FormEvent): Promise<void> => {
     event.preventDefault();
     setHasSubmitted(true);
-    setTouched({ username: true, password: true });
     const normalizedUsername = username.trim().toLowerCase();
     if (!USERNAME_PATTERN.test(normalizedUsername) || password.length < 8) return;
     setPending(true);
@@ -147,7 +145,6 @@ export function LoginModal() {
             if (next !== 'signin' && next !== 'signup') return;
             setMode(next);
             setError(null);
-            setTouched({ username: false, password: false });
             setHasSubmitted(false);
           }}
           className="auth-mode-tabs"
@@ -174,7 +171,6 @@ export function LoginModal() {
               placeholder="3-32 位小写字母、数字或下划线"
               aria-invalid={validation.username !== null}
               aria-describedby={validation.username ? 'username-error' : undefined}
-              onBlur={() => setTouched((current) => ({ ...current, username: true }))}
               onChange={(event) => setUsername(event.target.value)}
             />
             {validation.username ? (
@@ -194,7 +190,6 @@ export function LoginModal() {
                 placeholder="至少 8 个字符"
                 aria-invalid={validation.password !== null}
                 aria-describedby={validation.password ? 'password-error' : undefined}
-                onBlur={() => setTouched((current) => ({ ...current, password: true }))}
                 onChange={(event) => setPassword(event.target.value)}
               />
               <Button
@@ -230,10 +225,14 @@ export function LoginModal() {
         <Button
           type="button"
           variant="secondary"
-          disabled={pending || !isGoogleEnabled}
+          disabled={pending || isGoogleLoading || !isGoogleEnabled}
           onClick={() => void google()}
         >
-          {isGoogleEnabled ? '使用 Google 继续' : 'Google 登录未配置'}
+          {isGoogleLoading
+            ? '正在检查 Google 登录'
+            : isGoogleEnabled
+              ? '使用 Google 继续'
+              : 'Google 登录未配置'}
         </Button>
       </section>
     </MorphicCardModal>

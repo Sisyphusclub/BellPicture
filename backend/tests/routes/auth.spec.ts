@@ -36,6 +36,16 @@ describe('username/password auth', () => {
     expect(JSON.stringify(res.body)).not.toContain('GOOGLE_CLIENT_SECRET');
   });
 
+  it('does not rate-limit repeated public provider metadata checks', async () => {
+    const app = createApp({ provider: fakeProvider });
+
+    const responses = await Promise.all(
+      Array.from({ length: 25 }, () => request(app).get('/api/auth/providers')),
+    );
+
+    expect(responses.every((response) => response.status === 200)).toBe(true);
+  });
+
   it('POST /api/auth/sign-up/username creates a user and a credential account', async () => {
     const app = createApp({ provider: fakeProvider });
     const rawUsername = `User_${uniqueUsername('signup')}`;
