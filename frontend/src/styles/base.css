@@ -1510,8 +1510,8 @@ video {
   box-shadow: none;
 }
 .landing-generation-controls .landing-aspect-select:focus-visible {
-  outline: 1px solid color-mix(in oklch, var(--ring) 72%, transparent);
-  outline-offset: 1px;
+  outline: none;
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--ring) 72%, transparent);
 }
 .landing-generation-controls .landing-aspect-select:hover:not(:disabled),
 .landing-count-stepper:hover,
@@ -4145,6 +4145,11 @@ video {
 }
 .auth-form {
   gap: 15px;
+}
+.auth-form .input-control:focus-visible {
+  outline: none;
+  border-color: var(--border-strong);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--ring) 72%, transparent);
 }
 .password-field {
   position: relative;
