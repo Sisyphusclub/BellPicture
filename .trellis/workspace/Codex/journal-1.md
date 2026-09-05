@@ -53,7 +53,9 @@ Generated a Nebulens logo with gpt-image-2 through openai-image-api, removed the
 
 ### Main Changes
 
-(Add details)
+- Removed the shared presentation width override and matched the expanded dock to the hero composer at desktop, tablet, and mobile breakpoints.
+- Rendered all 169 built-in Discover items immediately, removed Discover pagination, and automatically continued public gallery cursors until completion or error.
+- Added route and style regressions for width ownership, complete gallery rendering, automatic public pagination, and fixed-composer end clearance.
 
 ### Git Commits
 
@@ -1498,6 +1500,44 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 - [OK] `npm run build`
 - [OK] `npm run format:check`
 - [OK] Playwright at 1440x813 and 390x844, including reduced motion
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 46: 修复发现页输入框并展开画廊
+
+**Date**: 2026-09-05
+**Task**: 修复发现页输入框并展开画廊
+
+### Summary
+
+修复底部展开输入框被通用宽度覆盖导致的越界，使其逐视口与上方对话框等宽；发现页画廊改为直接显示全部内置作品并自动续取公开作品。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `07ee47e` | `fix: 修复发现页展开输入框溢出` |
+| `4aee0df` | `feat: 发现页画廊默认显示全部` |
+
+### Testing
+
+- [OK] `npm run typecheck`
+- [OK] `npm run lint`
+- [OK] `npm test` (34 files, 136 tests)
+- [OK] `npm run build`
+- [OK] `npm run format:check`
+- [OK] Playwright at 1440x813, 1024x768, and 390x844 with matching hero/dock widths, 169 gallery items, no pagination button, and no console errors
 
 ### Status
 
