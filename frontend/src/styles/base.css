@@ -493,7 +493,7 @@ video {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 58%;
+  object-position: 50% 50%;
   opacity: 0.94;
   filter: saturate(1.02) contrast(1.03) brightness(1.08);
   transform: translate3d(var(--landing-video-x-shift), 0, 0) scale(1.04);
@@ -501,7 +501,7 @@ video {
 }
 @media (min-width: 861px) {
   .landing-hero__video {
-    object-position: 50% 60%;
+    object-position: 50% 52%;
   }
 }
 .landing-hero__overlay {
