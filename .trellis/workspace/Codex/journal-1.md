@@ -1578,3 +1578,35 @@ Replaced the imported Vercel reference with a Nebulens-specific design system an
 ### Next Steps
 
 - None - task complete
+
+
+## Session 48: 补充内嵌焦点样式
+
+**Date**: 2026-09-05
+**Task**: 补充内嵌焦点样式
+
+### Summary
+
+将登录输入框和发现页尺寸选择器的焦点提示改为内嵌样式，避免首次操作出现外部白色边框；重建前端并完成移动端截图回归。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3f960fa` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
