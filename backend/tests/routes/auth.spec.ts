@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../src/app.js';
 import { db } from '../../src/db/drizzle.js';
-import { account, user } from '../../src/db/schema.js';
+import { account, user, userQuota } from '../../src/db/schema.js';
 import { seedDefaultAdminIfEnabled } from '../../src/services/defaultAdminSeed.service.js';
 import type { ImageGenerationProvider } from '../../src/services/providers/ImageGenerationProvider.js';
 import { internalEmailForUsername } from '../../src/utils/username.js';
@@ -65,6 +65,21 @@ describe('username/password auth', () => {
     const createdUser = users[0]!;
     expect(createdUser.name).toBe(username);
     expect(createdUser.email).toBe(internalEmailForUsername(username));
+
+    const createdQuota = db
+      .select()
+      .from(userQuota)
+      .where(eq(userQuota.userId, createdUser.id))
+      .get();
+    expect(createdQuota).toMatchObject({
+      usedToday: 0,
+      quotaDate: expect.any(String),
+      dailyTotal: null,
+      checkInDate: null,
+      bonusToday: 0,
+      permanentTotal: 20,
+      permanentUsed: 0,
+    });
 
     const accounts = db.select().from(account).where(eq(account.userId, createdUser.id)).all();
     expect(accounts.length).toBeGreaterThanOrEqual(1);
