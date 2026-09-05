@@ -8751,7 +8751,8 @@ video {
   width: min(940px, calc(100vw - 210px));
   min-height: 0;
   margin: 0 !important;
-  translate: -50% 0;
+  margin-left: calc(-1 * min(470px, (100vw - 210px) / 2)) !important;
+  translate: none;
   transform: none;
 }
 .landing-composer-anchor.is-docked .landing-composer {
@@ -8764,6 +8765,7 @@ video {
 }
 .landing-composer-anchor.is-docked:not(.is-expanded) {
   width: min(560px, calc(100vw - var(--sidebar-width) - 64px));
+  margin-left: calc(-1 * min(280px, (100vw - var(--sidebar-width) - 64px) / 2)) !important;
 }
 .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer > .border-glow-inner,
 .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer__surface,
@@ -8834,8 +8836,10 @@ video {
 @media (max-width: 860px) {
   .landing-composer-anchor.is-docked,
   .landing-composer-anchor.is-docked:not(.is-expanded) {
-    left: 50%;
-    width: calc(100vw - 32px);
+    right: 16px !important;
+    left: 16px;
+    width: auto;
+    margin-left: 0 !important;
   }
   .landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer {
     width: calc(100vw - 32px);

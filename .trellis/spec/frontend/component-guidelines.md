@@ -187,6 +187,36 @@ multiline content keeps its natural growth and scrolling behavior. The desktop e
 tall, while the `<=860px` editor is `86px`; do not reuse desktop vertical padding or placeholder
 offsets at the mobile breakpoint.
 
+The Motion-projected `.landing-composer-anchor` owns the `transform` channel. Do not center its
+fixed state with either `transform: translateX(-50%)` or the individual `translate` property:
+Motion can resolve the latter to `none` when it writes its inline projection transform, leaving the
+composer's left edge on the intended center point. On desktop, pair the center `left` coordinate
+with a negative `margin-left` equal to half of the active compact or expanded width. At `<=860px`,
+anchor the fixed element with equal physical `left` and `right` values and clear that margin.
+
+```css
+/* Wrong: the dock starts at the center when Motion clears translate. */
+.landing-composer-anchor.is-docked {
+  left: calc(50% + 64px);
+  translate: -50% 0;
+}
+
+/* Correct: centering does not compete with Motion's transform channel. */
+.landing-composer-anchor.is-docked:not(.is-expanded) {
+  width: min(560px, calc(100vw - var(--sidebar-width) - 64px));
+  margin-left: calc(-1 * min(280px, (100vw - var(--sidebar-width) - 64px) / 2));
+}
+
+@media (max-width: 860px) {
+  .landing-composer-anchor.is-docked {
+    right: 16px;
+    left: 16px;
+    width: auto;
+    margin-left: 0;
+  }
+}
+```
+
 ```css
 /* Correct: preserve total padding while calibrating each editor height. */
 .is-docked.is-expanded .agent-chat-input__textarea {
@@ -202,7 +232,9 @@ offsets at the mobile breakpoint.
 
 For browser QA, compare the rendered text `Range` center to the editor center rather than comparing
 element boxes alone. Keep the delta below `1px` at desktop and `390px` mobile, and require zero
-horizontal document overflow.
+horizontal document overflow. Also compare the composer center before and after docking at desktop;
+the delta must stay below `1px`. At `390px`, assert equal `16px` layout-viewport margins in compact
+and expanded docked states.
 
 ### Image-led Library Assets
 

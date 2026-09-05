@@ -36,8 +36,36 @@ describe('landing composer motion contract', () => {
       baseStyles.indexOf('.landing-composer-anchor.is-docked .landing-composer {', dockStart),
     );
 
-    expect(dockContract).toContain('translate: -50% 0;');
+    expect(dockContract).toContain(
+      'margin-left: calc(-1 * min(470px, (100vw - 210px) / 2)) !important;',
+    );
+    expect(dockContract).toContain('translate: none;');
     expect(dockContract).toContain('transform: none;');
     expect(dockContract).not.toContain('transform: translateX(-50%);');
+    expect(dockContract).not.toContain('translate: -50% 0;');
+
+    const compactDockStart = baseStyles.indexOf(
+      '.landing-composer-anchor.is-docked:not(.is-expanded) {',
+      dockStart,
+    );
+    const compactDockContract = baseStyles.slice(
+      compactDockStart,
+      baseStyles.indexOf(
+        '.landing-composer-anchor.is-docked:not(.is-expanded) .landing-composer',
+        compactDockStart,
+      ),
+    );
+    expect(compactDockContract).toContain(
+      'margin-left: calc(-1 * min(280px, (100vw - var(--sidebar-width) - 64px) / 2)) !important;',
+    );
+
+    const mobileDockStart = baseStyles.indexOf('@media (max-width: 860px) {', compactDockStart);
+    const mobileDockContract = baseStyles.slice(
+      mobileDockStart,
+      baseStyles.indexOf('/* Keep the fixed discover composer', mobileDockStart),
+    );
+    expect(mobileDockContract).toContain('right: 16px !important;');
+    expect(mobileDockContract).toContain('left: 16px;');
+    expect(mobileDockContract).toContain('margin-left: 0 !important;');
   });
 });
