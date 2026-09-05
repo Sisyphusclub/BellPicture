@@ -40,11 +40,11 @@
 * [ ] 目标环境已填写 `GOOGLE_CLIENT_ID` 与 `GOOGLE_CLIENT_SECRET`。
 * [ ] Google Cloud OAuth 客户端包含精确回调 URI。
 * [ ] `/api/auth/providers` 在配置完成后返回 `google: true`。
-* [ ] 未配置凭据时应用仍能启动，Google 按钮保持禁用。
-* [ ] 配置变更通过必要的后端/前端测试与启动检查。
-* [ ] Google OAuth 登录不会基于昵称、姓名或邮箱前缀授予管理员权限。
-* [ ] Google 登录按钮在 provider 已配置时可用，未配置时明确禁用。
-* [ ] 自动化测试覆盖 provider 状态、前端按钮状态和 OAuth 回调参数。
+* [x] 未配置凭据时应用仍能启动，Google 按钮保持禁用。
+* [x] 配置变更通过必要的后端/前端测试与启动检查。
+* [x] Google OAuth 登录不会基于昵称、姓名或邮箱前缀授予管理员权限。
+* [x] Google 登录按钮在 provider 已配置时可用，未配置时明确禁用。
+* [x] 自动化测试覆盖 provider 状态、前端按钮状态和 OAuth 回调参数。
 
 ## Definition of Done
 
@@ -90,3 +90,13 @@
 2. 补齐生产 HTTPS 回调与凭据配置说明，避免误用公网 HTTP IP。
 3. 运行后端/前端定向测试及完整质量检查。
 4. 使用运行中服务验证未配置凭据时的禁用状态；真实凭据到位后重建服务并验证 `google: true` 与完整回调。
+
+## QA Evidence
+
+* Google OAuth 配置修复提交：`3c3b9a0`。
+* `Blur` 管理员修复提交：`5d16ba8`。
+* 后端：lint、typecheck、build、format 均通过；全量测试 `197/197` 通过，新增配置测试后定向测试 `13/13` 通过。
+* 前端：组件来源检查、lint、typecheck、build、format 均通过；全量测试 `131/131` 通过。
+* Compose 配置校验通过；重建后 `/api/health/ready` 返回 `status: ok`。
+* 当前未配置 Google 凭据，`/api/auth/providers` 按设计返回 `google: false`。
+* 运行数据库已在线备份至数据卷 `app.sqlite.pre-blur-admin-20260905`，现有规范化用户名 `blur` 已回读确认为 `isAdmin=1`。
