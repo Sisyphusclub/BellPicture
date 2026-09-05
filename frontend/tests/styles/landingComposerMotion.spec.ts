@@ -94,9 +94,9 @@ describe('landing composer motion contract', () => {
       expandedPlaceholderStart,
       expandedPlaceholderEnd + 1,
     );
-    expect(expandedPlaceholderContract).toContain('top: 21px;');
-    expect(expandedPlaceholderContract).toContain('right: 14px;');
-    expect(expandedPlaceholderContract).toContain('left: 14px;');
+    expect(expandedPlaceholderContract).toContain('top: 25px;');
+    expect(expandedPlaceholderContract).toContain('right: 22px;');
+    expect(expandedPlaceholderContract).toContain('left: 22px;');
     expect(expandedPlaceholderContract).toContain('font-size: 15px;');
     expect(expandedPlaceholderContract).toContain('line-height: 1.5;');
 
@@ -109,8 +109,14 @@ describe('landing composer motion contract', () => {
       mobileExpandedPlaceholderStart,
       mobileExpandedPlaceholderEnd + 1,
     );
-    expect(mobileExpandedPlaceholderContract).toContain('top: 25px;');
-    expect(mobileExpandedPlaceholderContract).toContain('right: 12px;');
-    expect(mobileExpandedPlaceholderContract).toContain('left: 12px;');
+    expect(mobileExpandedPlaceholderContract).toContain('top: 29px;');
+    expect(mobileExpandedPlaceholderContract).toContain('right: 20px;');
+    expect(mobileExpandedPlaceholderContract).toContain('left: 20px;');
+    expect(mobileExpandedPlaceholderContract).toContain('font-size: 16px;');
+    expect(mobileExpandedPlaceholderContract).toContain('line-height: 1.5;');
+    expect(expandedPlaceholderContract).toContain('line-height: 1.5;');
+    expect(baseStyles).toMatch(
+      /\.landing-composer-dock\.is-expanded\s+\.landing-composer\s+\.agent-chat-input__textarea\[data-empty='true'\]\s*{\s*caret-color: transparent;/,
+    );
   });
 });
