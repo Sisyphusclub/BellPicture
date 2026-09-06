@@ -81,3 +81,41 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 61: 收紧运营页标题与搜索框间距
+
+**Date**: 2026-09-06
+**Task**: 收紧运营页标题与搜索框间距
+
+### Summary
+
+将创作模板、资产和用户管理页面标题与下方工具栏间距统一收紧至 12px。
+
+### Main Changes
+
+- 将共享运营页头部的底部间距从 20px 收紧为 12px，创作模板、资产和用户管理三页统一生效。
+- 保持标题头部 48px 高度和无底部边框状态不变。
+- 更新 `workspaceLayout.spec.ts` 样式契约，锁定新的间距值。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `17827c4` | (see git log) |
+| `38abe54` | (see git log) |
+
+### Testing
+
+- [OK] 受影响页面定向测试：4 个测试文件、47 项通过。
+- [OK] 前端完整测试：36 个测试文件、141 项通过。
+- [OK] `typecheck`、`lint`、`format:check`、`build`、`git diff --check` 全部通过。
+- [OK] Chromium 桌面与 390px 移动端检查：三页标题到下方工具栏间距均为 12px，无页面错误或水平溢出；前端容器已重建。
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
