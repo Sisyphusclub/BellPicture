@@ -53,7 +53,7 @@ describe('operational workspace layout contract', () => {
     expect(operationalContract).toContain('--operational-header-safe-top: 92px;');
     expect(operationalContract).toContain('.operational-page-header {');
     expect(operationalContract).toContain('min-height: 48px;');
-    expect(operationalContract).toContain('margin: 0 0 20px;');
+    expect(operationalContract).toContain('margin: 0 0 12px;');
     expect(operationalContract).toContain('border-bottom: 0;');
     expect(operationalContract).toContain('font-size: 22px;');
     expect(operationalContract).toContain('.operational-page-header__meta {');
