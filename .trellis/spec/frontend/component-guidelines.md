@@ -106,6 +106,10 @@ the equal-width treatment does not reduce touch targets. Because the primary but
 border otherwise lets its fill appear taller than the secondary button's bordered fill, clip the
 prompt editor's primary background to its padding box without shrinking the shared click target.
 
+Operational page headers shared by Templates, Assets, and Users are borderless. Use a 48px minimum
+height with a 20px bottom margin so removing the former separator does not collapse the visual gap
+before the page toolbar or data surface. Keep page-owned table and list separators independent.
+
 - Use the layered dark workbench canvas and restrained graphite surfaces defined
   by the project. Do not flatten operational pages into one full-black canvas.
 - Landing-page measurements follow the prompt-first beUI composition in
