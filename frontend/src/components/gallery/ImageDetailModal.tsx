@@ -1,5 +1,5 @@
 import { Copy, Download, Globe2, ImagePlus, Lock, Trash2, X } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type CSSProperties } from 'react';
 
 import { MorphicCardModal } from '@/components/premium/morphic-card-modal';
 import { Button } from '@/components/ui/button';
@@ -57,10 +57,15 @@ export function ImageDetailModal({
       onClose={onClose}
       sharedLayout={false}
       backdropClassName="!bg-black/[0.78]"
-      className="image-detail-modal !max-w-[1080px] !rounded-2xl !bg-card !text-card-foreground !shadow-[var(--shadow-modal)]"
+      className="image-detail-modal !rounded-2xl !bg-card !text-card-foreground !shadow-[var(--shadow-modal)]"
     >
       <section
         className="dialog image-detail"
+        style={
+          {
+            '--image-detail-image-ratio': `${entry.record.width} / ${entry.record.height}`,
+          } as CSSProperties
+        }
         role="dialog"
         aria-modal="true"
         aria-labelledby="image-detail-title"
@@ -80,7 +85,12 @@ export function ImageDetailModal({
           </IconTooltip>
         </div>
         <div className="image-detail__media">
-          <img src={entry.imageUrl} alt={entry.record.prompt || '生成图片'} />
+          <img
+            src={entry.imageUrl}
+            alt={entry.record.prompt || '生成图片'}
+            width={entry.record.width}
+            height={entry.record.height}
+          />
         </div>
         <div className="image-detail__body">
           <p className="eyebrow">NEBULENS OUTPUT</p>

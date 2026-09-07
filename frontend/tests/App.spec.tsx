@@ -565,7 +565,11 @@ describe('React application routes', () => {
     const dialog = screen.getByRole('dialog', { name: '图片详情' });
     expect(dialog).toBeInTheDocument();
     expect(dialog.querySelector(':scope > .image-detail__close')).toBeInTheDocument();
-    expect(dialog.querySelector(':scope > .image-detail__media')).toBeInTheDocument();
+    const media = dialog.querySelector<HTMLElement>(':scope > .image-detail__media');
+    expect(media).toBeInTheDocument();
+    expect(dialog).toHaveStyle('--image-detail-image-ratio: 1024 / 1536');
+    expect(media?.querySelector('img')).toHaveAttribute('width', '1024');
+    expect(media?.querySelector('img')).toHaveAttribute('height', '1536');
     expect(dialog.querySelector(':scope > .image-detail__body')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '关闭图片详情' })).toBeInTheDocument();
   });

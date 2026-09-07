@@ -434,6 +434,14 @@ scroller. Portal the template modal to `document.body` so page stacking contexts
 navigation above it. Keep the close button outside the desktop scroller and fixed on mobile.
 Verify landscape, portrait, and square images against natural dimensions at desktop/mobile widths.
 
+The shared generated-image detail modal follows the same intrinsic-media contract. Pass the record's
+`width / height` as a CSS ratio on the detail section and keep matching numeric `width`/`height`
+attributes on the image to reserve its natural slot. On desktop, derive the media width and dialog
+height from that ratio while reserving a fixed detail rail; the rail may scroll independently but
+must not impose a fixed media height. On mobile, use an `auto` media row with the same ratio and
+let the outer modal scroll vertically. Do not restore the legacy `42svh` mobile row or fixed
+`min-height`, because those rules create black bars for landscape and portrait outputs.
+
 ```ts
 const entries = CREATION_TEMPLATES.map(templateToHistoryEntry);
 ```
