@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 61
-- **Last Active**: 2026-09-06
+- **Total Sessions**: 62
+- **Last Active**: 2026-09-07
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~116 | Active |
+| `journal-2.md` | ~154 | Active |
 | `journal-1.md` | ~1974 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 62 | 2026-09-07 | 统一生图详情图片无黑边处理 | `284cc81`, `433339e` | `-` |
 | 61 | 2026-09-06 | 收紧运营页标题与搜索框间距 | `17827c4`, `38abe54` | `-` |
 | 60 | 2026-09-06 | 调整运营页标题横线与间距 | `f1feb0f`, `64b2b75` | `-` |
 | 59 | 2026-09-06 | 修正提示词修改按钮视觉高度 | `33ede5a`, `b167b6a` | `-` |

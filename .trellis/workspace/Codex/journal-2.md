@@ -119,3 +119,40 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 62: 统一生图详情图片无黑边处理
+
+**Date**: 2026-09-07
+**Task**: 统一生图详情图片无黑边处理
+
+### Summary
+
+按 ImageRecord 原始宽高统一首页、历史页和生成页图片详情弹窗的媒体比例；桌面弹窗按视口约束并保持详情栏独立滚动，移动端按原比例自然展开。新增组件与 CSS 契约测试，前端 38 个测试套件、145 项测试及类型、lint、构建、格式门禁全部通过。当前环境无 Chromium 可执行文件，未执行浏览器截图检查。
+
+### Main Changes
+
+- `ImageDetailModal` 将 `ImageRecord.width / height` 传为 `--image-detail-image-ratio`，并为图片保留原始尺寸属性。
+- 桌面详情弹窗按媒体比例和视口约束计算媒体宽度/弹窗高度，详情栏独立滚动；移动端移除固定 `42svh` 行高，媒体按原比例自然展开。
+- 新增 `ImageDetailModal` 横图、竖图、方图组件回归测试和 `imageDetailSizing` CSS 契约测试；同步前端组件规范。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `284cc81` | (see git log) |
+| `433339e` | (see git log) |
+
+### Testing
+
+- [OK] `check:components`、`typecheck`、`lint`、`test`（38 个套件、145 项）、`build`、`format:check`、`git diff --check` 全部通过。
+- [OK] 定向图片详情测试覆盖横图、竖图、方图及移动端固定行高回归。
+- [INFO] 当前执行环境没有 Chromium 可执行文件，浏览器截图视觉检查留待具备浏览器的验收环境。
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
