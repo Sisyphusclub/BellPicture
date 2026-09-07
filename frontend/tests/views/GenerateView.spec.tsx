@@ -82,6 +82,7 @@ vi.mock('@/hooks/useImageGeneration', () => ({
 vi.mock('@/hooks/useImageHistory', () => ({
   useImageHistory: () => ({
     batches: historyMocks.batches,
+    isHydrated: true,
     isHydrating: false,
     hydrateError: null,
     removeBatch: historyMocks.removeBatch,
@@ -533,7 +534,10 @@ it('opens the right history flyout, searches, and loads a selected batch', async
   );
 
   const rail = screen.getByRole('button', { name: '展开生成历史' });
-  expect(document.querySelectorAll('.generation-history-track__mark')).toHaveLength(0);
+  await waitFor(() =>
+    expect(document.querySelectorAll('.generation-history-track__mark')).toHaveLength(1),
+  );
+  expect(screen.getByRole('region', { name: '本次创作结果' })).toHaveTextContent('海边灯塔');
   await user.click(rail);
   const panel = await screen.findByRole('complementary', { name: '生成历史' });
   expect(panel).toBeVisible();

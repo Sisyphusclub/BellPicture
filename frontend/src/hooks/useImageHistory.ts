@@ -268,6 +268,11 @@ export function useImageHistory() {
     records: visibleState.records,
     entries,
     batches,
+    isHydrated:
+      userId !== null &&
+      hydratedUserId === userId &&
+      !visibleState.isHydrating &&
+      visibleState.hydrateError === null,
     isHydrating: visibleState.isHydrating,
     hydrateError: visibleState.hydrateError,
     refresh,

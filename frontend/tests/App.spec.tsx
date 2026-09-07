@@ -68,6 +68,7 @@ vi.mock('@/hooks/useImageHistory', () => ({
     records: [],
     entries: [],
     batches: historyMocks.batches,
+    isHydrated: true,
     isHydrating: false,
     hydrateError: null,
     refresh: vi.fn(),
@@ -700,6 +701,58 @@ describe('React application routes', () => {
     expect(screen.getByLabelText('当前路由')).toHaveTextContent(`/generate?session=${session.id}`);
   });
 
+  it('keeps the remembered generation session across browser tabs', async () => {
+    const session = createGenerationSession('跨标签页保留的会话');
+    attachGenerationBatch(session.id, 'cross-tab-batch', '跨标签页保留的会话');
+    rememberGenerationSession('admin', session.id);
+    window.sessionStorage.clear();
+    historyMocks.batches = [mockHistoryBatch('cross-tab-batch', '跨标签页保留的会话')];
+
+    renderRoute('/generate');
+
+    expect(
+      await screen.findByRole('button', { name: '查看图片：跨标签页保留的会话' }),
+    ).toBeVisible();
+    expect(screen.getByLabelText('当前路由')).toHaveTextContent(`/generate?session=${session.id}`);
+  });
+
+  it('migrates a legacy tab-scoped remembered session to persistent storage', async () => {
+    const session = createGenerationSession('旧版标签页会话');
+    attachGenerationBatch(session.id, 'legacy-tab-batch', '旧版标签页会话');
+    window.sessionStorage.setItem(
+      'nebulens-active-generation-session-by-user-v1',
+      JSON.stringify({ admin: session.id }),
+    );
+    historyMocks.batches = [mockHistoryBatch('legacy-tab-batch', '旧版标签页会话')];
+
+    renderRoute('/generate');
+
+    expect(await screen.findByRole('button', { name: '查看图片：旧版标签页会话' })).toBeVisible();
+    expect(
+      JSON.parse(
+        window.localStorage.getItem('nebulens-active-generation-session-by-user-v1') ?? '{}',
+      ),
+    ).toMatchObject({ admin: session.id });
+    expect(
+      window.sessionStorage.getItem('nebulens-active-generation-session-by-user-v1'),
+    ).toBeNull();
+  });
+
+  it('rebuilds a generation session from server history when browser indexes are missing', async () => {
+    historyMocks.batches = [mockHistoryBatch('server-history-batch', '服务端保留的历史')];
+
+    renderRoute('/generate');
+
+    expect(await screen.findByRole('button', { name: '查看图片：服务端保留的历史' })).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getByLabelText('当前路由').textContent).toMatch(/^\/generate\?session=/),
+    );
+    const stored = JSON.parse(
+      window.localStorage.getItem('nebulens-generation-sessions-v1') ?? '[]',
+    ) as Array<{ batchIds?: string[] }>;
+    expect(stored[0]?.batchIds).toEqual(['server-history-batch']);
+  });
+
   it('does not replace a prompt handoff with a remembered session', () => {
     const session = createGenerationSession('旧会话');
     attachGenerationBatch(session.id, 'old-batch', '旧会话');
@@ -756,10 +809,10 @@ describe('React application routes', () => {
   });
 
   it('does not restore after the bare route has already been initialized', async () => {
-    historyMocks.batches = [mockHistoryBatch('late-batch', '另一标签页的会话')];
     renderRoute('/generate');
 
     act(() => {
+      historyMocks.batches = [mockHistoryBatch('late-batch', '另一标签页的会话')];
       const session = createGenerationSession('另一标签页的会话');
       attachGenerationBatch(session.id, 'late-batch', '另一标签页的会话');
       rememberGenerationSession('admin', session.id);
@@ -773,15 +826,16 @@ describe('React application routes', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('does not restore a session remembered by another account', () => {
+  it('recovers current history instead of a session remembered by another account', async () => {
     const session = createGenerationSession('账号 A 的会话');
     attachGenerationBatch(session.id, 'account-a-batch', '账号 A 的会话');
     rememberGenerationSession('account-a', session.id);
-    historyMocks.batches = [mockHistoryBatch('account-a-batch', '账号 A 的会话')];
+    historyMocks.batches = [mockHistoryBatch('admin-batch', '当前账号的历史')];
 
     renderRoute('/generate');
 
-    expect(screen.getByLabelText('当前路由')).toHaveTextContent(/^\/generate$/);
+    expect(await screen.findByRole('button', { name: '查看图片：当前账号的历史' })).toBeVisible();
+    expect(screen.getByLabelText('当前路由')).not.toHaveTextContent(session.id);
     expect(
       screen.queryByRole('button', { name: '查看图片：账号 A 的会话' }),
     ).not.toBeInTheDocument();

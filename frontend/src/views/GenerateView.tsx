@@ -900,28 +900,55 @@ export function GenerateView() {
 
   useEffect(() => {
     if (authLoading || bareRouteRestoreHandled.current) return;
-    bareRouteRestoreHandled.current = true;
     if (
       activeSessionId ||
       searchParams.toString() !== '' ||
       requestsAutoGeneration(location.state) ||
       currentUserId === null
     ) {
+      bareRouteRestoreHandled.current = true;
       return;
     }
+    if (!history.isHydrated) return;
+    bareRouteRestoreHandled.current = true;
 
     const rememberedSessionId = getRememberedGenerationSession(currentUserId);
-    if (!rememberedSessionId) return;
-    if (!sessions.some((session) => session.id === rememberedSessionId)) {
+    const historyBatchIds = new Set(history.batches.map((batch) => batch.batchId));
+    const rememberedSession = sessions.find((session) => session.id === rememberedSessionId);
+    const rememberedSessionIsRestorable = Boolean(
+      rememberedSession &&
+      (rememberedSession.transientTasks.length > 0 ||
+        rememberedSession.batchIds.some(
+          (batchId) => batchId.startsWith('pending-') || historyBatchIds.has(batchId),
+        )),
+    );
+    if (rememberedSessionId && !rememberedSessionIsRestorable) {
       forgetRememberedGenerationSession(currentUserId);
-      return;
     }
-    const nextSearch = new URLSearchParams({ session: rememberedSessionId });
+
+    let restoredSession = rememberedSessionIsRestorable ? rememberedSession : undefined;
+    restoredSession ??= sessions.find((session) =>
+      session.batchIds.some((batchId) => historyBatchIds.has(batchId)),
+    );
+    if (!restoredSession && history.batches.length > 0) {
+      const recoveredSession = createSession(history.batches[0]?.prompt);
+      restoredSession = recoveredSession;
+      [...history.batches].reverse().forEach((batch) => {
+        attachGenerationBatch(recoveredSession.id, batch.batchId, batch.prompt);
+      });
+    }
+    if (!restoredSession) return;
+
+    rememberGenerationSession(currentUserId, restoredSession.id);
+    const nextSearch = new URLSearchParams({ session: restoredSession.id });
     void navigate(`/generate?${nextSearch.toString()}`, { replace: true });
   }, [
     activeSessionId,
     authLoading,
+    createSession,
     currentUserId,
+    history.batches,
+    history.isHydrated,
     location.state,
     navigate,
     searchParams,

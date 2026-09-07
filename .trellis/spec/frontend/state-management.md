@@ -84,6 +84,30 @@ storage is permitted only for explicitly local preferences or compatibility
 caches. Treat persisted JSON as `unknown`, validate versions and fields, and
 recover to a valid empty/default state when data is malformed.
 
+### Generation workspace recovery
+
+Generation sessions are a browser-side navigation cache over server-backed image
+history. `image_records` remains authoritative; losing browser storage must never
+make existing server records unreachable from the generation workspace.
+
+- Persist the account-to-last-session map in `localStorage` under
+  `nebulens-active-generation-session-by-user-v1`. Read the legacy
+  `sessionStorage` value only as a migration fallback, then move it to
+  `localStorage`.
+- On a bare `/generate`, wait for `useImageHistory().isHydrated` before deciding
+  that no restorable history exists. Explicit `session`, prompt handoff, and
+  automatic-generation routes take precedence and must not be replaced.
+- Validate cached session batch ids against the current account's hydrated
+  history. A remembered failed transient task may restore without a server
+  record; an unrelated account's cached batch must not.
+- If the remembered id is missing, prefer the newest cached session that
+  intersects current history. If no cached session survives, rebuild one from
+  the current account's server batches in chronological order and persist the
+  recovered id.
+
+Route tests must cover cross-tab persistence, legacy storage migration, complete
+browser-index loss with server recovery, and account isolation.
+
 ## Concurrency
 
 - Guard against stale asynchronous responses.

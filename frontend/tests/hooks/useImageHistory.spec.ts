@@ -51,12 +51,14 @@ describe('useImageHistory', () => {
       );
     const { result, rerender } = renderHook(() => useImageHistory());
     await waitFor(() => expect(api.fetchHistory).toHaveBeenCalledTimes(1));
+    expect(result.current.isHydrated).toBe(false);
 
     auth.userId = 'user-b';
     rerender();
     await waitFor(() => expect(api.fetchHistory).toHaveBeenCalledTimes(2));
     act(() => resolveB([record('b.png')]));
     await waitFor(() => expect(result.current.records[0]?.id).toBe('b.png'));
+    expect(result.current.isHydrated).toBe(true);
 
     act(() => resolveA([record('a.png')]));
     expect(result.current.records.map((item) => item.id)).toEqual(['b.png']);
@@ -64,5 +66,6 @@ describe('useImageHistory', () => {
     auth.userId = null;
     rerender();
     expect(result.current.records).toEqual([]);
+    expect(result.current.isHydrated).toBe(false);
   });
 });
