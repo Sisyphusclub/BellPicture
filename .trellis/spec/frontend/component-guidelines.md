@@ -646,6 +646,18 @@ last-batch clearance at 1440 x 813 and 390 x 844.
 - Loading, empty, error, unauthorized, and forbidden states are first-class UI
   states, not blank containers.
 
+### Image Detail Media Contract
+
+- The shared `ImageDetailModal` must pass `record.width / record.height` as a numeric
+  `--image-detail-image-ratio` custom property. CSS `calc()` can consume the numeric value
+  reliably; a string such as `1024 / 1536` collapses the desktop modal height in Chromium.
+- Keep `.image-detail__media` transparent and let the image fill its ratio-sized frame with
+  `width: 100%`, `height: 100%`, and `object-fit: contain`. The media wrapper owns overflow and
+  the outer `MorphicCardModal` owns the visible radius; do not add an inner image radius or shadow
+  that can expose a dark media background as black bars.
+- Route tests must cover square, landscape, and portrait entries and assert both numeric ratio
+  propagation and the no-inner-decoration style contract.
+
 ### Authentication Modal Contract
 
 The shared account surface composes the existing beUI `MorphicCardModal`, segment `Tabs`, `Input`,

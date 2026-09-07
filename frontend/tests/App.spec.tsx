@@ -561,9 +561,9 @@ describe('React application routes', () => {
     expect(creationCards.length).toBeGreaterThanOrEqual(4);
 
     for (const [index, ratio, width, height] of [
-      [0, '1024 / 1536', '1024', '1536'],
-      [1, '1536 / 1024', '1536', '1024'],
-      [3, '1024 / 1024', '1024', '1024'],
+      [0, 1024 / 1536, '1024', '1536'],
+      [1, 1536 / 1024, '1536', '1024'],
+      [3, 1, '1024', '1024'],
     ] as const) {
       await user.click(creationCards[index]!);
 

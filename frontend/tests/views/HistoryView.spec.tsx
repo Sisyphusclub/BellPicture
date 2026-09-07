@@ -245,9 +245,9 @@ describe('HistoryView asset workflows', () => {
     renderView();
 
     for (const [prompt, ratio, width, height] of [
-      ['雨夜城市', '1024 / 1024', '1024', '1024'],
-      ['森林建筑', '1792 / 1024', '1792', '1024'],
-      ['纵向建筑', '1024 / 1792', '1024', '1792'],
+      ['雨夜城市', 1, '1024', '1024'],
+      ['森林建筑', 1792 / 1024, '1792', '1024'],
+      ['纵向建筑', 1024 / 1792, '1024', '1792'],
     ] as const) {
       await user.click(screen.getByRole('button', { name: `查看图片：${prompt}` }));
 

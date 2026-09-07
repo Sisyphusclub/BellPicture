@@ -34,7 +34,7 @@ describe('ImageDetailModal media framing', () => {
     const media = dialog.querySelector<HTMLElement>('.image-detail__media');
     const image = media?.querySelector('img');
 
-    expect(dialog).toHaveStyle(`--image-detail-image-ratio: ${width} / ${height}`);
+    expect(dialog).toHaveStyle(`--image-detail-image-ratio: ${width / height}`);
     expect(media).toHaveClass('image-detail__media');
     expect(image).toHaveAttribute('width', String(width));
     expect(image).toHaveAttribute('height', String(height));

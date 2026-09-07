@@ -40,12 +40,17 @@ describe('image detail sizing contract', () => {
     expect(desktopContract).toContain(
       'height: calc(var(--image-detail-media-width) / var(--image-detail-image-ratio));',
     );
-    expect(ruleBody(baseStyles, '.image-detail__media')).toContain(
-      'aspect-ratio: var(--image-detail-image-ratio);',
-    );
-    expect(ruleBody(baseStyles, '.image-detail__media img')).toContain('width: 100%;');
-    expect(ruleBody(baseStyles, '.image-detail__media img')).toContain('height: auto;');
-    expect(ruleBody(baseStyles, '.image-detail__media img')).toContain('object-fit: contain;');
+    const mediaRule = ruleBody(baseStyles, '.image-detail__media');
+    const imageRule = ruleBody(baseStyles, '.image-detail__media img');
+
+    expect(mediaRule).toContain('aspect-ratio: var(--image-detail-image-ratio);');
+    expect(mediaRule).toContain('background: transparent;');
+    expect(mediaRule).toContain('overflow: hidden;');
+    expect(imageRule).toContain('width: 100%;');
+    expect(imageRule).toContain('height: 100%;');
+    expect(imageRule).toContain('border-radius: 0;');
+    expect(imageRule).toContain('box-shadow: none;');
+    expect(imageRule).toContain('object-fit: contain;');
     expect(mobileContract).toContain('grid-template-rows: auto auto;');
     expect(mobileContract).toContain('aspect-ratio: var(--image-detail-image-ratio);');
     expect(mobileContract).not.toContain('min-height: 42vh;');

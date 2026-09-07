@@ -63,7 +63,7 @@ export function ImageDetailModal({
         className="dialog image-detail"
         style={
           {
-            '--image-detail-image-ratio': `${entry.record.width} / ${entry.record.height}`,
+            '--image-detail-image-ratio': entry.record.width / entry.record.height,
           } as CSSProperties
         }
         role="dialog"
