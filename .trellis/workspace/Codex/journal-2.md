@@ -156,3 +156,70 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 63: 统一发现页与资产页图片详情比例
+
+**Date**: 2026-09-07
+**Task**: 统一发现页与资产页图片详情比例
+
+### Summary
+
+确认发现页与资产页均复用已按原图宽高布局的 ImageDetailModal，并为两条路由补充方图、横图、竖图详情入口回归测试。前端 38 个测试套件、146 项测试以及类型、lint、构建、格式门禁全部通过。
+
+### Main Changes
+
+- 扩展首页 `App.spec.tsx`，验证发现页方图、横图、竖图打开详情时的比例属性与原始图片尺寸。
+- 扩展 `HistoryView.spec.tsx`，验证资产页方图、横图、竖图详情入口复用同一比例契约。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `cbc9de8` | (see git log) |
+
+### Testing
+
+- [OK] 定向路由测试 36 项通过；完整前端测试 38 个套件、146 项通过。
+- [OK] `typecheck`、`lint`、`build`、`format:check`、`git diff --check` 通过。
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 64: 完成可见范围与参考图拖拽
+
+**Date**: 2026-09-07
+**Task**: 完成可见范围与参考图拖拽
+
+### Summary
+
+统一发现页可见范围文案与动作，补充公开画廊缓存同步；AgentChatInput 支持参考图拖拽、类型过滤与视觉反馈，并新增组件及生成路由回归测试。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4c09261` | (see git log) |
+| `ceb9347` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
