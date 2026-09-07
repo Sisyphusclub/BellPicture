@@ -92,6 +92,7 @@ vi.mock('@/hooks/usePublicGallery', () => ({
     removeAsAdmin: vi.fn(),
   }),
   addPublicRecord: vi.fn(),
+  removePublicRecord: vi.fn(),
 }));
 
 vi.mock('@/hooks/useAdminUsers', () => ({
@@ -298,7 +299,7 @@ describe('React application routes', () => {
     expect(screen.queryByRole('button', { name: /选择模型和推理强度/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '选择首页画面尺寸' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: '生成张数' })).toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: '公开作品' })).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: '发布到发现页' })).not.toBeChecked();
     expect(screen.getByRole('status', { name: '剩余额度 16，总额度 20' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: '正在发生的想象' })).not.toBeInTheDocument();
   });
@@ -512,7 +513,7 @@ describe('React application routes', () => {
     await user.click(screen.getByRole('button', { name: '选择首页画面尺寸' }));
     await user.click(screen.getByRole('menuitemradio', { name: /16:9/ }));
     await user.click(screen.getByRole('button', { name: '增加生成张数' }));
-    await user.click(screen.getByRole('switch', { name: '公开作品' }));
+    await user.click(screen.getByRole('switch', { name: '发布到发现页' }));
     await user.click(screen.getByRole('button', { name: '带着提示词开始创作' }));
 
     expect(await screen.findByRole('region', { name: '图像生成工作区' })).toBeInTheDocument();
@@ -531,7 +532,7 @@ describe('React application routes', () => {
     );
     expect(screen.getByRole('button', { name: '选择画面比例' })).toHaveTextContent('16:9');
     expect(screen.getByRole('status', { name: '2 张' })).toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: '私有模式' })).not.toBeChecked();
+    expect(screen.getByRole('switch', { name: '发布到发现页' })).toBeChecked();
   });
 
   it('opens and closes the shadcn mobile sidebar', async () => {
@@ -922,7 +923,7 @@ describe('React application routes', () => {
     );
     expect(screen.getByRole('button', { name: '选择画面比例' })).toHaveTextContent('16:9');
     expect(screen.getByRole('status', { name: '1 张' })).toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: '私有模式' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: '发布到发现页' })).not.toBeChecked();
     expect(generation.generate).not.toHaveBeenCalled();
   }, 10_000);
 

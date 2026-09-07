@@ -21,6 +21,11 @@ const authMocks = vi.hoisted(() => ({
   isLoading: false,
 }));
 
+const publicGalleryMocks = vi.hoisted(() => ({
+  addPublicRecord: vi.fn(),
+  removePublicRecord: vi.fn(),
+}));
+
 const entries: HistoryEntry[] = [
   {
     record: {
@@ -81,6 +86,8 @@ vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => authMocks,
 }));
 
+vi.mock('@/hooks/usePublicGallery', () => publicGalleryMocks);
+
 vi.mock('@/hooks/useImageHistory', () => ({
   useImageHistory: () => ({
     records: historyMocks.entries.map((entry) => entry.record),
@@ -138,6 +145,8 @@ beforeEach(() => {
   historyMocks.remove.mockResolvedValue(undefined);
   historyMocks.removeMany.mockResolvedValue(1);
   historyMocks.refresh.mockResolvedValue(undefined);
+  publicGalleryMocks.addPublicRecord.mockReset();
+  publicGalleryMocks.removePublicRecord.mockReset();
 });
 
 describe('HistoryView asset workflows', () => {
@@ -159,6 +168,13 @@ describe('HistoryView asset workflows', () => {
       screen.getByRole('searchbox', { name: '搜索资产' }).closest('.asset-commandbar'),
     ).toHaveClass('operational-toolbar');
     expect(screen.getByRole('navigation', { name: '收藏集筛选' })).toBeInTheDocument();
+
+    const visibilityFilter = screen.getByRole('button', { name: '可见范围筛选' });
+    expect(visibilityFilter).toHaveTextContent('全部范围');
+    await user.click(visibilityFilter);
+    expect(screen.getByRole('menuitemradio', { name: '发现页可见' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitemradio', { name: '仅自己可见' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
 
     await user.click(screen.getByRole('button', { name: '灵感库' }));
 
@@ -235,8 +251,8 @@ describe('HistoryView asset workflows', () => {
     const table = screen.getByRole('table', { name: '资产紧凑列表' });
     expect(table).toBeInTheDocument();
     expect(screen.getByText('森林建筑')).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: '可见性' })).toBeInTheDocument();
-    expect(screen.getByRole('cell', { name: '公开' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: '可见范围' })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: '发现页可见' })).toBeInTheDocument();
   });
 
   it('opens square, landscape, and portrait assets with their source framing', async () => {
@@ -281,6 +297,36 @@ describe('HistoryView asset workflows', () => {
         collection: '灵感库',
       });
     });
+  });
+
+  it('publishes private assets with action-oriented feedback', async () => {
+    const user = userEvent.setup();
+    renderView();
+
+    await user.click(screen.getByRole('button', { name: '发布到发现页' }));
+
+    await waitFor(() => {
+      expect(historyMocks.update).toHaveBeenCalledWith('image-one.png', { isPublic: true });
+    });
+    expect(publicGalleryMocks.addPublicRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'image-one.png', isPublic: true }),
+    );
+    expect(await screen.findByText('已发布到发现页。')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '从发现页移除' })).toBeInTheDocument();
+  });
+
+  it('removes public assets from the discovery cache with action-oriented feedback', async () => {
+    const user = userEvent.setup();
+    renderView();
+
+    await user.click(screen.getByRole('button', { name: '从发现页移除' }));
+
+    await waitFor(() => {
+      expect(historyMocks.update).toHaveBeenCalledWith('image-two.png', { isPublic: false });
+    });
+    expect(publicGalleryMocks.removePublicRecord).toHaveBeenCalledWith('image-two.png');
+    expect(await screen.findByText('已从发现页移除，仅自己可见。')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '发布到发现页' })).toBeInTheDocument();
   });
 
   it('confirms single deletion with the beUI modal and supports cancel', async () => {

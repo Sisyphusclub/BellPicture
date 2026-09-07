@@ -1573,7 +1573,7 @@ video {
 .landing-public-toggle {
   position: relative;
   display: flex;
-  width: 88px;
+  width: 120px;
   height: 40px;
   min-width: 0;
   align-items: center;
@@ -6575,11 +6575,11 @@ video {
   }
 }
 
-/* Match the discovery page's compact public/private switch. The workspace keeps
+/* Match the discovery page's compact publish switch. The workspace keeps
    its separator spacing, while the control itself uses the shared pill language. */
 .studio-agent-input .studio-private-toggle {
-  width: 88px;
-  min-width: 88px;
+  width: 120px;
+  min-width: 120px;
   height: 40px;
   min-height: 40px;
   justify-content: center;
@@ -6624,35 +6624,6 @@ video {
   border: 0;
   background: var(--muted);
 }
-.studio-agent-input
-  .studio-private-toggle[data-mode='private']
-  input:checked
-  + .studio-private-toggle__track {
-  border-color: var(--border-strong);
-  background: var(--background);
-}
-.studio-agent-input
-  .studio-private-toggle[data-mode='private']
-  input:checked
-  + .studio-private-toggle__track::after {
-  background: var(--muted-foreground);
-  transform: none;
-}
-.studio-agent-input
-  .studio-private-toggle[data-mode='public']
-  input:not(:checked)
-  + .studio-private-toggle__track {
-  border-color: var(--primary);
-  background: var(--primary);
-}
-.studio-agent-input
-  .studio-private-toggle[data-mode='public']
-  input:not(:checked)
-  + .studio-private-toggle__track::after {
-  background: var(--primary-foreground);
-  transform: translateX(10px);
-}
-
 @media (max-width: 560px) {
   .studio-agent-input .studio-private-toggle {
     width: 100%;
@@ -7132,7 +7103,7 @@ video {
   position: relative;
   display: inline-flex;
   height: 36px;
-  min-width: 88px;
+  min-width: 120px;
   align-items: center;
   gap: 7px;
   border: 1px solid var(--border);
@@ -8249,7 +8220,7 @@ video {
     min-width: 98px;
   }
   .studio-private-toggle {
-    min-width: 88px;
+    min-width: 120px;
     padding-inline: 7px;
   }
   .studio-agent-input .agent-chat-input__toolbar {
@@ -8351,7 +8322,7 @@ video {
 }
 
 @media (min-width: 861px) {
-  /* Separate the private-mode surface itself from the parameter-group divider;
+  /* Separate the publish control itself from the parameter-group divider;
      the switch keeps the same internal padding as the other controls. */
   .studio-private-toggle {
     margin-left: 20px;

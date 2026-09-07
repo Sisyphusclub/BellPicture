@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
@@ -38,5 +38,40 @@ describe('ImageDetailModal media framing', () => {
     expect(media).toHaveClass('image-detail__media');
     expect(image).toHaveAttribute('width', String(width));
     expect(image).toHaveAttribute('height', String(height));
+  });
+
+  it('distinguishes the current discovery scope from the next visibility action', () => {
+    const onToggleVisibility = vi.fn();
+    const { rerender } = render(
+      <ImageDetailModal
+        entry={baseEntry}
+        onClose={vi.fn()}
+        onToggleVisibility={onToggleVisibility}
+      />,
+    );
+
+    expect(screen.getByText('可见范围')).toBeInTheDocument();
+    expect(screen.getByText('发现页可见')).toBeInTheDocument();
+    const removeButton = screen.getByRole('button', { name: '从发现页移除' });
+    expect(removeButton.querySelector('.lucide-eye-off')).toBeInTheDocument();
+    fireEvent.click(removeButton);
+    expect(onToggleVisibility).toHaveBeenCalledWith(baseEntry);
+
+    const privateEntry: HistoryEntry = {
+      ...baseEntry,
+      record: { ...baseEntry.record, isPublic: false },
+    };
+    rerender(
+      <ImageDetailModal
+        entry={privateEntry}
+        onClose={vi.fn()}
+        onToggleVisibility={onToggleVisibility}
+      />,
+    );
+
+    expect(screen.getByText('仅自己可见')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: '发布到发现页' }).querySelector('.lucide-earth'),
+    ).toBeInTheDocument();
   });
 });

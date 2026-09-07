@@ -93,3 +93,27 @@ it('binds square, landscape, and portrait media containers to their source dimen
     aspectRatio: '1024 / 1792',
   });
 });
+
+it('labels visibility controls by their next discovery action', () => {
+  const toggleVisibility = vi.fn();
+  const { rerender } = render(
+    <ImageGrid entries={[entry]} onSelect={vi.fn()} onToggleVisibility={toggleVisibility} />,
+  );
+
+  const publishButton = screen.getByRole('button', { name: '发布到发现页' });
+  expect(publishButton.querySelector('.lucide-earth')).toBeInTheDocument();
+  fireEvent.click(publishButton);
+  expect(toggleVisibility).toHaveBeenCalledWith(entry);
+
+  const publicEntry: HistoryEntry = {
+    ...entry,
+    record: { ...entry.record, isPublic: true },
+  };
+  rerender(
+    <ImageGrid entries={[publicEntry]} onSelect={vi.fn()} onToggleVisibility={toggleVisibility} />,
+  );
+
+  expect(
+    screen.getByRole('button', { name: '从发现页移除' }).querySelector('.lucide-eye-off'),
+  ).toBeInTheDocument();
+});

@@ -2,6 +2,7 @@ import {
   Check,
   Copy,
   Download,
+  EyeOff,
   Globe2,
   Grid2X2,
   Heart,
@@ -27,6 +28,7 @@ import { SelectMenu } from '@/components/ui/select-menu';
 import { useAuth } from '@/hooks/useAuth';
 import { openAuthModal } from '@/hooks/useAuthModal';
 import { useImageHistory } from '@/hooks/useImageHistory';
+import { addPublicRecord, removePublicRecord } from '@/hooks/usePublicGallery';
 import { cn } from '@/lib/utils';
 import {
   DEFAULT_ASPECT_RATIO,
@@ -36,6 +38,11 @@ import {
 } from '@/types/image';
 import { downloadUrl } from '@/utils/download';
 import { formatDateTime } from '@/utils/format';
+import {
+  getImageVisibilityActionLabel,
+  getImageVisibilityLabel,
+  getImageVisibilityUpdateMessage,
+} from '@/utils/imageVisibility';
 
 type AssetSort = 'newest' | 'oldest' | 'prompt';
 type DateFilter = 'all' | 'today' | 'week' | 'month';
@@ -55,9 +62,9 @@ const DATE_OPTIONS: readonly { value: DateFilter; label: string }[] = [
   { value: 'month', label: '最近 30 天' },
 ];
 const VISIBILITY_OPTIONS: readonly { value: VisibilityFilter; label: string }[] = [
-  { value: 'all', label: '全部可见性' },
-  { value: 'public', label: '公开' },
-  { value: 'private', label: '私有' },
+  { value: 'all', label: '全部范围' },
+  { value: 'public', label: '发现页可见' },
+  { value: 'private', label: '仅自己可见' },
 ];
 const DEFAULT_COLLECTIONS = ['灵感库', '客户项目', '待筛选'] as const;
 
@@ -155,7 +162,15 @@ export function HistoryView() {
     try {
       const record = await history.update(entry.record.id, updates);
       if (selected?.record.id === record.id) setSelected({ ...entry, record });
-      notify('资产已更新。');
+      if (updates.isPublic !== undefined) {
+        if (record.isPublic) addPublicRecord(record);
+        else removePublicRecord(record.id);
+      }
+      notify(
+        updates.isPublic === undefined
+          ? '资产已更新。'
+          : getImageVisibilityUpdateMessage(record.isPublic),
+      );
     } catch (error) {
       notify(error instanceof Error ? error.message : '资产更新失败。', 'error');
     } finally {
@@ -335,7 +350,7 @@ export function HistoryView() {
                   onValueChange={setDate}
                 />
                 <SelectMenu
-                  label="可见性筛选"
+                  label="可见范围筛选"
                   value={visibility}
                   options={VISIBILITY_OPTIONS}
                   onValueChange={setVisibility}
@@ -531,7 +546,7 @@ export function HistoryView() {
                   <span role="columnheader">图片</span>
                   <span role="columnheader">提示词</span>
                   <span role="columnheader">模型与尺寸</span>
-                  <span role="columnheader">可见性</span>
+                  <span role="columnheader">可见范围</span>
                   <span role="columnheader">收藏集</span>
                   <span role="columnheader">时间</span>
                   <span role="columnheader">操作</span>
@@ -576,13 +591,13 @@ export function HistoryView() {
                         {entry.record.aspectRatio ?? '1:1'}
                       </small>
                     </span>
-                    <span role="cell" className="asset-visibility" data-label="可见性">
+                    <span role="cell" className="asset-visibility" data-label="可见范围">
                       {entry.record.isPublic ? (
                         <Globe2 aria-hidden="true" />
                       ) : (
                         <Lock aria-hidden="true" />
                       )}
-                      {entry.record.isPublic ? '公开' : '私有'}
+                      {getImageVisibilityLabel(entry.record.isPublic)}
                     </span>
                     <span role="cell" data-label="收藏集">
                       {entry.record.collection ?? '未分类'}
@@ -629,20 +644,20 @@ export function HistoryView() {
                           <RefreshCw aria-hidden="true" />
                         </Button>
                       </IconTooltip>
-                      <IconTooltip label={entry.record.isPublic ? '设为私有' : '设为公开'}>
+                      <IconTooltip label={getImageVisibilityActionLabel(entry.record.isPublic)}>
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          aria-label={entry.record.isPublic ? '设为私有' : '设为公开'}
+                          aria-label={getImageVisibilityActionLabel(entry.record.isPublic)}
                           onClick={() =>
                             void updateEntry(entry, { isPublic: !entry.record.isPublic })
                           }
                         >
                           {entry.record.isPublic ? (
-                            <Globe2 aria-hidden="true" />
+                            <EyeOff aria-hidden="true" />
                           ) : (
-                            <Lock aria-hidden="true" />
+                            <Globe2 aria-hidden="true" />
                           )}
                         </Button>
                       </IconTooltip>

@@ -2,9 +2,9 @@ import {
   Check,
   Copy,
   Download,
+  EyeOff,
   Globe2,
   Heart,
-  Lock,
   RefreshCw,
   Square,
   Trash2,
@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/ui/icon-tooltip';
 import { cn } from '@/lib/utils';
 import type { HistoryEntry } from '@/types/image';
+import { getImageVisibilityActionLabel } from '@/utils/imageVisibility';
 
 interface ImageGridProps {
   entries: readonly HistoryEntry[];
@@ -111,18 +112,18 @@ export function ImageGrid({
                   </IconTooltip>
                 ) : null}
                 {onToggleVisibility ? (
-                  <IconTooltip label={entry.record.isPublic ? '设为私有' : '设为公开'}>
+                  <IconTooltip label={getImageVisibilityActionLabel(entry.record.isPublic)}>
                     <Button
                       type="button"
                       variant="secondary"
                       size="icon"
-                      aria-label={entry.record.isPublic ? '设为私有' : '设为公开'}
+                      aria-label={getImageVisibilityActionLabel(entry.record.isPublic)}
                       onClick={() => onToggleVisibility(entry)}
                     >
                       {entry.record.isPublic ? (
-                        <Globe2 aria-hidden="true" />
+                        <EyeOff aria-hidden="true" />
                       ) : (
-                        <Lock aria-hidden="true" />
+                        <Globe2 aria-hidden="true" />
                       )}
                     </Button>
                   </IconTooltip>

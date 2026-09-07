@@ -4,9 +4,9 @@ import {
   CircleAlert,
   Copy,
   Download,
+  EyeOff,
   Globe2,
   ImagePlus,
-  Lock,
   Minus,
   Pencil,
   Plus,
@@ -55,7 +55,7 @@ import { useImageGeneration } from '@/hooks/useImageGeneration';
 import { useImageHistory } from '@/hooks/useImageHistory';
 import type { GroupedBatch } from '@/hooks/useImageHistory';
 import { useImageQuota } from '@/hooks/useImageQuota';
-import { addPublicRecord } from '@/hooks/usePublicGallery';
+import { addPublicRecord, removePublicRecord } from '@/hooks/usePublicGallery';
 import { fetchOutputBlob } from '@/services/api/imagesApi';
 import {
   ASPECT_RATIOS,
@@ -71,6 +71,11 @@ import {
   type HistoryEntry,
 } from '@/types/image';
 import { downloadUrl } from '@/utils/download';
+import {
+  DISCOVERY_PUBLISH_LABEL,
+  getImageVisibilityActionLabel,
+  getImageVisibilityUpdateMessage,
+} from '@/utils/imageVisibility';
 
 interface FeedItem {
   id: string;
@@ -249,25 +254,27 @@ function SessionResultPreview({ entry, onOpen }: SessionResultPreviewProps) {
   );
 }
 
-interface PrivateModeToggleProps {
+interface DiscoveryPublishToggleProps {
   isPublic: boolean;
   disabled: boolean;
   onPublicChange: (value: boolean) => void;
 }
 
-function PrivateModeToggle({ isPublic, disabled, onPublicChange }: PrivateModeToggleProps) {
-  const isPrivate = !isPublic;
-
+function DiscoveryPublishToggle({
+  isPublic,
+  disabled,
+  onPublicChange,
+}: DiscoveryPublishToggleProps) {
   return (
-    <label className="studio-private-toggle" data-mode={isPrivate ? 'private' : 'public'}>
+    <label className="studio-private-toggle" data-mode={isPublic ? 'public' : 'private'}>
       <Switch
-        aria-label="私有模式"
-        checked={!isPublic}
+        aria-label={DISCOVERY_PUBLISH_LABEL}
+        checked={isPublic}
         disabled={disabled}
-        onCheckedChange={(checked) => onPublicChange(!checked)}
+        onCheckedChange={onPublicChange}
       />
       <span className="studio-private-toggle__track" aria-hidden="true" />
-      <span>{isPrivate ? '私有' : '公开'}</span>
+      <span>{DISCOVERY_PUBLISH_LABEL}</span>
     </label>
   );
 }
@@ -1062,7 +1069,8 @@ export function GenerateView() {
         })),
       );
       if (record.isPublic) addPublicRecord(record);
-      notify(record.isPublic ? '图片已设为公开。' : '图片已设为私有。');
+      else removePublicRecord(record.id);
+      notify(getImageVisibilityUpdateMessage(record.isPublic));
     } catch (error) {
       notify(error instanceof Error ? error.message : '可见性更新失败。', 'error');
     } finally {
@@ -1268,7 +1276,7 @@ export function GenerateView() {
                   <Plus aria-hidden="true" />
                 </Button>
               </div>
-              <PrivateModeToggle
+              <DiscoveryPublishToggle
                 isPublic={isPublic}
                 disabled={generation.isLoading}
                 onPublicChange={setIsPublic}
@@ -1405,19 +1413,19 @@ export function GenerateView() {
                             <Download aria-hidden="true" />
                           </Button>
                         </IconTooltip>
-                        <IconTooltip label={entry.record.isPublic ? '设为私有' : '设为公开'}>
+                        <IconTooltip label={getImageVisibilityActionLabel(entry.record.isPublic)}>
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            aria-label={entry.record.isPublic ? '设为私有' : '设为公开'}
+                            aria-label={getImageVisibilityActionLabel(entry.record.isPublic)}
                             disabled={mutatingId === entry.record.id}
                             onClick={() => void toggleVisibility(entry)}
                           >
                             {entry.record.isPublic ? (
-                              <Globe2 aria-hidden="true" />
+                              <EyeOff aria-hidden="true" />
                             ) : (
-                              <Lock aria-hidden="true" />
+                              <Globe2 aria-hidden="true" />
                             )}
                           </Button>
                         </IconTooltip>

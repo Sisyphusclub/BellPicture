@@ -5,6 +5,7 @@ import { SelectMenu } from '@/components/ui/select-menu';
 import { Switch } from '@/components/ui/switch';
 import type { AspectChoice } from '@/types/image';
 import { ASPECT_CHOICES, ASPECT_CHOICE_LABELS, MAX_COUNT, MIN_COUNT } from '@/types/image';
+import { DISCOVERY_PUBLISH_LABEL } from '@/utils/imageVisibility';
 
 const ASPECT_OPTIONS = ASPECT_CHOICES.map((value) => ({
   value,
@@ -80,9 +81,13 @@ export function LandingGenerationControls({
       </div>
 
       <label className="landing-public-toggle">
-        <Switch aria-label="公开作品" checked={isPublic} onCheckedChange={onPublicChange} />
+        <Switch
+          aria-label={DISCOVERY_PUBLISH_LABEL}
+          checked={isPublic}
+          onCheckedChange={onPublicChange}
+        />
         <span className="landing-public-toggle__track" aria-hidden="true" />
-        <span>{isPublic ? '公开' : '私有'}</span>
+        <span>{DISCOVERY_PUBLISH_LABEL}</span>
       </label>
 
       {quotaIsAction ? (

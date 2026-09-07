@@ -42,8 +42,7 @@ async function hydrate(): Promise<void> {
     store.set({
       ...store.getSnapshot(),
       isHydrating: false,
-      hydrateError:
-        error instanceof Error ? error : new Error('无法加载公开画廊，请稍后刷新重试。'),
+      hydrateError: error instanceof Error ? error : new Error('无法加载发现页，请稍后刷新重试。'),
     });
   }
 }
@@ -55,6 +54,13 @@ export function addPublicRecord(record: ImageRecord): HistoryEntry | null {
     records: [record, ...state.records.filter((item) => item.id !== record.id)],
   }));
   return { record, imageUrl: buildApiUrl(`/api/outputs/${record.id}`) };
+}
+
+export function removePublicRecord(id: string): void {
+  store.set((state) => ({
+    ...state,
+    records: state.records.filter((record) => record.id !== id),
+  }));
 }
 
 export function usePublicGallery() {
@@ -99,7 +105,7 @@ export function usePublicGallery() {
         ...latest,
         isHydrating: false,
         hydrateError:
-          error instanceof Error ? error : new Error('无法加载更多公开作品，请稍后重试。'),
+          error instanceof Error ? error : new Error('无法加载更多发现页作品，请稍后重试。'),
       }));
     }
   }, []);
