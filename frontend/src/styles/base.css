@@ -1002,6 +1002,14 @@ video {
 .agent-chat-input--error {
   border-color: color-mix(in oklch, var(--destructive) 70%, var(--border));
 }
+.agent-chat-input--dragging {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 22%, transparent);
+  cursor: copy;
+}
+.agent-chat-input--dragging .agent-chat-input__surface {
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--ring) 70%, transparent);
+}
 .agent-chat-input__surface {
   position: relative;
   border-radius: 17px;

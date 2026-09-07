@@ -15,7 +15,14 @@ import {
   WandSparkles,
 } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { type ChangeEvent, type ReactNode, useEffect, useRef, useState } from 'react';
+import {
+  type ChangeEvent,
+  type DragEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import {
   MorphPopover,
@@ -55,6 +62,31 @@ interface OptionMenuProps {
   selectedId: string;
   onSelect: (id: string) => void;
 }
+
+function matchesAcceptedFileType(file: File, acceptedFileTypes: string): boolean {
+  const accepted = acceptedFileTypes
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  if (accepted.length === 0 || accepted.includes('*/*')) return true;
+
+  const type = file.type.toLowerCase();
+  const name = file.name.toLowerCase();
+  return accepted.some((pattern) => {
+    if (pattern.startsWith('.')) return name.endsWith(pattern);
+    if (pattern.endsWith('/*')) return type.startsWith(pattern.slice(0, -1));
+    return type === pattern;
+  });
+}
+
+function hasFileTransfer(dataTransfer: DataTransfer | null | undefined): boolean {
+  if (!dataTransfer) return false;
+  return (
+    Array.from(dataTransfer.types ?? []).some((type) => type.toLowerCase() === 'files') ||
+    dataTransfer.files.length > 0
+  );
+}
+
 function OptionMenu({ label, options, selectedId, onSelect }: OptionMenuProps) {
   if (options.length === 0) return null;
 
@@ -519,6 +551,8 @@ export function AgentChatInput({
   const reduce = useReducedMotion() ?? false;
   const composerRef = useRef<AgentChatComposerHandle>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragDepthRef = useRef(0);
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   const [previewAttachmentId, setPreviewAttachmentId] = useState<string | null>(null);
   const [text, setText] = useControllableString({
     value,
@@ -573,6 +607,13 @@ export function AgentChatInput({
     if (autoFocus) composerRef.current?.focus();
   }, [autoFocus]);
 
+  useEffect(() => {
+    if (!allowFileUpload || disabled) {
+      dragDepthRef.current = 0;
+      setIsDraggingFiles(false);
+    }
+  }, [allowFileUpload, disabled]);
+
   function handleComposerChange(next: ComposerValue) {
     setText(next.text);
     setSelectedSkillIds(next.skillIds);
@@ -596,12 +637,12 @@ export function AgentChatInput({
     if (clearOnSubmit) composerRef.current?.clear();
   }
 
-  function handleFiles(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    if (files.length > 0) {
+  function addFiles(files: readonly File[]) {
+    const acceptedFiles = files.filter((file) => matchesAcceptedFileType(file, acceptedFileTypes));
+    if (acceptedFiles.length > 0) {
       setCurrentAttachments([
         ...currentAttachments,
-        ...files.map((file) => ({
+        ...acceptedFiles.map((file) => ({
           id: `${file.name}-${file.lastModified}-${file.size}-${crypto.randomUUID()}`,
           name: file.name,
           type: file.type,
@@ -610,7 +651,40 @@ export function AgentChatInput({
         })),
       ]);
     }
+  }
+
+  function handleFiles(event: ChangeEvent<HTMLInputElement>) {
+    addFiles(Array.from(event.target.files ?? []));
     event.target.value = '';
+  }
+
+  function handleDragEnter(event: DragEvent<HTMLDivElement>) {
+    if (!allowFileUpload || disabled || !hasFileTransfer(event.dataTransfer)) return;
+    event.preventDefault();
+    dragDepthRef.current += 1;
+    setIsDraggingFiles(true);
+  }
+
+  function handleDragOver(event: DragEvent<HTMLDivElement>) {
+    if (!allowFileUpload || disabled || !hasFileTransfer(event.dataTransfer)) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+    setIsDraggingFiles(true);
+  }
+
+  function handleDragLeave(event: DragEvent<HTMLDivElement>) {
+    if (!allowFileUpload || disabled) return;
+    if (event.dataTransfer && !hasFileTransfer(event.dataTransfer)) return;
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setIsDraggingFiles(false);
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
+    if (!allowFileUpload || disabled || !hasFileTransfer(event.dataTransfer)) return;
+    event.preventDefault();
+    dragDepthRef.current = 0;
+    setIsDraggingFiles(false);
+    addFiles(Array.from(event.dataTransfer.files));
   }
 
   function removeAttachment(id: string) {
@@ -640,6 +714,7 @@ export function AgentChatInput({
       className={cn(
         'agent-chat-input',
         status === 'error' && 'agent-chat-input--error',
+        isDraggingFiles && 'agent-chat-input--dragging',
         className,
         classNames?.root,
       )}
@@ -651,7 +726,14 @@ export function AgentChatInput({
         onRemove={removeQueuedMessage}
       />
 
-      <div className="agent-chat-input__surface">
+      <div
+        className="agent-chat-input__surface"
+        data-dragging={isDraggingFiles ? 'true' : undefined}
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         {streamingPlaceholders.length ? (
           <StreamingPlaceholder
             active={text.length === 0}
@@ -784,6 +866,7 @@ export function AgentChatInput({
         type="file"
         multiple
         hidden
+        disabled={disabled}
         accept={acceptedFileTypes}
         onChange={handleFiles}
       />

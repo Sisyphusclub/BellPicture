@@ -742,6 +742,38 @@ failure become a misleading active button or a raw `PROVIDER_NOT_FOUND` response
 - Binary settings use switches or checkboxes; modes use segmented controls;
   bounded numeric settings use inputs, steppers, or sliders.
 
+### Reference Image Drag/Drop Contract
+
+The shared `AgentChatInput` is the drop target for reference images in Generate and
+Discover. Attach drag handlers to `.agent-chat-input__surface` (not a route wrapper),
+guard them with `allowFileUpload && !disabled`, and set `data-dragging="true"` while a
+file transfer is inside the surface so the component-owned `agent-chat-input--dragging`
+style can provide feedback. `dropEffect` should be `copy`; dropping must reuse the same
+attachment shape and `onAttachmentsChange` callback as the file picker.
+
+```tsx
+<div
+  className="agent-chat-input__surface"
+  data-dragging={isDraggingFiles ? 'true' : undefined}
+  onDragEnter={handleDragEnter}
+  onDragOver={handleDragOver}
+  onDragLeave={handleDragLeave}
+  onDrop={handleDrop}
+>
+  ...
+</div>
+```
+
+Filter dropped and picked files against `acceptedFileTypes` before appending them. Accept
+exact MIME types, wildcard MIME patterns such as `image/*`, and extension patterns; ignore
+non-file drags and rejected files without invoking the change callback. Reset the hidden
+input value after each picker change so selecting the same file again still emits an update.
+Route-level upload hooks remain responsible for count and size limits.
+
+Tests must cover a valid image drop (dragging feedback, callback payload, and file identity),
+an unsupported file drop (no callback), and the Generate route forwarding the dropped file in
+the next generation request.
+
 ## Forbidden Patterns
 
 - Raw visible `<button>`, `<input>`, `<textarea>`, or `<select>` elements outside

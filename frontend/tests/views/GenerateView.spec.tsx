@@ -17,7 +17,10 @@ const authMocks = vi.hoisted(() => ({
   isAdmin: true,
 }));
 
-const publicGalleryMocks = vi.hoisted(() => ({ addPublicRecord: vi.fn() }));
+const publicGalleryMocks = vi.hoisted(() => ({
+  addPublicRecord: vi.fn(),
+  removePublicRecord: vi.fn(),
+}));
 
 const historyMocks = vi.hoisted(() => ({
   batches: [] as Array<{
@@ -284,6 +287,33 @@ it('supports up to four images per generation', async () => {
   await user.click(screen.getByRole('button', { name: '生成图片' }));
   await waitFor(() =>
     expect(generation.generate).toHaveBeenCalledWith(expect.objectContaining({ count: 4 })),
+  );
+});
+
+it('adds a dropped reference image to the next generation', async () => {
+  const user = userEvent.setup();
+  const file = new File(['dropped-image'], 'dropped-reference.png', { type: 'image/png' });
+  const { container } = render(
+    <MemoryRouter initialEntries={['/generate?prompt=拖拽参考图']}>
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+  const surface = container.querySelector('.studio-agent-input .agent-chat-input__surface');
+  expect(surface).toBeInTheDocument();
+
+  fireEvent.drop(surface!, {
+    dataTransfer: { files: [file], types: ['Files'], dropEffect: 'none' },
+  });
+
+  expect(await screen.findByText('dropped-reference.png')).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: '生成图片' }));
+
+  await waitFor(() =>
+    expect(generation.generate).toHaveBeenCalledWith(
+      expect.objectContaining({ referenceFiles: [file] }),
+    ),
   );
 });
 
@@ -682,7 +712,7 @@ it('reveals a completed image only after its load event', async () => {
   expect(screen.queryByRole('button', { name: '查看图片' })).not.toBeInTheDocument();
   expect(within(batch!).getByRole('button', { name: '用作参考图' })).toBeInTheDocument();
   expect(within(batch!).getByRole('button', { name: '下载图片' })).toBeInTheDocument();
-  expect(within(batch!).getByRole('button', { name: '设为私有' })).toBeInTheDocument();
+  expect(within(batch!).getByRole('button', { name: '从发现页移除' })).toBeInTheDocument();
   expect(within(batch!).getByRole('button', { name: '删除图片' })).toBeInTheDocument();
   expect(batch?.querySelector('.session-batch__header .session-batch__actions')).toBeNull();
   expect(preview).toHaveStyle({ aspectRatio: '1792 / 1024' });
@@ -996,7 +1026,7 @@ it('restores supported settings and normalizes legacy high-resolution snapshots 
   expect(screen.getByText('沿用 1 张历史参考图')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: '选择画面比例' })).toHaveTextContent('16:9');
   expect(screen.getByRole('status', { name: '2 张' })).toBeInTheDocument();
-  expect(screen.getByRole('switch', { name: '私有模式' })).not.toBeChecked();
+  expect(screen.getByRole('switch', { name: '发布到发现页' })).toBeChecked();
 });
 
 it('confirms single-image deletion with the beUI modal and supports cancel', async () => {
