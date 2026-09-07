@@ -59,6 +59,24 @@ const entries: HistoryEntry[] = [
   },
 ];
 
+const portraitEntry: HistoryEntry = {
+  record: {
+    id: 'image-three.png',
+    batchId: 'batch-three',
+    createdAt: '2026-07-28T08:00:00.000Z',
+    prompt: '纵向建筑',
+    model: 'gpt-image-2',
+    aspectRatio: '9:16',
+    width: 1024,
+    height: 1792,
+    count: 1,
+    resolution: 'standard',
+    isPublic: false,
+    isFavorite: false,
+  },
+  imageUrl: '/image-three.png',
+};
+
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => authMocks,
 }));
@@ -219,6 +237,31 @@ describe('HistoryView asset workflows', () => {
     expect(screen.getByText('森林建筑')).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: '可见性' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '公开' })).toBeInTheDocument();
+  });
+
+  it('opens square, landscape, and portrait assets with their source framing', async () => {
+    historyMocks.entries = [...entries, portraitEntry];
+    const user = userEvent.setup();
+    renderView();
+
+    for (const [prompt, ratio, width, height] of [
+      ['雨夜城市', '1024 / 1024', '1024', '1024'],
+      ['森林建筑', '1792 / 1024', '1792', '1024'],
+      ['纵向建筑', '1024 / 1792', '1024', '1792'],
+    ] as const) {
+      await user.click(screen.getByRole('button', { name: `查看图片：${prompt}` }));
+
+      const dialog = screen.getByRole('dialog', { name: '图片详情' });
+      const media = dialog.querySelector<HTMLElement>('.image-detail__media');
+      expect(dialog).toHaveStyle(`--image-detail-image-ratio: ${ratio}`);
+      expect(media?.querySelector('img')).toHaveAttribute('width', width);
+      expect(media?.querySelector('img')).toHaveAttribute('height', height);
+
+      await user.click(within(dialog).getByRole('button', { name: '关闭图片详情' }));
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog', { name: '图片详情' })).not.toBeInTheDocument();
+      });
+    }
   });
 
   it('persists favorite changes and bulk collection assignment', async () => {

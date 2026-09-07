@@ -552,26 +552,36 @@ describe('React application routes', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
   });
 
-  it('opens a vertical gallery image without entering a modal state loop', async () => {
+  it('opens discover images with square, landscape, and portrait detail framing', async () => {
     const user = userEvent.setup();
     const { container } = renderRoute('/');
-    const creationCard = container.querySelector<HTMLButtonElement>(
+    const creationCards = container.querySelectorAll<HTMLButtonElement>(
       '.image-gallery-vertical__image-button',
     );
+    expect(creationCards.length).toBeGreaterThanOrEqual(4);
 
-    expect(creationCard).not.toBeNull();
-    await user.click(creationCard!);
+    for (const [index, ratio, width, height] of [
+      [0, '1024 / 1536', '1024', '1536'],
+      [1, '1536 / 1024', '1536', '1024'],
+      [3, '1024 / 1024', '1024', '1024'],
+    ] as const) {
+      await user.click(creationCards[index]!);
 
-    const dialog = screen.getByRole('dialog', { name: '图片详情' });
-    expect(dialog).toBeInTheDocument();
-    expect(dialog.querySelector(':scope > .image-detail__close')).toBeInTheDocument();
-    const media = dialog.querySelector<HTMLElement>(':scope > .image-detail__media');
-    expect(media).toBeInTheDocument();
-    expect(dialog).toHaveStyle('--image-detail-image-ratio: 1024 / 1536');
-    expect(media?.querySelector('img')).toHaveAttribute('width', '1024');
-    expect(media?.querySelector('img')).toHaveAttribute('height', '1536');
-    expect(dialog.querySelector(':scope > .image-detail__body')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '关闭图片详情' })).toBeInTheDocument();
+      const dialog = screen.getByRole('dialog', { name: '图片详情' });
+      expect(dialog).toBeInTheDocument();
+      expect(dialog.querySelector(':scope > .image-detail__close')).toBeInTheDocument();
+      const media = dialog.querySelector<HTMLElement>(':scope > .image-detail__media');
+      expect(media).toBeInTheDocument();
+      expect(dialog).toHaveStyle(`--image-detail-image-ratio: ${ratio}`);
+      expect(media?.querySelector('img')).toHaveAttribute('width', width);
+      expect(media?.querySelector('img')).toHaveAttribute('height', height);
+      expect(dialog.querySelector(':scope > .image-detail__body')).toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: '关闭图片详情' }));
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog', { name: '图片详情' })).not.toBeInTheDocument();
+      });
+    }
   });
 
   it('keeps the generation route and its operational controls', () => {
