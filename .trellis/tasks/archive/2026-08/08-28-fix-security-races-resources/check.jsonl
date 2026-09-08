@@ -1,6 +1,0 @@
-{"file":".trellis/spec/backend/quality-guidelines.md","reason":"核对后端 lint、类型、测试和边界覆盖"}
-{"file":".trellis/spec/backend/error-handling.md","reason":"核对取消和存储错误映射"}
-{"file":".trellis/spec/backend/database-guidelines.md","reason":"核对事务、迁移和索引"}
-{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"核对账号切换迟到响应防护"}
-{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"核对前端回归测试"}
-{"file":".trellis/tasks/08-28-fix-security-races-resources/prd.md","reason":"逐项检查验收标准"}

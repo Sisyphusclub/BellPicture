@@ -1,2 +1,0 @@
-{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"执行前端 typecheck、lint、test、build、format 和视觉检查"}
-{"file":".trellis/spec/frontend/component-guidelines.md","reason":"复核 caret 状态与输入交互契约"}

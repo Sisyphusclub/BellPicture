@@ -24,12 +24,5 @@ coverage/
 # Project-local tools
 .ace-tool/
 
-# Trellis runtime (per-machine session/identity state)
-.trellis/.developer
-.trellis/.runtime/
-
-# Claude Code per-machine permissions
-.claude/settings.local.json
-
 # Orphan asset (not part of project)
 9bcf5924-9466-454b-acb3-e96822890fd8.png

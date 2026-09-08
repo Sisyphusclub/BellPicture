@@ -1,8 +1,0 @@
-{"file":".trellis/tasks/09-08-sub2api-user-image-key/research/sub2api-integration.md","reason":"sub2api 模型列表、分组 Key 与现有 Provider 的本地接口边界。"}
-{"file":".trellis/spec/backend/user-image-api-key.md","reason":"个人 Key 的加密、验证、请求级路由和额度契约。"}
-{"file":".trellis/spec/backend/database-guidelines.md","reason":"Drizzle 新表、级联删除和服务归属约束。"}
-{"file":".trellis/spec/backend/error-handling.md","reason":"个人 Key 验证与调用失败的稳定错误码。"}
-{"file":".trellis/spec/backend/logging-guidelines.md","reason":"主密钥、请求级凭据和密文的日志脱敏边界。"}
-{"file":".trellis/spec/frontend/image-api-key-settings.md","reason":"设置 API、账户隔离状态和弹窗交互契约。"}
-{"file":".trellis/spec/frontend/component-guidelines.md","reason":"对话框、图标按钮、响应式布局与无障碍约束。"}
-{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"账户归属外部缓存和异步竞态防护模式。"}
