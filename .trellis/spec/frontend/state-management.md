@@ -97,6 +97,10 @@ make existing server records unreachable from the generation workspace.
 - On a bare `/generate`, wait for `useImageHistory().isHydrated` before deciding
   that no restorable history exists. Explicit `session`, prompt handoff, and
   automatic-generation routes take precedence and must not be replaced.
+- Scope the bare-route recovery guard to one authenticated lifecycle. An
+  unauthenticated render clears the guard so logging back into the same account
+  can wait for fresh history hydration and restore again without remounting the
+  route.
 - Validate cached session batch ids against the current account's hydrated
   history. A remembered failed transient task may restore without a server
   record; an unrelated account's cached batch must not.
@@ -106,7 +110,8 @@ make existing server records unreachable from the generation workspace.
   recovered id.
 
 Route tests must cover cross-tab persistence, legacy storage migration, complete
-browser-index loss with server recovery, and account isolation.
+browser-index loss with server recovery, same-account logout/login recovery, and
+account isolation.
 
 ## Concurrency
 

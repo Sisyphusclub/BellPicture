@@ -22,6 +22,28 @@ const historyMocks = vi.hoisted(() => ({
   batches: [] as unknown[],
 }));
 
+const authMocks = vi.hoisted(
+  (): {
+    user: {
+      id: string;
+      email: string;
+      username: string;
+      isAdmin: boolean;
+    } | null;
+    isAuthenticated: boolean;
+    isLoading: boolean;
+  } => ({
+    user: {
+      id: 'admin',
+      email: 'admin@example.com',
+      username: 'admin',
+      isAdmin: true,
+    },
+    isAuthenticated: true,
+    isLoading: false,
+  }),
+);
+
 const publicGalleryMocks = vi.hoisted(() => ({
   hasMore: false,
   isHydrating: false,
@@ -31,9 +53,9 @@ const publicGalleryMocks = vi.hoisted(() => ({
 
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
-    user: { id: 'admin', email: 'admin@example.com', username: 'admin', isAdmin: true },
-    isAuthenticated: true,
-    isLoading: false,
+    user: authMocks.user,
+    isAuthenticated: authMocks.isAuthenticated,
+    isLoading: authMocks.isLoading,
     isAdmin: true,
     refreshProfile: vi.fn(),
     signInWithGoogle: vi.fn(),
@@ -179,19 +201,31 @@ function mockHistoryBatch(batchId: string, prompt: string) {
 }
 
 function renderRoute(entry: TestRouteEntry) {
-  return render(
+  return render(<RouteFixture entry={entry} />);
+}
+
+function RouteFixture({ entry }: { entry: TestRouteEntry }) {
+  return (
     <MemoryRouter initialEntries={[entry]}>
       <LocationProbe />
       <ToastProvider>
         <App />
       </ToastProvider>
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
   resetGenerationSessionsForTests();
+  authMocks.user = {
+    id: 'admin',
+    email: 'admin@example.com',
+    username: 'admin',
+    isAdmin: true,
+  };
+  authMocks.isAuthenticated = true;
+  authMocks.isLoading = false;
   historyMocks.batches = [];
   publicGalleryMocks.hasMore = false;
   publicGalleryMocks.isHydrating = false;
@@ -764,6 +798,36 @@ describe('React application routes', () => {
       window.localStorage.getItem('nebulens-generation-sessions-v1') ?? '[]',
     ) as Array<{ batchIds?: string[] }>;
     expect(stored[0]?.batchIds).toEqual(['server-history-batch']);
+  });
+
+  it('restores server history after the same account logs out and back in', async () => {
+    const view = renderRoute('/generate');
+    expect(
+      await screen.findByRole('region', { name: '图像生成工作区' }, { timeout: 3000 }),
+    ).toBeVisible();
+
+    act(() => {
+      authMocks.user = null;
+      authMocks.isAuthenticated = false;
+    });
+    view.rerender(<RouteFixture entry="/generate" />);
+
+    act(() => {
+      authMocks.user = {
+        id: 'admin',
+        email: 'admin@example.com',
+        username: 'admin',
+        isAdmin: true,
+      };
+      authMocks.isAuthenticated = true;
+      historyMocks.batches = [mockHistoryBatch('relogin-batch', '重新登录后的历史')];
+    });
+    view.rerender(<RouteFixture entry="/generate" />);
+
+    expect(await screen.findByRole('button', { name: '查看图片：重新登录后的历史' })).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getByLabelText('当前路由').textContent).toMatch(/^\/generate\?session=/),
+    );
   });
 
   it('does not replace a prompt handoff with a remembered session', () => {

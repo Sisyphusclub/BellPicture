@@ -39,6 +39,27 @@ beforeEach(() => {
 });
 
 describe('useImageHistory', () => {
+  it('hydrates the same account again after logout and login', async () => {
+    api.fetchHistory
+      .mockResolvedValueOnce([record('before-logout.png')])
+      .mockResolvedValueOnce([record('after-relogin.png')]);
+    const { result, rerender } = renderHook(() => useImageHistory());
+
+    await waitFor(() => expect(result.current.records[0]?.id).toBe('before-logout.png'));
+
+    auth.userId = null;
+    rerender();
+    expect(result.current.records).toEqual([]);
+    expect(result.current.isHydrated).toBe(false);
+
+    auth.userId = 'user-a';
+    rerender();
+
+    await waitFor(() => expect(api.fetchHistory).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(result.current.records[0]?.id).toBe('after-relogin.png'));
+    expect(result.current.isHydrated).toBe(true);
+  });
+
   it('discards a previous account response that arrives after the next account', async () => {
     let resolveA!: (value: ReturnType<typeof record>[]) => void;
     let resolveB!: (value: ReturnType<typeof record>[]) => void;

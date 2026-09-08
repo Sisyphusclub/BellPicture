@@ -910,12 +910,16 @@ export function GenerateView() {
   ]);
 
   useEffect(() => {
-    if (authLoading || bareRouteRestoreHandled.current) return;
+    if (authLoading) return;
+    if (currentUserId === null) {
+      bareRouteRestoreHandled.current = false;
+      return;
+    }
+    if (bareRouteRestoreHandled.current) return;
     if (
       activeSessionId ||
       searchParams.toString() !== '' ||
-      requestsAutoGeneration(location.state) ||
-      currentUserId === null
+      requestsAutoGeneration(location.state)
     ) {
       bareRouteRestoreHandled.current = true;
       return;
