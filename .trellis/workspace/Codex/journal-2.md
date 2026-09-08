@@ -223,3 +223,35 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 65: 支持用户配置 sub2api 生图分组 Key
+
+**Date**: 2026-09-08
+**Task**: 支持用户配置 sub2api 生图分组 Key
+
+### Summary
+
+完成个人 Key 加密存储、sub2api 模型验证、请求级凭据与额度路由、响应式设置界面及全链路验证。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c3148b3` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
