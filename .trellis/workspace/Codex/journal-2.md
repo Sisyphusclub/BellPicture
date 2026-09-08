@@ -255,3 +255,35 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 66: 修复重新登录后的生图历史恢复
+
+**Date**: 2026-09-08
+**Task**: 修复重新登录后的生图历史恢复
+
+### Summary
+
+重置裸生图路由的认证周期恢复门闩，补充同账号退出重登与历史重新水合回归，并重新部署前端容器。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `74c4933` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

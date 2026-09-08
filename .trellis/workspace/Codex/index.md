@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 65
+- **Total Sessions**: 66
 - **Last Active**: 2026-09-08
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~257 | Active |
+| `journal-2.md` | ~289 | Active |
 | `journal-1.md` | ~1974 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 66 | 2026-09-08 | 修复重新登录后的生图历史恢复 | `74c4933` | `-` |
 | 65 | 2026-09-08 | 支持用户配置 sub2api 生图分组 Key | `c3148b3` | `-` |
 | 64 | 2026-09-07 | 完成可见范围与参考图拖拽 | `4c09261`, `ceb9347` | `-` |
 | 63 | 2026-09-07 | 统一发现页与资产页图片详情比例 | `cbc9de8` | `-` |
