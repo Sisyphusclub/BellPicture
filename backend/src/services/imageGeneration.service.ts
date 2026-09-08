@@ -37,6 +37,7 @@ export interface GenerateImageInput {
   userId?: string;
   requestId?: string;
   signal?: AbortSignal;
+  providerCredential?: string;
 }
 
 export interface GenerateImageItemOutput {
@@ -141,6 +142,9 @@ export async function generateImage(
       aspectRatio,
       ...(input.requestId !== undefined ? { requestId: input.requestId } : {}),
       ...(input.signal !== undefined ? { signal: input.signal } : {}),
+      ...(input.providerCredential !== undefined
+        ? { providerCredential: input.providerCredential }
+        : {}),
       ...(input.resolution !== undefined ? { resolution } : {}),
       ...(referencePaths.length > 0 ? { referencePaths } : {}),
       ...(input.model !== undefined ? { model: input.model } : {}),

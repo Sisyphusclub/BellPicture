@@ -22,6 +22,16 @@ const publicGalleryMocks = vi.hoisted(() => ({
   removePublicRecord: vi.fn(),
 }));
 
+const imageApiKeyMocks = vi.hoisted(
+  (): {
+    status: { configured: boolean; keySuffix?: string };
+    isLoading: boolean;
+  } => ({
+    status: { configured: false },
+    isLoading: false,
+  }),
+);
+
 const historyMocks = vi.hoisted(() => ({
   batches: [] as Array<{
     batchId: string;
@@ -69,6 +79,18 @@ vi.mock('@/hooks/useImageQuota', () => ({
     isLoading: false,
     refresh: vi.fn(),
     checkIn: vi.fn(),
+  }),
+}));
+
+vi.mock('@/hooks/useImageApiKey', () => ({
+  useImageApiKey: () => ({
+    status: imageApiKeyMocks.status,
+    isLoading: imageApiKeyMocks.isLoading,
+    isMutating: false,
+    error: null,
+    refresh: vi.fn(),
+    save: vi.fn(),
+    remove: vi.fn(),
   }),
 }));
 
@@ -126,6 +148,8 @@ beforeEach(() => {
   historyMocks.batches = [];
   generation.error = null;
   generation.isLoading = false;
+  imageApiKeyMocks.status = { configured: false };
+  imageApiKeyMocks.isLoading = false;
   generation.generate.mockResolvedValue({
     batchId: 'batch-one',
     aspectRatio: '16:9',
@@ -152,6 +176,20 @@ beforeEach(() => {
       },
     ],
   });
+});
+
+it('shows personal Key routing instead of site quota when configured', () => {
+  imageApiKeyMocks.status = { configured: true, keySuffix: '4321' };
+  render(
+    <MemoryRouter initialEntries={['/generate']}>
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+
+  expect(screen.getByLabelText('当前使用个人 API Key')).toHaveTextContent('调用：个人 Key · 4321');
+  expect(screen.queryByLabelText('今日生成额度')).not.toBeInTheDocument();
 });
 
 it('keeps the generation workspace prompt plain and focused', () => {

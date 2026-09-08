@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { expect, it, vi } from 'vitest';
@@ -19,10 +19,12 @@ function renderActions({
   accountImage = null,
   isAuthenticated,
   onLogin = vi.fn(),
+  onOpenImageApiKeySettings = vi.fn(),
 }: {
   accountImage?: string | null;
   isAuthenticated: boolean;
   onLogin?: () => void;
+  onOpenImageApiKeySettings?: () => void;
 }) {
   render(
     <MemoryRouter>
@@ -33,9 +35,12 @@ function renderActions({
         creditsRemaining={10}
         dailyCheckInReward={5}
         isAuthenticated={isAuthenticated}
+        imageApiKeyConfigured={true}
+        imageApiKeySuffix="4321"
         onCheckIn={onCheckIn}
         onLogin={onLogin}
         onLogout={vi.fn(() => Promise.resolve())}
+        onOpenImageApiKeySettings={onOpenImageApiKeySettings}
         onNotify={vi.fn()}
       />
     </MemoryRouter>,
@@ -53,6 +58,20 @@ it('opens authentication directly from an explicit login button', async () => {
 
   await user.click(login);
   expect(onLogin).toHaveBeenCalledOnce();
+});
+
+it('opens personal image API Key settings from the profile menu', async () => {
+  const user = userEvent.setup();
+  const onOpenImageApiKeySettings = vi.fn();
+  renderActions({ isAuthenticated: true, onOpenImageApiKeySettings });
+
+  await user.click(screen.getByRole('button', { name: '账户：Blur' }));
+  const menu = screen.getByRole('menu');
+  expect(within(menu).getByText('尾号 4321')).toBeInTheDocument();
+  await user.click(within(menu).getByRole('button', { name: /生图 API Key/ }));
+
+  expect(onOpenImageApiKeySettings).toHaveBeenCalledOnce();
+  await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
 });
 
 it('uses the profile image for the authenticated account trigger and menu', async () => {

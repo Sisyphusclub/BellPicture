@@ -45,6 +45,7 @@ describe('config/env', () => {
     expect(env.IMAGE_API_BASE_URL).toBe('https://api.example.com');
     expect(env.HIGH_RES_IMAGE_API_BASE_URL).toBeUndefined();
     expect(env.IMAGE_API_KEY).toBe('sk-test');
+    expect(env.USER_API_KEY_ENCRYPTION_KEY).toBe(Buffer.alloc(32, 7).toString('base64'));
     expect(env.HIGH_RES_IMAGE_API_KEY).toBeUndefined();
     expect(env.OPENAI_COMPAT_API_KEY).toBe('compat-test');
     expect(env.IMAGE_MODEL).toBe('gpt-image-2');
@@ -161,6 +162,18 @@ describe('config/env', () => {
     delete process.env.OPENAI_COMPAT_API_KEY;
 
     await expect(import('../../src/config/env.js')).rejects.toThrow(/OPENAI_COMPAT_API_KEY/);
+  });
+
+  it('requires a canonical base64-encoded 32-byte user API key encryption key', async () => {
+    process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
+    process.env.IMAGE_API_KEY = 'sk-test';
+    process.env.OPENAI_COMPAT_API_KEY = 'compat-test';
+    process.env.BETTER_AUTH_SECRET = 'test-secret-padding';
+    process.env.USER_API_KEY_ENCRYPTION_KEY = 'not-a-32-byte-key';
+
+    await expect(import('../../src/config/env.js')).rejects.toThrow(
+      /USER_API_KEY_ENCRYPTION_KEY.*base64-encoded 32-byte key/,
+    );
   });
 
   it('reads SEED_DEFAULT_ADMIN only when explicitly true', async () => {

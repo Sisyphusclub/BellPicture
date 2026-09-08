@@ -71,6 +71,13 @@
       "when": 1788255104080,
       "tag": "0009_better-auth-account-issuer",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1788833079250,
+      "tag": "0010_flawless_ogun",
+      "breakpoints": true
     }
   ]
 }

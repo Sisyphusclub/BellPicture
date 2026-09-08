@@ -7,6 +7,7 @@ import { GenerationSubmitCost } from '@/components/generation/GenerationSubmitCo
 import { LandingSidebar } from '@/components/landing/LandingSidebar';
 import { LandingGenerationControls } from '@/components/landing/LandingGenerationControls';
 import { LandingAccountActions } from '@/components/landing/LandingAccountActions';
+import { ImageApiKeySettingsDialog } from '@/components/settings/ImageApiKeySettingsDialog';
 import { useToast } from '@/components/common/ToastProvider';
 import { AgentChatInput } from '@/components/premium/agent-chat-input/agent-chat-input';
 import type { AgentChatAttachment } from '@/components/premium/agent-chat-input/types';
@@ -18,6 +19,7 @@ import { IMAGE_PROMPT_EXAMPLES } from '@/data/imagePromptExamples';
 import { useAuth } from '@/hooks/useAuth';
 import { openAuthModal } from '@/hooks/useAuthModal';
 import { useImageQuota } from '@/hooks/useImageQuota';
+import { useImageApiKey } from '@/hooks/useImageApiKey';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { usePublicGallery } from '@/hooks/usePublicGallery';
 import { getAppNavigation } from '@/config/navigation';
@@ -140,6 +142,7 @@ export function LandingView() {
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading: authLoading, isAdmin, logout } = useAuth();
   const { quota, isLoading: quotaLoading, checkIn } = useImageQuota();
+  const imageApiKey = useImageApiKey();
   const { notify } = useToast();
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const {
@@ -158,6 +161,7 @@ export function LandingView() {
   const [count, setCount] = useState(DEFAULT_COUNT);
   const [isPublic, setIsPublic] = useState(false);
   const [selected, setSelected] = useState<HistoryEntry | null>(null);
+  const [imageApiKeySettingsOpen, setImageApiKeySettingsOpen] = useState(false);
   const [composerDocked, setComposerDocked] = useState(false);
   const [composerExpanded, setComposerExpanded] = useState(false);
   const composerHasContent = prompt.trim().length > 0 || attachments.length > 0;
@@ -241,17 +245,26 @@ export function LandingView() {
     }
   };
   const accountName = user?.username ?? user?.name ?? '账户';
-  const quotaPending = authLoading || (isAuthenticated && quotaLoading);
-  const quotaLabel = quotaPending
-    ? '额度同步中'
-    : isAuthenticated
-      ? `额度 ${quota?.remaining ?? '—'}/${quota?.total ?? '—'}`
-      : '登录查额度';
-  const quotaAriaLabel = quotaPending
-    ? '生成额度同步中'
-    : isAuthenticated
-      ? `剩余额度 ${quota?.remaining ?? '未知'}，总额度 ${quota?.total ?? '未知'}`
-      : '登录后查看生成额度';
+  const providerPending = authLoading || (isAuthenticated && imageApiKey.isLoading);
+  const quotaPending = isAuthenticated && quotaLoading;
+  const quotaLabel = providerPending
+    ? '调用方式同步中'
+    : imageApiKey.status?.configured === true
+      ? '个人 Key'
+      : quotaPending
+        ? '额度同步中'
+        : isAuthenticated
+          ? `额度 ${quota?.remaining ?? '—'}/${quota?.total ?? '—'}`
+          : '登录查额度';
+  const quotaAriaLabel = providerPending
+    ? '生图调用方式同步中'
+    : imageApiKey.status?.configured === true
+      ? '当前使用个人 API Key'
+      : quotaPending
+        ? '生成额度同步中'
+        : isAuthenticated
+          ? `剩余额度 ${quota?.remaining ?? '未知'}，总额度 ${quota?.total ?? '未知'}`
+          : '登录后查看生成额度';
   const updateAttachments = (next: AgentChatAttachment[]): void => {
     if (next.length > MAX_REFERENCE_IMAGES) {
       notify(
@@ -319,10 +332,12 @@ export function LandingView() {
           checkedInToday={quota?.checkedInToday ?? false}
           dailyCheckInReward={quota?.dailyCheckInReward ?? 5}
           isAuthenticated={isAuthenticated}
+          imageApiKeyConfigured={imageApiKey.status?.configured === true}
           items={getAppNavigation(isAdmin)}
           logoSrc="/brand/logo.png"
           onCheckIn={checkIn}
           onLogin={openAuthModal}
+          onOpenImageApiKeySettings={() => setImageApiKeySettingsOpen(true)}
           onNotify={notify}
         />
         <LandingAccountActions
@@ -332,10 +347,17 @@ export function LandingView() {
           creditsRemaining={quota?.remaining ?? '—'}
           dailyCheckInReward={quota?.dailyCheckInReward ?? 5}
           isAuthenticated={isAuthenticated}
+          imageApiKeyConfigured={imageApiKey.status?.configured === true}
+          imageApiKeySuffix={imageApiKey.status?.keySuffix}
           onCheckIn={checkIn}
           onLogin={openAuthModal}
           onLogout={logout}
+          onOpenImageApiKeySettings={() => setImageApiKeySettingsOpen(true)}
           onNotify={notify}
+        />
+        <ImageApiKeySettingsDialog
+          open={imageApiKeySettingsOpen}
+          onClose={() => setImageApiKeySettingsOpen(false)}
         />
         <div className="landing-hero__content">
           <h1 id="landing-title" aria-label="Turn your idea into images">

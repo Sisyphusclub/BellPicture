@@ -20,6 +20,7 @@ This directory contains guidelines for backend development. Fill in each file wi
 | [Deployment Readiness](./deployment-readiness.md) | Health probes, proxy trust, Compose exposure, and CI contracts | Verified (task 09-01) |
 | [Quality Guidelines](./quality-guidelines.md)     | TS strict, ESLint, Vitest, pre-commit, review checklist        | Verified (task 05-09) |
 | [Logging Guidelines](./logging-guidelines.md)     | pino singleton, log levels, redact rules                       | Verified (task 05-09) |
+| [User Image API Key](./user-image-api-key.md)     | Encrypted sub2api credentials, validation, routing, and quota  | Verified (task 09-08) |
 
 > **Status note**: "Verified" guides have been reconciled against
 > `backend/src/` after the named task — code and spec match. "Planning

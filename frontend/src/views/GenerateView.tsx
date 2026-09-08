@@ -26,6 +26,7 @@ import { ImageGenerationPlaceholder } from '@/components/generation/ImageGenerat
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
 import { LandingAccountActions } from '@/components/landing/LandingAccountActions';
 import { LandingSidebar } from '@/components/landing/LandingSidebar';
+import { ImageApiKeySettingsDialog } from '@/components/settings/ImageApiKeySettingsDialog';
 import { AgentChatInput } from '@/components/premium/agent-chat-input/agent-chat-input';
 import type { AgentChatAttachment } from '@/components/premium/agent-chat-input/types';
 import { MorphicCard } from '@/components/premium/morphic-card-modal';
@@ -52,6 +53,7 @@ import {
   type PersistedGenerationTask,
 } from '@/hooks/useGenerationSessions';
 import { useImageGeneration } from '@/hooks/useImageGeneration';
+import { useImageApiKey } from '@/hooks/useImageApiKey';
 import { useImageHistory } from '@/hooks/useImageHistory';
 import type { GroupedBatch } from '@/hooks/useImageHistory';
 import { useImageQuota } from '@/hooks/useImageQuota';
@@ -437,6 +439,7 @@ export function GenerateView() {
   const history = useImageHistory();
   const { sessions, create: createSession } = useGenerationSessions();
   const { quota, isLoading: quotaLoading, refresh: refreshQuota, checkIn } = useImageQuota();
+  const imageApiKey = useImageApiKey();
   const upload = useFileUpload();
   const { clear: clearUpload, selectFiles: selectUploadFiles } = upload;
   const generation = useImageGeneration();
@@ -467,6 +470,7 @@ export function GenerateView() {
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [mutatingId, setMutatingId] = useState<string | null>(null);
+  const [imageApiKeySettingsOpen, setImageApiKeySettingsOpen] = useState(false);
   const activeSessionId = searchParams.get('session');
   const previousSessionId = useRef<string | null>(activeSessionId);
   const accountName = user?.username ?? user?.name ?? '账户';
@@ -1145,10 +1149,12 @@ export function GenerateView() {
         checkedInToday={quota?.checkedInToday ?? false}
         dailyCheckInReward={quota?.dailyCheckInReward ?? 5}
         isAuthenticated={isAuthenticated}
+        imageApiKeyConfigured={imageApiKey.status?.configured === true}
         items={getAppNavigation(isAdmin)}
         logoSrc="/brand/logo.png"
         onCheckIn={checkIn}
         onLogin={openAuthModal}
+        onOpenImageApiKeySettings={() => setImageApiKeySettingsOpen(true)}
         onNotify={notify}
       />
       <LandingAccountActions
@@ -1158,10 +1164,17 @@ export function GenerateView() {
         creditsRemaining={quota?.remaining ?? '—'}
         dailyCheckInReward={quota?.dailyCheckInReward ?? 5}
         isAuthenticated={isAuthenticated}
+        imageApiKeyConfigured={imageApiKey.status?.configured === true}
+        imageApiKeySuffix={imageApiKey.status?.keySuffix}
         onCheckIn={checkIn}
         onLogin={openAuthModal}
         onLogout={logout}
+        onOpenImageApiKeySettings={() => setImageApiKeySettingsOpen(true)}
         onNotify={notify}
+      />
+      <ImageApiKeySettingsDialog
+        open={imageApiKeySettingsOpen}
+        onClose={() => setImageApiKeySettingsOpen(false)}
       />
       <GenerationHistoryFlyout
         batches={generationHistoryBatches}
@@ -1296,12 +1309,23 @@ export function GenerateView() {
                   />
                   {generation.isLoading ? generation.statusMessage : '准备生成'}
                 </span>
-                <span className="studio-toolbar-quota" aria-label="今日生成额度">
-                  {quotaLoading
-                    ? '额度：同步中'
-                    : isAuthenticated
-                      ? `额度：${quota?.remaining ?? '—'} / ${quota?.total ?? '—'}`
-                      : '额度：登录后查看'}
+                <span
+                  className="studio-toolbar-quota"
+                  aria-label={
+                    imageApiKey.status?.configured === true
+                      ? '当前使用个人 API Key'
+                      : '今日生成额度'
+                  }
+                >
+                  {imageApiKey.isLoading
+                    ? '调用：同步中'
+                    : imageApiKey.status?.configured === true
+                      ? `调用：个人 Key · ${imageApiKey.status.keySuffix ?? '已配置'}`
+                      : quotaLoading
+                        ? '额度：同步中'
+                        : isAuthenticated
+                          ? `额度：${quota?.remaining ?? '—'} / ${quota?.total ?? '—'}`
+                          : '额度：登录后查看'}
                 </span>
               </span>
             </div>

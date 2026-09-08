@@ -16,13 +16,19 @@ import { buildImagesRouter } from './routes/images.js';
 import { mediaRouter } from './routes/media.js';
 import { buildOpenAICompatRouter } from './routes/openaiCompat.js';
 import { buildOutputsRouter } from './routes/outputs.js';
+import { buildUserSettingsRouter } from './routes/userSettings.js';
 import type { DemoPromptCacheConfig } from './services/demoPromptCache.service.js';
 import type { ImageGenerationProvider } from './services/providers/ImageGenerationProvider.js';
+import {
+  createUserImageApiKeyService,
+  type UserImageApiKeyService,
+} from './services/userImageApiKey.service.js';
 import { createUserQuotaService, type UserQuotaService } from './services/userQuota.service.js';
 
 export interface AppDeps {
   provider: ImageGenerationProvider;
   userQuota?: UserQuotaService;
+  userImageApiKeys?: UserImageApiKeyService;
   /** Override the auth middleware. Tests can inject a stub that attaches `req.user` synchronously. */
   authMiddleware?: RequestHandler;
   /** Override the admin middleware. Tests can inject allow/deny behavior after auth. */
@@ -67,6 +73,7 @@ export function createApp(deps: AppDeps): Express {
   app.use(express.json({ limit: '1mb' }));
 
   const userQuota = deps.userQuota ?? createUserQuotaService();
+  const userImageApiKeys = deps.userImageApiKeys ?? createUserImageApiKeyService();
 
   app.use(
     '/v1',
@@ -79,6 +86,15 @@ export function createApp(deps: AppDeps): Express {
   app.use('/api', healthRouter);
   app.use('/api/media', mediaRouter);
   app.use(
+    '/api/settings',
+    buildUserSettingsRouter({
+      provider: deps.provider,
+      userImageApiKeys,
+      mutationRateLimiter: rateLimiters.settingsMutation,
+      ...(deps.authMiddleware !== undefined ? { authMiddleware: deps.authMiddleware } : {}),
+    }),
+  );
+  app.use(
     '/api/admin',
     buildAdminUsersRouter({
       ...(deps.authMiddleware !== undefined ? { authMiddleware: deps.authMiddleware } : {}),
@@ -90,6 +106,7 @@ export function createApp(deps: AppDeps): Express {
     buildImagesRouter({
       provider: deps.provider,
       userQuota,
+      userImageApiKeys,
       ...(deps.authMiddleware !== undefined ? { authMiddleware: deps.authMiddleware } : {}),
       ...(deps.demoGenerationDelayMs !== undefined
         ? { demoGenerationDelayMs: deps.demoGenerationDelayMs }

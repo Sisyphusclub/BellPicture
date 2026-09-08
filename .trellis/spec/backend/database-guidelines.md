@@ -73,16 +73,17 @@ file.
 
 ## Table ownership
 
-| Table               | Schema lives in    | Mutation path                                                                                              |
-| ------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `user`              | `src/db/schema.ts` | Better Auth only; username wrapper routes and seed service must mutate through `auth.handler` / `auth.api` |
-| `session`           | `src/db/schema.ts` | only Better Auth                                                                                           |
-| `account`           | `src/db/schema.ts` | only Better Auth                                                                                           |
-| `verification`      | `src/db/schema.ts` | only Better Auth                                                                                           |
-| `user_quota`        | `src/db/schema.ts` | `services/userQuota.service.ts` only                                                                       |
-| `quota_grants`      | `src/db/schema.ts` | `services/userQuota.service.ts` only                                                                       |
-| `reference_uploads` | `src/db/schema.ts` | `services/referenceUpload.service.ts` only (insert from authenticated upload, read before generation)      |
-| `image_records`     | `src/db/schema.ts` | `services/history.service.ts` only (insert from images.controller, list/delete from history.controller)    |
+| Table                 | Schema lives in    | Mutation path                                                                                              |
+| --------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `user`                | `src/db/schema.ts` | Better Auth only; username wrapper routes and seed service must mutate through `auth.handler` / `auth.api` |
+| `session`             | `src/db/schema.ts` | only Better Auth                                                                                           |
+| `account`             | `src/db/schema.ts` | only Better Auth                                                                                           |
+| `verification`        | `src/db/schema.ts` | only Better Auth                                                                                           |
+| `user_quota`          | `src/db/schema.ts` | `services/userQuota.service.ts` only                                                                       |
+| `quota_grants`        | `src/db/schema.ts` | `services/userQuota.service.ts` only                                                                       |
+| `reference_uploads`   | `src/db/schema.ts` | `services/referenceUpload.service.ts` only (insert from authenticated upload, read before generation)      |
+| `image_records`       | `src/db/schema.ts` | `services/history.service.ts` only (insert from images.controller, list/delete from history.controller)    |
+| `user_image_api_keys` | `src/db/schema.ts` | `services/userImageApiKey.service.ts` only; encrypted payload is never queried by controllers directly     |
 
 App code **must not** write to Better Auth's 4 tables directly. Read-only
 queries such as username uniqueness checks are fine; mutations for users,
@@ -150,6 +151,10 @@ created_at integer)` with `(user_id, created_at)` index. The filename is the
   text for the canonical multi-reference snapshot. Indexes: `(user_id, created_at)`
   (private history), `(batch_id)` (per-batch delete), and
   `(is_public, created_at, id)` (stable public-history cursor pagination).
+- **`user_image_api_keys`** — `(user_id PK FK -> user.id cascade,
+encrypted_key, key_suffix, created_at, updated_at)`. `encrypted_key` is a
+  versioned AES-256-GCM payload bound to `user_id` as AAD; only `key_suffix`
+  may be exposed through the settings status DTO.
 
 ## Scenario: multi-reference image generation records
 

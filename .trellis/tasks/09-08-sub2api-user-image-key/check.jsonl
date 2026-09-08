@@ -1,0 +1,5 @@
+{"file":".trellis/spec/backend/user-image-api-key.md","reason":"核对设置 API、加密存储、Provider 路由、额度和失败关闭契约。"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"执行后端 lint、typecheck、完整测试、构建和格式检查。"}
+{"file":".trellis/spec/frontend/image-api-key-settings.md","reason":"核对 DTO 收窄、账户隔离、入口状态和错误映射。"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"执行前端完整质量门禁与桌面/移动浏览器 QA。"}
+{"file":"AGENTS.md","reason":"核对独立提交范围和中文提交信息规范。"}

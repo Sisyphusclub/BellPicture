@@ -81,6 +81,8 @@ function generationError(error: unknown): Error {
     PROVIDER_PROMPT_REJECTED: '提示词或参考图未通过上游安全策略，请改用更中性的描述。',
     PROVIDER_EMPTY_RESULT: '上游没有返回图片，请换一个更明确、限制更少的提示词。',
     PROVIDER_RATE_LIMITED: '生成服务当前请求过多，请稍后再试。',
+    PROVIDER_KEY_INVALID: '个人生图 API Key 已失效，请更新后重试。',
+    PROVIDER_KEY_MODEL_UNAVAILABLE: '个人 Key 所属分组不支持当前生图模型。',
     QUOTA_EXHAUSTED: 'GPT 号池剩余额度不足，请稍后补充额度后再试。',
     BAD_REQUEST: '请求内容无效，请检查提示词和参考图。',
     NOT_FOUND: '生成图片不存在或已被后端清理。',

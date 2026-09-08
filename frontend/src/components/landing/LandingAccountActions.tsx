@@ -1,4 +1,4 @@
-import { Bell, BookOpen, Check, LogIn, LogOut, Sparkles } from 'lucide-react';
+import { Bell, BookOpen, Check, KeyRound, LogIn, LogOut, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -19,9 +19,12 @@ interface LandingAccountActionsProps {
   creditsRemaining: number | string;
   dailyCheckInReward: number;
   isAuthenticated: boolean;
+  imageApiKeyConfigured: boolean;
+  imageApiKeySuffix: string | undefined;
   onCheckIn: () => Promise<DailyCheckInResponse>;
   onLogin: () => void;
   onLogout: () => Promise<void>;
+  onOpenImageApiKeySettings: () => void;
   onNotify: (message: string, tone?: 'success' | 'error') => void;
 }
 
@@ -32,13 +35,17 @@ export function LandingAccountActions({
   creditsRemaining,
   dailyCheckInReward,
   isAuthenticated,
+  imageApiKeyConfigured,
+  imageApiKeySuffix,
   onCheckIn,
   onLogin,
   onLogout,
+  onOpenImageApiKeySettings,
   onNotify,
 }: LandingAccountActionsProps) {
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [checkingIn, setCheckingIn] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const handleCheckIn = async (): Promise<void> => {
     if (!isAuthenticated) {
@@ -62,6 +69,10 @@ export function LandingAccountActions({
     } catch {
       onNotify('退出登录失败，请稍后重试。', 'error');
     }
+  };
+  const openImageApiKeySettings = (): void => {
+    setProfileOpen(false);
+    onOpenImageApiKeySettings();
   };
 
   return (
@@ -147,7 +158,7 @@ export function LandingAccountActions({
       </MorphPopover>
 
       {isAuthenticated ? (
-        <MorphPopover>
+        <MorphPopover open={profileOpen} onOpenChange={setProfileOpen}>
           <MorphPopoverTrigger>
             <Button
               type="button"
@@ -170,6 +181,13 @@ export function LandingAccountActions({
                 <small>{creditsRemaining} 积分可用</small>
               </span>
             </div>
+            <Button type="button" variant="ghost" onClick={openImageApiKeySettings}>
+              <KeyRound aria-hidden="true" />
+              <span>生图 API Key</span>
+              <small>
+                {imageApiKeyConfigured ? `尾号 ${imageApiKeySuffix ?? '未知'}` : '使用平台额度'}
+              </small>
+            </Button>
             <Button type="button" variant="ghost" onClick={() => void handleLogout()}>
               <LogOut aria-hidden="true" />
               退出登录

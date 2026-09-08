@@ -53,6 +53,18 @@ vi.mock('@/hooks/useImageQuota', () => ({
   }),
 }));
 
+vi.mock('@/hooks/useImageApiKey', () => ({
+  useImageApiKey: () => ({
+    status: { configured: false },
+    isLoading: false,
+    isMutating: false,
+    error: null,
+    refresh: vi.fn(),
+    save: vi.fn(),
+    remove: vi.fn(),
+  }),
+}));
+
 vi.mock('@/hooks/useImageGeneration', () => ({
   useImageGeneration: () => ({
     isLoading: false,

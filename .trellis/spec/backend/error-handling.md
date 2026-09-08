@@ -30,6 +30,9 @@ export type ErrorCode =
   | "PROVIDER_EMPTY_RESULT" // 2API returned no image payload
   | "PROVIDER_TIMEOUT" // request exceeded IMAGE_API_TIMEOUT_MS
   | "PROVIDER_RATE_LIMITED" // 2API returned 429
+  | "PROVIDER_KEY_INVALID" // personal image Key failed authentication
+  | "PROVIDER_KEY_MODEL_UNAVAILABLE" // Key group lacks IMAGE_MODEL
+  | "PROVIDER_KEY_VALIDATION_FAILED" // validation transport/payload failure
   | "REQUEST_ABORTED" // caller disconnected/cancelled; internal status 499
   | "QUOTA_EXHAUSTED" // per-user daily image quota would overflow
   | "RATE_LIMITED" // application endpoint request rate exceeded
@@ -140,6 +143,19 @@ Always log the upstream status + a redacted summary of the response body
 (no `Authorization` header echoes, no API key fragments).
 Never send the upstream response body to the frontend. The frontend should branch
 on stable `code` values and safe `details.reason` values, not provider prose.
+
+Personal image-Key validation and use add these mappings:
+
+| Trigger                                                    | AppError.code                    | HTTP                               |
+| ---------------------------------------------------------- | -------------------------------- | ---------------------------------- |
+| `/v1/models` returns 401/403                               | `PROVIDER_KEY_INVALID`           | 400                                |
+| Valid model response omits configured `IMAGE_MODEL`        | `PROVIDER_KEY_MODEL_UNAVAILABLE` | 400                                |
+| Validation times out                                       | `PROVIDER_KEY_VALIDATION_FAILED` | 504                                |
+| Validation network/non-auth HTTP/malformed payload failure | `PROVIDER_KEY_VALIDATION_FAILED` | 502                                |
+| Saved personal Key returns 401/403 during generation       | `PROVIDER_KEY_INVALID`           | 400; never retry with platform Key |
+
+Do not attach the submitted Key, encrypted payload, Authorization header, or raw
+provider body to `cause`, `details`, or the public message.
 
 ## Upload / validation failure mapping
 

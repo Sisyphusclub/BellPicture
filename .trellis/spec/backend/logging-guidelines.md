@@ -28,26 +28,35 @@ export const logger = pino({
       'req.headers["x-api-key"]',
       // top-level keys (when an object containing the secret is logged directly)
       "apiKey",
+      "credential",
+      "encryptedKey",
       "highResApiKey",
       "openaiCompatApiKey",
+      "providerCredential",
       "IMAGE_API_KEY",
       "HIGH_RES_IMAGE_API_KEY",
       "OPENAI_COMPAT_API_KEY",
+      "USER_API_KEY_ENCRYPTION_KEY",
       "GOOGLE_CLIENT_SECRET",
       "BETTER_AUTH_SECRET",
       // one level deep (config / context / provider option objects)
       "*.apiKey",
+      "*.credential",
+      "*.encryptedKey",
       "*.highResApiKey",
       "*.openaiCompatApiKey",
+      "*.providerCredential",
       "*.IMAGE_API_KEY",
       "*.HIGH_RES_IMAGE_API_KEY",
       "*.OPENAI_COMPAT_API_KEY",
+      "*.USER_API_KEY_ENCRYPTION_KEY",
       "*.GOOGLE_CLIENT_SECRET",
       "*.BETTER_AUTH_SECRET",
       // the env object literal exported from config/env.ts
       "env.IMAGE_API_KEY",
       "env.HIGH_RES_IMAGE_API_KEY",
       "env.OPENAI_COMPAT_API_KEY",
+      "env.USER_API_KEY_ENCRYPTION_KEY",
       "env.GOOGLE_CLIENT_SECRET",
       "env.BETTER_AUTH_SECRET",
     ],
@@ -61,10 +70,13 @@ export const logger = pino({
 ```
 
 The redact list is intentionally a **superset** of the obvious cases: `apiKey`,
-`highResApiKey`, `openaiCompatApiKey`, `IMAGE_API_KEY`,
-`HIGH_RES_IMAGE_API_KEY`, and `OPENAI_COMPAT_API_KEY` at the top level (in case
+`credential`, `encryptedKey`, `highResApiKey`, `openaiCompatApiKey`,
+`providerCredential`, `IMAGE_API_KEY`,
+`HIGH_RES_IMAGE_API_KEY`, `OPENAI_COMPAT_API_KEY`, and
+`USER_API_KEY_ENCRYPTION_KEY` at the top level (in case
 someone logs config objects verbatim) plus `env.IMAGE_API_KEY`,
-`env.HIGH_RES_IMAGE_API_KEY`, and `env.OPENAI_COMPAT_API_KEY` (in case the env
+`env.HIGH_RES_IMAGE_API_KEY`, `env.OPENAI_COMPAT_API_KEY`, and
+`env.USER_API_KEY_ENCRYPTION_KEY` (in case the env
 singleton is logged for debugging). When you add a new provider or inbound API
 auth config field that carries a secret, add the same triple — top-level,
 `*.x`, and any specific path you can foresee.
@@ -131,7 +143,8 @@ try {
   request id, count, and reference metadata instead.
 - ❌ Logging API keys, env vars, raw `Authorization` headers — even at
   `debug`. This includes `IMAGE_API_KEY`, `HIGH_RES_IMAGE_API_KEY`,
-  `OPENAI_COMPAT_API_KEY`, and computed bearer strings. Use the redact list,
+  `OPENAI_COMPAT_API_KEY`, `USER_API_KEY_ENCRYPTION_KEY`, submitted personal
+  image Keys, encrypted credential payloads, and computed bearer strings. Use the redact list,
   and don't bypass it by interpolating into a message string.
 - ❌ Logging exceptions as `${err}` (loses stack). Pass `err` as a field:
   `logger.error({ err }, 'message')` — pino serializes it properly.

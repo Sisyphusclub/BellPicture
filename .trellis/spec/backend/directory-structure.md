@@ -121,22 +121,25 @@ backend/
 │   ├── db/
 │   │   ├── sqlite.ts         # better-sqlite3 singleton (WAL + foreign_keys)
 │   │   ├── drizzle.ts        # drizzle-orm instance + runMigrations() helper
-│   │   └── schema.ts         # drizzle schema for all 6 tables
+│   │   └── schema.ts         # drizzle schema for all database tables
 │   ├── routes/
 │   │   ├── auth.ts           # Username auth wrapper: sign-up/username and email-auth rejection
 │   │   ├── images.ts         # POST /api/images/generate, /upload — gated by requireAuth
 │   │   ├── history.ts        # GET /api/history/public is public; owner history/delete routes are gated by requireAuth
 │   │   ├── openaiCompat.ts   # OpenAI-compatible /v1 image API — gated by openaiCompatAuth
+│   │   ├── userSettings.ts   # Account image-Key status/save/delete — gated by requireAuth
 │   │   └── health.ts         # GET /api/health
 │   ├── controllers/          # Thin: parse req → call service → format res
 │   │   ├── images.controller.ts
 │   │   ├── history.controller.ts
+│   │   ├── userSettings.controller.ts
 │   │   └── openaiCompat.controller.ts
 │   ├── services/             # Business logic. No req/res objects here.
 │   │   ├── defaultAdminSeed.service.ts      # Gated local/demo admin seed via Better Auth API
 │   │   ├── imageGeneration.service.ts
 │   │   ├── userQuota.service.ts             # Per-user daily quota (drizzle queries)
 │   │   ├── history.service.ts               # image_records CRUD via drizzle
+│   │   ├── userImageApiKey.service.ts        # AES-GCM account credential storage
 │   │   ├── quota.service.ts                 # Shared QuotaPool / QuotaSnapshot type contract
 │   │   └── providers/
 │   │       ├── ImageGenerationProvider.ts   # Interface
@@ -197,6 +200,7 @@ outside `config/env.ts`.**
 | `IMAGE_API_BASE_URL`          | yes      | `https://api.2api.example`      | 2API reverse-proxy origin. **No `/v1` suffix and no trailing slash** — `TwoApiImageProvider` always appends `/v1/images/generations`. Trailing slashes are stripped before concat, so `https://x.com/` and `https://x.com///` are tolerated, but a base URL that already includes `/v1` will produce a double-`/v1` URL. |
 | `HIGH_RES_IMAGE_API_BASE_URL` | no       | `https://codex.example`         | Optional admin 2K/4K provider origin. **No `/v1` suffix and no trailing slash**. Empty means high-resolution calls reuse `IMAGE_API_BASE_URL`.                                                                                                                                                                           |
 | `IMAGE_API_KEY`               | yes      | `sk-...`                        | Server-side only provider key. Never log or expose to API clients.                                                                                                                                                                                                                                                       |
+| `USER_API_KEY_ENCRYPTION_KEY` | yes      | `<base64 32-byte key>`          | Master key for account-scoped provider credentials. Must be canonical base64 decoding to exactly 32 bytes; generate with `openssl rand -base64 32`. Never log or expose.                                                                                                                                                 |
 | `HIGH_RES_IMAGE_API_KEY`      | no       | `sk-...`                        | Optional server-side provider key for admin 2K/4K calls. Empty means high-resolution calls reuse `IMAGE_API_KEY`. Never log or expose to API clients.                                                                                                                                                                    |
 | `OPENAI_COMPAT_API_KEY`       | yes      | `ref2img_...`                   | Inbound bearer token for OpenAI-compatible `/v1/*` clients. Never log.                                                                                                                                                                                                                                                   |
 | `IMAGE_MODEL`                 | no       | `gpt-image-2`                   | Default `gpt-image-2`                                                                                                                                                                                                                                                                                                    |
@@ -213,8 +217,8 @@ outside `config/env.ts`.**
 | `GOOGLE_CLIENT_SECRET`        | no       | `<google secret>`               | Optional, paired with `GOOGLE_CLIENT_ID`. Server-side only. Never log.                                                                                                                                                                                                                                                   |
 | `FRONTEND_ORIGIN`             | no       | `http://localhost:5173`         | Allowed CORS origin for cookie-authenticated requests.                                                                                                                                                                                                                                                                   |
 | `SQLITE_PATH`                 | no       | `./data/app.sqlite`             | Persistent location for the SQLite file. Directory is auto-created on boot.                                                                                                                                                                                                                                              |
-| `DAILY_USER_QUOTA`            | no       | `20`                            | Base per-user generations allowed per `Asia/Shanghai` product day.                                                                                                                                                                                                                                                        |
-| `DAILY_CHECK_IN_REWARD`       | no       | `5`                             | Extra generation credits granted once per authenticated user and `Asia/Shanghai` product day.                                                                                                                                                                                                                           |
+| `DAILY_USER_QUOTA`            | no       | `20`                            | Base per-user generations allowed per `Asia/Shanghai` product day.                                                                                                                                                                                                                                                       |
+| `DAILY_CHECK_IN_REWARD`       | no       | `5`                             | Extra generation credits granted once per authenticated user and `Asia/Shanghai` product day.                                                                                                                                                                                                                            |
 | `DEMO_PROMPTS`                | no       | `prompt A                       |                                                                                                                                                                                                                                                                                                                          |     | prompt B` | Exact prompt texts that should be cached after their first normal generation. Empty disables the feature. Split on ` |     |     | `, trim entries, drop empties, and de-duplicate. |
 | `DEMO_PROMPT_CACHE_DELAY_MS`  | no       | `4000`                          | Delay before returning an already-prepared demo prompt image. Default 4000. Must be a non-negative integer; negative or non-numeric values throw on `config/env.ts` import.                                                                                                                                              |
 
@@ -763,7 +767,7 @@ const records: NewImageRecord[] = result.images.map((image) => ({
   `QuotaPool` with `snapshot()`, `ensureAvailable(count)`, and `consume(count)`.
 - DB row: `user_quota(user_id TEXT PRIMARY KEY, used_today INTEGER,
 quota_date TEXT, check_in_date TEXT NULL, bonus_today INTEGER DEFAULT 0)` where
-both dates are `Asia/Shanghai` `YYYY-MM-DD` product dates.
+  both dates are `Asia/Shanghai` `YYYY-MM-DD` product dates.
 
 ### 3. Contracts
 
@@ -860,14 +864,14 @@ const remaining = Math.max(0, env.DAILY_USER_QUOTA - used);
 
 ### 4. Validation & Error Matrix
 
-| Condition | Expected behavior |
-| --- | --- |
-| Both Google credentials unset | Backend boots; capability API reports `google: false`; button is disabled |
-| Both Google credentials set | Provider registers; capability API reports `google: true`; button is enabled |
-| Only one Google credential set | Backend fails at startup with the paired-credential error |
-| Callback differs by scheme, host, port, path, case, or trailing slash | Google rejects the request with `redirect_uri_mismatch` |
-| Production callback uses a public HTTP IP | Google rejects the redirect registration |
-| Google profile resembles `Blur` | User remains non-admin unless persistent backend state explicitly says otherwise |
+| Condition                                                             | Expected behavior                                                                |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Both Google credentials unset                                         | Backend boots; capability API reports `google: false`; button is disabled        |
+| Both Google credentials set                                           | Provider registers; capability API reports `google: true`; button is enabled     |
+| Only one Google credential set                                        | Backend fails at startup with the paired-credential error                        |
+| Callback differs by scheme, host, port, path, case, or trailing slash | Google rejects the request with `redirect_uri_mismatch`                          |
+| Production callback uses a public HTTP IP                             | Google rejects the redirect registration                                         |
+| Google profile resembles `Blur`                                       | User remains non-admin unless persistent backend state explicitly says otherwise |
 
 ### 5. Good/Base/Bad Cases
 
@@ -898,8 +902,8 @@ const remaining = Math.max(0, env.DAILY_USER_QUOTA - used);
 ```ts
 const socialProviders = {
   google: {
-    clientId: process.env.GOOGLE_CLIENT_ID ?? '',
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+    clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
   },
 };
 ```

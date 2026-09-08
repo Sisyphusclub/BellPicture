@@ -1,4 +1,4 @@
-import { Check, LogIn, Sparkles, X, type LucideIcon } from 'lucide-react';
+import { Check, KeyRound, LogIn, Sparkles, X, type LucideIcon } from 'lucide-react';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -37,10 +37,12 @@ interface LandingSidebarProps {
   checkedInToday: boolean;
   dailyCheckInReward: number;
   isAuthenticated: boolean;
+  imageApiKeyConfigured: boolean;
   items: readonly LandingSidebarItem[];
   logoSrc: string;
   onCheckIn: () => Promise<DailyCheckInResponse>;
   onLogin: () => void;
+  onOpenImageApiKeySettings: () => void;
   onNotify: (message: string, tone?: 'success' | 'error') => void;
 }
 
@@ -64,10 +66,12 @@ function LandingSidebarContent({
   checkedInToday,
   dailyCheckInReward,
   isAuthenticated,
+  imageApiKeyConfigured,
   items,
   logoSrc,
   onCheckIn,
   onLogin,
+  onOpenImageApiKeySettings,
   onNotify,
 }: LandingSidebarProps) {
   const location = useLocation();
@@ -95,6 +99,10 @@ function LandingSidebarContent({
     } finally {
       setCheckingIn(false);
     }
+  };
+  const openImageApiKeySettings = (): void => {
+    closeMobile();
+    onOpenImageApiKeySettings();
   };
 
   const renderItems = (entries: readonly LandingSidebarItem[]) => (
@@ -165,6 +173,10 @@ function LandingSidebarContent({
                 <span>{accountName}</span>
                 <strong>{creditsRemaining} 积分</strong>
               </span>
+              <Button type="button" variant="ghost" onClick={openImageApiKeySettings}>
+                <KeyRound aria-hidden="true" />
+                生图 API Key · {imageApiKeyConfigured ? '已配置' : '平台额度'}
+              </Button>
               <Button
                 type="button"
                 variant="ghost"
