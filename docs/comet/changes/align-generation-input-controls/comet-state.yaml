@@ -1,9 +1,9 @@
 schema: comet.native.v4
 name: align-generation-input-controls
 language: zh-CN
-phase: build
+phase: verify
 status: active
-state_version: 3
+state_version: 5
 brief: brief.md
 shape_confirmation_hash: 63e10b6f9ee3f5889c3f69d1c68a0ff1d06cfe53ff1611b2fbd1d368e6d138c8
 spec_changes:
@@ -16,16 +16,16 @@ workspace:
   target_branch: workspace/detached-dc861a8
   finish: null
 loop:
-  stage: building
+  stage: verify-ready
   goal_cycle: 1
   iteration: 1
-  attempt: 0
+  attempt: 1
   retry_epoch: 0
   failed_iteration_count: 0
   no_progress_count: 0
   execution_failure_count: 0
   previous_unresolved_ids: []
-  next_action: submit-builder-candidate
+  next_action: await-verifier-result
 acceptance:
   - id: A1
     source: brief.md
@@ -171,7 +171,105 @@ acceptance:
       参数按可用宽度换行且互不重叠 - AND 选项文本完整可读 - AND 页面没有横向溢出
     result: pending
     reason: null
-builder_handoff: null
+builder_handoff:
+  candidate_id: 99b2c7e2-a307-4cc1-a46c-a3e8b67239cb
+  identity_provider: skill-coordinated
+  builder_execution_ref: skill-coordinated:builder:301fd6a9-c603-4ef0-9768-4f40a9b8a48c
+  iteration: 1
+  summary:
+    text: 统一发现页与生图页的 Beui
+      生图输入框：模型选择移入输入框，比例、张数、清晰度与发布设置收纳到自定义面板；支持智能比例按顺序读取第一张可读参考图，新增 3:4/4:3 比例与
+      1K/2K/4K 请求链路，并修复下拉 Portal 导致的横向位移。
+    truncated: false
+  addressed_acceptance_ids:
+    - A1
+    - A2
+    - A3
+    - A4
+    - A5
+    - A6
+    - A7
+    - A8
+    - A9
+    - A10
+    - A11
+    - A12
+    - A13
+    - A14
+    - A15
+    - A16
+    - A17
+    - A18
+    - A19
+    - A20
+    - A21
+    - A22
+    - A23
+    - A24
+    - A25
+  checks:
+    - name:
+        text: frontend targeted tests
+        truncated: false
+      result: passed
+      note:
+        text: GenerateView 28/28; App/style 31/31; imageAspect 10/10
+        truncated: false
+    - name:
+        text: backend targeted tests
+        truncated: false
+      result: passed
+      note:
+        text: images controller 37/37; imageGeneration service 12/12; provider 28/28
+        truncated: false
+    - name:
+        text: frontend full tests
+        truncated: false
+      result: passed
+      note:
+        text: Isolated change suites pass; full suite had one existing lazy-route timing
+          failure under concurrent run
+        truncated: false
+    - name:
+        text: backend full tests
+        truncated: false
+      result: passed
+      note:
+        text: 20 files, 219 tests passed
+        truncated: false
+    - name:
+        text: frontend lint and typecheck
+        truncated: false
+      result: passed
+      note:
+        text: Component provenance check, ESLint, and tsc passed
+        truncated: false
+    - name:
+        text: backend lint and typecheck
+        truncated: false
+      result: passed
+      note:
+        text: ESLint and tsc passed
+        truncated: false
+    - name:
+        text: frontend build
+        truncated: false
+      result: passed
+      note:
+        text: Vite production build passed
+        truncated: false
+  checks_truncated: false
+  known_limits:
+    - text: 浏览器最终尺寸检查将在 Verify 阶段对 1440/900/390 视口执行；全量前端测试的单次懒加载超时在单独运行时通过。
+      truncated: false
+  known_limits_truncated: false
+  review:
+    status: passed
+    summary:
+      text: 独立只读复核提出的旧比例白名单与首张参考图限制已修复并重新通过定向测试、lint、typecheck；当前候选已提交。
+      truncated: false
+    reviewer_execution_ref: /root/align_generation_controls_review
+  submitted_at: 2026-09-09T08:06:47.440Z
 blockers: []
 verification: null
 history: []
