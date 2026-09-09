@@ -1,0 +1,289 @@
+schema: comet.native.v4
+name: add-image-model-upstreams
+language: zh-CN
+phase: archive
+status: done
+state_version: 15
+brief: brief.md
+shape_confirmation_hash: 5dd5b71921fba42ee04820bf33a6d064889cc87bfb71a1273fb41385b03ca948
+spec_changes:
+  - capability: image-model-selection
+    operation: create
+    source: specs/image-model-selection/spec.md
+workspace:
+  isolation: current
+  change_branch: workspace/detached-dc861a8
+  target_branch: workspace/detached-dc861a8
+  finish: null
+loop:
+  stage: done
+  goal_cycle: 1
+  iteration: 2
+  attempt: 3
+  retry_epoch: 0
+  failed_iteration_count: 1
+  no_progress_count: 0
+  execution_failure_count: 0
+  previous_unresolved_ids: []
+  next_action: null
+acceptance:
+  - id: A1
+    source: brief.md
+    text: A1：打开生图工作区时，模型选择器显示
+      `gpt-image-2`、`gpt-image-2.5-flare`、`gpt-image-2.5-sunburst`，且默认选中
+      `gpt-image-2`。
+    result: passed
+    reason:
+      text: GenerateView 定义并展示三个模型，默认 gpt-image-2；定向测试与浏览器检查覆盖。
+      truncated: false
+  - id: A2
+    source: brief.md
+    text: A2：用户选择 `gpt-image-2.5-flare` 或 `gpt-image-2.5-sunburst` 后提交生成，前端请求中的
+      `model` 与所选标识完全一致，生成任务与历史设置保留该标识。
+    result: passed
+    reason:
+      text: 提交逻辑将当前 model 原样写入 generation.generate、任务及完成历史设置；Flare 与 Sunburst
+        精确透传测试通过。
+      truncated: false
+  - id: A3
+    source: brief.md
+    text: A3：用户对使用新模型生成的批次执行“复用完整设置”时，生图工作区恢复该批次的模型选择，后续再次生成继续使用该模型。
+    result: passed
+    reason:
+      text: reuseSettings 恢复批次模型，后续提交沿用恢复值；完整设置复用与再次生成测试通过。
+      truncated: false
+  - id: A4
+    source: brief.md
+    text: A4：携带有效鉴权请求 `/v1/models` 时，响应模型列表包含 `gpt-image-2.5-flare` 和
+      `gpt-image-2.5-sunburst`，并保留原有模型。
+    result: passed
+    reason:
+      text: /v1/models 保留原有清单并新增两个精确模型标识；有效鉴权 HTTP 测试及无监听清单测试通过。
+      truncated: false
+  - id: A5
+    source: specs/image-model-selection/spec.md
+    text: 默认模型与可选项 - GIVEN 用户打开生图工作区 - WHEN 用户查看模型选择控件 - THEN 当前模型为 `gpt-image-2` -
+      AND 可选项包含 `gpt-image-2`、`gpt-image-2.5-flare` 和 `gpt-image-2.5-sunburst`
+    result: passed
+    reason:
+      text: GenerateView 提供 gpt-image-2、gpt-image-2.5-flare、gpt-image-2.5-sunburst
+        三个精确选项，默认选中 gpt-image-2；相关测试通过。
+      truncated: false
+  - id: A6
+    source: specs/image-model-selection/spec.md
+    text: 使用 Flare 生成 - GIVEN 用户选择 `gpt-image-2.5-flare` - WHEN 用户提交有效的生图提示词 - THEN
+      生成请求的 `model` 为 `gpt-image-2.5-flare` - AND 当前生成任务设置保留
+      `gpt-image-2.5-flare`
+    result: passed
+    reason:
+      text: 选择 gpt-image-2.5-flare 提交时，请求 model 精确为该标识，生成任务和历史设置保留 Flare；定向测试通过。
+      truncated: false
+  - id: A7
+    source: specs/image-model-selection/spec.md
+    text: 使用 Sunburst 生成 - GIVEN 用户选择 `gpt-image-2.5-sunburst` - WHEN 用户提交有效的生图提示词 -
+      THEN 生成请求的 `model` 为 `gpt-image-2.5-sunburst` - AND 当前生成任务设置保留
+      `gpt-image-2.5-sunburst`
+    result: passed
+    reason:
+      text: 选择 gpt-image-2.5-sunburst 提交时，请求 model 精确为该标识，生成任务和历史设置保留 Sunburst；定向测试通过。
+      truncated: false
+  - id: A8
+    source: specs/image-model-selection/spec.md
+    text: 恢复新模型设置 - GIVEN 一个批次的设置记录模型为 `gpt-image-2.5-sunburst` - WHEN 用户选择“复用完整设置”
+      - THEN 当前模型变为 `gpt-image-2.5-sunburst` - AND 用户再次提交时请求模型为
+      `gpt-image-2.5-sunburst`
+    result: passed
+    reason:
+      text: 复用完整设置会恢复 gpt-image-2.5-sunburst，后续再次提交继续使用该模型；测试通过。
+      truncated: false
+  - id: A9
+    source: specs/image-model-selection/spec.md
+    text: 查询兼容模型清单 - GIVEN 请求携带有效的兼容接口鉴权 - WHEN 客户端请求 `GET /v1/models` - THEN 响应包含
+      `gpt-image-2.5-flare` - AND 响应包含 `gpt-image-2.5-sunburst` - AND
+      响应仍包含变更前的全部模型标识
+    result: passed
+    reason:
+      text: 有效鉴权 GET /v1/models 响应包含两个新增模型，并保留全部原有模型标识；HTTP 与无监听清单测试通过。
+      truncated: false
+builder_handoff:
+  candidate_id: d0b7d64d-301f-4e6b-a0a2-7eb78926b8b1
+  identity_provider: skill-coordinated
+  builder_execution_ref: skill-coordinated:builder:7713c59c-c40b-4259-9085-dafbd035de5b
+  iteration: 2
+  summary:
+    text: 定位首轮失败为 Runtime 沙箱禁止 Supertest 监听端口；保留原带鉴权 HTTP 集成测试，并新增直接调用 models
+      控制器的无监听用例，精确校验完整 11 项模型清单，使 A4/A9 可在受限 Runtime 中获得正式回执。
+    truncated: false
+  addressed_acceptance_ids:
+    - A4
+    - A9
+  checks:
+    - name:
+        text: 无监听模型清单定向测试
+        truncated: false
+      result: passed
+      note:
+        text: 1 项通过，39 项跳过；在受限环境中执行
+        truncated: false
+    - name:
+        text: 后端 OpenAI 兼容控制器完整测试
+        truncated: false
+      result: passed
+      note:
+        text: 40 项通过
+        truncated: false
+    - name:
+        text: 后端类型检查
+        truncated: false
+      result: passed
+      note:
+        text: typecheck 通过
+        truncated: false
+    - name:
+        text: 后端 lint 与格式检查
+        truncated: false
+      result: passed
+      note:
+        text: eslint 与 Prettier 均通过
+        truncated: false
+    - name:
+        text: git diff --check
+        truncated: false
+      result: passed
+      note:
+        text: 未发现空白错误
+        truncated: false
+  checks_truncated: false
+  known_limits:
+    - text: Runtime 沙箱禁止监听端口，带鉴权 HTTP 集成套件在允许本地监听的测试环境中验证。
+      truncated: false
+  known_limits_truncated: false
+  review:
+    status: passed
+    summary:
+      text: 独立只读复核未发现问题；新增测试验证完整模型列表且未替换原 HTTP 鉴权覆盖。
+      truncated: false
+    reviewer_execution_ref: 01a084e4-f6da-7950-8ddb-3dca37cec7f8
+  submitted_at: 2026-09-09T06:45:15.655Z
+blockers: []
+verification:
+  candidate_id: d0b7d64d-301f-4e6b-a0a2-7eb78926b8b1
+  identity_provider: skill-coordinated
+  verifier_execution_ref: skill-coordinated:verifier:367c0baf-2b36-4091-a499-caeb21b67e0c
+  iteration: 2
+  attempt: 3
+  assurance: skill-coordinated
+  verdict: pass
+  checks:
+    - id: backend-model-list-unit
+      name:
+        text: 无监听模型清单单元测试
+        truncated: false
+      argv_display:
+        - text: node_modules/vitest/vitest.mjs
+          truncated: false
+        - text: run
+          truncated: false
+        - text: tests/controllers/openaiCompat.controller.spec.ts
+          truncated: false
+        - text: -t
+          truncated: false
+        - text: returns the model list without opening a network listener
+          truncated: false
+        - text: --reporter=verbose
+          truncated: false
+      argv_truncated: false
+      cwd_ref: backend
+      status: passed
+      exit_code: 0
+      duration_ms: 2645
+    - id: backend-repair-typecheck
+      name:
+        text: 后端修复类型检查
+        truncated: false
+      argv_display:
+        - text: run
+          truncated: false
+        - text: typecheck
+          truncated: false
+      argv_truncated: false
+      cwd_ref: backend
+      status: passed
+      exit_code: 0
+      duration_ms: 7384
+    - id: backend-repair-lint
+      name:
+        text: 后端修复 lint
+        truncated: false
+      argv_display:
+        - text: run
+          truncated: false
+        - text: lint
+          truncated: false
+      argv_truncated: false
+      cwd_ref: backend
+      status: passed
+      exit_code: 0
+      duration_ms: 11866
+  summary:
+    text: 基于已完成的源码、规格、提交差异和 Runtime 证据审查，A1-A9 全部通过，本地契约验收通过。
+    truncated: false
+  risks:
+    - text: 未连接真实外部图像上游，实际供应商对新增模型的可用性和响应行为仍需部署环境验证。
+      truncated: false
+  risks_truncated: false
+  completed_at: 2026-09-09T07:11:35.256Z
+history:
+  - goal_cycle: 1
+    iteration: 1
+    attempt: 1
+    outcome: fail
+    unresolved_ids:
+      - A4
+      - A9
+    summary:
+      text: 实现与独立审阅未发现代码缺陷，前端及静态验收通过；因一项 Runtime 后端检查失败，本轮不判通过。
+      truncated: false
+    completed_at: 2026-09-09T06:36:21.641Z
+  - goal_cycle: 1
+    iteration: 2
+    attempt: 1
+    outcome: recovery
+    unresolved_ids: []
+    summary:
+      text: Repair verification passed for A4, A9; final full verification is
+        required.
+      truncated: false
+    completed_at: 2026-09-09T06:49:49.526Z
+  - goal_cycle: 1
+    iteration: 2
+    attempt: 2
+    outcome: execution-error
+    unresolved_ids: []
+    summary:
+      text: 独立 Verifier 已完成只读审查，但最终输出仅返回不完整的 JSON 起始大括号，未形成可提交的裁决结果。
+      truncated: false
+    completed_at: 2026-09-09T06:58:24.046Z
+  - goal_cycle: 1
+    iteration: 2
+    attempt: 3
+    outcome: pass
+    unresolved_ids: []
+    summary:
+      text: 基于已完成的源码、规格、提交差异和 Runtime 证据审查，A1-A9 全部通过，本地契约验收通过。
+      truncated: false
+    completed_at: 2026-09-09T07:11:35.256Z
+history_overflow:
+  dropped_entries: 0
+  first_dropped_at: null
+  last_dropped_at: null
+  outcome_counts:
+    pass: 0
+    fail: 0
+    blocked: 0
+    execution-error: 0
+    recovery: 0
+verification_result: pass
+verification_report: verification.md
+archived: true
+created_at: 2026-09-09T05:31:44.315Z
