@@ -22,17 +22,35 @@ describe('imageAspect', () => {
   it('falls back to 1:1 without a readable reference image', async () => {
     vi.stubGlobal('createImageBitmap', vi.fn().mockRejectedValue(new Error('unreadable')));
 
-    await expect(resolveAspectChoice('auto', new File(['invalid'], 'invalid.png'))).resolves.toBe(
+    await expect(resolveAspectChoice('auto', [new File(['invalid'], 'invalid.png')])).resolves.toBe(
       '1:1',
     );
     await expect(resolveAspectChoice('auto')).resolves.toBe('1:1');
+  });
+
+  it('uses the first readable reference image in upload order', async () => {
+    const createBitmap = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('unreadable'))
+      .mockResolvedValueOnce({ width: 750, height: 1000, close: vi.fn() });
+    vi.stubGlobal('createImageBitmap', createBitmap);
+
+    await expect(
+      resolveAspectChoice('auto', [
+        new File(['invalid'], 'invalid.png'),
+        new File(['image'], 'image.png'),
+      ]),
+    ).resolves.toBe('3:4');
+    expect(createBitmap).toHaveBeenCalledTimes(2);
   });
 
   it('keeps an explicit aspect ratio without inspecting the reference', async () => {
     const createBitmap = vi.fn();
     vi.stubGlobal('createImageBitmap', createBitmap);
 
-    await expect(resolveAspectChoice('3:2', new File(['image'], 'image.png'))).resolves.toBe('3:2');
+    await expect(resolveAspectChoice('3:2', [new File(['image'], 'image.png')])).resolves.toBe(
+      '3:2',
+    );
     expect(createBitmap).not.toHaveBeenCalled();
   });
 });

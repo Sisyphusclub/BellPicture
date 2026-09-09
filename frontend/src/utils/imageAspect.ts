@@ -30,15 +30,15 @@ export function closestAspectRatio(width: number, height: number): AspectRatio {
 
 export async function resolveAspectChoice(
   aspect: AspectChoice,
-  firstReference?: File,
+  references: readonly File[] = [],
 ): Promise<AspectRatio> {
   if (aspect !== 'auto') return aspect;
-  if (!firstReference) return DEFAULT_ASPECT_RATIO;
 
-  const dimensions = await readImageDimensions(firstReference);
-  return dimensions
-    ? closestAspectRatio(dimensions.width, dimensions.height)
-    : DEFAULT_ASPECT_RATIO;
+  for (const reference of references) {
+    const dimensions = await readImageDimensions(reference);
+    if (dimensions) return closestAspectRatio(dimensions.width, dimensions.height);
+  }
+  return DEFAULT_ASPECT_RATIO;
 }
 
 async function readImageDimensions(file: File): Promise<{ width: number; height: number } | null> {

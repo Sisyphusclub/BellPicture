@@ -690,7 +690,7 @@ export function GenerateView() {
     prompt: promptValue.trim(),
     model,
     count,
-    aspectRatio: await resolveAspectChoice(aspect, referenceFiles[0]),
+    aspectRatio: await resolveAspectChoice(aspect, referenceFiles),
     resolution,
     isPublic,
     referenceIds: reusedReferenceIds,

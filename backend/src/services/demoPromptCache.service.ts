@@ -9,7 +9,7 @@ import {
   readInternalOutputTextFile,
   writeInternalOutputFile,
 } from '../storage/localStorage.js';
-import { type AspectRatio } from '../types/image.js';
+import { ASPECT_RATIOS, type AspectRatio } from '../types/image.js';
 
 import type { GenerateImageOutput } from './imageGeneration.service.js';
 
@@ -164,7 +164,5 @@ function isDemoPromptMeta(value: unknown): value is DemoPromptMeta {
 }
 
 function isAspectRatio(value: unknown): value is AspectRatio {
-  return (
-    value === '1:1' || value === '3:2' || value === '2:3' || value === '16:9' || value === '9:16'
-  );
+  return typeof value === 'string' && (ASPECT_RATIOS as readonly string[]).includes(value);
 }
