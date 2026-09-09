@@ -7,9 +7,7 @@ import {
   EyeOff,
   Globe2,
   ImagePlus,
-  Minus,
   Pencil,
-  Plus,
   RefreshCw,
   Sparkles,
   Trash2,
@@ -23,6 +21,7 @@ import { useToast } from '@/components/common/ToastProvider';
 import { GenerationSubmitCost } from '@/components/generation/GenerationSubmitCost';
 import { GenerationHistoryFlyout } from '@/components/generation/GenerationHistoryFlyout';
 import { ImageGenerationPlaceholder } from '@/components/generation/ImageGenerationPlaceholder';
+import { GenerationComposerControls } from '@/components/generation/GenerationComposerControls';
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
 import { LandingAccountActions } from '@/components/landing/LandingAccountActions';
 import { LandingSidebar } from '@/components/landing/LandingSidebar';
@@ -30,11 +29,8 @@ import { ImageApiKeySettingsDialog } from '@/components/settings/ImageApiKeySett
 import { AgentChatInput } from '@/components/premium/agent-chat-input/agent-chat-input';
 import type { AgentChatAttachment } from '@/components/premium/agent-chat-input/types';
 import { MorphicCard } from '@/components/premium/morphic-card-modal';
-import { ModelLogo } from '@/components/premium/agent-chat-input/model-logo';
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/ui/icon-tooltip';
-import { SelectMenu } from '@/components/ui/select-menu';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
 import { openAuthModal } from '@/hooks/useAuthModal';
@@ -60,21 +56,29 @@ import { useImageQuota } from '@/hooks/useImageQuota';
 import { addPublicRecord, removePublicRecord } from '@/hooks/usePublicGallery';
 import { fetchOutputBlob } from '@/services/api/imagesApi';
 import {
-  ASPECT_RATIOS,
-  ASPECT_RATIO_LABELS,
   DEFAULT_ASPECT_RATIO,
+  DEFAULT_ASPECT_CHOICE,
   DEFAULT_COUNT,
+  DEFAULT_IMAGE_MODEL,
   DEFAULT_IMAGE_RESOLUTION,
+  isAspectChoice,
+  isAspectRatio,
+  isImageResolution,
   MAX_COUNT,
   MAX_REFERENCE_IMAGES,
   MIN_COUNT,
+  normalizeAspectChoiceForResolution,
+  normalizeImageModel,
+  type AspectChoice,
   type AspectRatio,
   type GenerationSettingsSnapshot,
   type HistoryEntry,
+  type ImageModel,
+  type ImageResolution,
 } from '@/types/image';
 import { downloadUrl } from '@/utils/download';
+import { resolveAspectChoice } from '@/utils/imageAspect';
 import {
-  DISCOVERY_PUBLISH_LABEL,
   getImageVisibilityActionLabel,
   getImageVisibilityUpdateMessage,
 } from '@/utils/imageVisibility';
@@ -134,28 +138,6 @@ function sameFeed(left: readonly FeedItem[], right: readonly FeedItem[]): boolea
 
 type DeleteTarget = { kind: 'entry'; entry: HistoryEntry } | { kind: 'batch'; item: FeedItem };
 
-const ASPECT_MENU_OPTIONS = ASPECT_RATIOS.map((value) => ({
-  value,
-  label: ASPECT_RATIO_LABELS[value],
-}));
-
-const IMAGE_MODEL_OPTIONS = [
-  { value: 'gpt-image-2', label: 'gpt-image-2' },
-  { value: 'gpt-image-2.5-flare', label: 'gpt-image-2.5-flare' },
-  { value: 'gpt-image-2.5-sunburst', label: 'gpt-image-2.5-sunburst' },
-] as const;
-const AGENT_IMAGE_MODELS = IMAGE_MODEL_OPTIONS.map(({ value, label }) => ({ id: value, label }));
-const DEFAULT_IMAGE_MODEL = IMAGE_MODEL_OPTIONS[0].value;
-type ImageModel = (typeof IMAGE_MODEL_OPTIONS)[number]['value'];
-
-function normalizeImageModel(value: string): ImageModel {
-  return IMAGE_MODEL_OPTIONS.find((option) => option.value === value)?.value ?? DEFAULT_IMAGE_MODEL;
-}
-
-function isAspectRatio(value: string | null): value is AspectRatio {
-  return value !== null && (ASPECT_RATIOS as readonly string[]).includes(value);
-}
-
 interface GenerationErrorCopy {
   message: string;
   requestId: string | null;
@@ -196,6 +178,16 @@ function readCount(searchParams: URLSearchParams): number {
   return Number.isInteger(value) && value >= MIN_COUNT && value <= MAX_COUNT
     ? value
     : DEFAULT_COUNT;
+}
+
+function readAspectChoice(searchParams: URLSearchParams): AspectChoice {
+  const value = searchParams.get('aspect');
+  return isAspectChoice(value) ? value : DEFAULT_ASPECT_CHOICE;
+}
+
+function readResolution(searchParams: URLSearchParams): ImageResolution {
+  const value = searchParams.get('resolution');
+  return isImageResolution(value) ? value : DEFAULT_IMAGE_RESOLUTION;
 }
 
 function readReferenceIds(searchParams: URLSearchParams): string[] {
@@ -266,31 +258,6 @@ function SessionResultPreview({ entry, onOpen }: SessionResultPreviewProps) {
         <img src={entry.imageUrl} alt={entry.record.prompt} onLoad={() => setImageLoaded(true)} />
       </Button>
     </MorphicCard>
-  );
-}
-
-interface DiscoveryPublishToggleProps {
-  isPublic: boolean;
-  disabled: boolean;
-  onPublicChange: (value: boolean) => void;
-}
-
-function DiscoveryPublishToggle({
-  isPublic,
-  disabled,
-  onPublicChange,
-}: DiscoveryPublishToggleProps) {
-  return (
-    <label className="studio-private-toggle" data-mode={isPublic ? 'public' : 'private'}>
-      <Switch
-        aria-label={DISCOVERY_PUBLISH_LABEL}
-        checked={isPublic}
-        disabled={disabled}
-        onCheckedChange={onPublicChange}
-      />
-      <span className="studio-private-toggle__track" aria-hidden="true" />
-      <span>{DISCOVERY_PUBLISH_LABEL}</span>
-    </label>
   );
 }
 
@@ -459,12 +426,17 @@ export function GenerateView() {
   const autoGenerationHandled = useRef(false);
   const bareRouteRestoreHandled = useRef(false);
   const [prompt, setPrompt] = useState(searchParams.get('prompt') ?? '');
-  const [model, setModel] = useState<ImageModel>(DEFAULT_IMAGE_MODEL);
+  const [model, setModel] = useState<ImageModel>(() =>
+    normalizeImageModel(searchParams.get('model')),
+  );
   const [count, setCount] = useState(() => readCount(searchParams));
-  const [aspect, setAspect] = useState<AspectRatio>(() => {
-    const value = searchParams.get('aspect');
-    return isAspectRatio(value) ? value : DEFAULT_ASPECT_RATIO;
-  });
+  const [resolution, setResolution] = useState<ImageResolution>(() => readResolution(searchParams));
+  const [aspect, setAspect] = useState<AspectChoice>(() =>
+    normalizeAspectChoiceForResolution(
+      readAspectChoice(searchParams),
+      readResolution(searchParams),
+    ),
+  );
   const [isPublic, setIsPublic] = useState(() => searchParams.get('isPublic') === 'true');
   const [reusedReferenceIds, setReusedReferenceIds] = useState<string[]>(() =>
     readReferenceIds(searchParams),
@@ -555,7 +527,7 @@ export function GenerateView() {
           model: DEFAULT_IMAGE_MODEL,
           count: readCount(searchParams),
           aspectRatio: isAspectRatio(queryAspect) ? queryAspect : DEFAULT_ASPECT_RATIO,
-          resolution: DEFAULT_IMAGE_RESOLUTION,
+          resolution: readResolution(searchParams),
           isPublic: searchParams.get('isPublic') === 'true',
           referenceIds: [],
         },
@@ -597,8 +569,10 @@ export function GenerateView() {
   useEffect(() => {
     const queryPrompt = searchParams.get('prompt');
     if (queryPrompt !== null) setPrompt(queryPrompt);
-    const queryAspect = searchParams.get('aspect');
-    if (isAspectRatio(queryAspect)) setAspect(queryAspect);
+    setModel(normalizeImageModel(searchParams.get('model')));
+    const queryResolution = readResolution(searchParams);
+    setResolution(queryResolution);
+    setAspect(normalizeAspectChoiceForResolution(readAspectChoice(searchParams), queryResolution));
     setCount(readCount(searchParams));
     const queryPublic = searchParams.get('isPublic');
     if (queryPublic === 'true' || queryPublic === 'false') setIsPublic(queryPublic === 'true');
@@ -709,12 +683,15 @@ export function GenerateView() {
     };
   }, [latestBatchVisibilityKey]);
 
-  const currentSettings = (promptValue = prompt): GenerationSettingsSnapshot => ({
+  const currentSettings = async (
+    promptValue = prompt,
+    referenceFiles: readonly File[] = [],
+  ): Promise<GenerationSettingsSnapshot> => ({
     prompt: promptValue.trim(),
     model,
     count,
-    aspectRatio: aspect,
-    resolution: DEFAULT_IMAGE_RESOLUTION,
+    aspectRatio: await resolveAspectChoice(aspect, referenceFiles[0]),
+    resolution,
     isPublic,
     referenceIds: reusedReferenceIds,
   });
@@ -727,10 +704,7 @@ export function GenerateView() {
   ): Promise<void> => {
     const generationUserId = currentUserIdRef.current;
     if (generation.isLoading) return;
-    const generationSettings: GenerationSettingsSnapshot = {
-      ...settings,
-      resolution: DEFAULT_IMAGE_RESOLUTION,
-    };
+    const generationSettings = settings;
     if (!generationSettings.prompt) {
       notify('请先描述你想生成的图片。', 'error');
       return;
@@ -743,8 +717,10 @@ export function GenerateView() {
       generationSessionId = session.id;
       const nextSearch = new URLSearchParams({
         session: session.id,
+        model: generationSettings.model,
         aspect: generationSettings.aspectRatio,
         count: String(generationSettings.count),
+        resolution: generationSettings.resolution,
         isPublic: String(generationSettings.isPublic),
       });
       void navigate(`/generate?${nextSearch.toString()}`, { replace: true });
@@ -800,6 +776,7 @@ export function GenerateView() {
         model: generationSettings.model,
         count: generationSettings.count,
         aspectRatio: generationSettings.aspectRatio,
+        resolution: generationSettings.resolution,
         isPublic: generationSettings.isPublic,
         referenceIds: [...generationSettings.referenceIds],
         ...(referenceFiles.length ? { referenceFiles: [...referenceFiles] } : {}),
@@ -881,7 +858,6 @@ export function GenerateView() {
     const settings: GenerationSettingsSnapshot = {
       ...item.settings,
       prompt: promptValue.trim(),
-      resolution: DEFAULT_IMAGE_RESOLUTION,
     };
     if (authLoading) return;
     if (!isAuthenticated) {
@@ -892,14 +868,17 @@ export function GenerateView() {
   };
 
   const submitCurrent = (promptValue = prompt, initialReferenceFiles?: readonly File[]): void => {
-    const settings = currentSettings(promptValue);
     const files = initialReferenceFiles ?? upload.selectedFiles.map((item) => item.file);
+    const generateCurrent = async (): Promise<void> => {
+      const settings = await currentSettings(promptValue, files);
+      await performGeneration(settings, files, true);
+    };
     if (authLoading) return;
     if (!isAuthenticated) {
-      openAuthModal({ onSuccess: () => performGeneration(settings, files, true) });
+      openAuthModal({ onSuccess: () => void generateCurrent() });
       return;
     }
-    void performGeneration(settings, files, true);
+    void generateCurrent();
   };
   const submitCurrentRef = useRef(submitCurrent);
   submitCurrentRef.current = submitCurrent;
@@ -1016,12 +995,18 @@ export function GenerateView() {
     setPrompt(settings.prompt);
     setModel(normalizeImageModel(settings.model));
     setCount(settings.count);
-    setAspect(settings.aspectRatio);
+    setResolution(settings.resolution);
+    setAspect(normalizeAspectChoiceForResolution(settings.aspectRatio, settings.resolution));
     setIsPublic(settings.isPublic);
     setReusedReferenceIds([...settings.referenceIds]);
     upload.clear();
     window.scrollTo({ top: 0, behavior: 'smooth' });
     notify('完整设置已恢复。');
+  };
+
+  const updateResolution = (next: ImageResolution): void => {
+    setResolution(next);
+    setAspect((current) => normalizeAspectChoiceForResolution(current, next));
   };
 
   const addAsReference = async (entry: HistoryEntry): Promise<void> => {
@@ -1262,8 +1247,7 @@ export function GenerateView() {
           disabled={authLoading}
           minRows={2}
           maxRows={7}
-          models={AGENT_IMAGE_MODELS}
-          model={model}
+          models={[]}
           reasoningLevels={[]}
           speedModes={[]}
           agents={[]}
@@ -1272,89 +1256,56 @@ export function GenerateView() {
           onAttachmentsChange={handleAttachments}
           acceptedFileTypes="image/png,image/jpeg,image/webp"
           toolbarContent={
-            <div className="studio-controls">
-              <SelectMenu
-                label="选择模型"
-                value={model}
-                options={IMAGE_MODEL_OPTIONS}
-                disabled={generation.isLoading}
-                leadingIcon={<ModelLogo modelId={model} className="studio-model__icon" />}
-                className="studio-model-select"
-                onValueChange={setModel}
-              />
-              <SelectMenu
-                label="选择画面比例"
-                value={aspect}
-                options={ASPECT_MENU_OPTIONS}
-                disabled={generation.isLoading}
-                className="studio-aspect-select"
-                onValueChange={setAspect}
-              />
-              <div className="studio-count-stepper" role="group" aria-label="生成张数">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="减少生成张数"
-                  disabled={generation.isLoading || count <= MIN_COUNT}
-                  onClick={() => setCount((value) => Math.max(MIN_COUNT, value - 1))}
-                >
-                  <Minus aria-hidden="true" />
-                </Button>
-                <output aria-label={`${count} 张`}>{count}</output>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="增加生成张数"
-                  disabled={generation.isLoading || count >= MAX_COUNT}
-                  onClick={() => setCount((value) => Math.min(MAX_COUNT, value + 1))}
-                >
-                  <Plus aria-hidden="true" />
-                </Button>
-              </div>
-              <DiscoveryPublishToggle
-                isPublic={isPublic}
-                disabled={generation.isLoading}
-                onPublicChange={setIsPublic}
-              />
-              <span className="studio-toolbar-spacer" aria-hidden="true" />
-              <span className="studio-toolbar-meta">
-                <span
-                  className="studio-toolbar-status"
-                  data-active={generation.isLoading ? 'true' : undefined}
-                  role="status"
-                  aria-live="polite"
-                >
+            <GenerationComposerControls
+              model={model}
+              aspect={aspect}
+              count={count}
+              resolution={resolution}
+              isPublic={isPublic}
+              disabled={generation.isLoading}
+              onModelChange={setModel}
+              onAspectChange={setAspect}
+              onCountChange={setCount}
+              onResolutionChange={updateResolution}
+              onPublicChange={setIsPublic}
+              trailingContent={
+                <span className="studio-toolbar-meta">
                   <span
-                    className="studio-toolbar-status__dot"
+                    className="studio-toolbar-status"
                     data-active={generation.isLoading ? 'true' : undefined}
-                    aria-hidden="true"
-                  />
-                  {generation.isLoading ? generation.statusMessage : '准备生成'}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <span
+                      className="studio-toolbar-status__dot"
+                      data-active={generation.isLoading ? 'true' : undefined}
+                      aria-hidden="true"
+                    />
+                    {generation.isLoading ? generation.statusMessage : '准备生成'}
+                  </span>
+                  <span
+                    className="studio-toolbar-quota"
+                    aria-label={
+                      imageApiKey.status?.configured === true
+                        ? '当前使用个人 API Key'
+                        : '今日生成额度'
+                    }
+                  >
+                    {imageApiKey.isLoading
+                      ? '调用：同步中'
+                      : imageApiKey.status?.configured === true
+                        ? `调用：个人 Key · ${imageApiKey.status.keySuffix ?? '已配置'}`
+                        : quotaLoading
+                          ? '额度：同步中'
+                          : isAuthenticated
+                            ? `额度：${quota?.remaining ?? '—'} / ${quota?.total ?? '—'}`
+                            : '额度：登录后查看'}
+                  </span>
                 </span>
-                <span
-                  className="studio-toolbar-quota"
-                  aria-label={
-                    imageApiKey.status?.configured === true
-                      ? '当前使用个人 API Key'
-                      : '今日生成额度'
-                  }
-                >
-                  {imageApiKey.isLoading
-                    ? '调用：同步中'
-                    : imageApiKey.status?.configured === true
-                      ? `调用：个人 Key · ${imageApiKey.status.keySuffix ?? '已配置'}`
-                      : quotaLoading
-                        ? '额度：同步中'
-                        : isAuthenticated
-                          ? `额度：${quota?.remaining ?? '—'} / ${quota?.total ?? '—'}`
-                          : '额度：登录后查看'}
-                </span>
-              </span>
-            </div>
+              }
+            />
           }
-          className="studio-agent-input"
+          className="generation-composer studio-agent-input"
         />
       </div>
 

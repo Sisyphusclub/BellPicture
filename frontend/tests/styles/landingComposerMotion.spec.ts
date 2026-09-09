@@ -40,8 +40,9 @@ describe('landing composer motion contract', () => {
 
     expect(dockContract).toContain('width: min(940px, calc(100% - 144px));');
     expect(dockContract).toContain(
-      'margin-left: calc(-1 * min(470px, (100vw - 144px) / 2)) !important;',
+      'margin-left: calc(-1 * min(470px, (100% - 144px) / 2)) !important;',
     );
+    expect(dockContract).not.toContain('(100vw - 144px)');
     expect(dockContract).toContain('translate: none;');
     expect(dockContract).toContain('transform: none;');
     expect(dockContract).not.toContain('transform: translateX(-50%);');

@@ -151,6 +151,50 @@ describe('TwoApiImageProvider', () => {
     expect(body['size']).toBe('1360x2048');
   });
 
+  it.each([
+    ['3:4', '1024x1360', 1024, 1360],
+    ['4:3', '1360x1024', 1360, 1024],
+  ] as const)(
+    'maps the new %s standard ratio to provider size payload',
+    async (aspectRatio, size, width, height) => {
+      const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+        jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
+      );
+      const provider = new TwoApiImageProvider(baseConfig, fetchMock);
+
+      const out = await provider.generate({ prompt: 'new ratio', aspectRatio });
+
+      expect(out.images[0]).toMatchObject({ width, height });
+      const init = fetchMock.mock.calls[0]![1] as RequestInit;
+      const body = JSON.parse(init.body as string) as Record<string, unknown>;
+      expect(body['size']).toBe(size);
+    },
+  );
+
+  it.each([
+    ['3:4', '1536x2048', 1536, 2048],
+    ['4:3', '2048x1536', 2048, 1536],
+  ] as const)(
+    'maps the new %s 2k ratio to provider size payload',
+    async (aspectRatio, size, width, height) => {
+      const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+        jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
+      );
+      const provider = new TwoApiImageProvider(baseConfig, fetchMock);
+
+      const out = await provider.generate({
+        prompt: 'new ratio 2k',
+        aspectRatio,
+        resolution: '2k',
+      });
+
+      expect(out.images[0]).toMatchObject({ width, height });
+      const init = fetchMock.mock.calls[0]![1] as RequestInit;
+      const body = JSON.parse(init.body as string) as Record<string, unknown>;
+      expect(body['size']).toBe(size);
+    },
+  );
+
   it('routes high-resolution text-to-image calls to the configured high-res base URL', async () => {
     const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
       jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),

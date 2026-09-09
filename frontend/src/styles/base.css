@@ -920,7 +920,7 @@ video {
   gap: 0;
   /* Use a margin offset instead of transform so docked composers can escape
      this content container and remain fixed to the viewport while scrolling. */
-  margin-left: calc(-1 * min(470px, (100vw - 144px) / 2));
+  margin-left: calc(-1 * min(470px, (100% - 144px) / 2));
   text-align: center;
 }
 .landing-hero__content h1 {
@@ -8940,7 +8940,7 @@ video {
   width: min(940px, calc(100% - 144px));
   min-height: 0;
   margin: 0 !important;
-  margin-left: calc(-1 * min(470px, (100vw - 144px) / 2)) !important;
+  margin-left: calc(-1 * min(470px, (100% - 144px) / 2)) !important;
   translate: none;
   transform: none;
 }
@@ -10623,5 +10623,334 @@ video {
 @media (prefers-reduced-motion: reduce) {
   .route-loading > span {
     animation: none;
+  }
+}
+
+/* Shared image-generation composer contract for Discover and Generate. */
+.landing-composer-hero .generation-composer,
+.landing-composer-dock .generation-composer,
+.generation-composer.studio-agent-input {
+  --border-radius: 20px !important;
+  --card-bg: color-mix(in oklch, var(--card) 86%, transparent) !important;
+  border: 1px solid color-mix(in oklch, var(--border-strong) 76%, transparent);
+  border-radius: 20px;
+  background: var(--card-bg) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(236 248 255 / 0.08),
+    0 22px 56px -34px rgb(0 0 0 / 0.92);
+}
+.generation-composer.border-glow-card > .border-glow-inner,
+.generation-composer .agent-chat-input__surface {
+  border-radius: 19px;
+  background: transparent !important;
+}
+.generation-composer .agent-chat-input__surface {
+  padding: 4px 8px 8px;
+}
+.generation-composer .agent-chat-input__textarea {
+  min-height: 88px !important;
+  max-height: 160px !important;
+  padding: 18px 16px 12px !important;
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+}
+.generation-composer .agent-chat-input__toolbar {
+  margin-top: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  border-top: 0;
+  padding: 2px 1px 0;
+}
+.generation-composer .agent-chat-input__toolbar-content {
+  order: 3;
+  width: 100%;
+  min-width: 0;
+  flex: 1 0 100%;
+  justify-content: flex-start;
+  margin-left: 0;
+  border-top: 1px solid var(--border);
+  padding: 6px 2px 0;
+}
+.generation-composer .agent-chat-input__toolbar-group--end {
+  margin-left: auto;
+}
+.generation-composer .agent-chat-input__submit {
+  width: auto;
+  min-width: 68px;
+  height: 36px;
+  min-height: 36px;
+  flex: 0 0 68px;
+  border: 0;
+  border-radius: var(--radius-full);
+  padding: 0 10px;
+  box-shadow: none;
+}
+
+.generation-composer-controls {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+.generation-composer-controls .beui-select-trigger,
+.generation-custom-trigger,
+.generation-public-toggle,
+.generation-controls-tail > * {
+  box-sizing: border-box;
+  height: 40px;
+  min-height: 40px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.generation-composer-controls .beui-select-trigger:hover:not(:disabled),
+.generation-custom-trigger:hover:not(:disabled),
+.generation-public-toggle:hover,
+.generation-controls-tail > button:hover:not(:disabled) {
+  background: var(--muted);
+  color: var(--foreground);
+}
+.generation-composer-controls .generation-model-select {
+  width: 190px;
+  min-width: 0;
+  flex: 0 1 190px;
+  padding-inline: 10px;
+}
+.generation-model-select__icon {
+  width: 17px;
+  height: 17px;
+}
+.generation-custom-trigger {
+  display: inline-flex;
+  width: auto;
+  min-width: 210px;
+  flex: 0 1 auto;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  padding: 0 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.generation-custom-trigger > svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+.generation-custom-trigger > small {
+  overflow: hidden;
+  min-width: 0;
+  color: color-mix(in oklch, var(--muted-foreground) 78%, transparent);
+  font-size: 10px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.generation-custom-trigger > svg:last-child {
+  margin-left: auto;
+}
+.generation-custom-panel {
+  display: grid;
+  width: min(720px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  grid-template-columns: minmax(300px, 1.55fr) minmax(150px, 0.75fr) minmax(145px, 0.7fr);
+  gap: 12px;
+  overflow-x: hidden;
+  border-color: color-mix(in oklch, var(--border-strong) 78%, transparent) !important;
+  border-radius: 8px !important;
+  background: color-mix(in oklch, var(--background) 96%, var(--card)) !important;
+  padding: 12px !important;
+  box-shadow: 0 22px 58px -24px rgb(0 0 0 / 0.82) !important;
+}
+.generation-custom-group {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 7px;
+}
+.generation-custom-group__label {
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 16px;
+}
+.generation-segmented {
+  display: grid;
+  min-width: 0;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(36px, 1fr);
+  gap: 3px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in oklch, var(--muted) 42%, transparent);
+  padding: 3px;
+}
+.generation-segmented--aspect {
+  grid-template-columns: repeat(4, minmax(54px, 1fr));
+  grid-auto-flow: row;
+}
+.generation-segmented .button {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  min-height: 34px;
+  justify-content: center;
+  gap: 3px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  padding: 0 7px;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+.generation-segmented .button svg {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+}
+.generation-segmented .button:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--foreground);
+}
+.generation-segmented .button[aria-checked='true'] {
+  border-color: color-mix(in oklch, var(--ring) 46%, var(--border));
+  background: var(--surface-raised);
+  color: var(--foreground);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+.generation-segmented .button:disabled {
+  cursor: not-allowed;
+  opacity: 0.28;
+}
+.generation-public-toggle {
+  position: relative;
+  display: inline-flex;
+  min-width: 124px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 9px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.generation-public-toggle input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+.generation-public-toggle__track {
+  position: relative;
+  width: 25px;
+  height: 15px;
+  flex: 0 0 auto;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  background: var(--background);
+}
+.generation-public-toggle__track::after {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--muted-foreground);
+  content: '';
+  transition: transform 0.18s var(--ease-out-expo);
+}
+.generation-public-toggle input:checked + .generation-public-toggle__track {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+.generation-public-toggle input:checked + .generation-public-toggle__track::after {
+  background: var(--primary-foreground);
+  transform: translateX(10px);
+}
+.generation-public-toggle input:focus-visible + .generation-public-toggle__track {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.generation-public-toggle:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.generation-controls-tail {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+.generation-controls-tail .landing-quota {
+  margin-left: 0;
+}
+.generation-controls-tail .studio-toolbar-meta {
+  min-width: 0;
+}
+
+@media (max-width: 860px) {
+  .generation-composer .agent-chat-input__textarea {
+    min-height: 86px !important;
+    max-height: 150px !important;
+    padding: 14px 14px 8px !important;
+  }
+  .generation-composer-controls {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .generation-composer-controls .generation-model-select {
+    width: min(190px, 48%);
+    flex: 1 1 170px;
+  }
+  .generation-custom-trigger {
+    min-width: 170px;
+    flex: 1 1 190px;
+  }
+  .generation-public-toggle {
+    flex: 0 0 124px;
+  }
+}
+
+@media (max-width: 560px) {
+  .generation-composer .agent-chat-input__surface {
+    padding-inline: 6px;
+  }
+  .generation-composer-controls .generation-model-select,
+  .generation-custom-trigger {
+    width: calc(50% - 3px);
+    min-width: 0;
+    flex: 1 1 calc(50% - 3px);
+  }
+  .generation-custom-trigger > small {
+    display: none;
+  }
+  .generation-public-toggle {
+    min-width: 0;
+    flex: 0 1 124px;
+  }
+  .generation-controls-tail {
+    flex: 1 1 150px;
+  }
+  .generation-custom-panel {
+    width: min(360px, calc(100vw - 20px));
+    max-width: calc(100vw - 20px);
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px !important;
+  }
+  .generation-segmented--aspect {
+    grid-template-columns: repeat(4, minmax(48px, 1fr));
   }
 }

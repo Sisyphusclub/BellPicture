@@ -357,13 +357,13 @@ describe('POST /api/images/generate', () => {
     expect(quota.body.remaining).toBe(20);
   });
 
-  it('lets admins call the dedicated high-resolution endpoint', async () => {
+  it('lets authenticated users call the dedicated high-resolution endpoint', async () => {
     const { provider } = fakeProvider();
     const userId = `high-res-admin-${randomUUID()}`;
     const app = buildApp(provider, stubAuth(userId, true));
 
     const res = await request(app).post('/api/images/generate/high-res').send({
-      prompt: '管理员生成 4K 宽屏图',
+      prompt: '登录用户生成 4K 宽屏图',
       count: 1,
       aspectRatio: '16:9',
       resolution: '4k',
@@ -385,7 +385,7 @@ describe('POST /api/images/generate', () => {
 
     const history = await request(app).get('/api/history');
     expect(history.body.records[0]).toMatchObject({
-      prompt: '管理员生成 4K 宽屏图',
+      prompt: '登录用户生成 4K 宽屏图',
       width: 3840,
       height: 2160,
       count: 1,
@@ -394,7 +394,7 @@ describe('POST /api/images/generate', () => {
     });
   });
 
-  it('rejects high-resolution endpoint calls from non-admin users', async () => {
+  it('lets non-admin users call the high-resolution endpoint', async () => {
     const { provider } = fakeProvider();
     const userId = `high-res-user-${randomUUID()}`;
     const app = buildApp(provider, stubAuth(userId, false));
@@ -404,12 +404,11 @@ describe('POST /api/images/generate', () => {
       resolution: '2k',
     });
 
-    expect(res.status).toBe(403);
-    expect(res.body.error.code).toBe('FORBIDDEN');
-    expect(provider.generate).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(provider.generate).toHaveBeenCalledWith(expect.objectContaining({ resolution: '2k' }));
 
     const quota = await request(app).get('/api/images/quota');
-    expect(quota.body.remaining).toBe(20);
+    expect(quota.body.remaining).toBe(19);
   });
 
   it('requires 2k or 4k on the high-resolution endpoint', async () => {
@@ -763,7 +762,7 @@ describe('POST /api/images/generate', () => {
 
     const res = await request(app)
       .post('/api/images/generate')
-      .send({ prompt: 'p', aspectRatio: '4:3' });
+      .send({ prompt: 'p', aspectRatio: '5:4' });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('BAD_REQUEST');
   });

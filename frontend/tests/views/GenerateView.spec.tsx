@@ -261,6 +261,75 @@ it.each(['gpt-image-2.5-flare', 'gpt-image-2.5-sunburst'] as const)(
   },
 );
 
+it('shows the requested custom aspect ratios in order and preserves a selection', async () => {
+  const user = userEvent.setup();
+  render(
+    <MemoryRouter initialEntries={['/generate']}>
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+
+  const customTrigger = screen.getByRole('button', { name: '自定义生成参数' });
+  await user.click(customTrigger);
+  const aspectGroup = screen.getByRole('radiogroup', { name: '画面比例' });
+  expect(
+    within(aspectGroup)
+      .getAllByRole('radio')
+      .map((option) => option.textContent),
+  ).toEqual(['智能', '1:1', '3:4', '4:3', '16:9', '9:16', '2:3', '3:2']);
+
+  await user.click(within(aspectGroup).getByRole('radio', { name: '4:3' }));
+  await user.keyboard('{Escape}');
+  expect(screen.queryByRole('radiogroup', { name: '画面比例' })).not.toBeInTheDocument();
+  expect(customTrigger).toHaveTextContent('4:3');
+
+  await user.click(customTrigger);
+  expect(
+    within(screen.getByRole('radiogroup', { name: '画面比例' })).getByRole('radio', {
+      name: '4:3',
+    }),
+  ).toHaveAttribute('aria-checked', 'true');
+});
+
+it('resolves the smart aspect from the first discovery reference image', async () => {
+  const close = vi.fn();
+  vi.stubGlobal(
+    'createImageBitmap',
+    vi.fn().mockResolvedValue({ width: 750, height: 1000, close }),
+  );
+  const reference = new File(['portrait'], 'portrait.png', { type: 'image/png' });
+
+  render(
+    <MemoryRouter
+      initialEntries={[
+        {
+          pathname: '/generate',
+          search: '?prompt=%E7%AB%96%E7%89%88%E6%B5%B7%E6%8A%A5&aspect=auto',
+          state: {
+            autoGenerate: true,
+            attachments: [{ id: 'portrait', name: reference.name, file: reference }],
+          },
+        },
+      ]}
+    >
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+
+  await waitFor(() => expect(generation.generate).toHaveBeenCalledTimes(1));
+  expect(generation.generate).toHaveBeenCalledWith(
+    expect.objectContaining({
+      aspectRatio: '3:4',
+      referenceFiles: [reference],
+    }),
+  );
+  expect(close).toHaveBeenCalledTimes(1);
+});
+
 it('restores a generated batch model when reusing its complete settings', async () => {
   const user = userEvent.setup();
   render(
@@ -386,15 +455,17 @@ it('supports up to four images per generation', async () => {
     </MemoryRouter>,
   );
 
-  const increase = screen.getByRole('button', { name: '增加生成张数' });
   expect(screen.getByRole('button', { name: '生成图片' })).toHaveTextContent('1');
-  await user.click(increase);
-  await user.click(increase);
-  await user.click(increase);
+  await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
+  const countGroup = screen.getByRole('radiogroup', { name: '生成张数' });
+  await user.click(within(countGroup).getByRole('radio', { name: '4' }));
 
   expect(screen.getByRole('status', { name: '4 张' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: '生成图片' })).toHaveTextContent('4');
-  expect(increase).toBeDisabled();
+  expect(within(countGroup).getByRole('radio', { name: '4' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
   await user.click(screen.getByRole('button', { name: '生成图片' }));
   await waitFor(() =>
     expect(generation.generate).toHaveBeenCalledWith(expect.objectContaining({ count: 4 })),
@@ -952,7 +1023,7 @@ it('edits a completed prompt and replaces the original generation batch', async 
       referenceIds: ['reference-one.png'],
     }),
   );
-  expect(generation.generate.mock.calls[1]?.[0]).not.toHaveProperty('resolution');
+  expect(generation.generate.mock.calls[1]?.[0]).toHaveProperty('resolution', '2k');
 
   await act(async () => {
     replacement.resolve({
@@ -1067,7 +1138,7 @@ it('replaces pending skeletons with a retryable error card on failure', async ()
   expect(within(errorCard).getByRole('button', { name: '重试' })).toBeEnabled();
 });
 
-it('keeps admin generation fixed to 1K and ignores legacy high-resolution URL settings', async () => {
+it('normalizes an incompatible 4K URL ratio to 16:9', async () => {
   const user = userEvent.setup();
   render(
     <MemoryRouter initialEntries={['/generate?prompt=夜空&aspect=2%3A3&resolution=4k']}>
@@ -1077,17 +1148,23 @@ it('keeps admin generation fixed to 1K and ignores legacy high-resolution URL se
     </MemoryRouter>,
   );
 
-  expect(screen.queryByRole('radiogroup', { name: '清晰度' })).not.toBeInTheDocument();
-  expect(screen.getByRole('button', { name: '选择画面比例' })).toHaveTextContent('2:3');
+  expect(screen.getByRole('button', { name: '自定义生成参数' })).toHaveTextContent('16:9');
+  expect(screen.getByRole('button', { name: '自定义生成参数' })).toHaveTextContent('4K');
+  await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
+  const aspectGroup = screen.getByRole('radiogroup', { name: '画面比例' });
+  expect(within(aspectGroup).getByRole('radio', { name: '16:9' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+  expect(within(aspectGroup).getByRole('radio', { name: '2:3' })).toBeDisabled();
   await user.click(screen.getByRole('button', { name: '生成图片' }));
   await waitFor(() => expect(generation.generate).toHaveBeenCalledTimes(1));
   expect(generation.generate.mock.calls[0]?.[0]).toEqual(
-    expect.objectContaining({ aspectRatio: '2:3' }),
+    expect.objectContaining({ aspectRatio: '16:9', resolution: '4k' }),
   );
-  expect(generation.generate.mock.calls[0]?.[0]).not.toHaveProperty('resolution');
 });
 
-it('does not render or submit high-resolution settings for non-admin users', async () => {
+it('lets non-admin users select and submit high-resolution settings', async () => {
   authMocks.isAdmin = false;
   const user = userEvent.setup();
   render(
@@ -1098,13 +1175,18 @@ it('does not render or submit high-resolution settings for non-admin users', asy
     </MemoryRouter>,
   );
 
-  expect(screen.queryByRole('radiogroup', { name: '清晰度' })).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
+  await user.click(
+    within(screen.getByRole('radiogroup', { name: '清晰度' })).getByRole('radio', {
+      name: '2K',
+    }),
+  );
   await user.click(screen.getByRole('button', { name: '生成图片' }));
   await waitFor(() => expect(generation.generate).toHaveBeenCalledTimes(1));
-  expect(generation.generate.mock.calls[0]?.[0]).not.toHaveProperty('resolution');
+  expect(generation.generate.mock.calls[0]?.[0]).toHaveProperty('resolution', '2k');
 });
 
-it('restores supported settings and normalizes legacy high-resolution snapshots to 1K', async () => {
+it('restores supported settings and preserves high-resolution snapshots', async () => {
   const user = userEvent.setup();
   render(
     <MemoryRouter
@@ -1128,14 +1210,15 @@ it('restores supported settings and normalizes legacy high-resolution snapshots 
       prompt: '雨夜建筑',
       aspectRatio: '16:9',
       count: 2,
+      resolution: '2k',
       isPublic: true,
     }),
   );
-  expect(generation.generate.mock.calls[0]?.[0]).not.toHaveProperty('resolution');
 
   await user.click(screen.getByRole('button', { name: '复用完整设置' }));
   expect(screen.getByText('沿用 1 张历史参考图')).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: '选择画面比例' })).toHaveTextContent('16:9');
+  expect(screen.getByRole('button', { name: '自定义生成参数' })).toHaveTextContent('16:9');
+  expect(screen.getByRole('button', { name: '自定义生成参数' })).toHaveTextContent('2K');
   expect(screen.getByRole('status', { name: '2 张' })).toBeInTheDocument();
   expect(screen.getByRole('switch', { name: '发布到发现页' })).toBeChecked();
 });

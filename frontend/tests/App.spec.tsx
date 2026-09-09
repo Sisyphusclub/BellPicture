@@ -259,6 +259,7 @@ beforeEach(() => {
 
 describe('React application routes', () => {
   it('renders the complete GPT Image 2 gallery without pagination', async () => {
+    const user = userEvent.setup();
     const { container } = renderRoute('/');
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Turn your idea into images' }),
@@ -343,8 +344,13 @@ describe('React application routes', () => {
     expect(screen.queryByRole('button', { name: /选择智能体/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '添加参考图或技能' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /选择模型和推理强度/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '选择首页画面尺寸' })).toBeInTheDocument();
-    expect(screen.getByRole('group', { name: '生成张数' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '选择模型' })).toHaveTextContent('gpt-image-2');
+    expect(screen.getByRole('button', { name: '自定义生成参数' })).toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup', { name: '画面比例' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
+    expect(screen.getByRole('radiogroup', { name: '画面比例' })).toBeInTheDocument();
+    expect(screen.getByRole('radiogroup', { name: '生成张数' })).toBeInTheDocument();
+    expect(screen.getByRole('radiogroup', { name: '清晰度' })).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: '发布到发现页' })).not.toBeChecked();
     expect(screen.getByRole('status', { name: '剩余额度 16，总额度 20' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: '正在发生的想象' })).not.toBeInTheDocument();
@@ -473,9 +479,16 @@ describe('React application routes', () => {
     expect(container.querySelector(".landing-sidebar [data-sidebar='separator']")).toBeNull();
   });
 
-  it('hides non-functional homepage model settings', () => {
+  it('shows the functional homepage model selector', async () => {
+    const user = userEvent.setup();
     renderRoute('/');
     expect(screen.queryByRole('button', { name: /选择模型和推理强度/ })).not.toBeInTheDocument();
+    const trigger = screen.getByRole('button', { name: '选择模型' });
+    await user.click(trigger);
+    expect(screen.getByRole('menuitemradio', { name: 'gpt-image-2.5-flare' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('menuitemradio', { name: 'gpt-image-2.5-sunburst' }),
+    ).toBeInTheDocument();
   });
 
   it('shows the current generation credit cost in the homepage submit action', async () => {
@@ -486,7 +499,12 @@ describe('React application routes', () => {
     expect(submit).toHaveTextContent('1');
     expect(submit).toBeDisabled();
 
-    await user.click(screen.getByRole('button', { name: '增加生成张数' }));
+    await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
+    await user.click(
+      within(screen.getByRole('radiogroup', { name: '生成张数' })).getByRole('radio', {
+        name: '2',
+      }),
+    );
     expect(submit).toHaveTextContent('2');
 
     await user.type(screen.getByRole('textbox', { name: '首页创作提示词' }), '玻璃城市');
@@ -556,9 +574,24 @@ describe('React application routes', () => {
     expect(screen.queryByText('reference-5.png')).not.toBeInTheDocument();
 
     await user.type(screen.getByRole('textbox', { name: '首页创作提示词' }), '雨夜的未来城市');
-    await user.click(screen.getByRole('button', { name: '选择首页画面尺寸' }));
-    await user.click(screen.getByRole('menuitemradio', { name: /16:9/ }));
-    await user.click(screen.getByRole('button', { name: '增加生成张数' }));
+    await user.click(screen.getByRole('button', { name: '选择模型' }));
+    await user.click(screen.getByRole('menuitemradio', { name: 'gpt-image-2.5-sunburst' }));
+    await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
+    await user.click(
+      within(screen.getByRole('radiogroup', { name: '画面比例' })).getByRole('radio', {
+        name: '16:9',
+      }),
+    );
+    await user.click(
+      within(screen.getByRole('radiogroup', { name: '生成张数' })).getByRole('radio', {
+        name: '2',
+      }),
+    );
+    await user.click(
+      within(screen.getByRole('radiogroup', { name: '清晰度' })).getByRole('radio', {
+        name: '2K',
+      }),
+    );
     await user.click(screen.getByRole('switch', { name: '发布到发现页' }));
     await user.click(screen.getByRole('button', { name: '带着提示词开始创作' }));
 
@@ -567,8 +600,10 @@ describe('React application routes', () => {
     expect(generation.generate).toHaveBeenCalledWith(
       expect.objectContaining({
         prompt: '雨夜的未来城市',
+        model: 'gpt-image-2.5-sunburst',
         aspectRatio: '16:9',
         count: 2,
+        resolution: '2k',
         isPublic: true,
         referenceFiles: referenceFiles.slice(0, 4),
       }),
@@ -576,7 +611,8 @@ describe('React application routes', () => {
     expect(screen.getByRole('region', { name: '本次创作结果' })).toHaveTextContent(
       '雨夜的未来城市',
     );
-    expect(screen.getByRole('button', { name: '选择画面比例' })).toHaveTextContent('16:9');
+    expect(screen.getByRole('button', { name: '自定义生成参数' })).toHaveTextContent('16:9');
+    expect(screen.getByRole('button', { name: '自定义生成参数' })).toHaveTextContent('2K');
     expect(screen.getByRole('status', { name: '2 张' })).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: '发布到发现页' })).toBeChecked();
   });
@@ -642,7 +678,7 @@ describe('React application routes', () => {
     const generate = within(workspace);
     expect(generate.getByRole('button', { name: '选择模型' })).toHaveTextContent('gpt-image-2');
     expect(generate.getByLabelText('今日生成额度')).toBeInTheDocument();
-    expect(generate.getByLabelText('选择画面比例')).toBeInTheDocument();
+    expect(generate.getByRole('button', { name: '自定义生成参数' })).toBeInTheDocument();
     expect(generate.getByRole('button', { name: /生成图片/ })).toBeInTheDocument();
     expect(workspace).toHaveClass('is-empty');
     expect(generate.queryByRole('region', { name: '本次创作结果' })).not.toBeInTheDocument();
@@ -1001,7 +1037,7 @@ describe('React application routes', () => {
     expect(screen.getByRole('textbox', { name: '图像提示词' })).toHaveTextContent(
       'Generate a high-end photorealistic render of a future-facing biotech laboratory',
     );
-    expect(screen.getByRole('button', { name: '选择画面比例' })).toHaveTextContent('16:9');
+    expect(screen.getByRole('button', { name: '自定义生成参数' })).toHaveTextContent('16:9');
     expect(screen.getByRole('status', { name: '1 张' })).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: '发布到发现页' })).not.toBeChecked();
     expect(generation.generate).not.toHaveBeenCalled();

@@ -1,4 +1,4 @@
-export const ASPECT_RATIOS = ['1:1', '3:2', '2:3', '16:9', '9:16'] as const;
+export const ASPECT_RATIOS = ['1:1', '3:4', '4:3', '16:9', '9:16', '2:3', '3:2'] as const;
 export type AspectRatio = (typeof ASPECT_RATIOS)[number];
 
 export const IMAGE_RESOLUTIONS = ['standard', '2k', '4k'] as const;
@@ -22,10 +22,12 @@ export interface AspectSize {
 
 export const ASPECT_SIZE_MAP: Record<AspectRatio, AspectSize> = {
   '1:1': { size: '1024x1024', width: 1024, height: 1024 },
-  '3:2': { size: '1536x1024', width: 1536, height: 1024 },
-  '2:3': { size: '1024x1536', width: 1024, height: 1536 },
+  '3:4': { size: '1024x1360', width: 1024, height: 1360 },
+  '4:3': { size: '1360x1024', width: 1360, height: 1024 },
   '16:9': { size: '1792x1024', width: 1792, height: 1024 },
   '9:16': { size: '1024x1792', width: 1024, height: 1792 },
+  '2:3': { size: '1024x1536', width: 1024, height: 1536 },
+  '3:2': { size: '1536x1024', width: 1536, height: 1024 },
 };
 
 export const RESOLUTION_SIZE_MAP: Record<
@@ -35,10 +37,12 @@ export const RESOLUTION_SIZE_MAP: Record<
   standard: ASPECT_SIZE_MAP,
   '2k': {
     '1:1': { size: '2048x2048', width: 2048, height: 2048 },
-    '3:2': { size: '2048x1360', width: 2048, height: 1360 },
-    '2:3': { size: '1360x2048', width: 1360, height: 2048 },
+    '3:4': { size: '1536x2048', width: 1536, height: 2048 },
+    '4:3': { size: '2048x1536', width: 2048, height: 1536 },
     '16:9': { size: '2048x1152', width: 2048, height: 1152 },
     '9:16': { size: '1152x2048', width: 1152, height: 2048 },
+    '2:3': { size: '1360x2048', width: 1360, height: 2048 },
+    '3:2': { size: '2048x1360', width: 2048, height: 1360 },
   },
   '4k': {
     '16:9': { size: '3840x2160', width: 3840, height: 2160 },
