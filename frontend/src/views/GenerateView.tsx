@@ -139,6 +139,19 @@ const ASPECT_MENU_OPTIONS = ASPECT_RATIOS.map((value) => ({
   label: ASPECT_RATIO_LABELS[value],
 }));
 
+const IMAGE_MODEL_OPTIONS = [
+  { value: 'gpt-image-2', label: 'gpt-image-2' },
+  { value: 'gpt-image-2.5-flare', label: 'gpt-image-2.5-flare' },
+  { value: 'gpt-image-2.5-sunburst', label: 'gpt-image-2.5-sunburst' },
+] as const;
+const AGENT_IMAGE_MODELS = IMAGE_MODEL_OPTIONS.map(({ value, label }) => ({ id: value, label }));
+const DEFAULT_IMAGE_MODEL = IMAGE_MODEL_OPTIONS[0].value;
+type ImageModel = (typeof IMAGE_MODEL_OPTIONS)[number]['value'];
+
+function normalizeImageModel(value: string): ImageModel {
+  return IMAGE_MODEL_OPTIONS.find((option) => option.value === value)?.value ?? DEFAULT_IMAGE_MODEL;
+}
+
 function isAspectRatio(value: string | null): value is AspectRatio {
   return value !== null && (ASPECT_RATIOS as readonly string[]).includes(value);
 }
@@ -446,6 +459,7 @@ export function GenerateView() {
   const autoGenerationHandled = useRef(false);
   const bareRouteRestoreHandled = useRef(false);
   const [prompt, setPrompt] = useState(searchParams.get('prompt') ?? '');
+  const [model, setModel] = useState<ImageModel>(DEFAULT_IMAGE_MODEL);
   const [count, setCount] = useState(() => readCount(searchParams));
   const [aspect, setAspect] = useState<AspectRatio>(() => {
     const value = searchParams.get('aspect');
@@ -538,7 +552,7 @@ export function GenerateView() {
         createdAt: session.updatedAt,
         settings: {
           prompt: searchParams.get('prompt')?.trim() || session.title,
-          model: 'gpt-image-2',
+          model: DEFAULT_IMAGE_MODEL,
           count: readCount(searchParams),
           aspectRatio: isAspectRatio(queryAspect) ? queryAspect : DEFAULT_ASPECT_RATIO,
           resolution: DEFAULT_IMAGE_RESOLUTION,
@@ -697,7 +711,7 @@ export function GenerateView() {
 
   const currentSettings = (promptValue = prompt): GenerationSettingsSnapshot => ({
     prompt: promptValue.trim(),
-    model: 'gpt-image-2',
+    model,
     count,
     aspectRatio: aspect,
     resolution: DEFAULT_IMAGE_RESOLUTION,
@@ -1000,6 +1014,7 @@ export function GenerateView() {
 
   const reuseSettings = (settings: GenerationSettingsSnapshot): void => {
     setPrompt(settings.prompt);
+    setModel(normalizeImageModel(settings.model));
     setCount(settings.count);
     setAspect(settings.aspectRatio);
     setIsPublic(settings.isPublic);
@@ -1247,8 +1262,8 @@ export function GenerateView() {
           disabled={authLoading}
           minRows={2}
           maxRows={7}
-          models={[{ id: 'gpt-image-2', label: 'gpt-image-2' }]}
-          model="gpt-image-2"
+          models={AGENT_IMAGE_MODELS}
+          model={model}
           reasoningLevels={[]}
           speedModes={[]}
           agents={[]}
@@ -1258,10 +1273,15 @@ export function GenerateView() {
           acceptedFileTypes="image/png,image/jpeg,image/webp"
           toolbarContent={
             <div className="studio-controls">
-              <span className="studio-model" aria-label="当前模型 gpt-image-2">
-                <ModelLogo modelId="gpt-image-2" className="studio-model__icon" />
-                <span>gpt-image-2</span>
-              </span>
+              <SelectMenu
+                label="选择模型"
+                value={model}
+                options={IMAGE_MODEL_OPTIONS}
+                disabled={generation.isLoading}
+                leadingIcon={<ModelLogo modelId={model} className="studio-model__icon" />}
+                className="studio-model-select"
+                onValueChange={setModel}
+              />
               <SelectMenu
                 label="选择画面比例"
                 value={aspect}

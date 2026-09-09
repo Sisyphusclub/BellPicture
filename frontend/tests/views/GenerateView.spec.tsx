@@ -216,6 +216,79 @@ it('keeps the generation workspace prompt plain and focused', () => {
   expect(document.querySelectorAll('.generation-history-track__mark')).toHaveLength(0);
 });
 
+it('offers the default model and both new upstream models', async () => {
+  const user = userEvent.setup();
+  render(
+    <MemoryRouter initialEntries={['/generate']}>
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+
+  const trigger = screen.getByRole('button', { name: '选择模型' });
+  expect(trigger).toHaveTextContent('gpt-image-2');
+
+  await user.click(trigger);
+  expect(screen.getByRole('menuitemradio', { name: 'gpt-image-2' })).toHaveAttribute(
+    'data-state',
+    'checked',
+  );
+  expect(screen.getByRole('menuitemradio', { name: 'gpt-image-2.5-flare' })).toBeInTheDocument();
+  expect(screen.getByRole('menuitemradio', { name: 'gpt-image-2.5-sunburst' })).toBeInTheDocument();
+});
+
+it.each(['gpt-image-2.5-flare', 'gpt-image-2.5-sunburst'] as const)(
+  'submits the selected upstream model %s',
+  async (model) => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/generate?prompt=雨夜建筑']}>
+        <ToastProvider>
+          <GenerateView />
+        </ToastProvider>
+      </MemoryRouter>,
+    );
+
+    const trigger = screen.getByRole('button', { name: '选择模型' });
+    await user.click(trigger);
+    await user.click(screen.getByRole('menuitemradio', { name: model }));
+    expect(trigger).toHaveTextContent(model);
+
+    await user.click(screen.getByRole('button', { name: '生成图片' }));
+    await waitFor(() => expect(generation.generate).toHaveBeenCalledTimes(1));
+    expect(generation.generate).toHaveBeenCalledWith(expect.objectContaining({ model }));
+  },
+);
+
+it('restores a generated batch model when reusing its complete settings', async () => {
+  const user = userEvent.setup();
+  render(
+    <MemoryRouter initialEntries={['/generate?prompt=雨夜建筑']}>
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+
+  const trigger = screen.getByRole('button', { name: '选择模型' });
+  await user.click(trigger);
+  await user.click(screen.getByRole('menuitemradio', { name: 'gpt-image-2.5-sunburst' }));
+  await user.click(screen.getByRole('button', { name: '生成图片' }));
+  await waitFor(() => expect(generation.generate).toHaveBeenCalledTimes(1));
+
+  await user.click(trigger);
+  await user.click(screen.getByRole('menuitemradio', { name: 'gpt-image-2.5-flare' }));
+  await user.click(screen.getByRole('button', { name: '复用完整设置' }));
+  expect(trigger).toHaveTextContent('gpt-image-2.5-sunburst');
+
+  await user.click(screen.getByRole('button', { name: '生成图片' }));
+  await waitFor(() => expect(generation.generate).toHaveBeenCalledTimes(2));
+  expect(generation.generate).toHaveBeenLastCalledWith(
+    expect.objectContaining({ model: 'gpt-image-2.5-sunburst' }),
+  );
+});
+
 it('keeps the composer neutral when a retryable result error is present', () => {
   generation.error = new Error('请求内容无效，请检查提示词和参考图。（请求编号：req-123）');
   const { container } = render(

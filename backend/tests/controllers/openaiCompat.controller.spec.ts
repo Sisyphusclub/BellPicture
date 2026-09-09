@@ -139,6 +139,8 @@ describe('GET /v1/models', () => {
     expect(res.body.object).toBe('list');
     expect(res.body.data.map((model: { id: string }) => model.id)).toEqual([
       'gpt-image-2',
+      'gpt-image-2.5-flare',
+      'gpt-image-2.5-sunburst',
       'codex-gpt-image-2',
       'auto',
       'gpt-5',

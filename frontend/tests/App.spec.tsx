@@ -632,11 +632,15 @@ describe('React application routes', () => {
     }
   });
 
-  it('keeps the generation route and its operational controls', () => {
+  it('keeps the generation route and its operational controls', async () => {
     renderRoute('/generate');
-    const workspace = screen.getByRole('region', { name: '图像生成工作区' });
+    const workspace = await screen.findByRole(
+      'region',
+      { name: '图像生成工作区' },
+      { timeout: 5_000 },
+    );
     const generate = within(workspace);
-    expect(generate.getByLabelText('当前模型 gpt-image-2')).toHaveTextContent('gpt-image-2');
+    expect(generate.getByRole('button', { name: '选择模型' })).toHaveTextContent('gpt-image-2');
     expect(generate.getByLabelText('今日生成额度')).toBeInTheDocument();
     expect(generate.getByLabelText('选择画面比例')).toBeInTheDocument();
     expect(generate.getByRole('button', { name: /生成图片/ })).toBeInTheDocument();

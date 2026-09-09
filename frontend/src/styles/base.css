@@ -8524,6 +8524,9 @@ video {
   width: 132px;
   padding-inline: 10px;
 }
+.studio-controls .studio-model-select {
+  width: 190px;
+}
 .studio-controls .studio-model:hover,
 .studio-controls .studio-control:hover,
 .studio-controls .beui-select-trigger:hover:not(:disabled),
@@ -8658,6 +8661,7 @@ video {
     gap: 6px;
   }
   .studio-controls .studio-aspect-select,
+  .studio-controls .studio-model-select,
   .studio-controls .studio-count-stepper,
   .studio-private-toggle {
     width: 100%;
