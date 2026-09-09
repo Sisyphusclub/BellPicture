@@ -6,7 +6,7 @@ Comet 作为 Codex Skill 被发现和调用。项目继续通过 `.comet/config.
 
 ## 验收场景
 
-Scenario: 使用 Skill 提及语法进入 Comet
+### Scenario: 使用 Skill 提及语法进入 Comet
 
 - GIVEN 当前 Codex 会话已发现名为 `comet` 的 Skill
 - WHEN 用户在提示中输入 `$comet`
@@ -14,7 +14,7 @@ Scenario: 使用 Skill 提及语法进入 Comet
 - AND Comet 根据项目配置解析并进入 `native` workflow
 - AND 不出现 `/comet` 未识别错误
 
-Scenario: 从技能列表进入 Comet
+### Scenario: 从技能列表进入 Comet
 
 - GIVEN 当前 Codex 会话已发现名为 `comet` 的 Skill
 - WHEN 用户运行 `/skills` 并选择 `comet`
