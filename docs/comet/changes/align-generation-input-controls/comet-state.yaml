@@ -1,9 +1,9 @@
 schema: comet.native.v4
 name: align-generation-input-controls
 language: zh-CN
-phase: shape
-status: await-user
-state_version: 2
+phase: build
+status: active
+state_version: 3
 brief: brief.md
 shape_confirmation_hash: 63e10b6f9ee3f5889c3f69d1c68a0ff1d06cfe53ff1611b2fbd1d368e6d138c8
 spec_changes:
@@ -16,16 +16,16 @@ workspace:
   target_branch: workspace/detached-dc861a8
   finish: null
 loop:
-  stage: await-user
+  stage: building
   goal_cycle: 1
-  iteration: 0
+  iteration: 1
   attempt: 0
   retry_epoch: 0
   failed_iteration_count: 0
   no_progress_count: 0
   execution_failure_count: 0
   previous_unresolved_ids: []
-  next_action: confirm-shape
+  next_action: submit-builder-candidate
 acceptance:
   - id: A1
     source: brief.md
