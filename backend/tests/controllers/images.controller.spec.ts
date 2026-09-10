@@ -441,6 +441,26 @@ describe('POST /api/images/generate', () => {
     });
   });
 
+  it('charges four credits for a sunburst high-resolution image', async () => {
+    const { provider } = fakeProvider();
+    const userId = `sunburst-high-res-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId, true));
+
+    const res = await request(app).post('/api/images/generate/high-res').send({
+      prompt: 'Sunburst 生成 2K 图片',
+      model: 'gpt-image-2.5-sunburst',
+      resolution: '2k',
+    });
+
+    expect(res.status).toBe(200);
+    expect(provider.generate).toHaveBeenCalledWith(
+      expect.objectContaining({ model: 'gpt-image-2.5-sunburst', resolution: '2k' }),
+    );
+
+    const quota = await request(app).get('/api/images/quota');
+    expect(quota.body.remaining).toBe(16);
+  });
+
   it('lets non-admin users call the high-resolution endpoint', async () => {
     const { provider } = fakeProvider();
     const userId = `high-res-user-${randomUUID()}`;

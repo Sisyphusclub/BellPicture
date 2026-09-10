@@ -499,7 +499,9 @@ it('supports up to four images per generation', async () => {
   const user = userEvent.setup();
   render(
     <MemoryRouter
-      initialEntries={['/generate?prompt=%E5%9B%9B%E5%BC%A0%E6%A6%82%E5%BF%B5%E5%9B%BE']}
+      initialEntries={[
+        '/generate?prompt=%E5%9B%9B%E5%BC%A0%E6%A6%82%E5%BF%B5%E5%9B%BE&model=gpt-image-2.5-sunburst',
+      ]}
     >
       <ToastProvider>
         <GenerateView />
@@ -523,11 +525,11 @@ it('supports up to four images per generation', async () => {
       name: '2K',
     }),
   );
-  expect(screen.getByRole('button', { name: '生成图片' })).toHaveTextContent('12');
+  expect(screen.getByRole('button', { name: '生成图片' })).toHaveTextContent('16');
   await user.click(screen.getByRole('button', { name: '生成图片' }));
   await waitFor(() =>
     expect(generation.generate).toHaveBeenCalledWith(
-      expect.objectContaining({ count: 4, resolution: '2k' }),
+      expect.objectContaining({ count: 4, model: 'gpt-image-2.5-sunburst', resolution: '2k' }),
     ),
   );
 });

@@ -153,9 +153,14 @@ describe('imageGeneration.service', () => {
     });
   });
 
-  it.each(['2k', '4k'] as const)(
-    'reserves and commits three credits per generated %s image',
-    async (resolution) => {
+  it.each([
+    ['gpt-image-2.5-flare', '2k', 6],
+    ['gpt-image-2.5-flare', '4k', 6],
+    ['gpt-image-2.5-sunburst', '2k', 8],
+    ['gpt-image-2.5-sunburst', '4k', 8],
+  ] as const)(
+    'charges the configured high-resolution cost for %s at %s',
+    async (model, resolution, expectedCost) => {
       const provider = fakeProvider();
       const commit = vi.fn();
       const release = vi.fn();
@@ -177,13 +182,32 @@ describe('imageGeneration.service', () => {
       };
 
       await generateImage(
-        { prompt: 'high resolution', count: 2, resolution },
+        { prompt: 'high resolution', model, count: 2, resolution },
         { provider, quotaPool },
       );
 
-      expect(quotaPool.reserve).toHaveBeenCalledWith(6, { scope: 'permanent' });
-      expect(commit).toHaveBeenCalledWith(6);
+      expect(quotaPool.reserve).toHaveBeenCalledWith(expectedCost, { scope: 'permanent' });
+      expect(commit).toHaveBeenCalledWith(expectedCost);
       expect(release).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['gpt-image-2.5-flare', 'gpt-image-2.5-sunburst'])(
+    'charges one credit per standard image for %s',
+    async (model) => {
+      const provider = fakeProvider();
+      const commit = vi.fn();
+      const quotaPool = {
+        reserve: vi.fn(() => ({ commit, release: vi.fn() })),
+      } as unknown as QuotaPool;
+
+      await generateImage(
+        { prompt: 'standard resolution', model, count: 1, resolution: 'standard' },
+        { provider, quotaPool },
+      );
+
+      expect(quotaPool.reserve).toHaveBeenCalledWith(1, { scope: 'all' });
+      expect(commit).toHaveBeenCalledWith(1);
     },
   );
 

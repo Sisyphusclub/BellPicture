@@ -15,11 +15,9 @@ export const QUALITY_CAPABLE_IMAGE_MODELS = [
 
 export const DEFAULT_ASPECT_RATIO: AspectRatio = '1:1';
 export const DEFAULT_IMAGE_RESOLUTION: ImageResolution = 'standard';
-export const IMAGE_GENERATION_CREDIT_COSTS: Record<ImageResolution, number> = {
-  standard: 1,
-  '2k': 3,
-  '4k': 3,
-};
+export const STANDARD_IMAGE_GENERATION_CREDIT_COST = 1;
+export const HIGH_RES_IMAGE_GENERATION_CREDIT_COST = 3;
+export const SUNBURST_HIGH_RES_IMAGE_GENERATION_CREDIT_COST = 4;
 export const DEFAULT_COUNT = 1;
 export const MIN_COUNT = 1;
 export const MAX_COUNT = 4;
@@ -82,8 +80,12 @@ export function isAspectRatioSupportedForResolution(
 
 export function imageGenerationCreditCost(
   resolution: ImageResolution = DEFAULT_IMAGE_RESOLUTION,
+  model?: string,
 ): number {
-  return IMAGE_GENERATION_CREDIT_COSTS[resolution];
+  if (resolution === DEFAULT_IMAGE_RESOLUTION) return STANDARD_IMAGE_GENERATION_CREDIT_COST;
+  return model === 'gpt-image-2.5-sunburst'
+    ? SUNBURST_HIGH_RES_IMAGE_GENERATION_CREDIT_COST
+    : HIGH_RES_IMAGE_GENERATION_CREDIT_COST;
 }
 
 export function supportsImageQuality(model: string | undefined): boolean {

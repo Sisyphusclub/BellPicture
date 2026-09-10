@@ -147,7 +147,7 @@ export async function generateImage(
   );
 
   throwIfAborted(input.signal);
-  const creditCost = imageGenerationCreditCost(resolution);
+  const creditCost = imageGenerationCreditCost(resolution, input.model);
   const reservation = deps.quotaPool?.reserve(count * creditCost, {
     scope: resolution === DEFAULT_IMAGE_RESOLUTION ? 'all' : 'permanent',
   });

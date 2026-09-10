@@ -1262,7 +1262,9 @@ export function GenerateView() {
           placeholder="描述你想生成的画面…"
           ariaLabel="图像提示词"
           submitLabel="生成图片"
-          submitContent={<GenerationSubmitCost count={count} resolution={resolution} />}
+          submitContent={
+            <GenerationSubmitCost count={count} model={model} resolution={resolution} />
+          }
           disabled={authLoading}
           minRows={2}
           maxRows={7}
