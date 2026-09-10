@@ -347,9 +347,9 @@ describe('React application routes', () => {
     const modelTrigger = screen.getByRole('button', { name: '选择模型' });
     expect(modelTrigger).toHaveTextContent('gpt-image-2');
     await user.click(modelTrigger);
-    expect(document.querySelector('.generation-model-menu')).toHaveClass(
-      'generation-control-panel',
-    );
+    const modelPanel = document.querySelector('.generation-model-menu');
+    expect(modelPanel).toHaveClass('generation-control-panel', '!bg-popover');
+    expect(modelPanel).not.toHaveClass('!bg-background');
     await user.click(modelTrigger);
     const customTrigger = screen.getByRole('button', { name: '自定义生成参数' });
     expect(customTrigger).toHaveTextContent('自定义');
