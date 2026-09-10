@@ -10798,7 +10798,7 @@ video {
   transform: rotate(180deg);
 }
 .generation-custom-panel {
-  width: min(620px, calc(100vw - 24px));
+  width: min(560px, calc(100vw - 24px));
   max-width: calc(100vw - 24px);
   overflow-x: hidden;
   border: 0 !important;
