@@ -351,7 +351,9 @@ describe('React application routes', () => {
     expect(screen.queryByRole('group', { name: '画面比例' })).not.toBeInTheDocument();
     await user.click(customTrigger);
     const customPanel = screen.getByRole('menu', { name: '自定义生成参数' });
-    expect(within(customPanel).getByText('生成参数')).toBeInTheDocument();
+    expect(customPanel).toHaveAttribute('data-side', 'bottom');
+    expect(within(customPanel).getByText('生成偏好')).toBeInTheDocument();
+    expect(within(customPanel).getByText('其他设置')).toBeInTheDocument();
     expect(within(customPanel).getByText('智能 · 1K · 1张')).toBeInTheDocument();
     expect(screen.getByRole('group', { name: '画面比例' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: '生成张数' })).toBeInTheDocument();

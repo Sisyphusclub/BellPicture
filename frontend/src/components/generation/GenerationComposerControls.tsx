@@ -10,7 +10,6 @@ import {
   AnimatedDropdownLabel,
   AnimatedDropdownRadioGroup,
   AnimatedDropdownRadioItem,
-  AnimatedDropdownSeparator,
   AnimatedDropdownTrigger,
 } from '@/components/premium/animated-dropdown';
 import { Button } from '@/components/ui/button';
@@ -97,25 +96,21 @@ export function GenerationComposerControls({
           </Button>
         </AnimatedDropdownTrigger>
         <AnimatedDropdownContent
-          side="top"
           align="start"
-          sideOffset={10}
-          collisionPadding={12}
           className="generation-custom-panel"
           aria-label="自定义生成参数"
         >
           <AnimatedDropdownLabel className="generation-custom-panel__header">
             <span className="generation-custom-panel__title">
               <SlidersHorizontal aria-hidden="true" />
-              <strong>生成参数</strong>
+              <strong>生成偏好</strong>
             </span>
             <output>{parameterSummary}</output>
           </AnimatedDropdownLabel>
-          <AnimatedDropdownSeparator className="generation-custom-panel__separator" />
 
           <div className="generation-custom-panel__body">
             <ParameterGroup
-              label="画面比例"
+              label="选择比例"
               value={visibleAspect}
               className="generation-custom-group--aspect"
             >
@@ -157,6 +152,7 @@ export function GenerationComposerControls({
               </AnimatedDropdownRadioGroup>
             </ParameterGroup>
 
+            <span className="generation-custom-section-label">其他设置</span>
             <div className="generation-custom-panel__compact-groups">
               <ParameterGroup label="清晰度" value={IMAGE_RESOLUTION_LABELS[resolution]}>
                 <AnimatedDropdownRadioGroup

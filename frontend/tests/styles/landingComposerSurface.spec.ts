@@ -40,6 +40,31 @@ describe('landing composer surface contract', () => {
     );
   });
 
+  it('uses fill-only custom selections without a persistent focus outline', () => {
+    const triggerRule = baseStyles.match(/\.generation-custom-trigger\s*\{([^}]+)\}/)?.[1] ?? '';
+    const optionRule = baseStyles.match(/\.generation-custom-option\s*\{([^}]+)\}/)?.[1] ?? '';
+    const checkedRule =
+      baseStyles.match(/\.generation-custom-option\[data-state='checked'\]\s*\{([^}]+)\}/)?.[1] ??
+      '';
+    const focusRule =
+      baseStyles.match(
+        /\.generation-custom-option:focus,\s*\.generation-custom-option:focus-visible\s*\{([^}]+)\}/,
+      )?.[1] ?? '';
+    const triggerFocusRule =
+      baseStyles.match(
+        /\.generation-custom-trigger:focus,\s*\.generation-custom-trigger:focus-visible\s*\{([^}]+)\}/,
+      )?.[1] ?? '';
+
+    expect(triggerRule).toContain('border: 0;');
+    expect(optionRule).toContain('border: 0;');
+    expect(checkedRule).not.toContain('border-color');
+    expect(checkedRule).toContain('box-shadow: none;');
+    expect(focusRule).toContain('outline: none !important;');
+    expect(focusRule).toContain('box-shadow: none !important;');
+    expect(triggerFocusRule).toContain('outline: none !important;');
+    expect(triggerFocusRule).toContain('box-shadow: none !important;');
+  });
+
   it('keeps the idle hero composer visible without painting a nested card', () => {
     const idleStart = baseStyles.indexOf(
       '/* The hero and dock share the same beUI Agent Chat Input surface.',
