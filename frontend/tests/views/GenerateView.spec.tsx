@@ -844,9 +844,11 @@ it('opens the right history flyout, searches, and loads a selected batch', async
 
   const rail = screen.getByRole('button', { name: '展开生成历史' });
   await waitFor(() =>
-    expect(document.querySelectorAll('.generation-history-track__mark')).toHaveLength(1),
+    expect(document.querySelectorAll('.generation-history-track__mark')).toHaveLength(2),
   );
-  expect(screen.getByRole('region', { name: '本次创作结果' })).toHaveTextContent('海边灯塔');
+  const generationResults = screen.getByRole('region', { name: '本次创作结果' });
+  expect(generationResults).toHaveTextContent('海边灯塔');
+  expect(generationResults).toHaveTextContent('山间木屋');
   await user.click(rail);
   const panel = await screen.findByRole('complementary', { name: '生成历史' });
   expect(panel).toBeVisible();

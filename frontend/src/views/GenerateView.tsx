@@ -555,7 +555,14 @@ export function GenerateView() {
         .filter((item) => session.batchIds.includes(item.id) && !persisted.has(item.id))
         .map((item) => [item.id, item]),
     );
-    const next = [...session.batchIds]
+    const persistedBatchIds = [...history.batches]
+      .reverse()
+      .map((batch) => batch.batchId);
+    const orderedBatchIds = [
+      ...persistedBatchIds,
+      ...session.batchIds.filter((batchId) => !persisted.has(batchId)),
+    ];
+    const next = orderedBatchIds
       .map((batchId) => transient.get(batchId) ?? persisted.get(batchId))
       .filter((item): item is FeedItem => item !== undefined);
     feedSessionId.current = activeSessionId;
@@ -624,7 +631,10 @@ export function GenerateView() {
       right.createdAt.localeCompare(left.createdAt),
     );
   }, [feed, history.batches]);
-  const visibleHistoryBatchIds = useMemo(() => feed.map((item) => item.id), [feed]);
+  const visibleHistoryBatchIds = useMemo(
+    () => generationHistoryBatches.map((batch) => batch.batchId),
+    [generationHistoryBatches],
+  );
   const latestBatch = feed[feed.length - 1];
   const latestBatchVisibilityKey = latestBatch
     ? `${latestBatch.id}:${latestBatch.entries.length}:${latestBatch.error ? 'error' : 'ready'}`
