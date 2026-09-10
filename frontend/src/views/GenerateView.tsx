@@ -1283,6 +1283,7 @@ export function GenerateView() {
               quality={quality}
               isPublic={isPublic}
               disabled={generation.isLoading}
+              customPanelSide="top"
               onModelChange={setModel}
               onAspectChange={setAspect}
               onCountChange={setCount}

@@ -46,6 +46,7 @@ interface GenerationComposerControlsProps {
   quality: ImageQuality;
   isPublic: boolean;
   disabled?: boolean;
+  customPanelSide?: 'top' | 'bottom';
   trailingContent?: ReactNode;
   onModelChange: (model: ImageModel) => void;
   onAspectChange: (aspect: AspectChoice) => void;
@@ -63,6 +64,7 @@ export function GenerationComposerControls({
   quality,
   isPublic,
   disabled = false,
+  customPanelSide = 'bottom',
   trailingContent,
   onModelChange,
   onAspectChange,
@@ -109,7 +111,7 @@ export function GenerationComposerControls({
         </AnimatedDropdownTrigger>
         <AnimatedDropdownContent
           align="start"
-          side="bottom"
+          side={customPanelSide}
           avoidCollisions={false}
           className="generation-custom-panel"
           aria-label="自定义生成参数"

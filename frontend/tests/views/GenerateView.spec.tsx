@@ -296,6 +296,23 @@ it('does not expose or submit quality for gpt-image-2', async () => {
   expect(generation.generate.mock.calls[0]?.[0]).not.toHaveProperty('quality');
 });
 
+it('opens the generation settings panel above its trigger', async () => {
+  const user = userEvent.setup();
+  render(
+    <MemoryRouter initialEntries={['/generate']}>
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+
+  await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
+  expect(screen.getByRole('menu', { name: '自定义生成参数' })).toHaveAttribute(
+    'data-side',
+    'top',
+  );
+});
+
 it('shows the requested custom aspect ratios in order and preserves a selection', async () => {
   const user = userEvent.setup();
   render(
