@@ -5,7 +5,7 @@ import { MorphicCardModal } from '@/components/premium/morphic-card-modal';
 import { Button } from '@/components/ui/button';
 import { IconTooltip } from '@/components/ui/icon-tooltip';
 import { useImageDetailModalState } from '@/hooks/useImageDetailModalState';
-import type { HistoryEntry } from '@/types/image';
+import { imageModelLabel, type HistoryEntry } from '@/types/image';
 import { downloadUrl } from '@/utils/download';
 import { formatDateTime } from '@/utils/format';
 import { getImageVisibilityActionLabel, getImageVisibilityLabel } from '@/utils/imageVisibility';
@@ -100,7 +100,7 @@ export function ImageDetailModal({
           <dl className="metadata-grid">
             <div>
               <dt>模型</dt>
-              <dd>{entry.record.model}</dd>
+              <dd>{imageModelLabel(entry.record.model)}</dd>
             </div>
             <div>
               <dt>尺寸</dt>

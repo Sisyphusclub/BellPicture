@@ -11,6 +11,9 @@ describe('GenerationSubmitCost', () => {
     ['gpt-image-2.5-sunburst', 'standard', 1],
     ['gpt-image-2.5-sunburst', '2k', 4],
     ['gpt-image-2.5-sunburst', '4k', 4],
+    ['gemini-3.1-flash-image', 'standard', 1],
+    ['gemini-3.1-flash-image', '2k', 3],
+    ['gemini-3.1-flash-image', '4k', 3],
   ] as const)('shows the configured cost for %s at %s', (model, resolution, expectedCost) => {
     render(<GenerationSubmitCost count={1} model={model} resolution={resolution} />);
 

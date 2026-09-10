@@ -27,6 +27,7 @@ export interface TwoApiConfig {
   baseUrl: string;
   highResBaseUrl?: string;
   apiKey: string;
+  modelApiKeys?: Readonly<Record<string, string>>;
   highResApiKey?: string;
   defaultModel: string;
   highResModel?: string;
@@ -146,8 +147,8 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     const aspectRatio: AspectRatio = input.aspectRatio ?? DEFAULT_ASPECT_RATIO;
     const resolution: ImageResolution = input.resolution ?? DEFAULT_IMAGE_RESOLUTION;
     const model = this.modelForResolution(resolution, input.model);
-    const baseUrl = this.baseUrlForResolution(resolution);
-    const apiKey = this.apiKeyForResolution(resolution, input.providerCredential);
+    const baseUrl = this.baseUrlForRequest(model, resolution);
+    const apiKey = this.apiKeyForRequest(model, resolution, input.providerCredential);
     const count = input.count ?? DEFAULT_COUNT;
     const sizing = aspectSizeForResolution(aspectRatio, resolution);
     if (sizing === undefined) {
@@ -340,15 +341,19 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     return { images, aspectRatio, model };
   }
 
-  private baseUrlForResolution(resolution: ImageResolution): string {
+  private baseUrlForRequest(model: string, resolution: ImageResolution): string {
+    if (this.config.modelApiKeys?.[model] !== undefined) return this.config.baseUrl;
     if (resolution === DEFAULT_IMAGE_RESOLUTION) return this.config.baseUrl;
     return this.config.highResBaseUrl ?? this.config.baseUrl;
   }
 
-  private apiKeyForResolution(
+  private apiKeyForRequest(
+    model: string,
     resolution: ImageResolution,
     providerCredential: string | undefined,
   ): string {
+    const modelApiKey = this.config.modelApiKeys?.[model];
+    if (modelApiKey !== undefined) return modelApiKey;
     if (resolution === DEFAULT_IMAGE_RESOLUTION) {
       return providerCredential ?? this.config.apiKey;
     }

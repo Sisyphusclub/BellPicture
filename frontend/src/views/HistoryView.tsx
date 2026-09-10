@@ -34,6 +34,7 @@ import {
   DEFAULT_ASPECT_RATIO,
   DEFAULT_COUNT,
   DEFAULT_IMAGE_RESOLUTION,
+  imageModelLabel,
   type HistoryEntry,
 } from '@/types/image';
 import { downloadUrl } from '@/utils/download';
@@ -123,7 +124,7 @@ export function HistoryView() {
       const record = entry.record;
       if (
         normalized &&
-        !`${record.prompt} ${record.model} ${record.id} ${record.collection ?? ''}`
+        !`${record.prompt} ${record.model} ${imageModelLabel(record.model)} ${record.id} ${record.collection ?? ''}`
           .toLocaleLowerCase('zh-CN')
           .includes(normalized)
       ) {
@@ -585,7 +586,7 @@ export function HistoryView() {
                       {entry.record.prompt}
                     </span>
                     <span role="cell" data-label="模型与尺寸">
-                      {entry.record.model}
+                      {imageModelLabel(entry.record.model)}
                       <small>
                         {entry.record.width} × {entry.record.height} ·{' '}
                         {entry.record.aspectRatio ?? '1:1'}

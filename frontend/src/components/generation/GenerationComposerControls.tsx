@@ -18,6 +18,7 @@ import { Switch } from '@/components/ui/switch';
 import {
   ASPECT_CHOICES,
   DEFAULT_IMAGE_MODEL,
+  IMAGE_MODEL_LABELS,
   IMAGE_MODELS,
   IMAGE_QUALITIES,
   IMAGE_RESOLUTIONS,
@@ -32,7 +33,7 @@ import {
 } from '@/types/image';
 import { DISCOVERY_PUBLISH_LABEL } from '@/utils/imageVisibility';
 
-const MODEL_OPTIONS = IMAGE_MODELS.map((value) => ({ value, label: value }));
+const MODEL_OPTIONS = IMAGE_MODELS.map((value) => ({ value, label: IMAGE_MODEL_LABELS[value] }));
 
 function keepCustomPanelOpen(event: Event): void {
   event.preventDefault();

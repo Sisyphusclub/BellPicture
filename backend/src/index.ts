@@ -16,6 +16,7 @@ const provider = new TwoApiImageProvider({
     ? { highResBaseUrl: env.HIGH_RES_IMAGE_API_BASE_URL }
     : {}),
   apiKey: env.IMAGE_API_KEY,
+  modelApiKeys: { 'gemini-3.1-flash-image': env.GEMINI_IMAGE_API_KEY },
   ...(env.HIGH_RES_IMAGE_API_KEY !== undefined
     ? { highResApiKey: env.HIGH_RES_IMAGE_API_KEY }
     : {}),

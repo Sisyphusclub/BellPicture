@@ -41,9 +41,16 @@ export const IMAGE_MODELS = [
   'gpt-image-2',
   'gpt-image-2.5-flare',
   'gpt-image-2.5-sunburst',
+  'gemini-3.1-flash-image',
 ] as const;
 export type ImageModel = (typeof IMAGE_MODELS)[number];
 export const DEFAULT_IMAGE_MODEL: ImageModel = IMAGE_MODELS[0];
+export const IMAGE_MODEL_LABELS: Record<ImageModel, string> = {
+  'gpt-image-2': 'gpt-image-2',
+  'gpt-image-2.5-flare': 'gpt-image-2.5-flare',
+  'gpt-image-2.5-sunburst': 'gpt-image-2.5-sunburst',
+  'gemini-3.1-flash-image': 'Nano Banana 2',
+};
 export const IMAGE_QUALITIES = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
 export type ImageQuality = (typeof IMAGE_QUALITIES)[number];
 export const DEFAULT_IMAGE_QUALITY: ImageQuality = 'medium';
@@ -73,6 +80,10 @@ export function isImageResolution(value: string | null): value is ImageResolutio
 
 export function normalizeImageModel(value: string | null | undefined): ImageModel {
   return IMAGE_MODELS.find((model) => model === value) ?? DEFAULT_IMAGE_MODEL;
+}
+
+export function imageModelLabel(model: string): string {
+  return IMAGE_MODEL_LABELS[model as ImageModel] ?? model;
 }
 
 export function isImageQuality(value: string | null | undefined): value is ImageQuality {

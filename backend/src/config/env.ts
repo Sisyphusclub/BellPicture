@@ -6,6 +6,7 @@ export interface Env {
   IMAGE_API_BASE_URL: string;
   HIGH_RES_IMAGE_API_BASE_URL: string | undefined;
   IMAGE_API_KEY: string;
+  GEMINI_IMAGE_API_KEY: string;
   USER_API_KEY_ENCRYPTION_KEY: string;
   HIGH_RES_IMAGE_API_KEY: string | undefined;
   OPENAI_COMPAT_API_KEY: string;
@@ -122,6 +123,7 @@ function loadEnv(): Env {
     IMAGE_API_BASE_URL: readString('IMAGE_API_BASE_URL'),
     HIGH_RES_IMAGE_API_BASE_URL: readOptionalString('HIGH_RES_IMAGE_API_BASE_URL'),
     IMAGE_API_KEY: readString('IMAGE_API_KEY'),
+    GEMINI_IMAGE_API_KEY: readString('GEMINI_IMAGE_API_KEY'),
     USER_API_KEY_ENCRYPTION_KEY: readBase64Key('USER_API_KEY_ENCRYPTION_KEY'),
     HIGH_RES_IMAGE_API_KEY: readOptionalString('HIGH_RES_IMAGE_API_KEY'),
     OPENAI_COMPAT_API_KEY: readString('OPENAI_COMPAT_API_KEY'),

@@ -517,6 +517,9 @@ describe('React application routes', () => {
     expect(
       screen.getByRole('menuitemradio', { name: 'gpt-image-2.5-sunburst' }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('menuitemradio', { name: 'Nano Banana 2' }),
+    ).toBeInTheDocument();
   });
 
   it('shows the current generation credit cost in the homepage submit action', async () => {
@@ -949,7 +952,7 @@ describe('React application routes', () => {
       expect(screen.getByLabelText('当前路由').textContent).toMatch(/^\/generate\?session=/),
     );
     expect(screen.getByLabelText('当前路由')).not.toHaveTextContent(session.id);
-    expect(screen.queryByRole('button', { name: '查看图片：旧会话' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '查看图片：旧会话' })).toBeInTheDocument();
   });
 
   it('does not restore a remembered session for a state-only automatic entry', async () => {

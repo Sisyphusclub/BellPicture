@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { GroupedBatch } from '@/hooks/useImageHistory';
-import { ASPECT_RATIO_LABELS } from '@/types/image';
+import { ASPECT_RATIO_LABELS, imageModelLabel } from '@/types/image';
 import { formatClockTime } from '@/utils/format';
 import { getImageVisibilityLabel } from '@/utils/imageVisibility';
 
@@ -72,6 +72,7 @@ function matchesQuery(batch: GroupedBatch, query: string, groupLabel: string): b
     batch.prompt,
     batch.batchId,
     batch.model,
+    imageModelLabel(batch.model),
     groupLabel,
     formatHistoryDate(batch.createdAt),
     formatClockTime(batch.createdAt),
@@ -340,7 +341,7 @@ export function GenerationHistoryFlyout({
             <span className="generation-history-preview__content">
               <strong>{previewBatch.prompt.trim() || '未命名任务'}</strong>
               <span className="generation-history-preview__summary">
-                {previewBatch.model} · {formatClockTime(previewBatch.createdAt)}
+                {imageModelLabel(previewBatch.model)} · {formatClockTime(previewBatch.createdAt)}
                 <br />
                 {ASPECT_RATIO_LABELS[previewBatch.settings.aspectRatio]} ·{' '}
                 {previewBatch.settings.count} 张 ·{' '}
@@ -450,7 +451,7 @@ export function GenerationHistoryFlyout({
                         <span className="generation-history-item__content">
                           <strong>{batch.prompt.trim() || '未命名任务'}</strong>
                           <small>
-                            {batch.error ? '生成失败' : batch.model} ·{' '}
+                            {batch.error ? '生成失败' : imageModelLabel(batch.model)} ·{' '}
                             {formatClockTime(batch.createdAt)}
                           </small>
                           <small>

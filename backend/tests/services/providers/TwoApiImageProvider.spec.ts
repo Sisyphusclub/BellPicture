@@ -306,6 +306,36 @@ describe('TwoApiImageProvider', () => {
     expect(headers['Authorization']).toBe('Bearer sk-high-res');
   });
 
+  it('routes gemini through the base URL and its model-specific key at every resolution', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
+    );
+    const provider = new TwoApiImageProvider(
+      {
+        ...baseConfig,
+        highResBaseUrl: 'https://codex.example.com',
+        highResApiKey: 'sk-high-res',
+        modelApiKeys: { 'gemini-3.1-flash-image': 'sk-gemini' },
+      },
+      fetchMock,
+    );
+
+    await provider.generate({
+      prompt: 'gemini 4k square',
+      model: 'gemini-3.1-flash-image',
+      providerCredential: 'sk-personal',
+      resolution: '4k',
+    });
+
+    const [calledUrl, init] = fetchMock.mock.calls[0]!;
+    expect(calledUrl).toBe('https://api.example.com/v1/images/generations');
+    const headers = (init as RequestInit).headers as Record<string, string>;
+    expect(headers['Authorization']).toBe('Bearer sk-gemini');
+    const body = JSON.parse((init as RequestInit).body as string) as Record<string, unknown>;
+    expect(body['model']).toBe('gemini-3.1-flash-image');
+    expect(body['size']).toBe('4096x4096');
+  });
+
   it('uses the configured high-res model when the app sends the default model', async () => {
     const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
       jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),

@@ -45,6 +45,7 @@ describe('config/env', () => {
     expect(env.IMAGE_API_BASE_URL).toBe('https://api.example.com');
     expect(env.HIGH_RES_IMAGE_API_BASE_URL).toBeUndefined();
     expect(env.IMAGE_API_KEY).toBe('sk-test');
+    expect(env.GEMINI_IMAGE_API_KEY).toBe('test-gemini-key');
     expect(env.USER_API_KEY_ENCRYPTION_KEY).toBe(Buffer.alloc(32, 7).toString('base64'));
     expect(env.HIGH_RES_IMAGE_API_KEY).toBeUndefined();
     expect(env.OPENAI_COMPAT_API_KEY).toBe('compat-test');
@@ -154,6 +155,14 @@ describe('config/env', () => {
     delete process.env.IMAGE_API_KEY;
 
     await expect(import('../../src/config/env.js')).rejects.toThrow(/IMAGE_API_KEY/);
+  });
+
+  it('throws on import when GEMINI_IMAGE_API_KEY is missing', async () => {
+    process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
+    process.env.IMAGE_API_KEY = 'sk-test';
+    delete process.env.GEMINI_IMAGE_API_KEY;
+
+    await expect(import('../../src/config/env.js')).rejects.toThrow(/GEMINI_IMAGE_API_KEY/);
   });
 
   it('throws on import when OPENAI_COMPAT_API_KEY is missing', async () => {
