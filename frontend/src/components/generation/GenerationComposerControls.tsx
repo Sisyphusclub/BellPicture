@@ -149,7 +149,7 @@ export function GenerationComposerControls({
                       onSelect={keepCustomPanelOpen}
                     >
                       <AnimatedDropdownItemIcon
-                        className="generation-custom-option__visual"
+                        className="generation-custom-option__visual group-data-[highlighted]:translate-x-0"
                         data-aspect={value}
                       >
                         {value === 'auto' ? (
@@ -158,7 +158,7 @@ export function GenerationComposerControls({
                           <span className="generation-custom-option__frame" />
                         )}
                       </AnimatedDropdownItemIcon>
-                      <AnimatedDropdownItemText className="generation-custom-option__text">
+                      <AnimatedDropdownItemText className="generation-custom-option__text group-data-[highlighted]:translate-x-0">
                         {value === 'auto' ? '智能' : value}
                       </AnimatedDropdownItemText>
                     </AnimatedDropdownRadioItem>
@@ -187,7 +187,7 @@ export function GenerationComposerControls({
                         className="generation-custom-option generation-custom-option--compact"
                         onSelect={keepCustomPanelOpen}
                       >
-                        <AnimatedDropdownItemText className="generation-custom-option__text">
+                        <AnimatedDropdownItemText className="generation-custom-option__text group-data-[highlighted]:translate-x-0">
                           {value}
                         </AnimatedDropdownItemText>
                       </AnimatedDropdownRadioItem>
@@ -211,7 +211,7 @@ export function GenerationComposerControls({
                       className="generation-custom-option generation-custom-option--compact"
                       onSelect={keepCustomPanelOpen}
                     >
-                      <AnimatedDropdownItemText className="generation-custom-option__text">
+                      <AnimatedDropdownItemText className="generation-custom-option__text group-data-[highlighted]:translate-x-0">
                         {IMAGE_RESOLUTION_LABELS[value]}
                       </AnimatedDropdownItemText>
                     </AnimatedDropdownRadioItem>
@@ -237,7 +237,7 @@ export function GenerationComposerControls({
                       className="generation-custom-option generation-custom-option--compact"
                       onSelect={keepCustomPanelOpen}
                     >
-                      <AnimatedDropdownItemText className="generation-custom-option__text">
+                      <AnimatedDropdownItemText className="generation-custom-option__text group-data-[highlighted]:translate-x-0">
                         {value}
                       </AnimatedDropdownItemText>
                     </AnimatedDropdownRadioItem>

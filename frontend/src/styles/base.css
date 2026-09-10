@@ -10941,8 +10941,6 @@ video {
   align-items: center;
   justify-content: center;
   color: var(--muted-foreground);
-  transform: none !important;
-  translate: none !important;
   transition: color 0.15s ease;
 }
 .generation-custom-option__visual > svg {
@@ -10990,8 +10988,6 @@ video {
   text-align: center;
   text-overflow: clip;
   white-space: normal;
-  transform: none !important;
-  translate: none !important;
   transition: color 0.15s ease;
 }
 .generation-custom-option--compact {
