@@ -520,6 +520,7 @@ export function LandingView() {
                         quality={quality}
                         isPublic={isPublic}
                         disabled={authLoading}
+                        customPanelSide={composerDocked ? 'top' : 'bottom'}
                         quotaLabel={quotaLabel}
                         quotaAriaLabel={quotaAriaLabel}
                         quotaIsAction={!authLoading && !isAuthenticated}

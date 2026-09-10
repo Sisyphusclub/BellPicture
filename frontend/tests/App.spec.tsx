@@ -400,6 +400,13 @@ describe('React application routes', () => {
     expect(anchor?.querySelector('.landing-composer-hero')).not.toBeInTheDocument();
     expect(screen.getAllByRole('textbox', { name: '首页创作提示词' })).toHaveLength(1);
 
+    await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
+    expect(screen.getByRole('menu', { name: '自定义生成参数' })).toHaveAttribute(
+      'data-side',
+      'top',
+    );
+    await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
+
     const promptInput = screen.getByRole('textbox', { name: '首页创作提示词' });
     await user.click(promptInput);
     expect(anchor).toHaveAttribute('data-expanded', 'true');

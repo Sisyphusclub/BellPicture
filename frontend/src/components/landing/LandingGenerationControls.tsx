@@ -12,6 +12,7 @@ interface LandingGenerationControlsProps {
   quality: ImageQuality;
   isPublic: boolean;
   disabled?: boolean;
+  customPanelSide?: 'top' | 'bottom';
   quotaLabel: string;
   quotaAriaLabel: string;
   quotaIsAction: boolean;
@@ -32,6 +33,7 @@ export function LandingGenerationControls({
   quality,
   isPublic,
   disabled,
+  customPanelSide = 'bottom',
   quotaLabel,
   quotaAriaLabel,
   quotaIsAction,
@@ -59,6 +61,7 @@ export function LandingGenerationControls({
       quality={quality}
       isPublic={isPublic}
       disabled={disabled ?? false}
+      customPanelSide={customPanelSide}
       onModelChange={onModelChange}
       onAspectChange={onAspectChange}
       onCountChange={onCountChange}
