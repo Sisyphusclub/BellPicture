@@ -31,7 +31,6 @@ export const DEFAULT_ASPECT_CHOICE: AspectChoice = 'auto';
 export const DEFAULT_ASPECT_RATIO: AspectRatio = '1:1';
 export const IMAGE_RESOLUTIONS = ['standard', '2k', '4k'] as const;
 export type ImageResolution = (typeof IMAGE_RESOLUTIONS)[number];
-export const FOUR_K_ASPECT_RATIOS = ['16:9', '9:16'] as const;
 export const IMAGE_RESOLUTION_LABELS: Record<ImageResolution, string> = {
   standard: '1K',
   '2k': '2K',
@@ -88,18 +87,13 @@ export function supportsImageQuality(model: string | null | undefined): boolean 
   );
 }
 
-export function isAspectChoiceSupportedForResolution(
-  aspect: AspectChoice,
-  resolution: ImageResolution,
-): boolean {
-  return resolution !== '4k' || (FOUR_K_ASPECT_RATIOS as readonly string[]).includes(aspect);
-}
-
 export function normalizeAspectChoiceForResolution(
   aspect: AspectChoice,
   resolution: ImageResolution,
 ): AspectChoice {
-  return isAspectChoiceSupportedForResolution(aspect, resolution) ? aspect : '16:9';
+  return (IMAGE_RESOLUTIONS as readonly string[]).includes(resolution)
+    ? aspect
+    : DEFAULT_ASPECT_CHOICE;
 }
 
 export interface ImageRecord {

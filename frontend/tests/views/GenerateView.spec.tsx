@@ -1173,7 +1173,7 @@ it('replaces pending skeletons with a retryable error card on failure', async ()
   expect(within(errorCard).getByRole('button', { name: '重试' })).toBeEnabled();
 });
 
-it('normalizes an incompatible 4K URL ratio to 16:9', async () => {
+it('preserves and submits every ratio at 4K resolution', async () => {
   const user = userEvent.setup();
   render(
     <MemoryRouter initialEntries={['/generate?prompt=夜空&aspect=2%3A3&resolution=4k']}>
@@ -1183,21 +1183,21 @@ it('normalizes an incompatible 4K URL ratio to 16:9', async () => {
     </MemoryRouter>,
   );
 
-  expect(screen.getByRole('button', { name: '自定义生成参数' })).toHaveTextContent('16:9');
+  expect(screen.getByRole('button', { name: '自定义生成参数' })).toHaveTextContent('2:3');
   expect(screen.getByRole('button', { name: '自定义生成参数' })).toHaveTextContent('4K');
   await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
   const aspectGroup = screen.getByRole('group', { name: '画面比例' });
-  expect(within(aspectGroup).getByRole('menuitemradio', { name: '16:9' })).toHaveAttribute(
+  expect(within(aspectGroup).getByRole('menuitemradio', { name: '2:3' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
-  expect(within(aspectGroup).getByRole('menuitemradio', { name: '2:3' })).toHaveAttribute(
-    'data-disabled',
-  );
+  for (const option of within(aspectGroup).getAllByRole('menuitemradio')) {
+    expect(option).not.toHaveAttribute('data-disabled');
+  }
   await user.click(screen.getByRole('button', { name: '生成图片' }));
   await waitFor(() => expect(generation.generate).toHaveBeenCalledTimes(1));
   expect(generation.generate.mock.calls[0]?.[0]).toEqual(
-    expect.objectContaining({ aspectRatio: '16:9', resolution: '4k' }),
+    expect.objectContaining({ aspectRatio: '2:3', resolution: '4k' }),
   );
 });
 

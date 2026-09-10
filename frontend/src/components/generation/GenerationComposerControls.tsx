@@ -18,7 +18,6 @@ import { Switch } from '@/components/ui/switch';
 import {
   ASPECT_CHOICES,
   DEFAULT_IMAGE_MODEL,
-  FOUR_K_ASPECT_RATIOS,
   IMAGE_MODELS,
   IMAGE_QUALITIES,
   IMAGE_RESOLUTIONS,
@@ -135,35 +134,29 @@ export function GenerationComposerControls({
                 aria-label="画面比例"
                 onValueChange={(value) => onAspectChange(value as AspectChoice)}
               >
-                {ASPECT_CHOICES.map((value) => {
-                  const optionDisabled =
-                    resolution === '4k' &&
-                    !(FOUR_K_ASPECT_RATIOS as readonly string[]).includes(value);
-                  return (
-                    <AnimatedDropdownRadioItem
-                      key={value}
-                      value={value}
-                      disabled={optionDisabled}
-                      aria-label={value === 'auto' ? '智能' : value}
-                      className="generation-custom-option generation-custom-option--aspect"
-                      onSelect={keepCustomPanelOpen}
+                {ASPECT_CHOICES.map((value) => (
+                  <AnimatedDropdownRadioItem
+                    key={value}
+                    value={value}
+                    aria-label={value === 'auto' ? '智能' : value}
+                    className="generation-custom-option generation-custom-option--aspect"
+                    onSelect={keepCustomPanelOpen}
+                  >
+                    <AnimatedDropdownItemIcon
+                      className="generation-custom-option__visual group-data-[highlighted]:translate-x-0"
+                      data-aspect={value}
                     >
-                      <AnimatedDropdownItemIcon
-                        className="generation-custom-option__visual group-data-[highlighted]:translate-x-0"
-                        data-aspect={value}
-                      >
-                        {value === 'auto' ? (
-                          <Sparkles />
-                        ) : (
-                          <span className="generation-custom-option__frame" />
-                        )}
-                      </AnimatedDropdownItemIcon>
-                      <AnimatedDropdownItemText className="generation-custom-option__text group-data-[highlighted]:translate-x-0">
-                        {value === 'auto' ? '智能' : value}
-                      </AnimatedDropdownItemText>
-                    </AnimatedDropdownRadioItem>
-                  );
-                })}
+                      {value === 'auto' ? (
+                        <Sparkles />
+                      ) : (
+                        <span className="generation-custom-option__frame" />
+                      )}
+                    </AnimatedDropdownItemIcon>
+                    <AnimatedDropdownItemText className="generation-custom-option__text group-data-[highlighted]:translate-x-0">
+                      {value === 'auto' ? '智能' : value}
+                    </AnimatedDropdownItemText>
+                  </AnimatedDropdownRadioItem>
+                ))}
               </AnimatedDropdownRadioGroup>
             </ParameterGroup>
 

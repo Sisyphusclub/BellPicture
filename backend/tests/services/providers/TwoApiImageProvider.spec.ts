@@ -327,7 +327,15 @@ describe('TwoApiImageProvider', () => {
     expect(body['model']).toBe('codex-gpt-image-2');
   });
 
-  it('maps 4k resolution to provider size payload', async () => {
+  it.each([
+    ['1:1', '4096x4096', 4096, 4096],
+    ['3:4', '3072x4096', 3072, 4096],
+    ['4:3', '4096x3072', 4096, 3072],
+    ['16:9', '3840x2160', 3840, 2160],
+    ['9:16', '2160x3840', 2160, 3840],
+    ['2:3', '2720x4096', 2720, 4096],
+    ['3:2', '4096x2720', 4096, 2720],
+  ] as const)('maps 4k %s to the provider size %s', async (aspectRatio, size, width, height) => {
     const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
       jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
     );
@@ -337,36 +345,16 @@ describe('TwoApiImageProvider', () => {
     );
 
     const out = await provider.generate({
-      prompt: '4k wide',
+      prompt: '4k image',
       count: 1,
-      aspectRatio: '16:9',
+      aspectRatio,
       resolution: '4k',
     });
 
-    expect(out.images[0]).toMatchObject({ width: 3840, height: 2160 });
+    expect(out.images[0]).toMatchObject({ width, height });
     const init = fetchMock.mock.calls[0]![1] as RequestInit;
     const body = JSON.parse(init.body as string) as Record<string, unknown>;
-    expect(body['size']).toBe('3840x2160');
-  });
-
-  it('rejects 4k requests for unsupported aspect ratios before provider IO', async () => {
-    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
-      jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
-    );
-    const provider = new TwoApiImageProvider(baseConfig, fetchMock);
-
-    await expect(
-      provider.generate({
-        prompt: '4k square',
-        aspectRatio: '1:1',
-        resolution: '4k',
-      }),
-    ).rejects.toMatchObject({
-      code: 'BAD_REQUEST',
-      status: 400,
-      details: { aspectRatio: '1:1', resolution: '4k' },
-    });
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(body['size']).toBe(size);
   });
 
   it('calls /v1/images/edits with multipart FormData when referencePath is set (image-to-image)', async () => {

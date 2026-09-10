@@ -136,17 +136,21 @@ describe('imageGeneration.service', () => {
     expect(provider.generate).not.toHaveBeenCalled();
   });
 
-  it('rejects unsupported resolution and aspect ratio combinations before provider work', async () => {
+  it('accepts every aspect ratio at 4K resolution', async () => {
     const provider = fakeProvider();
+    const aspectRatios = ['1:1', '3:4', '4:3', '16:9', '9:16', '2:3', '3:2'] as const;
 
-    await expect(
-      generateImage({ prompt: 'p', aspectRatio: '1:1', resolution: '4k' }, { provider }),
-    ).rejects.toMatchObject({
-      code: 'BAD_REQUEST',
-      status: 400,
-      details: { aspectRatio: '1:1', resolution: '4k' },
+    for (const aspectRatio of aspectRatios) {
+      await generateImage({ prompt: 'p', aspectRatio, resolution: '4k' }, { provider });
+    }
+
+    expect(provider.generate).toHaveBeenCalledTimes(aspectRatios.length);
+    aspectRatios.forEach((aspectRatio, index) => {
+      expect(provider.generate).toHaveBeenNthCalledWith(
+        index + 1,
+        expect.objectContaining({ aspectRatio, resolution: '4k' }),
+      );
     });
-    expect(provider.generate).not.toHaveBeenCalled();
   });
 
   it('image-to-image: resolves referenceId to an absolute path under UPLOAD_DIR', async () => {

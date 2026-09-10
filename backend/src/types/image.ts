@@ -5,7 +5,6 @@ export const IMAGE_RESOLUTIONS = ['standard', '2k', '4k'] as const;
 export type ImageResolution = (typeof IMAGE_RESOLUTIONS)[number];
 export const HIGH_RES_IMAGE_RESOLUTIONS = ['2k', '4k'] as const;
 export type HighImageResolution = (typeof HIGH_RES_IMAGE_RESOLUTIONS)[number];
-export const FOUR_K_ASPECT_RATIOS = ['16:9', '9:16'] as const;
 
 export const IMAGE_QUALITIES = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
 export type ImageQuality = (typeof IMAGE_QUALITIES)[number];
@@ -52,8 +51,13 @@ export const RESOLUTION_SIZE_MAP: Record<
     '3:2': { size: '2048x1360', width: 2048, height: 1360 },
   },
   '4k': {
+    '1:1': { size: '4096x4096', width: 4096, height: 4096 },
+    '3:4': { size: '3072x4096', width: 3072, height: 4096 },
+    '4:3': { size: '4096x3072', width: 4096, height: 3072 },
     '16:9': { size: '3840x2160', width: 3840, height: 2160 },
     '9:16': { size: '2160x3840', width: 2160, height: 3840 },
+    '2:3': { size: '2720x4096', width: 2720, height: 4096 },
+    '3:2': { size: '4096x2720', width: 4096, height: 2720 },
   },
 };
 
