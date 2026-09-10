@@ -14,6 +14,7 @@ import type {
   QuotaPool,
   QuotaReservation,
   QuotaReservationOptions,
+  QuotaReservationScope,
   QuotaSnapshot,
 } from './quota.service.js';
 
@@ -139,9 +140,54 @@ export interface UserQuotaService {
 }
 
 export function createUserQuotaService(): UserQuotaService {
+  const reservations = new Map<string, { all: number; permanent: number }>();
+
+  function reservationTotals(userId: string): { all: number; permanent: number } {
+    return reservations.get(userId) ?? { all: 0, permanent: 0 };
+  }
+
+  function updateReservation(userId: string, scope: QuotaReservationScope, delta: number): void {
+    const current = reservationTotals(userId);
+    const next = { ...current, [scope]: current[scope] + delta };
+    if (next.all < 0 || next.permanent < 0) {
+      throw new AppError(
+        'INTERNAL',
+        'Quota reservation accounting is inconsistent',
+        500,
+        undefined,
+        { userId, scope, delta, current },
+      );
+    }
+    if (next.all === 0 && next.permanent === 0) reservations.delete(userId);
+    else reservations.set(userId, next);
+  }
+
+  function withReservations<T extends QuotaSnapshot>(userId: string, value: T): T {
+    const held = reservationTotals(userId);
+    return {
+      ...value,
+      remaining: Math.max(0, value.remaining - held.all - held.permanent),
+    };
+  }
+
+  function availableForScope(
+    parts: QuotaSnapshotParts,
+    held: { all: number; permanent: number },
+    scope: QuotaReservationScope,
+  ): number {
+    if (scope === 'all') {
+      return Math.max(0, parts.remaining - held.all - held.permanent);
+    }
+    const allUsingPermanent = Math.max(0, held.all - parts.bonusRemaining);
+    return Math.max(0, parts.permanentRemaining - held.permanent - allUsingPermanent);
+  }
+
   function forUser(userId: string): QuotaPool {
     function snapshot(): QuotaSnapshot {
-      return toQuotaSnapshot(buildSnapshot(selectQuotaRow(userId), selectActiveGrants(userId)));
+      return withReservations(
+        userId,
+        toQuotaSnapshot(buildSnapshot(selectQuotaRow(userId), selectActiveGrants(userId))),
+      );
     }
 
     function reserve(count: number, options: QuotaReservationOptions = {}): QuotaReservation {
@@ -151,116 +197,133 @@ export function createUserQuotaService(): UserQuotaService {
         });
       }
       const scope = options.scope ?? 'all';
-
-      const result = db.transaction((tx) => {
-        const row = tx
-          .select({
-            userId: userQuota.userId,
-            usedToday: userQuota.usedToday,
-            quotaDate: userQuota.quotaDate,
-            dailyTotal: userQuota.dailyTotal,
-            checkInDate: userQuota.checkInDate,
-            bonusToday: userQuota.bonusToday,
-            permanentTotal: userQuota.permanentTotal,
-            permanentUsed: userQuota.permanentUsed,
-          })
-          .from(userQuota)
-          .where(eq(userQuota.userId, userId))
-          .get();
-        const today = productDateKey();
-        const now = new Date();
-        const grants = tx
-          .select({
-            id: quotaGrants.id,
-            userId: quotaGrants.userId,
-            source: quotaGrants.source,
-            amount: quotaGrants.amount,
-            remaining: quotaGrants.remaining,
-            grantedAt: quotaGrants.grantedAt,
-            expiresAt: quotaGrants.expiresAt,
-            checkInDate: quotaGrants.checkInDate,
-          })
-          .from(quotaGrants)
-          .where(
-            and(
-              eq(quotaGrants.userId, userId),
-              gt(quotaGrants.expiresAt, now),
-              gt(quotaGrants.remaining, 0),
-            ),
-          )
-          .orderBy(asc(quotaGrants.expiresAt), asc(quotaGrants.grantedAt), asc(quotaGrants.id))
-          .all();
-        const baseTotal = permanentTotal(row);
-        const baseUsed = permanentUsed(row, today);
-        const baseRemaining = Math.max(0, baseTotal - baseUsed);
-        const bonusRemaining = grants.reduce((sum, grant) => sum + grant.remaining, 0);
-        const availableRemaining =
-          scope === 'permanent' ? baseRemaining : baseRemaining + bonusRemaining;
-        if (count > availableRemaining) {
-          const active = buildSnapshot(row, grants, today);
-          throw new AppError('QUOTA_EXHAUSTED', 'User quota is exhausted', 429, undefined, {
-            requested: count,
-            remaining: availableRemaining,
-            total: scope === 'permanent' ? active.permanentTotal : active.total,
-            quotaScope: scope,
-          });
-        }
-
-        let left = count;
-        const allocations: Array<{ kind: 'bonus' | 'permanent'; id?: string; amount: number }> = [];
-        if (scope === 'all') {
-          for (const grant of grants) {
-            if (left <= 0) break;
-            const amount = Math.min(left, grant.remaining);
-            tx.update(quotaGrants)
-              .set({ remaining: sql`${quotaGrants.remaining} - ${amount}` })
-              .where(eq(quotaGrants.id, grant.id))
-              .run();
-            allocations.push({ kind: 'bonus', id: grant.id, amount });
-            left -= amount;
-          }
-        }
-        if (left > 0) {
-          tx.update(userQuota)
-            .set({ permanentUsed: sql`COALESCE(${userQuota.permanentUsed}, 0) + ${left}` })
-            .where(eq(userQuota.userId, userId))
-            .run();
-          allocations.push({ kind: 'permanent', amount: left });
-        }
-
-        const nextUsedToday = (row?.quotaDate === today ? row.usedToday : 0) + count;
-        tx.insert(userQuota)
-          .values({
-            userId,
-            usedToday: nextUsedToday,
-            quotaDate: today,
-            dailyTotal: row?.dailyTotal ?? null,
-            checkInDate: row?.checkInDate ?? null,
-            bonusToday: row?.bonusToday ?? 0,
-            permanentTotal: row?.permanentTotal ?? row?.dailyTotal ?? 0,
-            permanentUsed: baseUsed + left,
-          })
-          .onConflictDoUpdate({
-            target: userQuota.userId,
-            set: {
-              usedToday: sql`excluded.used_today`,
-              quotaDate: sql`excluded.quota_date`,
-              permanentTotal: sql`COALESCE(${userQuota.permanentTotal}, excluded.permanent_total)`,
-              permanentUsed: sql`excluded.permanent_used`,
-            },
-          })
-          .run();
-
-        const nextGrants = grants.map((grant) => {
-          const allocation = allocations.find((item) => item.id === grant.id);
-          return allocation === undefined
-            ? grant
-            : { ...grant, remaining: grant.remaining - allocation.amount };
+      const parts = buildSnapshot(selectQuotaRow(userId), selectActiveGrants(userId));
+      const availableRemaining = availableForScope(parts, reservationTotals(userId), scope);
+      if (count > availableRemaining) {
+        throw new AppError('QUOTA_EXHAUSTED', 'User quota is exhausted', 429, undefined, {
+          requested: count,
+          remaining: availableRemaining,
+          total: scope === 'permanent' ? parts.permanentTotal : parts.total,
+          quotaScope: scope,
         });
-        return {
-          quotaDate: today,
-          allocations,
-          snapshot: toQuotaSnapshot(
+      }
+      updateReservation(userId, scope, count);
+      logger.debug(
+        { userId, reserved: count, scope, remaining: availableRemaining - count },
+        'user quota: reserved',
+      );
+      let state: 'reserved' | 'committed' | 'released' = 'reserved';
+
+      function charge(actualCount: number): QuotaSnapshot {
+        if (actualCount === 0) {
+          return toQuotaSnapshot(buildSnapshot(selectQuotaRow(userId), selectActiveGrants(userId)));
+        }
+        return db.transaction((tx) => {
+          const row = tx
+            .select({
+              userId: userQuota.userId,
+              usedToday: userQuota.usedToday,
+              quotaDate: userQuota.quotaDate,
+              dailyTotal: userQuota.dailyTotal,
+              checkInDate: userQuota.checkInDate,
+              bonusToday: userQuota.bonusToday,
+              permanentTotal: userQuota.permanentTotal,
+              permanentUsed: userQuota.permanentUsed,
+            })
+            .from(userQuota)
+            .where(eq(userQuota.userId, userId))
+            .get();
+          const today = productDateKey();
+          const now = new Date();
+          const grants = tx
+            .select({
+              id: quotaGrants.id,
+              userId: quotaGrants.userId,
+              source: quotaGrants.source,
+              amount: quotaGrants.amount,
+              remaining: quotaGrants.remaining,
+              grantedAt: quotaGrants.grantedAt,
+              expiresAt: quotaGrants.expiresAt,
+              checkInDate: quotaGrants.checkInDate,
+            })
+            .from(quotaGrants)
+            .where(
+              and(
+                eq(quotaGrants.userId, userId),
+                gt(quotaGrants.expiresAt, now),
+                gt(quotaGrants.remaining, 0),
+              ),
+            )
+            .orderBy(asc(quotaGrants.expiresAt), asc(quotaGrants.grantedAt), asc(quotaGrants.id))
+            .all();
+          const baseTotal = permanentTotal(row);
+          const baseUsed = permanentUsed(row, today);
+          const baseRemaining = Math.max(0, baseTotal - baseUsed);
+          const bonusRemaining = grants.reduce((sum, grant) => sum + grant.remaining, 0);
+          const availableAtCommit =
+            scope === 'permanent' ? baseRemaining : baseRemaining + bonusRemaining;
+          if (actualCount > availableAtCommit) {
+            const active = buildSnapshot(row, grants, today);
+            throw new AppError('QUOTA_EXHAUSTED', 'User quota is exhausted', 429, undefined, {
+              requested: actualCount,
+              remaining: availableAtCommit,
+              total: scope === 'permanent' ? active.permanentTotal : active.total,
+              quotaScope: scope,
+            });
+          }
+
+          let left = actualCount;
+          if (scope === 'all') {
+            for (const grant of grants) {
+              if (left <= 0) break;
+              const amount = Math.min(left, grant.remaining);
+              tx.update(quotaGrants)
+                .set({ remaining: sql`${quotaGrants.remaining} - ${amount}` })
+                .where(eq(quotaGrants.id, grant.id))
+                .run();
+              left -= amount;
+            }
+          }
+          if (left > 0) {
+            tx.update(userQuota)
+              .set({ permanentUsed: sql`COALESCE(${userQuota.permanentUsed}, 0) + ${left}` })
+              .where(eq(userQuota.userId, userId))
+              .run();
+          }
+
+          const nextUsedToday = (row?.quotaDate === today ? row.usedToday : 0) + actualCount;
+          tx.insert(userQuota)
+            .values({
+              userId,
+              usedToday: nextUsedToday,
+              quotaDate: today,
+              dailyTotal: row?.dailyTotal ?? null,
+              checkInDate: row?.checkInDate ?? null,
+              bonusToday: row?.bonusToday ?? 0,
+              permanentTotal: row?.permanentTotal ?? row?.dailyTotal ?? 0,
+              permanentUsed: baseUsed + left,
+            })
+            .onConflictDoUpdate({
+              target: userQuota.userId,
+              set: {
+                usedToday: sql`excluded.used_today`,
+                quotaDate: sql`excluded.quota_date`,
+                permanentTotal: sql`COALESCE(${userQuota.permanentTotal}, excluded.permanent_total)`,
+                permanentUsed: sql`excluded.permanent_used`,
+              },
+            })
+            .run();
+
+          const nextGrants = grants.map((grant) => {
+            if (scope !== 'all') return grant;
+            const current = tx
+              .select({ remaining: quotaGrants.remaining })
+              .from(quotaGrants)
+              .where(eq(quotaGrants.id, grant.id))
+              .get();
+            return current === undefined ? grant : { ...grant, remaining: current.remaining };
+          });
+          return toQuotaSnapshot(
             buildSnapshot(
               {
                 ...(row ?? {
@@ -273,55 +336,15 @@ export function createUserQuotaService(): UserQuotaService {
                   permanentTotal: null,
                   permanentUsed: null,
                 }),
+                usedToday: nextUsedToday,
+                quotaDate: today,
                 permanentUsed: baseUsed + left,
               },
               nextGrants,
               today,
             ),
-          ),
-        };
-      });
-
-      logger.debug(
-        { userId, reserved: count, scope, remaining: result.snapshot.remaining },
-        'user quota: reserved',
-      );
-      let state: 'reserved' | 'committed' | 'released' = 'reserved';
-
-      function restore(amount: number): QuotaSnapshot {
-        if (amount === 0) return snapshot();
-        db.transaction((tx) => {
-          let left = amount;
-          for (let index = result.allocations.length - 1; index >= 0 && left > 0; index -= 1) {
-            const allocation = result.allocations[index];
-            if (allocation === undefined) continue;
-            const amountToRestore = Math.min(left, allocation.amount);
-            if (allocation.kind === 'bonus' && allocation.id !== undefined) {
-              const grant = tx
-                .select({ remaining: quotaGrants.remaining, expiresAt: quotaGrants.expiresAt })
-                .from(quotaGrants)
-                .where(eq(quotaGrants.id, allocation.id))
-                .get();
-              if (grant !== undefined && grant.expiresAt.getTime() > Date.now()) {
-                tx.update(quotaGrants)
-                  .set({ remaining: sql`${quotaGrants.remaining} + ${amountToRestore}` })
-                  .where(eq(quotaGrants.id, allocation.id))
-                  .run();
-                left -= amountToRestore;
-              }
-            } else {
-              tx.update(userQuota)
-                .set({
-                  permanentUsed: sql`MAX(0, COALESCE(${userQuota.permanentUsed}, 0) - ${amountToRestore})`,
-                  usedToday: sql`MAX(0, ${userQuota.usedToday} - ${amountToRestore})`,
-                })
-                .where(eq(userQuota.userId, userId))
-                .run();
-              left -= amountToRestore;
-            }
-          }
+          );
         });
-        return snapshot();
       }
 
       return {
@@ -340,13 +363,14 @@ export function createUserQuotaService(): UserQuotaService {
               { actualCount, reservedCount: count },
             );
           }
-          const committed = restore(count - actualCount);
+          const committed = charge(actualCount);
+          updateReservation(userId, scope, -count);
           state = 'committed';
           logger.debug(
             { userId, reserved: count, committed: actualCount },
             'user quota: reservation committed',
           );
-          return committed;
+          return withReservations(userId, committed);
         },
         release(): QuotaSnapshot {
           if (state !== 'reserved') {
@@ -354,8 +378,9 @@ export function createUserQuotaService(): UserQuotaService {
               state,
             });
           }
-          const released = restore(count);
+          updateReservation(userId, scope, -count);
           state = 'released';
+          const released = snapshot();
           logger.debug(
             { userId, released: count, remaining: released.remaining },
             'user quota: reservation released',
@@ -471,11 +496,12 @@ export function createUserQuotaService(): UserQuotaService {
           claimed: claimed && !alreadyClaimed,
         };
       });
+      const visibleResult = withReservations(userId, result);
       logger.info(
-        { userId, claimed: result.claimed, remaining: result.remaining },
+        { userId, claimed: visibleResult.claimed, remaining: visibleResult.remaining },
         'user quota: daily check-in',
       );
-      return result;
+      return visibleResult;
     }
 
     return { snapshot, reserve, checkIn };
