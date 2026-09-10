@@ -502,7 +502,7 @@ export function LandingView() {
                     placeholder="描述你想生成的画面..."
                     ariaLabel="首页创作提示词"
                     submitLabel="带着提示词开始创作"
-                    submitContent={<GenerationSubmitCost count={count} />}
+                    submitContent={<GenerationSubmitCost count={count} resolution={resolution} />}
                     minRows={1}
                     maxRows={4}
                     allowFileUpload

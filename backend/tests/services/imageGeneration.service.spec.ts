@@ -153,6 +153,40 @@ describe('imageGeneration.service', () => {
     });
   });
 
+  it.each(['2k', '4k'] as const)(
+    'reserves and commits three credits per generated %s image',
+    async (resolution) => {
+      const provider = fakeProvider();
+      const commit = vi.fn();
+      const release = vi.fn();
+      const quotaPool: QuotaPool = {
+        snapshot: vi.fn(() => ({
+          total: 20,
+          remaining: 20,
+          checkedInToday: false,
+          dailyCheckInReward: 5,
+        })),
+        reserve: vi.fn(() => ({ commit, release })),
+        checkIn: vi.fn(() => ({
+          total: 20,
+          remaining: 20,
+          checkedInToday: true,
+          dailyCheckInReward: 5,
+          claimed: true,
+        })),
+      };
+
+      await generateImage(
+        { prompt: 'high resolution', count: 2, resolution },
+        { provider, quotaPool },
+      );
+
+      expect(quotaPool.reserve).toHaveBeenCalledWith(6);
+      expect(commit).toHaveBeenCalledWith(6);
+      expect(release).not.toHaveBeenCalled();
+    },
+  );
+
   it('image-to-image: resolves referenceId to an absolute path under UPLOAD_DIR', async () => {
     const buf = Buffer.concat([PNG_PREFIX, Buffer.alloc(64, 0)]);
     const saved = await saveUpload(buf);

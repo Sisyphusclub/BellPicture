@@ -509,7 +509,7 @@ describe('React application routes', () => {
     const user = userEvent.setup();
     renderRoute('/');
 
-    const submit = screen.getByRole('button', { name: '带着提示词开始创作' });
+    const submit = await screen.findByRole('button', { name: '带着提示词开始创作' });
     expect(submit).toHaveTextContent('1');
     expect(submit).toBeDisabled();
 
@@ -519,6 +519,14 @@ describe('React application routes', () => {
         name: '2 张',
       }),
     );
+    expect(submit).toHaveTextContent('2');
+
+    const resolutionGroup = screen.getByRole('group', { name: '清晰度' });
+    await user.click(within(resolutionGroup).getByRole('menuitemradio', { name: '2K' }));
+    expect(submit).toHaveTextContent('6');
+    await user.click(within(resolutionGroup).getByRole('menuitemradio', { name: '4K' }));
+    expect(submit).toHaveTextContent('6');
+    await user.click(within(resolutionGroup).getByRole('menuitemradio', { name: '1K' }));
     expect(submit).toHaveTextContent('2');
 
     await user.type(screen.getByRole('textbox', { name: '首页创作提示词' }), '玻璃城市');

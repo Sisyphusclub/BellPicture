@@ -14,6 +14,7 @@ import {
   MAX_COUNT,
   MAX_REFERENCE_IMAGES,
   MIN_COUNT,
+  imageGenerationCreditCost,
   supportsImageQuality,
   isAspectRatioSupportedForResolution,
   type AspectRatio,
@@ -146,7 +147,8 @@ export async function generateImage(
   );
 
   throwIfAborted(input.signal);
-  const reservation = deps.quotaPool?.reserve(count);
+  const creditCost = imageGenerationCreditCost(resolution);
+  const reservation = deps.quotaPool?.reserve(count * creditCost);
   let generatedResult: GenerateOutput | undefined;
   try {
     generatedResult = await deps.provider.generate({
@@ -186,7 +188,7 @@ export async function generateImage(
       await Promise.all(generatedResult.images.map((image) => removeOutput(image.outputPath)));
       throw requestAbortedError(input.signal.reason);
     }
-    reservation?.commit(generatedResult.images.length);
+    reservation?.commit(generatedResult.images.length * creditCost);
 
     return {
       batchId: randomUUID(),

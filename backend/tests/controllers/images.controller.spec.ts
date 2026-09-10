@@ -428,7 +428,7 @@ describe('POST /api/images/generate', () => {
     expect(call.aspectRatio).toBe('16:9');
 
     const quota = await request(app).get('/api/images/quota');
-    expect(quota.body.remaining).toBe(19);
+    expect(quota.body.remaining).toBe(17);
 
     const history = await request(app).get('/api/history');
     expect(history.body.records[0]).toMatchObject({
@@ -455,7 +455,7 @@ describe('POST /api/images/generate', () => {
     expect(provider.generate).toHaveBeenCalledWith(expect.objectContaining({ resolution: '2k' }));
 
     const quota = await request(app).get('/api/images/quota');
-    expect(quota.body.remaining).toBe(19);
+    expect(quota.body.remaining).toBe(17);
   });
 
   it('requires 2k or 4k on the high-resolution endpoint', async () => {
@@ -473,7 +473,7 @@ describe('POST /api/images/generate', () => {
     expect(provider.generate).not.toHaveBeenCalled();
   });
 
-  it('rejects 4k requests when the selected aspect ratio is not supported upstream', async () => {
+  it('accepts 4k requests for every supported aspect ratio', async () => {
     const { provider } = fakeProvider();
     const userId = `high-res-aspect-${randomUUID()}`;
     const app = buildApp(provider, stubAuth(userId, true));
@@ -484,9 +484,13 @@ describe('POST /api/images/generate', () => {
       resolution: '4k',
     });
 
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('BAD_REQUEST');
-    expect(provider.generate).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(provider.generate).toHaveBeenCalledWith(
+      expect.objectContaining({ aspectRatio: '1:1', resolution: '4k' }),
+    );
+
+    const quota = await request(app).get('/api/images/quota');
+    expect(quota.body.remaining).toBe(17);
   });
 
   it('passes reference ids through dedicated high-resolution image-to-image calls', async () => {

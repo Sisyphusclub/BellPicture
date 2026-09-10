@@ -51,7 +51,11 @@ export const QUALITY_CAPABLE_IMAGE_MODELS = [
   'gpt-image-2.5-flare',
   'gpt-image-2.5-sunburst',
 ] as const satisfies readonly ImageModel[];
-export const IMAGE_GENERATION_CREDIT_COST = 1;
+export const IMAGE_GENERATION_CREDIT_COSTS: Record<ImageResolution, number> = {
+  standard: 1,
+  '2k': 3,
+  '4k': 3,
+};
 export const DEFAULT_COUNT = 1;
 export const MIN_COUNT = 1;
 export const MAX_COUNT = 4;
@@ -85,6 +89,10 @@ export function supportsImageQuality(model: string | null | undefined): boolean 
   return QUALITY_CAPABLE_IMAGE_MODELS.includes(
     model as (typeof QUALITY_CAPABLE_IMAGE_MODELS)[number],
   );
+}
+
+export function imageGenerationCreditCost(resolution: ImageResolution): number {
+  return IMAGE_GENERATION_CREDIT_COSTS[resolution];
 }
 
 export function normalizeAspectChoiceForResolution(

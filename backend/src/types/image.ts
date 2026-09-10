@@ -15,6 +15,11 @@ export const QUALITY_CAPABLE_IMAGE_MODELS = [
 
 export const DEFAULT_ASPECT_RATIO: AspectRatio = '1:1';
 export const DEFAULT_IMAGE_RESOLUTION: ImageResolution = 'standard';
+export const IMAGE_GENERATION_CREDIT_COSTS: Record<ImageResolution, number> = {
+  standard: 1,
+  '2k': 3,
+  '4k': 3,
+};
 export const DEFAULT_COUNT = 1;
 export const MIN_COUNT = 1;
 export const MAX_COUNT = 4;
@@ -73,6 +78,12 @@ export function isAspectRatioSupportedForResolution(
   resolution: ImageResolution = DEFAULT_IMAGE_RESOLUTION,
 ): boolean {
   return aspectSizeForResolution(aspectRatio, resolution) !== undefined;
+}
+
+export function imageGenerationCreditCost(
+  resolution: ImageResolution = DEFAULT_IMAGE_RESOLUTION,
+): number {
+  return IMAGE_GENERATION_CREDIT_COSTS[resolution];
 }
 
 export function supportsImageQuality(model: string | undefined): boolean {

@@ -501,9 +501,17 @@ it('supports up to four images per generation', async () => {
     'aria-checked',
     'true',
   );
+  await user.click(
+    within(screen.getByRole('group', { name: '清晰度' })).getByRole('menuitemradio', {
+      name: '2K',
+    }),
+  );
+  expect(screen.getByRole('button', { name: '生成图片' })).toHaveTextContent('12');
   await user.click(screen.getByRole('button', { name: '生成图片' }));
   await waitFor(() =>
-    expect(generation.generate).toHaveBeenCalledWith(expect.objectContaining({ count: 4 })),
+    expect(generation.generate).toHaveBeenCalledWith(
+      expect.objectContaining({ count: 4, resolution: '2k' }),
+    ),
   );
 });
 
