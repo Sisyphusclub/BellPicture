@@ -606,14 +606,8 @@ export function GenerateView() {
     [upload.selectedFiles],
   );
 
-  const sessionHistoryBatches = useMemo(() => {
-    const session = sessions.find((candidate) => candidate.id === activeSessionId);
-    if (!activeSessionId || !session) return history.batches;
-    const batchIds = new Set(session.batchIds);
-    return history.batches.filter((batch) => batchIds.has(batch.batchId));
-  }, [activeSessionId, history.batches, sessions]);
   const generationHistoryBatches = useMemo(() => {
-    const batches = new Map(sessionHistoryBatches.map((batch) => [batch.batchId, batch]));
+    const batches = new Map(history.batches.map((batch) => [batch.batchId, batch]));
     feed.forEach((item) => {
       if (!item.error) return;
       batches.set(item.id, {
@@ -629,7 +623,7 @@ export function GenerateView() {
     return [...batches.values()].sort((left, right) =>
       right.createdAt.localeCompare(left.createdAt),
     );
-  }, [feed, sessionHistoryBatches]);
+  }, [feed, history.batches]);
   const visibleHistoryBatchIds = useMemo(() => feed.map((item) => item.id), [feed]);
   const latestBatch = feed[feed.length - 1];
   const latestBatchVisibilityKey = latestBatch

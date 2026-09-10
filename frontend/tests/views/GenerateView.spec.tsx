@@ -797,10 +797,45 @@ it('opens the right history flyout, searches, and loads a selected batch', async
         referenceIds: [],
       },
     },
+    {
+      batchId: 'older-history-batch',
+      createdAt: '2026-07-29T08:00:00.000Z',
+      prompt: '山间木屋',
+      model: 'gpt-image-2',
+      entries: [
+        {
+          record: {
+            id: 'older-history-result.png',
+            batchId: 'older-history-batch',
+            createdAt: '2026-07-29T08:00:00.000Z',
+            prompt: '山间木屋',
+            model: 'gpt-image-2',
+            aspectRatio: '16:9',
+            width: 1792,
+            height: 1024,
+            count: 1,
+            resolution: 'standard',
+            isPublic: false,
+          },
+          imageUrl: '/older-history-result.png',
+        },
+      ],
+      settings: {
+        prompt: '山间木屋',
+        model: 'gpt-image-2',
+        count: 1,
+        aspectRatio: '16:9',
+        resolution: 'standard',
+        isPublic: false,
+        referenceIds: [],
+      },
+    },
   ];
+  const session = createGenerationSession('海边灯塔');
+  attachGenerationBatch(session.id, 'history-batch', '海边灯塔');
   const user = userEvent.setup();
   render(
-    <MemoryRouter initialEntries={['/generate']}>
+    <MemoryRouter initialEntries={[`/generate?session=${session.id}`]}>
       <ToastProvider>
         <GenerateView />
       </ToastProvider>
@@ -815,6 +850,7 @@ it('opens the right history flyout, searches, and loads a selected batch', async
   await user.click(rail);
   const panel = await screen.findByRole('complementary', { name: '生成历史' });
   expect(panel).toBeVisible();
+  expect(within(panel).getByRole('button', { name: /山间木屋/ })).toBeVisible();
   await user.type(within(panel).getByRole('searchbox'), '灯塔');
   expect(within(panel).getByRole('button', { name: /海边灯塔/ })).toBeVisible();
   await user.click(within(panel).getByRole('button', { name: /海边灯塔/ }));
