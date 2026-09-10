@@ -455,6 +455,7 @@ export function GenerateView() {
   const feedSessionId = useRef<string | null>(null);
   const latestFeed = useRef(feed);
   const pendingScrollId = useRef<string | null>(null);
+  const initialLatestScrollSession = useRef<string | null>(null);
   const composerRef = useRef<HTMLDivElement>(null);
   const sessionFeedRef = useRef<HTMLElement>(null);
   const latestBatchRef = useRef<HTMLElement>(null);
@@ -1159,6 +1160,22 @@ export function GenerateView() {
     setActiveHistoryBatchId(null);
     window.scrollTo({ top, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   };
+
+  useLayoutEffect(() => {
+    if (
+      !activeSessionId ||
+      !history.isHydrated ||
+      generation.isLoading ||
+      feed.length === 0 ||
+      initialLatestScrollSession.current === activeSessionId
+    ) {
+      return;
+    }
+    const latestId = feed[feed.length - 1]?.id;
+    if (!latestId || !scrollToGenerationBatch(latestId)) return;
+    initialLatestScrollSession.current = activeSessionId;
+    setActiveHistoryBatchId(null);
+  }, [activeSessionId, feed, generation.isLoading, history.isHydrated]);
 
   return (
     <section
