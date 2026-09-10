@@ -346,20 +346,20 @@ describe('React application routes', () => {
     expect(screen.queryByRole('button', { name: /选择模型和推理强度/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '选择模型' })).toHaveTextContent('gpt-image-2');
     const customTrigger = screen.getByRole('button', { name: '自定义生成参数' });
-    expect(customTrigger).toHaveTextContent('自定义设置');
+    expect(customTrigger).toHaveTextContent('自定义');
     expect(customTrigger).toHaveTextContent('智能 · 1K · 1张');
-    expect(screen.queryByRole('radiogroup', { name: '画面比例' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: '画面比例' })).not.toBeInTheDocument();
     await user.click(customTrigger);
     const customPanel = screen.getByRole('menu', { name: '自定义生成参数' });
-    expect(within(customPanel).getByText('自定义设置')).toBeInTheDocument();
+    expect(within(customPanel).getByText('生成参数')).toBeInTheDocument();
     expect(within(customPanel).getByText('智能 · 1K · 1张')).toBeInTheDocument();
-    expect(screen.getByRole('radiogroup', { name: '画面比例' })).toBeInTheDocument();
-    expect(screen.getByRole('radiogroup', { name: '生成张数' })).toBeInTheDocument();
-    expect(screen.getByRole('radiogroup', { name: '清晰度' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: '画面比例' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: '生成张数' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: '清晰度' })).toBeInTheDocument();
     expect(
-      within(screen.getByRole('radiogroup', { name: '画面比例' }))
-        .getByRole('radio', { name: '16:9' })
-        .querySelector('.generation-aspect-option__frame'),
+      within(screen.getByRole('group', { name: '画面比例' }))
+        .getByRole('menuitemradio', { name: '16:9' })
+        .querySelector('.generation-custom-option__frame'),
     ).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: '发布到发现页' })).not.toBeChecked();
     expect(screen.getByRole('status', { name: '剩余额度 16，总额度 20' })).toBeInTheDocument();
@@ -511,8 +511,8 @@ describe('React application routes', () => {
 
     await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
     await user.click(
-      within(screen.getByRole('radiogroup', { name: '生成张数' })).getByRole('radio', {
-        name: '2',
+      within(screen.getByRole('group', { name: '生成张数' })).getByRole('menuitemradio', {
+        name: '2 张',
       }),
     );
     expect(submit).toHaveTextContent('2');
@@ -574,7 +574,7 @@ describe('React application routes', () => {
         new File([`reference-${index + 1}`], `reference-${index + 1}.png`, { type: 'image/png' }),
     );
 
-    await user.click(screen.getByRole('button', { name: '添加参考图或技能' }));
+    await user.click(await screen.findByRole('button', { name: '添加参考图或技能' }));
     await user.click(screen.getByRole('menuitem', { name: '添加参考图' }));
     const fileInput = container.querySelector<HTMLInputElement>('input[type="file"]');
     expect(fileInput).toHaveAttribute('accept', 'image/png,image/jpeg,image/webp');
@@ -588,17 +588,17 @@ describe('React application routes', () => {
     await user.click(screen.getByRole('menuitemradio', { name: 'gpt-image-2.5-sunburst' }));
     await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
     await user.click(
-      within(screen.getByRole('radiogroup', { name: '画面比例' })).getByRole('radio', {
+      within(screen.getByRole('group', { name: '画面比例' })).getByRole('menuitemradio', {
         name: '16:9',
       }),
     );
     await user.click(
-      within(screen.getByRole('radiogroup', { name: '生成张数' })).getByRole('radio', {
-        name: '2',
+      within(screen.getByRole('group', { name: '生成张数' })).getByRole('menuitemradio', {
+        name: '2 张',
       }),
     );
     await user.click(
-      within(screen.getByRole('radiogroup', { name: '清晰度' })).getByRole('radio', {
+      within(screen.getByRole('group', { name: '清晰度' })).getByRole('menuitemradio', {
         name: '2K',
       }),
     );

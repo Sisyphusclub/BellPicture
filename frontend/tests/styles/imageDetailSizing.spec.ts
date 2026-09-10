@@ -42,6 +42,7 @@ describe('image detail sizing contract', () => {
     );
     const mediaRule = ruleBody(baseStyles, '.image-detail__media');
     const imageRule = ruleBody(baseStyles, '.image-detail__media img');
+    const promptRule = ruleBody(baseStyles, '.image-detail__prompt');
 
     expect(mediaRule).toContain('aspect-ratio: var(--image-detail-image-ratio);');
     expect(mediaRule).toContain('background: transparent;');
@@ -51,6 +52,10 @@ describe('image detail sizing contract', () => {
     expect(imageRule).toContain('border-radius: 0;');
     expect(imageRule).toContain('box-shadow: none;');
     expect(imageRule).toContain('object-fit: contain;');
+    expect(promptRule).toContain('max-width: 100%;');
+    expect(promptRule).toContain('overflow-wrap: anywhere;');
+    expect(promptRule).toContain('white-space: pre-wrap;');
+    expect(promptRule).toContain('word-break: break-word;');
     expect(mobileContract).toContain('grid-template-rows: auto auto;');
     expect(mobileContract).toContain('aspect-ratio: var(--image-detail-image-ratio);');
     expect(mobileContract).not.toContain('min-height: 42vh;');

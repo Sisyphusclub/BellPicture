@@ -1,10 +1,16 @@
-import { Check, ChevronDown, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { ChevronDown, SlidersHorizontal, Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { ModelLogo } from '@/components/premium/agent-chat-input/model-logo';
 import {
   AnimatedDropdown,
   AnimatedDropdownContent,
+  AnimatedDropdownItemIcon,
+  AnimatedDropdownItemText,
+  AnimatedDropdownLabel,
+  AnimatedDropdownRadioGroup,
+  AnimatedDropdownRadioItem,
+  AnimatedDropdownSeparator,
   AnimatedDropdownTrigger,
 } from '@/components/premium/animated-dropdown';
 import { Button } from '@/components/ui/button';
@@ -26,6 +32,10 @@ import {
 import { DISCOVERY_PUBLISH_LABEL } from '@/utils/imageVisibility';
 
 const MODEL_OPTIONS = IMAGE_MODELS.map((value) => ({ value, label: value }));
+
+function keepCustomPanelOpen(event: Event): void {
+  event.preventDefault();
+}
 
 interface GenerationComposerControlsProps {
   model: ImageModel;
@@ -80,13 +90,9 @@ export function GenerationComposerControls({
             aria-label="自定义生成参数"
             disabled={disabled}
           >
-            <span className="generation-custom-trigger__icon" aria-hidden="true">
-              <SlidersHorizontal />
-            </span>
-            <span className="generation-custom-trigger__copy">
-              <span>自定义设置</span>
-              <small>{parameterSummary}</small>
-            </span>
+            <SlidersHorizontal aria-hidden="true" />
+            <span>自定义</span>
+            <small>{parameterSummary}</small>
             <ChevronDown aria-hidden="true" />
           </Button>
         </AnimatedDropdownTrigger>
@@ -98,15 +104,14 @@ export function GenerationComposerControls({
           className="generation-custom-panel"
           aria-label="自定义生成参数"
         >
-          <header className="generation-custom-panel__header">
-            <span className="generation-custom-panel__icon" aria-hidden="true">
-              <SlidersHorizontal />
+          <AnimatedDropdownLabel className="generation-custom-panel__header">
+            <span className="generation-custom-panel__title">
+              <SlidersHorizontal aria-hidden="true" />
+              <strong>生成参数</strong>
             </span>
-            <div>
-              <strong>自定义设置</strong>
-              <span>{parameterSummary}</span>
-            </div>
-          </header>
+            <output>{parameterSummary}</output>
+          </AnimatedDropdownLabel>
+          <AnimatedDropdownSeparator className="generation-custom-panel__separator" />
 
           <div className="generation-custom-panel__body">
             <ParameterGroup
@@ -114,89 +119,92 @@ export function GenerationComposerControls({
               value={visibleAspect}
               className="generation-custom-group--aspect"
             >
-              <div
-                className="generation-segmented generation-segmented--aspect"
-                role="radiogroup"
+              <AnimatedDropdownRadioGroup
+                value={aspect}
+                className="generation-custom-options generation-custom-options--aspect"
                 aria-label="画面比例"
+                onValueChange={(value) => onAspectChange(value as AspectChoice)}
               >
                 {ASPECT_CHOICES.map((value) => {
                   const optionDisabled =
                     resolution === '4k' &&
                     !(FOUR_K_ASPECT_RATIOS as readonly string[]).includes(value);
-                  const selected = value === aspect;
                   return (
-                    <Button
+                    <AnimatedDropdownRadioItem
                       key={value}
-                      type="button"
-                      variant="ghost"
-                      size="compact"
-                      role="radio"
-                      aria-checked={selected}
+                      value={value}
                       disabled={optionDisabled}
-                      className="generation-aspect-option"
-                      onClick={() => onAspectChange(value)}
+                      aria-label={value === 'auto' ? '智能' : value}
+                      className="generation-custom-option generation-custom-option--aspect"
+                      onSelect={keepCustomPanelOpen}
                     >
-                      <span
-                        className="generation-aspect-option__visual"
+                      <AnimatedDropdownItemIcon
+                        className="generation-custom-option__visual"
                         data-aspect={value}
-                        aria-hidden="true"
                       >
                         {value === 'auto' ? (
                           <Sparkles />
                         ) : (
-                          <span className="generation-aspect-option__frame" />
+                          <span className="generation-custom-option__frame" />
                         )}
-                      </span>
-                      <span>{value === 'auto' ? '智能' : value}</span>
-                      {selected ? (
-                        <span className="generation-aspect-option__check" aria-hidden="true">
-                          <Check />
-                        </span>
-                      ) : null}
-                    </Button>
+                      </AnimatedDropdownItemIcon>
+                      <AnimatedDropdownItemText className="generation-custom-option__text">
+                        {value === 'auto' ? '智能' : value}
+                      </AnimatedDropdownItemText>
+                    </AnimatedDropdownRadioItem>
                   );
                 })}
-              </div>
+              </AnimatedDropdownRadioGroup>
             </ParameterGroup>
 
             <div className="generation-custom-panel__compact-groups">
               <ParameterGroup label="清晰度" value={IMAGE_RESOLUTION_LABELS[resolution]}>
-                <div className="generation-segmented" role="radiogroup" aria-label="清晰度">
+                <AnimatedDropdownRadioGroup
+                  value={resolution}
+                  className="generation-custom-options generation-custom-options--compact"
+                  aria-label="清晰度"
+                  onValueChange={(value) => onResolutionChange(value as ImageResolution)}
+                >
                   {IMAGE_RESOLUTIONS.map((value) => (
-                    <Button
+                    <AnimatedDropdownRadioItem
                       key={value}
-                      type="button"
-                      variant="ghost"
-                      size="compact"
-                      role="radio"
-                      aria-checked={value === resolution}
-                      onClick={() => onResolutionChange(value)}
+                      value={value}
+                      aria-label={IMAGE_RESOLUTION_LABELS[value]}
+                      className="generation-custom-option generation-custom-option--compact"
+                      onSelect={keepCustomPanelOpen}
                     >
-                      {IMAGE_RESOLUTION_LABELS[value]}
-                    </Button>
+                      <AnimatedDropdownItemText className="generation-custom-option__text">
+                        {IMAGE_RESOLUTION_LABELS[value]}
+                      </AnimatedDropdownItemText>
+                    </AnimatedDropdownRadioItem>
                   ))}
-                </div>
+                </AnimatedDropdownRadioGroup>
               </ParameterGroup>
 
               <ParameterGroup label="生成张数" value={`${count} 张`}>
-                <div className="generation-segmented" role="radiogroup" aria-label="生成张数">
+                <AnimatedDropdownRadioGroup
+                  value={String(count)}
+                  className="generation-custom-options generation-custom-options--compact generation-custom-options--count"
+                  aria-label="生成张数"
+                  onValueChange={(value) => onCountChange(Number(value))}
+                >
                   {Array.from(
                     { length: MAX_COUNT - MIN_COUNT + 1 },
                     (_, index) => index + MIN_COUNT,
                   ).map((value) => (
-                    <Button
+                    <AnimatedDropdownRadioItem
                       key={value}
-                      type="button"
-                      variant="ghost"
-                      size="compact"
-                      role="radio"
-                      aria-checked={value === count}
-                      onClick={() => onCountChange(value)}
+                      value={String(value)}
+                      aria-label={`${value} 张`}
+                      className="generation-custom-option generation-custom-option--compact"
+                      onSelect={keepCustomPanelOpen}
                     >
-                      {value}
-                    </Button>
+                      <AnimatedDropdownItemText className="generation-custom-option__text">
+                        {value}
+                      </AnimatedDropdownItemText>
+                    </AnimatedDropdownRadioItem>
                   ))}
-                </div>
+                </AnimatedDropdownRadioGroup>
               </ParameterGroup>
             </div>
           </div>

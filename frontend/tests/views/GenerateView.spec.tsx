@@ -273,21 +273,21 @@ it('shows the requested custom aspect ratios in order and preserves a selection'
 
   const customTrigger = screen.getByRole('button', { name: '自定义生成参数' });
   await user.click(customTrigger);
-  const aspectGroup = screen.getByRole('radiogroup', { name: '画面比例' });
+  const aspectGroup = screen.getByRole('group', { name: '画面比例' });
   expect(
     within(aspectGroup)
-      .getAllByRole('radio')
+      .getAllByRole('menuitemradio')
       .map((option) => option.textContent),
   ).toEqual(['智能', '1:1', '3:4', '4:3', '16:9', '9:16', '2:3', '3:2']);
 
-  await user.click(within(aspectGroup).getByRole('radio', { name: '4:3' }));
+  await user.click(within(aspectGroup).getByRole('menuitemradio', { name: '4:3' }));
   await user.keyboard('{Escape}');
-  expect(screen.queryByRole('radiogroup', { name: '画面比例' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: '画面比例' })).not.toBeInTheDocument();
   expect(customTrigger).toHaveTextContent('4:3');
 
   await user.click(customTrigger);
   expect(
-    within(screen.getByRole('radiogroup', { name: '画面比例' })).getByRole('radio', {
+    within(screen.getByRole('group', { name: '画面比例' })).getByRole('menuitemradio', {
       name: '4:3',
     }),
   ).toHaveAttribute('aria-checked', 'true');
@@ -457,12 +457,12 @@ it('supports up to four images per generation', async () => {
 
   expect(screen.getByRole('button', { name: '生成图片' })).toHaveTextContent('1');
   await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
-  const countGroup = screen.getByRole('radiogroup', { name: '生成张数' });
-  await user.click(within(countGroup).getByRole('radio', { name: '4' }));
+  const countGroup = screen.getByRole('group', { name: '生成张数' });
+  await user.click(within(countGroup).getByRole('menuitemradio', { name: '4 张' }));
 
   expect(screen.getByRole('status', { name: '4 张' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: '生成图片' })).toHaveTextContent('4');
-  expect(within(countGroup).getByRole('radio', { name: '4' })).toHaveAttribute(
+  expect(within(countGroup).getByRole('menuitemradio', { name: '4 张' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
@@ -1151,12 +1151,14 @@ it('normalizes an incompatible 4K URL ratio to 16:9', async () => {
   expect(screen.getByRole('button', { name: '自定义生成参数' })).toHaveTextContent('16:9');
   expect(screen.getByRole('button', { name: '自定义生成参数' })).toHaveTextContent('4K');
   await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
-  const aspectGroup = screen.getByRole('radiogroup', { name: '画面比例' });
-  expect(within(aspectGroup).getByRole('radio', { name: '16:9' })).toHaveAttribute(
+  const aspectGroup = screen.getByRole('group', { name: '画面比例' });
+  expect(within(aspectGroup).getByRole('menuitemradio', { name: '16:9' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
-  expect(within(aspectGroup).getByRole('radio', { name: '2:3' })).toBeDisabled();
+  expect(within(aspectGroup).getByRole('menuitemradio', { name: '2:3' })).toHaveAttribute(
+    'data-disabled',
+  );
   await user.click(screen.getByRole('button', { name: '生成图片' }));
   await waitFor(() => expect(generation.generate).toHaveBeenCalledTimes(1));
   expect(generation.generate.mock.calls[0]?.[0]).toEqual(
@@ -1177,7 +1179,7 @@ it('lets non-admin users select and submit high-resolution settings', async () =
 
   await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
   await user.click(
-    within(screen.getByRole('radiogroup', { name: '清晰度' })).getByRole('radio', {
+    within(screen.getByRole('group', { name: '清晰度' })).getByRole('menuitemradio', {
       name: '2K',
     }),
   );

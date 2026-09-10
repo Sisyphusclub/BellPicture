@@ -6,6 +6,40 @@ import { describe, expect, it } from 'vitest';
 const baseStyles = readFileSync(resolve(process.cwd(), 'src/styles/base.css'), 'utf8');
 
 describe('landing composer surface contract', () => {
+  it('keeps pasted unbroken prompts inside the composer width', () => {
+    const editorRule = baseStyles.match(/\.agent-chat-input__textarea\s*\{([^}]+)\}/)?.[1] ?? '';
+
+    expect(editorRule).toContain('min-width: 0;');
+    expect(editorRule).toContain('max-width: 100%;');
+    expect(editorRule).toContain('overflow-x: hidden;');
+    expect(editorRule).toContain('overflow-wrap: anywhere;');
+    expect(editorRule).toContain('white-space: pre-wrap;');
+    expect(editorRule).toContain('word-break: break-word;');
+    expect(baseStyles).not.toMatch(
+      /\.landing-composer-dock:not\(\.is-expanded\)\s+\.agent-chat-input__textarea\s*\{[^}]*white-space:\s*nowrap;/s,
+    );
+  });
+
+  it('keeps the generation action after the controls in the desktop toolbar', () => {
+    const sharedComposerStart = baseStyles.indexOf(
+      '/* Shared image-generation composer contract for Discover and Generate. */',
+    );
+    const sharedComposerContract = baseStyles.slice(sharedComposerStart);
+
+    expect(sharedComposerContract).toMatch(
+      /\.generation-composer \.agent-chat-input__toolbar\s*\{[^}]*flex-wrap:\s*nowrap;/s,
+    );
+    expect(sharedComposerContract).toMatch(
+      /\.generation-composer \.agent-chat-input__toolbar-group:first-child\s*\{[^}]*order:\s*0;/s,
+    );
+    expect(sharedComposerContract).toMatch(
+      /\.generation-composer \.agent-chat-input__toolbar-content\s*\{[^}]*order:\s*1;[^}]*width:\s*auto;/s,
+    );
+    expect(sharedComposerContract).toMatch(
+      /\.generation-composer \.agent-chat-input__toolbar-group--end\s*\{[^}]*order:\s*2;/s,
+    );
+  });
+
   it('keeps the idle hero composer visible without painting a nested card', () => {
     const idleStart = baseStyles.indexOf(
       '/* The hero and dock share the same beUI Agent Chat Input surface.',
