@@ -67,5 +67,8 @@ services:
 
 volumes:
   backend-data:
+    name: bellpicture_backend-data
   backend-uploads:
+    name: bellpicture_backend-uploads
   backend-outputs:
+    name: bellpicture_backend-outputs
