@@ -345,12 +345,22 @@ describe('React application routes', () => {
     expect(screen.getByRole('button', { name: '添加参考图或技能' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /选择模型和推理强度/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '选择模型' })).toHaveTextContent('gpt-image-2');
-    expect(screen.getByRole('button', { name: '自定义生成参数' })).toBeInTheDocument();
+    const customTrigger = screen.getByRole('button', { name: '自定义生成参数' });
+    expect(customTrigger).toHaveTextContent('自定义设置');
+    expect(customTrigger).toHaveTextContent('智能 · 1K · 1张');
     expect(screen.queryByRole('radiogroup', { name: '画面比例' })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
+    await user.click(customTrigger);
+    const customPanel = screen.getByRole('menu', { name: '自定义生成参数' });
+    expect(within(customPanel).getByText('自定义设置')).toBeInTheDocument();
+    expect(within(customPanel).getByText('智能 · 1K · 1张')).toBeInTheDocument();
     expect(screen.getByRole('radiogroup', { name: '画面比例' })).toBeInTheDocument();
     expect(screen.getByRole('radiogroup', { name: '生成张数' })).toBeInTheDocument();
     expect(screen.getByRole('radiogroup', { name: '清晰度' })).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('radiogroup', { name: '画面比例' }))
+        .getByRole('radio', { name: '16:9' })
+        .querySelector('.generation-aspect-option__frame'),
+    ).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: '发布到发现页' })).not.toBeChecked();
     expect(screen.getByRole('status', { name: '剩余额度 16，总额度 20' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: '正在发生的想象' })).not.toBeInTheDocument();

@@ -1,4 +1,4 @@
-import { Check, ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { Check, ChevronDown, SlidersHorizontal, Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { ModelLogo } from '@/components/premium/agent-chat-input/model-logo';
@@ -57,6 +57,7 @@ export function GenerationComposerControls({
   onPublicChange,
 }: GenerationComposerControlsProps) {
   const visibleAspect = aspect === 'auto' ? '智能' : aspect;
+  const parameterSummary = `${visibleAspect} · ${IMAGE_RESOLUTION_LABELS[resolution]} · ${count}张`;
 
   return (
     <div className="generation-composer-controls" aria-label="生成设置">
@@ -79,9 +80,13 @@ export function GenerationComposerControls({
             aria-label="自定义生成参数"
             disabled={disabled}
           >
-            <SlidersHorizontal aria-hidden="true" />
-            <span>自定义</span>
-            <small>{`${visibleAspect} · ${count}张 · ${IMAGE_RESOLUTION_LABELS[resolution]}`}</small>
+            <span className="generation-custom-trigger__icon" aria-hidden="true">
+              <SlidersHorizontal />
+            </span>
+            <span className="generation-custom-trigger__copy">
+              <span>自定义设置</span>
+              <small>{parameterSummary}</small>
+            </span>
             <ChevronDown aria-hidden="true" />
           </Button>
         </AnimatedDropdownTrigger>
@@ -93,74 +98,108 @@ export function GenerationComposerControls({
           className="generation-custom-panel"
           aria-label="自定义生成参数"
         >
-          <ParameterGroup label="画面比例" className="generation-custom-group--aspect">
-            <div
-              className="generation-segmented generation-segmented--aspect"
-              role="radiogroup"
-              aria-label="画面比例"
+          <header className="generation-custom-panel__header">
+            <span className="generation-custom-panel__icon" aria-hidden="true">
+              <SlidersHorizontal />
+            </span>
+            <div>
+              <strong>自定义设置</strong>
+              <span>{parameterSummary}</span>
+            </div>
+          </header>
+
+          <div className="generation-custom-panel__body">
+            <ParameterGroup
+              label="画面比例"
+              value={visibleAspect}
+              className="generation-custom-group--aspect"
             >
-              {ASPECT_CHOICES.map((value) => {
-                const optionDisabled =
-                  resolution === '4k' &&
-                  !(FOUR_K_ASPECT_RATIOS as readonly string[]).includes(value);
-                const selected = value === aspect;
-                return (
-                  <Button
-                    key={value}
-                    type="button"
-                    variant="ghost"
-                    size="compact"
-                    role="radio"
-                    aria-checked={selected}
-                    disabled={optionDisabled}
-                    onClick={() => onAspectChange(value)}
-                  >
-                    {selected ? <Check aria-hidden="true" /> : null}
-                    <span>{value === 'auto' ? '智能' : value}</span>
-                  </Button>
-                );
-              })}
-            </div>
-          </ParameterGroup>
+              <div
+                className="generation-segmented generation-segmented--aspect"
+                role="radiogroup"
+                aria-label="画面比例"
+              >
+                {ASPECT_CHOICES.map((value) => {
+                  const optionDisabled =
+                    resolution === '4k' &&
+                    !(FOUR_K_ASPECT_RATIOS as readonly string[]).includes(value);
+                  const selected = value === aspect;
+                  return (
+                    <Button
+                      key={value}
+                      type="button"
+                      variant="ghost"
+                      size="compact"
+                      role="radio"
+                      aria-checked={selected}
+                      disabled={optionDisabled}
+                      className="generation-aspect-option"
+                      onClick={() => onAspectChange(value)}
+                    >
+                      <span
+                        className="generation-aspect-option__visual"
+                        data-aspect={value}
+                        aria-hidden="true"
+                      >
+                        {value === 'auto' ? (
+                          <Sparkles />
+                        ) : (
+                          <span className="generation-aspect-option__frame" />
+                        )}
+                      </span>
+                      <span>{value === 'auto' ? '智能' : value}</span>
+                      {selected ? (
+                        <span className="generation-aspect-option__check" aria-hidden="true">
+                          <Check />
+                        </span>
+                      ) : null}
+                    </Button>
+                  );
+                })}
+              </div>
+            </ParameterGroup>
 
-          <ParameterGroup label="生成张数">
-            <div className="generation-segmented" role="radiogroup" aria-label="生成张数">
-              {Array.from(
-                { length: MAX_COUNT - MIN_COUNT + 1 },
-                (_, index) => index + MIN_COUNT,
-              ).map((value) => (
-                <Button
-                  key={value}
-                  type="button"
-                  variant="ghost"
-                  size="compact"
-                  role="radio"
-                  aria-checked={value === count}
-                  onClick={() => onCountChange(value)}
-                >
-                  {value}
-                </Button>
-              ))}
-            </div>
-          </ParameterGroup>
+            <div className="generation-custom-panel__compact-groups">
+              <ParameterGroup label="清晰度" value={IMAGE_RESOLUTION_LABELS[resolution]}>
+                <div className="generation-segmented" role="radiogroup" aria-label="清晰度">
+                  {IMAGE_RESOLUTIONS.map((value) => (
+                    <Button
+                      key={value}
+                      type="button"
+                      variant="ghost"
+                      size="compact"
+                      role="radio"
+                      aria-checked={value === resolution}
+                      onClick={() => onResolutionChange(value)}
+                    >
+                      {IMAGE_RESOLUTION_LABELS[value]}
+                    </Button>
+                  ))}
+                </div>
+              </ParameterGroup>
 
-          <ParameterGroup label="清晰度">
-            <div className="generation-segmented" role="radiogroup" aria-label="清晰度">
-              {IMAGE_RESOLUTIONS.map((value) => (
-                <Button
-                  key={value}
-                  type="button"
-                  variant="ghost"
-                  size="compact"
-                  role="radio"
-                  aria-checked={value === resolution}
-                  onClick={() => onResolutionChange(value)}
-                >
-                  {IMAGE_RESOLUTION_LABELS[value]}
-                </Button>
-              ))}
+              <ParameterGroup label="生成张数" value={`${count} 张`}>
+                <div className="generation-segmented" role="radiogroup" aria-label="生成张数">
+                  {Array.from(
+                    { length: MAX_COUNT - MIN_COUNT + 1 },
+                    (_, index) => index + MIN_COUNT,
+                  ).map((value) => (
+                    <Button
+                      key={value}
+                      type="button"
+                      variant="ghost"
+                      size="compact"
+                      role="radio"
+                      aria-checked={value === count}
+                      onClick={() => onCountChange(value)}
+                    >
+                      {value}
+                    </Button>
+                  ))}
+                </div>
+              </ParameterGroup>
             </div>
-          </ParameterGroup>
+          </div>
         </AnimatedDropdownContent>
       </AnimatedDropdown>
 
@@ -186,16 +225,21 @@ export function GenerationComposerControls({
 
 function ParameterGroup({
   label,
+  value,
   className,
   children,
 }: {
   label: string;
+  value: string;
   className?: string;
   children: ReactNode;
 }) {
   return (
     <section className={`generation-custom-group${className ? ` ${className}` : ''}`}>
-      <span className="generation-custom-group__label">{label}</span>
+      <header className="generation-custom-group__header">
+        <span className="generation-custom-group__label">{label}</span>
+        <output>{value}</output>
+      </header>
       {children}
     </section>
   );
