@@ -167,7 +167,6 @@ export function GenerationComposerControls({
               </AnimatedDropdownRadioGroup>
             </ParameterGroup>
 
-            <span className="generation-custom-section-label">其他设置</span>
             <div className="generation-custom-panel__compact-groups">
               {qualitySupported ? (
                 <ParameterGroup

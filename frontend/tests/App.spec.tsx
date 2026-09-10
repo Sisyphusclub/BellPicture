@@ -353,7 +353,7 @@ describe('React application routes', () => {
     const customPanel = screen.getByRole('menu', { name: '自定义生成参数' });
     expect(customPanel).toHaveAttribute('data-side', 'bottom');
     expect(within(customPanel).getByText('生成偏好')).toBeInTheDocument();
-    expect(within(customPanel).getByText('其他设置')).toBeInTheDocument();
+    expect(within(customPanel).queryByText('其他设置')).not.toBeInTheDocument();
     expect(within(customPanel).getByText('智能 · 1K · 1张')).toBeInTheDocument();
     expect(screen.getByRole('group', { name: '画面比例' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: '生成张数' })).toBeInTheDocument();
@@ -496,8 +496,9 @@ describe('React application routes', () => {
     const user = userEvent.setup();
     renderRoute('/');
     expect(screen.queryByRole('button', { name: /选择模型和推理强度/ })).not.toBeInTheDocument();
-    const trigger = screen.getByRole('button', { name: '选择模型' });
+    const trigger = await screen.findByRole('button', { name: '选择模型' });
     await user.click(trigger);
+    expect(trigger).toHaveAttribute('data-beui-pointer-focus');
     expect(screen.getByRole('menuitemradio', { name: 'gpt-image-2.5-flare' })).toBeInTheDocument();
     expect(
       screen.getByRole('menuitemradio', { name: 'gpt-image-2.5-sunburst' }),
