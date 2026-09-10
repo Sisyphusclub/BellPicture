@@ -148,7 +148,9 @@ export async function generateImage(
 
   throwIfAborted(input.signal);
   const creditCost = imageGenerationCreditCost(resolution);
-  const reservation = deps.quotaPool?.reserve(count * creditCost);
+  const reservation = deps.quotaPool?.reserve(count * creditCost, {
+    scope: resolution === DEFAULT_IMAGE_RESOLUTION ? 'all' : 'permanent',
+  });
   let generatedResult: GenerateOutput | undefined;
   try {
     generatedResult = await deps.provider.generate({

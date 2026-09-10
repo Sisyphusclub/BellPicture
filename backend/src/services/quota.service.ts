@@ -19,8 +19,14 @@ export interface QuotaReservation {
   release: () => QuotaSnapshot;
 }
 
+export type QuotaReservationScope = 'all' | 'permanent';
+
+export interface QuotaReservationOptions {
+  scope?: QuotaReservationScope;
+}
+
 export interface QuotaPool {
   snapshot: () => QuotaSnapshot;
-  reserve: (count: number) => QuotaReservation;
+  reserve: (count: number, options?: QuotaReservationOptions) => QuotaReservation;
   checkIn: () => DailyCheckInResult;
 }

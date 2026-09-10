@@ -13,6 +13,7 @@ import type {
   DailyCheckInResult,
   QuotaPool,
   QuotaReservation,
+  QuotaReservationOptions,
   QuotaSnapshot,
 } from './quota.service.js';
 
@@ -143,12 +144,13 @@ export function createUserQuotaService(): UserQuotaService {
       return toQuotaSnapshot(buildSnapshot(selectQuotaRow(userId), selectActiveGrants(userId)));
     }
 
-    function reserve(count: number): QuotaReservation {
+    function reserve(count: number, options: QuotaReservationOptions = {}): QuotaReservation {
       if (!Number.isInteger(count) || count <= 0) {
         throw new AppError('INTERNAL', 'Invalid quota reservation count', 500, undefined, {
           count,
         });
       }
+      const scope = options.scope ?? 'all';
 
       const result = db.transaction((tx) => {
         const row = tx
@@ -192,26 +194,31 @@ export function createUserQuotaService(): UserQuotaService {
         const baseUsed = permanentUsed(row, today);
         const baseRemaining = Math.max(0, baseTotal - baseUsed);
         const bonusRemaining = grants.reduce((sum, grant) => sum + grant.remaining, 0);
-        if (count > baseRemaining + bonusRemaining) {
+        const availableRemaining =
+          scope === 'permanent' ? baseRemaining : baseRemaining + bonusRemaining;
+        if (count > availableRemaining) {
           const active = buildSnapshot(row, grants, today);
           throw new AppError('QUOTA_EXHAUSTED', 'User quota is exhausted', 429, undefined, {
             requested: count,
-            remaining: active.remaining,
-            total: active.total,
+            remaining: availableRemaining,
+            total: scope === 'permanent' ? active.permanentTotal : active.total,
+            quotaScope: scope,
           });
         }
 
         let left = count;
         const allocations: Array<{ kind: 'bonus' | 'permanent'; id?: string; amount: number }> = [];
-        for (const grant of grants) {
-          if (left <= 0) break;
-          const amount = Math.min(left, grant.remaining);
-          tx.update(quotaGrants)
-            .set({ remaining: sql`${quotaGrants.remaining} - ${amount}` })
-            .where(eq(quotaGrants.id, grant.id))
-            .run();
-          allocations.push({ kind: 'bonus', id: grant.id, amount });
-          left -= amount;
+        if (scope === 'all') {
+          for (const grant of grants) {
+            if (left <= 0) break;
+            const amount = Math.min(left, grant.remaining);
+            tx.update(quotaGrants)
+              .set({ remaining: sql`${quotaGrants.remaining} - ${amount}` })
+              .where(eq(quotaGrants.id, grant.id))
+              .run();
+            allocations.push({ kind: 'bonus', id: grant.id, amount });
+            left -= amount;
+          }
         }
         if (left > 0) {
           tx.update(userQuota)
@@ -276,7 +283,7 @@ export function createUserQuotaService(): UserQuotaService {
       });
 
       logger.debug(
-        { userId, reserved: count, remaining: result.snapshot.remaining },
+        { userId, reserved: count, scope, remaining: result.snapshot.remaining },
         'user quota: reserved',
       );
       let state: 'reserved' | 'committed' | 'released' = 'reserved';

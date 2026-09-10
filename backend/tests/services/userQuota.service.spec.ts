@@ -77,6 +77,23 @@ describe('user quota reservations', () => {
     expect(() => reservation.release()).toThrowError(expect.objectContaining({ code: 'INTERNAL' }));
   });
 
+  it('keeps check-in credits unavailable to permanent-only reservations', () => {
+    const pool = createUserQuotaService().forUser(createQuotaUser(1));
+    expect(pool.checkIn()).toMatchObject({ claimed: true, remaining: 6 });
+
+    pool.reserve(1, { scope: 'permanent' }).commit(1);
+    expect(pool.snapshot().remaining).toBe(5);
+    expect(() => pool.reserve(1, { scope: 'permanent' })).toThrowError(
+      expect.objectContaining({
+        code: 'QUOTA_EXHAUSTED',
+        details: expect.objectContaining({ remaining: 0, quotaScope: 'permanent' }),
+      }),
+    );
+
+    pool.reserve(1).commit(1);
+    expect(pool.snapshot().remaining).toBe(4);
+  });
+
   it('keeps permanent credits after the product date changes', () => {
     const userId = createQuotaUser(4);
     db.update(userQuota)

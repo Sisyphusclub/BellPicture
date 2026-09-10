@@ -16,13 +16,19 @@ vi.mock('@/hooks/useAuth', () => ({
 }));
 vi.mock('@/hooks/useImageHistory', () => history);
 vi.mock('@/services/api/imagesApi', () => ({
-  ImageApiError: class ImageApiError extends Error {},
+  ImageApiError: class ImageApiError extends Error {
+    status?: number;
+    code?: string;
+    requestId?: string;
+    details?: Record<string, unknown>;
+  },
   createGenerateRequest: (input: unknown) => input,
   generateImage: api.generateImage,
   uploadReferenceImages: api.uploadReferenceImages,
 }));
 
 import { useImageGeneration } from '@/hooks/useImageGeneration';
+import { ImageApiError } from '@/services/api/imagesApi';
 
 function deferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
@@ -131,5 +137,22 @@ describe('useImageGeneration', () => {
 
     expect(history.addImageRecord).not.toHaveBeenCalled();
     expect(result.current.lastBatch).toBeNull();
+  });
+
+  it('explains that high-resolution generation requires permanent credits', async () => {
+    api.generateImage.mockRejectedValueOnce(
+      Object.assign(new ImageApiError(429, 'QUOTA_EXHAUSTED', 'quota exhausted'), {
+        status: 429,
+        code: 'QUOTA_EXHAUSTED',
+        details: { quotaScope: 'permanent' },
+      }),
+    );
+    const { result } = renderHook(() => useImageGeneration());
+
+    await act(async () => {
+      await expect(
+        result.current.generate({ prompt: 'high resolution', resolution: '2k' }),
+      ).rejects.toThrow('2K/4K 仅可使用永久积分，当前永久积分不足。');
+    });
   });
 });

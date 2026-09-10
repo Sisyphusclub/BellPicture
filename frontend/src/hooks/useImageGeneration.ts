@@ -77,6 +77,10 @@ function generationError(error: unknown): Error {
     return new Error('生成失败，请检查后端服务是否可用后重试。');
   }
   const suffix = error.requestId ? `（请求编号：${error.requestId}）` : '';
+  const quotaMessage =
+    error.details?.['quotaScope'] === 'permanent'
+      ? '2K/4K 仅可使用永久积分，当前永久积分不足。'
+      : 'GPT 号池剩余额度不足，请稍后补充额度后再试。';
   const messages: Record<string, string> = {
     PAYLOAD_TOO_LARGE: '参考图超过后端限制，请压缩后重试。',
     UNSUPPORTED_MEDIA_TYPE: '后端无法识别此参考图格式，请改用 PNG、JPEG 或 WebP。',
@@ -86,7 +90,7 @@ function generationError(error: unknown): Error {
     PROVIDER_RATE_LIMITED: '生成服务当前请求过多，请稍后再试。',
     PROVIDER_KEY_INVALID: '个人生图 API Key 已失效，请更新后重试。',
     PROVIDER_KEY_MODEL_UNAVAILABLE: '个人 Key 所属分组不支持当前生图模型。',
-    QUOTA_EXHAUSTED: 'GPT 号池剩余额度不足，请稍后补充额度后再试。',
+    QUOTA_EXHAUSTED: quotaMessage,
     BAD_REQUEST: '请求内容无效，请检查提示词和参考图。',
     NOT_FOUND: '生成图片不存在或已被后端清理。',
     INVALID_RESPONSE: '后端返回了无法识别的响应。',
