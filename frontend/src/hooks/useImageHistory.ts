@@ -144,6 +144,7 @@ export function useImageHistory() {
             count: entry.record.count ?? DEFAULT_COUNT,
             aspectRatio: entry.record.aspectRatio ?? DEFAULT_ASPECT_RATIO,
             resolution: entry.record.resolution ?? DEFAULT_IMAGE_RESOLUTION,
+            ...(entry.record.quality === undefined ? {} : { quality: entry.record.quality }),
             isPublic: entry.record.isPublic,
             referenceIds:
               entry.record.referenceIds ??

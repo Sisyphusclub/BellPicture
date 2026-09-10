@@ -132,6 +132,24 @@ describe('TwoApiImageProvider', () => {
     expect(body['size']).toBe('1792x1024');
   });
 
+  it('passes quality to text-to-image JSON requests', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
+    );
+    const provider = new TwoApiImageProvider(baseConfig, fetchMock);
+
+    await provider.generate({
+      prompt: 'quality text',
+      model: 'gpt-image-2.5-flare',
+      quality: 'max',
+    });
+
+    const init = fetchMock.mock.calls[0]![1] as RequestInit;
+    const body = JSON.parse(init.body as string) as Record<string, unknown>;
+    expect(body['model']).toBe('gpt-image-2.5-flare');
+    expect(body['quality']).toBe('max');
+  });
+
   it('maps 2k resolution to provider size payload', async () => {
     const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
       jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
@@ -364,6 +382,8 @@ describe('TwoApiImageProvider', () => {
       prompt: 'reshape it',
       referencePath: refPath,
       providerCredential: 'sk-personal-edit',
+      model: 'gpt-image-2.5-sunburst',
+      quality: 'xhigh',
       count: 2,
       aspectRatio: '1:1',
     });
@@ -379,7 +399,8 @@ describe('TwoApiImageProvider', () => {
     expect(form).toBeInstanceOf(FormData);
     const fd = form as FormData;
     expect(fd.get('prompt')).toBe('reshape it');
-    expect(fd.get('model')).toBe('gpt-image-2');
+    expect(fd.get('model')).toBe('gpt-image-2.5-sunburst');
+    expect(fd.get('quality')).toBe('xhigh');
     expect(fd.get('n')).toBe('2');
     expect(fd.get('size')).toBe('1024x1024');
     expect(fd.get('response_format')).toBe('b64_json');

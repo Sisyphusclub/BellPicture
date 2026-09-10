@@ -7,7 +7,7 @@ import { imageRecords } from '../db/schema.js';
 import { AppError } from '../errors/AppError.js';
 import { logger } from '../logger.js';
 import { removeOutputByFilename } from '../storage/localStorage.js';
-import type { AspectRatio, ImageResolution } from '../types/image.js';
+import type { AspectRatio, ImageQuality, ImageResolution } from '../types/image.js';
 
 export interface ImageRecordDTO {
   id: string;
@@ -23,6 +23,7 @@ export interface ImageRecordDTO {
   height: number;
   count: number;
   resolution: ImageResolution;
+  quality?: ImageQuality;
   elapsedMs?: number;
   isPublic: boolean;
   isFavorite: boolean;
@@ -55,6 +56,7 @@ export interface NewImageRecord {
   height: number;
   count: number;
   resolution: ImageResolution;
+  quality?: ImageQuality;
   elapsedMs?: number;
   isPublic: boolean;
   createdAt: Date;
@@ -96,6 +98,7 @@ function toDTO(row: typeof imageRecords.$inferSelect): ImageRecordDTO {
   if (row.referenceId !== null) dto.referenceId = row.referenceId;
   if (referenceIds.length > 0) dto.referenceIds = referenceIds;
   if (row.aspectRatio !== null) dto.aspectRatio = row.aspectRatio as AspectRatio;
+  if (row.quality !== null) dto.quality = row.quality as ImageQuality;
   if (row.elapsedMs !== null) dto.elapsedMs = row.elapsedMs;
   if (row.collection !== null) dto.collection = row.collection;
   return dto;
@@ -121,6 +124,7 @@ export function insertImageRecords(records: NewImageRecord[]): void {
         height: r.height,
         count: r.count,
         resolution: r.resolution,
+        quality: r.quality ?? null,
         elapsedMs: r.elapsedMs ?? null,
         isPublic: r.isPublic,
         createdAt: r.createdAt,

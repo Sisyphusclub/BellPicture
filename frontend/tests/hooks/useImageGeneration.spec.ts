@@ -40,6 +40,51 @@ beforeEach(() => {
 });
 
 describe('useImageGeneration', () => {
+  it('preserves quality for supported models and strips it from gpt-image-2', async () => {
+    api.generateImage.mockResolvedValue({
+      batchId: 'batch-quality',
+      aspectRatio: '1:1',
+      generationMode: 'text-to-image',
+      images: [
+        {
+          id: 'quality.png',
+          outputUrl: '/api/outputs/quality.png',
+          filename: 'quality.png',
+          mime: 'image/png',
+          width: 1024,
+          height: 1024,
+        },
+      ],
+    });
+    history.addImageRecord.mockImplementation((record: unknown) => ({
+      record,
+      imageUrl: '/api/outputs/quality.png',
+    }));
+    const { result } = renderHook(() => useImageGeneration());
+
+    await act(async () => {
+      await result.current.generate({
+        prompt: 'flare',
+        model: 'gpt-image-2.5-flare',
+        quality: 'max',
+      });
+    });
+    expect(api.generateImage).toHaveBeenLastCalledWith(
+      expect.objectContaining({ model: 'gpt-image-2.5-flare', quality: 'max' }),
+      expect.any(AbortSignal),
+    );
+    expect(history.addImageRecord).toHaveBeenLastCalledWith(
+      expect.objectContaining({ model: 'gpt-image-2.5-flare', quality: 'max' }),
+    );
+
+    await act(async () => {
+      await result.current.generate({ prompt: 'legacy', model: 'gpt-image-2', quality: 'max' });
+    });
+    const legacyRequest = api.generateImage.mock.calls[1]?.[0] as Record<string, unknown>;
+    expect(legacyRequest).not.toHaveProperty('quality');
+    expect(history.addImageRecord.mock.calls[1]?.[0]).not.toHaveProperty('quality');
+  });
+
   it('discards a generation response after the authenticated account changes', async () => {
     const response = deferred<{
       batchId: string;

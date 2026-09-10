@@ -358,6 +358,7 @@ describe('React application routes', () => {
     expect(screen.getByRole('group', { name: '画面比例' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: '生成张数' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: '清晰度' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: '质量' })).not.toBeInTheDocument();
     expect(
       within(screen.getByRole('group', { name: '画面比例' }))
         .getByRole('menuitemradio', { name: '16:9' })
@@ -590,6 +591,11 @@ describe('React application routes', () => {
     await user.click(screen.getByRole('menuitemradio', { name: 'gpt-image-2.5-sunburst' }));
     await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
     await user.click(
+      within(screen.getByRole('group', { name: '质量' })).getByRole('menuitemradio', {
+        name: 'xhigh',
+      }),
+    );
+    await user.click(
       within(screen.getByRole('group', { name: '画面比例' })).getByRole('menuitemradio', {
         name: '16:9',
       }),
@@ -616,6 +622,7 @@ describe('React application routes', () => {
         aspectRatio: '16:9',
         count: 2,
         resolution: '2k',
+        quality: 'xhigh',
         isPublic: true,
         referenceFiles: referenceFiles.slice(0, 4),
       }),
@@ -625,6 +632,7 @@ describe('React application routes', () => {
     );
     expect(screen.getByRole('button', { name: '自定义生成参数' })).toHaveTextContent('16:9');
     expect(screen.getByRole('button', { name: '自定义生成参数' })).toHaveTextContent('2K');
+    expect(screen.getByRole('button', { name: '自定义生成参数' })).toHaveTextContent('xhigh');
     expect(screen.getByRole('status', { name: '2 张' })).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: '发布到发现页' })).toBeChecked();
   });

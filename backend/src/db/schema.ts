@@ -172,6 +172,7 @@ export const imageRecords = sqliteTable(
     height: integer('height').notNull(),
     count: integer('count').notNull().default(1),
     resolution: text('resolution').notNull().default('standard'),
+    quality: text('quality'),
     elapsedMs: integer('elapsed_ms'),
     isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(false),
     isFavorite: integer('is_favorite', { mode: 'boolean' }).notNull().default(false),

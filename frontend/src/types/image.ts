@@ -45,6 +45,13 @@ export const IMAGE_MODELS = [
 ] as const;
 export type ImageModel = (typeof IMAGE_MODELS)[number];
 export const DEFAULT_IMAGE_MODEL: ImageModel = IMAGE_MODELS[0];
+export const IMAGE_QUALITIES = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
+export type ImageQuality = (typeof IMAGE_QUALITIES)[number];
+export const DEFAULT_IMAGE_QUALITY: ImageQuality = 'medium';
+export const QUALITY_CAPABLE_IMAGE_MODELS = [
+  'gpt-image-2.5-flare',
+  'gpt-image-2.5-sunburst',
+] as const satisfies readonly ImageModel[];
 export const IMAGE_GENERATION_CREDIT_COST = 1;
 export const DEFAULT_COUNT = 1;
 export const MIN_COUNT = 1;
@@ -65,6 +72,20 @@ export function isImageResolution(value: string | null): value is ImageResolutio
 
 export function normalizeImageModel(value: string | null | undefined): ImageModel {
   return IMAGE_MODELS.find((model) => model === value) ?? DEFAULT_IMAGE_MODEL;
+}
+
+export function isImageQuality(value: string | null | undefined): value is ImageQuality {
+  return value !== null && value !== undefined && IMAGE_QUALITIES.includes(value as ImageQuality);
+}
+
+export function normalizeImageQuality(value: string | null | undefined): ImageQuality {
+  return isImageQuality(value) ? value : DEFAULT_IMAGE_QUALITY;
+}
+
+export function supportsImageQuality(model: string | null | undefined): boolean {
+  return QUALITY_CAPABLE_IMAGE_MODELS.includes(
+    model as (typeof QUALITY_CAPABLE_IMAGE_MODELS)[number],
+  );
 }
 
 export function isAspectChoiceSupportedForResolution(
@@ -96,6 +117,7 @@ export interface ImageRecord {
   height: number;
   count?: number;
   resolution?: ImageResolution;
+  quality?: ImageQuality;
   /** Wall-clock ms from request start to image saved. Optional. */
   elapsedMs?: number;
   isPublic: boolean;
@@ -109,6 +131,7 @@ export interface GenerationSettingsSnapshot {
   count: number;
   aspectRatio: AspectRatio;
   resolution: ImageResolution;
+  quality?: ImageQuality;
   isPublic: boolean;
   referenceIds: readonly string[];
 }
@@ -134,6 +157,7 @@ export interface GenerateRequest {
   count?: number;
   aspectRatio?: AspectRatio;
   resolution?: ImageResolution;
+  quality?: ImageQuality;
   isPublic?: boolean;
   demoPresetId?: string;
 }

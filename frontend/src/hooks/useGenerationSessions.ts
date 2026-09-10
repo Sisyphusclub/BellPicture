@@ -3,6 +3,7 @@ import { useCallback, useSyncExternalStore } from 'react';
 import { createExternalStore } from '@/lib/externalStore';
 import {
   ASPECT_RATIOS,
+  isImageQuality,
   IMAGE_RESOLUTIONS,
   MAX_COUNT,
   MIN_COUNT,
@@ -38,6 +39,7 @@ function parseGenerationSettings(value: unknown): GenerationSettingsSnapshot | n
   const candidate = value as Partial<GenerationSettingsSnapshot>;
   const aspectRatio = ASPECT_RATIOS.find((value) => value === candidate.aspectRatio);
   const resolution = IMAGE_RESOLUTIONS.find((value) => value === candidate.resolution);
+  const quality = candidate.quality;
   if (
     typeof candidate.prompt !== 'string' ||
     typeof candidate.model !== 'string' ||
@@ -47,6 +49,7 @@ function parseGenerationSettings(value: unknown): GenerationSettingsSnapshot | n
     candidate.count > MAX_COUNT ||
     aspectRatio === undefined ||
     resolution === undefined ||
+    (quality !== undefined && !isImageQuality(quality)) ||
     typeof candidate.isPublic !== 'boolean' ||
     !Array.isArray(candidate.referenceIds) ||
     !candidate.referenceIds.every((referenceId) => typeof referenceId === 'string')
@@ -59,6 +62,7 @@ function parseGenerationSettings(value: unknown): GenerationSettingsSnapshot | n
     count: candidate.count,
     aspectRatio,
     resolution,
+    ...(quality === undefined ? {} : { quality }),
     isPublic: candidate.isPublic,
     referenceIds: [...candidate.referenceIds],
   };

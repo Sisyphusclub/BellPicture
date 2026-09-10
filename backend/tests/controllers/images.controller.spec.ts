@@ -323,6 +323,53 @@ describe('POST /api/images/generate', () => {
     expect(history.body.records[0]).toMatchObject({ prompt: 'publish to gallery', isPublic: true });
   });
 
+  it('forwards and persists quality for supported models', async () => {
+    const { provider } = fakeProvider();
+    const userId = `quality-user-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId));
+
+    const response = await request(app).post('/api/images/generate').send({
+      prompt: 'quality generation',
+      model: 'gpt-image-2.5-flare',
+      quality: 'high',
+    });
+
+    expect(response.status).toBe(200);
+    expect(provider.generate).toHaveBeenCalledWith(
+      expect.objectContaining({ model: 'gpt-image-2.5-flare', quality: 'high' }),
+    );
+    const history = await request(app).get('/api/history');
+    expect(history.body.records[0]).toMatchObject({
+      model: 'gpt-image-2.5-flare',
+      quality: 'high',
+    });
+  });
+
+  it('rejects quality for gpt-image-2 and invalid quality values', async () => {
+    const { provider } = fakeProvider();
+    const app = buildApp(provider);
+
+    const unsupported = await request(app).post('/api/images/generate').send({
+      prompt: 'unsupported quality',
+      model: 'gpt-image-2',
+      quality: 'high',
+    });
+    const invalid = await request(app).post('/api/images/generate').send({
+      prompt: 'invalid quality',
+      model: 'gpt-image-2.5-flare',
+      quality: 'ultra',
+    });
+
+    expect(unsupported.status).toBe(400);
+    expect(unsupported.body.error).toMatchObject({
+      code: 'BAD_REQUEST',
+      details: { model: 'gpt-image-2', quality: 'high' },
+    });
+    expect(invalid.status).toBe(400);
+    expect(invalid.body.error.code).toBe('BAD_REQUEST');
+    expect(provider.generate).not.toHaveBeenCalled();
+  });
+
   it('respects explicit count + aspectRatio', async () => {
     const { provider } = fakeProvider();
     const app = buildApp(provider);

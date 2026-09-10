@@ -10,10 +10,12 @@ import {
   DEFAULT_ASPECT_RATIO,
   DEFAULT_COUNT,
   DEFAULT_IMAGE_RESOLUTION,
+  supportsImageQuality,
   type AspectRatio,
   type GeneratedBatchResult,
   type HistoryEntry,
   type ImageRecord,
+  type ImageQuality,
   type ImageResolution,
 } from '@/types/image';
 
@@ -30,6 +32,7 @@ export interface GenerateImageOptions {
   count?: number;
   aspectRatio?: AspectRatio;
   resolution?: ImageResolution;
+  quality?: ImageQuality;
   isPublic?: boolean;
   demoPresetId?: string;
 }
@@ -155,6 +158,7 @@ export function useImageGeneration() {
           referenceIds.length ? '正在结合参考图生成图片。' : '正在根据提示词生成图片。',
         );
         const model = options.model?.trim() || 'gpt-image-2';
+        const quality = supportsImageQuality(model) ? options.quality : undefined;
         const startedAt = Date.now();
         const generated = await generateImage(
           createGenerateRequest({
@@ -163,6 +167,7 @@ export function useImageGeneration() {
             count: options.count ?? DEFAULT_COUNT,
             aspectRatio: options.aspectRatio ?? DEFAULT_ASPECT_RATIO,
             ...(options.resolution === undefined ? {} : { resolution: options.resolution }),
+            ...(quality === undefined ? {} : { quality }),
             ...(referenceIds.length ? { referenceIds } : {}),
             isPublic: options.isPublic ?? false,
             ...(options.demoPresetId === undefined ? {} : { demoPresetId: options.demoPresetId }),
@@ -183,6 +188,7 @@ export function useImageGeneration() {
             height: image.height,
             count: options.count ?? DEFAULT_COUNT,
             resolution: options.resolution ?? DEFAULT_IMAGE_RESOLUTION,
+            ...(quality === undefined ? {} : { quality }),
             elapsedMs: Date.now() - startedAt,
             isPublic: options.isPublic ?? false,
             isFavorite: false,

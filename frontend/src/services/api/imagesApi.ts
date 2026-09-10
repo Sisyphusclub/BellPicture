@@ -8,6 +8,7 @@ import {
   type GenerateResponseItem,
   type GenerationMode,
   type ImageResolution,
+  type ImageQuality,
   type QuotaResponse,
   type UploadResponse,
 } from '@/types/image';
@@ -202,6 +203,7 @@ export function createGenerateRequest(input: {
   count?: number;
   aspectRatio?: AspectRatio;
   resolution?: ImageResolution;
+  quality?: ImageQuality;
   isPublic?: boolean;
   demoPresetId?: string;
 }): GenerateRequest {
@@ -225,6 +227,9 @@ export function createGenerateRequest(input: {
   }
   if (input.resolution !== undefined) {
     request.resolution = input.resolution;
+  }
+  if (input.quality !== undefined) {
+    request.quality = input.quality;
   }
   if (input.isPublic !== undefined) {
     request.isPublic = input.isPublic;

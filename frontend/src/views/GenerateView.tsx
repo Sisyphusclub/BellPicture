@@ -60,6 +60,7 @@ import {
   DEFAULT_ASPECT_CHOICE,
   DEFAULT_COUNT,
   DEFAULT_IMAGE_MODEL,
+  DEFAULT_IMAGE_QUALITY,
   DEFAULT_IMAGE_RESOLUTION,
   isAspectChoice,
   isAspectRatio,
@@ -68,12 +69,15 @@ import {
   MAX_REFERENCE_IMAGES,
   MIN_COUNT,
   normalizeAspectChoiceForResolution,
+  normalizeImageQuality,
   normalizeImageModel,
+  supportsImageQuality,
   type AspectChoice,
   type AspectRatio,
   type GenerationSettingsSnapshot,
   type HistoryEntry,
   type ImageModel,
+  type ImageQuality,
   type ImageResolution,
 } from '@/types/image';
 import { downloadUrl } from '@/utils/download';
@@ -188,6 +192,10 @@ function readAspectChoice(searchParams: URLSearchParams): AspectChoice {
 function readResolution(searchParams: URLSearchParams): ImageResolution {
   const value = searchParams.get('resolution');
   return isImageResolution(value) ? value : DEFAULT_IMAGE_RESOLUTION;
+}
+
+function readQuality(searchParams: URLSearchParams): ImageQuality {
+  return normalizeImageQuality(searchParams.get('quality'));
 }
 
 function readReferenceIds(searchParams: URLSearchParams): string[] {
@@ -431,6 +439,7 @@ export function GenerateView() {
   );
   const [count, setCount] = useState(() => readCount(searchParams));
   const [resolution, setResolution] = useState<ImageResolution>(() => readResolution(searchParams));
+  const [quality, setQuality] = useState<ImageQuality>(() => readQuality(searchParams));
   const [aspect, setAspect] = useState<AspectChoice>(() =>
     normalizeAspectChoiceForResolution(
       readAspectChoice(searchParams),
@@ -572,6 +581,7 @@ export function GenerateView() {
     setModel(normalizeImageModel(searchParams.get('model')));
     const queryResolution = readResolution(searchParams);
     setResolution(queryResolution);
+    setQuality(readQuality(searchParams));
     setAspect(normalizeAspectChoiceForResolution(readAspectChoice(searchParams), queryResolution));
     setCount(readCount(searchParams));
     const queryPublic = searchParams.get('isPublic');
@@ -692,6 +702,7 @@ export function GenerateView() {
     count,
     aspectRatio: await resolveAspectChoice(aspect, referenceFiles),
     resolution,
+    ...(supportsImageQuality(model) ? { quality } : {}),
     isPublic,
     referenceIds: reusedReferenceIds,
   });
@@ -724,6 +735,9 @@ export function GenerateView() {
         resolution: generationSettings.resolution,
         isPublic: String(generationSettings.isPublic),
       });
+      if (generationSettings.quality !== undefined) {
+        nextSearch.set('quality', generationSettings.quality);
+      }
       void navigate(`/generate?${nextSearch.toString()}`, { replace: true });
     }
     if (generationUserId !== null) {
@@ -778,6 +792,9 @@ export function GenerateView() {
         count: generationSettings.count,
         aspectRatio: generationSettings.aspectRatio,
         resolution: generationSettings.resolution,
+        ...(generationSettings.quality === undefined
+          ? {}
+          : { quality: generationSettings.quality }),
         isPublic: generationSettings.isPublic,
         referenceIds: [...generationSettings.referenceIds],
         ...(referenceFiles.length ? { referenceFiles: [...referenceFiles] } : {}),
@@ -997,6 +1014,7 @@ export function GenerateView() {
     setModel(normalizeImageModel(settings.model));
     setCount(settings.count);
     setResolution(settings.resolution);
+    setQuality(settings.quality ?? DEFAULT_IMAGE_QUALITY);
     setAspect(normalizeAspectChoiceForResolution(settings.aspectRatio, settings.resolution));
     setIsPublic(settings.isPublic);
     setReusedReferenceIds([...settings.referenceIds]);
@@ -1262,12 +1280,14 @@ export function GenerateView() {
               aspect={aspect}
               count={count}
               resolution={resolution}
+              quality={quality}
               isPublic={isPublic}
               disabled={generation.isLoading}
               onModelChange={setModel}
               onAspectChange={setAspect}
               onCountChange={setCount}
               onResolutionChange={updateResolution}
+              onQualityChange={setQuality}
               onPublicChange={setIsPublic}
               trailingContent={
                 <span className="studio-toolbar-meta">

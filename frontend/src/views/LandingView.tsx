@@ -29,14 +29,22 @@ import {
   templateToHistoryEntry,
 } from '@/data/creationTemplates';
 import { buildApiUrl } from '@/services/api/imagesApi';
-import type { AspectChoice, HistoryEntry, ImageModel, ImageResolution } from '@/types/image';
+import type {
+  AspectChoice,
+  HistoryEntry,
+  ImageModel,
+  ImageQuality,
+  ImageResolution,
+} from '@/types/image';
 import {
   DEFAULT_ASPECT_CHOICE,
   DEFAULT_COUNT,
   DEFAULT_IMAGE_MODEL,
+  DEFAULT_IMAGE_QUALITY,
   DEFAULT_IMAGE_RESOLUTION,
   MAX_REFERENCE_IMAGES,
   normalizeAspectChoiceForResolution,
+  supportsImageQuality,
 } from '@/types/image';
 
 const HERO_VIDEO = buildApiUrl('/api/media/liquid-glass.mp4');
@@ -179,6 +187,7 @@ export function LandingView() {
   const [aspect, setAspect] = useState<AspectChoice>(DEFAULT_ASPECT_CHOICE);
   const [count, setCount] = useState(DEFAULT_COUNT);
   const [resolution, setResolution] = useState<ImageResolution>(DEFAULT_IMAGE_RESOLUTION);
+  const [quality, setQuality] = useState<ImageQuality>(DEFAULT_IMAGE_QUALITY);
   const [isPublic, setIsPublic] = useState(false);
   const [selected, setSelected] = useState<HistoryEntry | null>(null);
   const [imageApiKeySettingsOpen, setImageApiKeySettingsOpen] = useState(false);
@@ -312,22 +321,21 @@ export function LandingView() {
     if (!trimmed) return;
     sessionStorage.setItem(LANDING_SCROLL_KEY, String(window.scrollY));
     sessionStorage.setItem(LANDING_SCROLL_RESTORE_KEY, 'true');
-    void navigate(
-      `/generate?${new URLSearchParams({
-        prompt: trimmed,
-        model,
-        aspect,
-        count: String(count),
-        resolution,
-        isPublic: String(isPublic),
-      }).toString()}`,
-      {
-        state: {
-          autoGenerate: true,
-          attachments: selectedAttachments.slice(0, MAX_REFERENCE_IMAGES),
-        },
+    const nextSearch = new URLSearchParams({
+      prompt: trimmed,
+      model,
+      aspect,
+      count: String(count),
+      resolution,
+      isPublic: String(isPublic),
+    });
+    if (supportsImageQuality(model)) nextSearch.set('quality', quality);
+    void navigate(`/generate?${nextSearch.toString()}`, {
+      state: {
+        autoGenerate: true,
+        attachments: selectedAttachments.slice(0, MAX_REFERENCE_IMAGES),
       },
-    );
+    });
   };
 
   return (
@@ -507,6 +515,7 @@ export function LandingView() {
                         aspect={aspect}
                         count={count}
                         resolution={resolution}
+                        quality={quality}
                         isPublic={isPublic}
                         disabled={authLoading}
                         quotaLabel={quotaLabel}
@@ -516,6 +525,7 @@ export function LandingView() {
                         onAspectChange={setAspect}
                         onCountChange={setCount}
                         onResolutionChange={updateResolution}
+                        onQualityChange={setQuality}
                         onPublicChange={setIsPublic}
                         onQuotaClick={openAuthModal}
                       />

@@ -239,7 +239,7 @@ it('offers the default model and both new upstream models', async () => {
 });
 
 it.each(['gpt-image-2.5-flare', 'gpt-image-2.5-sunburst'] as const)(
-  'submits the selected upstream model %s',
+  'offers all quality levels and submits the selected quality for %s',
   async (model) => {
     const user = userEvent.setup();
     render(
@@ -255,11 +255,46 @@ it.each(['gpt-image-2.5-flare', 'gpt-image-2.5-sunburst'] as const)(
     await user.click(screen.getByRole('menuitemradio', { name: model }));
     expect(trigger).toHaveTextContent(model);
 
+    const customTrigger = screen.getByRole('button', { name: '自定义生成参数' });
+    await user.click(customTrigger);
+    const qualityGroup = screen.getByRole('group', { name: '质量' });
+    expect(
+      within(qualityGroup)
+        .getAllByRole('menuitemradio')
+        .map((option) => option.textContent),
+    ).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
+    expect(within(qualityGroup).getByRole('menuitemradio', { name: 'medium' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    await user.click(within(qualityGroup).getByRole('menuitemradio', { name: 'max' }));
+    expect(customTrigger).toHaveTextContent('max');
+
     await user.click(screen.getByRole('button', { name: '生成图片' }));
     await waitFor(() => expect(generation.generate).toHaveBeenCalledTimes(1));
-    expect(generation.generate).toHaveBeenCalledWith(expect.objectContaining({ model }));
+    expect(generation.generate).toHaveBeenCalledWith(
+      expect.objectContaining({ model, quality: 'max' }),
+    );
   },
 );
+
+it('does not expose or submit quality for gpt-image-2', async () => {
+  const user = userEvent.setup();
+  render(
+    <MemoryRouter initialEntries={['/generate?prompt=雨夜建筑&quality=max']}>
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+
+  await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
+  expect(screen.queryByRole('group', { name: '质量' })).not.toBeInTheDocument();
+
+  await user.click(screen.getByRole('button', { name: '生成图片' }));
+  await waitFor(() => expect(generation.generate).toHaveBeenCalledTimes(1));
+  expect(generation.generate.mock.calls[0]?.[0]).not.toHaveProperty('quality');
+});
 
 it('shows the requested custom aspect ratios in order and preserves a selection', async () => {
   const user = userEvent.setup();

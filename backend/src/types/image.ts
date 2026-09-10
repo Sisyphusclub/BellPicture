@@ -7,6 +7,13 @@ export const HIGH_RES_IMAGE_RESOLUTIONS = ['2k', '4k'] as const;
 export type HighImageResolution = (typeof HIGH_RES_IMAGE_RESOLUTIONS)[number];
 export const FOUR_K_ASPECT_RATIOS = ['16:9', '9:16'] as const;
 
+export const IMAGE_QUALITIES = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
+export type ImageQuality = (typeof IMAGE_QUALITIES)[number];
+export const QUALITY_CAPABLE_IMAGE_MODELS = [
+  'gpt-image-2.5-flare',
+  'gpt-image-2.5-sunburst',
+] as const;
+
 export const DEFAULT_ASPECT_RATIO: AspectRatio = '1:1';
 export const DEFAULT_IMAGE_RESOLUTION: ImageResolution = 'standard';
 export const DEFAULT_COUNT = 1;
@@ -64,6 +71,12 @@ export function isAspectRatioSupportedForResolution(
   return aspectSizeForResolution(aspectRatio, resolution) !== undefined;
 }
 
+export function supportsImageQuality(model: string | undefined): boolean {
+  return QUALITY_CAPABLE_IMAGE_MODELS.includes(
+    model as (typeof QUALITY_CAPABLE_IMAGE_MODELS)[number],
+  );
+}
+
 export interface GenerateInput {
   prompt: string;
   requestId?: string;
@@ -87,6 +100,7 @@ export interface GenerateInput {
   count?: number;
   aspectRatio?: AspectRatio;
   resolution?: ImageResolution;
+  quality?: ImageQuality;
 }
 
 export interface GenerateImageItem {

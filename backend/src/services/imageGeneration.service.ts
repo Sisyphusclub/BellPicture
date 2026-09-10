@@ -14,10 +14,12 @@ import {
   MAX_COUNT,
   MAX_REFERENCE_IMAGES,
   MIN_COUNT,
+  supportsImageQuality,
   isAspectRatioSupportedForResolution,
   type AspectRatio,
   type GenerateOutput,
   type ImageResolution,
+  type ImageQuality,
 } from '../types/image.js';
 
 import type { ImageGenerationProvider } from './providers/ImageGenerationProvider.js';
@@ -34,6 +36,7 @@ export interface GenerateImageInput {
   count?: number;
   aspectRatio?: AspectRatio;
   resolution?: ImageResolution;
+  quality?: ImageQuality;
   userId?: string;
   requestId?: string;
   signal?: AbortSignal;
@@ -117,6 +120,15 @@ export async function generateImage(
       { aspectRatio, resolution },
     );
   }
+  if (input.quality !== undefined && !supportsImageQuality(input.model)) {
+    throw new AppError(
+      'BAD_REQUEST',
+      `Image quality is not supported for model ${input.model ?? '<default>'}`,
+      400,
+      undefined,
+      { model: input.model ?? null, quality: input.quality },
+    );
+  }
 
   logger.info(
     {
@@ -128,6 +140,7 @@ export async function generateImage(
       count,
       aspectRatio,
       resolution,
+      quality: input.quality,
     },
     'image generation: service invoke',
   );
@@ -146,6 +159,7 @@ export async function generateImage(
         ? { providerCredential: input.providerCredential }
         : {}),
       ...(input.resolution !== undefined ? { resolution } : {}),
+      ...(input.quality !== undefined ? { quality: input.quality } : {}),
       ...(referencePaths.length > 0 ? { referencePaths } : {}),
       ...(input.model !== undefined ? { model: input.model } : {}),
     });

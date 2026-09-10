@@ -1,10 +1,12 @@
 import {
   ASPECT_RATIOS,
+  IMAGE_QUALITIES,
   IMAGE_RESOLUTIONS,
   type AspectRatio,
   type ImageMetadataUpdate,
   type ImageRecord,
   type ImageResolution,
+  type ImageQuality,
 } from '@/types/image';
 import { isNumber, isRecord, readNumber, readString } from '@/utils/narrowing';
 
@@ -138,6 +140,10 @@ function isImageResolution(value: unknown): value is ImageResolution {
   return typeof value === 'string' && (IMAGE_RESOLUTIONS as readonly string[]).includes(value);
 }
 
+function isImageQuality(value: unknown): value is ImageQuality {
+  return typeof value === 'string' && (IMAGE_QUALITIES as readonly string[]).includes(value);
+}
+
 function isImageRecord(value: unknown): value is ImageRecord {
   if (!isRecord(value)) return false;
   const id = readString(value, 'id');
@@ -159,6 +165,7 @@ function isImageRecord(value: unknown): value is ImageRecord {
   const isPublic = value.isPublic;
   const count = value.count;
   const resolution = value.resolution;
+  const quality = value.quality;
   const isFavorite = value.isFavorite;
   const collection = value.collection;
   return (
@@ -169,6 +176,7 @@ function isImageRecord(value: unknown): value is ImageRecord {
     (elapsedMs === undefined || typeof elapsedMs === 'number') &&
     (count === undefined || typeof count === 'number') &&
     (resolution === undefined || isImageResolution(resolution)) &&
+    (quality === undefined || isImageQuality(quality)) &&
     (isFavorite === undefined || typeof isFavorite === 'boolean') &&
     (collection === undefined || typeof collection === 'string') &&
     typeof isPublic === 'boolean'

@@ -10897,6 +10897,12 @@ video {
 .generation-custom-options--count {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
+.generation-custom-options--quality {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.generation-custom-group--quality {
+  grid-column: 1 / -1;
+}
 .generation-custom-option {
   position: relative;
   width: 100%;
@@ -11127,6 +11133,7 @@ video {
     width: min(360px, calc(100vw - 20px));
     max-width: calc(100vw - 20px);
     padding: 10px !important;
+    translate: calc(-100% + var(--radix-dropdown-menu-trigger-width) + 18px) 0;
   }
   .generation-custom-panel__header {
     min-height: 38px;

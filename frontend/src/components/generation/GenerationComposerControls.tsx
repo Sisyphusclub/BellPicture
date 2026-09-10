@@ -20,13 +20,16 @@ import {
   DEFAULT_IMAGE_MODEL,
   FOUR_K_ASPECT_RATIOS,
   IMAGE_MODELS,
+  IMAGE_QUALITIES,
   IMAGE_RESOLUTIONS,
   IMAGE_RESOLUTION_LABELS,
   MAX_COUNT,
   MIN_COUNT,
   type AspectChoice,
   type ImageModel,
+  type ImageQuality,
   type ImageResolution,
+  supportsImageQuality,
 } from '@/types/image';
 import { DISCOVERY_PUBLISH_LABEL } from '@/utils/imageVisibility';
 
@@ -41,6 +44,7 @@ interface GenerationComposerControlsProps {
   aspect: AspectChoice;
   count: number;
   resolution: ImageResolution;
+  quality: ImageQuality;
   isPublic: boolean;
   disabled?: boolean;
   trailingContent?: ReactNode;
@@ -48,6 +52,7 @@ interface GenerationComposerControlsProps {
   onAspectChange: (aspect: AspectChoice) => void;
   onCountChange: (count: number) => void;
   onResolutionChange: (resolution: ImageResolution) => void;
+  onQualityChange: (quality: ImageQuality) => void;
   onPublicChange: (isPublic: boolean) => void;
 }
 
@@ -56,6 +61,7 @@ export function GenerationComposerControls({
   aspect,
   count,
   resolution,
+  quality,
   isPublic,
   disabled = false,
   trailingContent,
@@ -63,10 +69,17 @@ export function GenerationComposerControls({
   onAspectChange,
   onCountChange,
   onResolutionChange,
+  onQualityChange,
   onPublicChange,
 }: GenerationComposerControlsProps) {
   const visibleAspect = aspect === 'auto' ? '智能' : aspect;
-  const parameterSummary = `${visibleAspect} · ${IMAGE_RESOLUTION_LABELS[resolution]} · ${count}张`;
+  const qualitySupported = supportsImageQuality(model);
+  const parameterSummary = [
+    visibleAspect,
+    IMAGE_RESOLUTION_LABELS[resolution],
+    ...(qualitySupported ? [quality] : []),
+    `${count}张`,
+  ].join(' · ');
 
   return (
     <div className="generation-composer-controls" aria-label="生成设置">
@@ -97,6 +110,8 @@ export function GenerationComposerControls({
         </AnimatedDropdownTrigger>
         <AnimatedDropdownContent
           align="start"
+          side="bottom"
+          avoidCollisions={false}
           className="generation-custom-panel"
           aria-label="自定义生成参数"
         >
@@ -154,6 +169,34 @@ export function GenerationComposerControls({
 
             <span className="generation-custom-section-label">其他设置</span>
             <div className="generation-custom-panel__compact-groups">
+              {qualitySupported ? (
+                <ParameterGroup
+                  label="质量"
+                  value={quality}
+                  className="generation-custom-group--quality"
+                >
+                  <AnimatedDropdownRadioGroup
+                    value={quality}
+                    className="generation-custom-options generation-custom-options--compact generation-custom-options--quality"
+                    aria-label="质量"
+                    onValueChange={(value) => onQualityChange(value as ImageQuality)}
+                  >
+                    {IMAGE_QUALITIES.map((value) => (
+                      <AnimatedDropdownRadioItem
+                        key={value}
+                        value={value}
+                        className="generation-custom-option generation-custom-option--compact"
+                        onSelect={keepCustomPanelOpen}
+                      >
+                        <AnimatedDropdownItemText className="generation-custom-option__text">
+                          {value}
+                        </AnimatedDropdownItemText>
+                      </AnimatedDropdownRadioItem>
+                    ))}
+                  </AnimatedDropdownRadioGroup>
+                </ParameterGroup>
+              ) : null}
+
               <ParameterGroup label="清晰度" value={IMAGE_RESOLUTION_LABELS[resolution]}>
                 <AnimatedDropdownRadioGroup
                   value={resolution}

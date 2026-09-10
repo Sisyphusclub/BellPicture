@@ -59,6 +59,33 @@ describe('imageGeneration.service', () => {
     });
   });
 
+  it('passes quality through for supported 2.5 models', async () => {
+    const provider = fakeProvider();
+    await generateImage(
+      { prompt: 'p', model: 'gpt-image-2.5-flare', quality: 'xhigh' },
+      { provider },
+    );
+    expect(provider.generate).toHaveBeenCalledWith({
+      prompt: 'p',
+      model: 'gpt-image-2.5-flare',
+      quality: 'xhigh',
+      count: 1,
+      aspectRatio: '1:1',
+    });
+  });
+
+  it('rejects quality for gpt-image-2 before provider work', async () => {
+    const provider = fakeProvider();
+    await expect(
+      generateImage({ prompt: 'p', model: 'gpt-image-2', quality: 'high' }, { provider }),
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      status: 400,
+      details: { model: 'gpt-image-2', quality: 'high' },
+    });
+    expect(provider.generate).not.toHaveBeenCalled();
+  });
+
   it('honours explicit count and aspectRatio', async () => {
     const provider = fakeProvider();
     const result = await generateImage(

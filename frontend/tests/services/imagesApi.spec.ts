@@ -148,6 +148,41 @@ describe('imagesApi', () => {
     });
   });
 
+  it('sends the selected quality in generate requests', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          batchId: 'b-quality',
+          aspectRatio: '1:1',
+          generationMode: 'text-to-image',
+          images: [
+            {
+              id: 'quality.png',
+              outputUrl: '/api/outputs/quality.png',
+              filename: 'quality.png',
+              mime: 'image/png',
+              width: 1024,
+              height: 1024,
+            },
+          ],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await generateImage({
+      prompt: 'quality test',
+      model: 'gpt-image-2.5-flare',
+      quality: 'xhigh',
+    });
+
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toMatchObject({
+      model: 'gpt-image-2.5-flare',
+      quality: 'xhigh',
+    });
+  });
+
   it('routes high-resolution generate requests to the dedicated endpoint', async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(
