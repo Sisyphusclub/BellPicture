@@ -24,6 +24,12 @@ coverage/
 # Project-local tools
 .ace-tool/
 
+# >>> Comet managed project state >>>
+!/.comet/
+/.comet/*
+!/.comet/config.yaml
+# <<< Comet managed project state <<<
+
 # Orphan asset (not part of project)
 9bcf5924-9466-454b-acb3-e96822890fd8.png
 

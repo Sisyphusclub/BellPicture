@@ -39,7 +39,7 @@ export function SelectMenu<T extends string>({
   const selected = options.find((option) => option.value === value) ?? options[0];
 
   return (
-    <AnimatedDropdown>
+    <AnimatedDropdown modal={false}>
       <AnimatedDropdownTrigger asChild>
         <button
           type="button"

@@ -58,12 +58,12 @@ cp .env.docker.example .env
 
 ```env
 IMAGE_API_BASE_URL=https://api.2api.example
-# 可选：管理员 2K/4K 专用上游，例如 Codex 图像通道。
+# 可选：登录用户 2K/4K 专用上游，例如 Codex 图像通道。
 HIGH_RES_IMAGE_API_BASE_URL=
 IMAGE_API_KEY=replace-me
 # 用于加密用户自带 sub2api Key；执行 openssl rand -base64 32 生成。
 USER_API_KEY_ENCRYPTION_KEY=replace-with-a-base64-encoded-32-byte-key
-# 可选：管理员 2K/4K 专用上游密钥；留空则复用 IMAGE_API_KEY。
+# 可选：登录用户 2K/4K 专用上游密钥；留空则复用 IMAGE_API_KEY。
 HIGH_RES_IMAGE_API_KEY=
 OPENAI_COMPAT_API_KEY=replace-me-openai-compat
 BETTER_AUTH_SECRET=replace-me-with-a-random-32-byte-secret
@@ -165,12 +165,12 @@ cp frontend/.env.example frontend/.env
 
 ```env
 IMAGE_API_BASE_URL=https://api.2api.example
-# 可选：管理员 2K/4K 专用上游，例如 Codex 图像通道。
+# 可选：登录用户 2K/4K 专用上游，例如 Codex 图像通道。
 HIGH_RES_IMAGE_API_BASE_URL=
 IMAGE_API_KEY=replace-me
 # 用于加密用户自带 sub2api Key；执行 openssl rand -base64 32 生成。
 USER_API_KEY_ENCRYPTION_KEY=replace-with-a-base64-encoded-32-byte-key
-# 可选：管理员 2K/4K 专用上游密钥；留空则复用 IMAGE_API_KEY。
+# 可选：登录用户 2K/4K 专用上游密钥；留空则复用 IMAGE_API_KEY。
 HIGH_RES_IMAGE_API_KEY=
 OPENAI_COMPAT_API_KEY=replace-me-openai-compat
 BETTER_AUTH_SECRET=replace-me-with-a-random-secret
@@ -229,14 +229,14 @@ http://localhost:5173
 | 变量                          | 必需 | 说明                                                                                    |
 | ----------------------------- | ---- | --------------------------------------------------------------------------------------- |
 | `IMAGE_API_BASE_URL`          | 是   | 图像生成服务地址                                                                        |
-| `HIGH_RES_IMAGE_API_BASE_URL` | 否   | 管理员 2K/4K 专用图像生成服务地址；留空则复用 `IMAGE_API_BASE_URL`                      |
+| `HIGH_RES_IMAGE_API_BASE_URL` | 否   | 登录用户 2K/4K 专用图像生成服务地址；留空则复用 `IMAGE_API_BASE_URL`                    |
 | `IMAGE_API_KEY`               | 是   | 图像生成服务密钥                                                                        |
 | `USER_API_KEY_ENCRYPTION_KEY` | 是   | 32 字节 Base64 主密钥，用于 AES-256-GCM 加密用户自带的 sub2api Key                      |
-| `HIGH_RES_IMAGE_API_KEY`      | 否   | 管理员 2K/4K 专用图像生成服务密钥；留空则复用 `IMAGE_API_KEY`                           |
+| `HIGH_RES_IMAGE_API_KEY`      | 否   | 登录用户 2K/4K 专用图像生成服务密钥；留空则复用 `IMAGE_API_KEY`                         |
 | `OPENAI_COMPAT_API_KEY`       | 是   | OpenAI-compatible API 调用密钥                                                          |
 | `BETTER_AUTH_SECRET`          | 是   | Better Auth 会话密钥                                                                    |
 | `IMAGE_MODEL`                 | 否   | 默认图像模型，默认 `gpt-image-2`                                                        |
-| `HIGH_RES_IMAGE_MODEL`        | 否   | 管理员 2K/4K 专用模型名，例如 `codex-gpt-image-2`；留空则沿用请求模型                   |
+| `HIGH_RES_IMAGE_MODEL`        | 否   | 登录用户 2K/4K 专用模型名，例如 `codex-gpt-image-2`；留空则沿用请求模型                 |
 | `IMAGE_API_TIMEOUT_MS`        | 否   | 图像生成请求超时时间，默认 `300000ms`（5 分钟）                                         |
 | `UPLOAD_MAX_BYTES`            | 否   | 参考图上传大小上限；Compose 会同时传给后端与前端代理，代理自动增加 1 MiB multipart 余量 |
 | `DAILY_USER_QUOTA`            | 否   | 默认用户永久生图额度（兼容旧环境变量名）                                                |

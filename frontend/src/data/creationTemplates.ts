@@ -1,4 +1,9 @@
-import type { AspectRatio, ImageResolution, HistoryEntry } from '@/types/image';
+import {
+  ASPECT_RATIOS,
+  type AspectRatio,
+  type ImageResolution,
+  type HistoryEntry,
+} from '@/types/image';
 
 import manifest from './creationTemplates.json';
 
@@ -24,7 +29,7 @@ export interface CreationTemplate {
 }
 
 const isAspectRatio = (value: unknown): value is AspectRatio =>
-  value === '1:1' || value === '3:2' || value === '2:3' || value === '16:9' || value === '9:16';
+  typeof value === 'string' && (ASPECT_RATIOS as readonly string[]).includes(value);
 
 const isImageResolution = (value: unknown): value is ImageResolution =>
   value === 'standard' || value === '2k' || value === '4k';

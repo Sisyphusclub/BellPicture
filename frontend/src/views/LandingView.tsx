@@ -29,8 +29,15 @@ import {
   templateToHistoryEntry,
 } from '@/data/creationTemplates';
 import { buildApiUrl } from '@/services/api/imagesApi';
-import type { AspectChoice, HistoryEntry } from '@/types/image';
-import { DEFAULT_ASPECT_CHOICE, DEFAULT_COUNT, MAX_REFERENCE_IMAGES } from '@/types/image';
+import type { AspectChoice, HistoryEntry, ImageModel, ImageResolution } from '@/types/image';
+import {
+  DEFAULT_ASPECT_CHOICE,
+  DEFAULT_COUNT,
+  DEFAULT_IMAGE_MODEL,
+  DEFAULT_IMAGE_RESOLUTION,
+  MAX_REFERENCE_IMAGES,
+  normalizeAspectChoiceForResolution,
+} from '@/types/image';
 
 const HERO_VIDEO = buildApiUrl('/api/media/liquid-glass.mp4');
 const HERO_SHINY_GRADIENT_STYLE: CSSProperties = {
@@ -47,6 +54,17 @@ const LANDING_SCROLL_RESTORE_KEY = 'nebulens:landing-scroll-restore';
 const LANDING_COMPOSER_TRANSITION_EASE = [0.16, 1, 0.3, 1] as const;
 const LANDING_COMPOSER_CLOSED_CLIP = 'inset(0 50% 0 50% round 20px)';
 const LANDING_COMPOSER_OPEN_CLIP = 'inset(0 0% 0 0% round 20px)';
+
+function isComposerDropdownTarget(anchor: HTMLElement, target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+
+  const content = target.closest<HTMLElement>('[data-radix-menu-content]');
+  if (!content?.id) return false;
+
+  return Array.from(anchor.querySelectorAll<HTMLElement>('[aria-controls]')).some(
+    (trigger) => trigger.getAttribute('aria-controls') === content.id,
+  );
+}
 const HERO_ENTRIES: HistoryEntry[] = [
   {
     record: {
@@ -157,8 +175,10 @@ export function LandingView() {
   const [videoFailed, setVideoFailed] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<AgentChatAttachment[]>([]);
+  const [model, setModel] = useState<ImageModel>(DEFAULT_IMAGE_MODEL);
   const [aspect, setAspect] = useState<AspectChoice>(DEFAULT_ASPECT_CHOICE);
   const [count, setCount] = useState(DEFAULT_COUNT);
+  const [resolution, setResolution] = useState<ImageResolution>(DEFAULT_IMAGE_RESOLUTION);
   const [isPublic, setIsPublic] = useState(false);
   const [selected, setSelected] = useState<HistoryEntry | null>(null);
   const [imageApiKeySettingsOpen, setImageApiKeySettingsOpen] = useState(false);
@@ -280,6 +300,10 @@ export function LandingView() {
     setPrompt(value);
     if (composerDocked && !value.trim() && attachments.length === 0) setComposerExpanded(false);
   };
+  const updateResolution = (next: ImageResolution): void => {
+    setResolution(next);
+    setAspect((current) => normalizeAspectChoiceForResolution(current, next));
+  };
   const submitPrompt = (
     value: string,
     selectedAttachments: readonly AgentChatAttachment[],
@@ -291,8 +315,10 @@ export function LandingView() {
     void navigate(
       `/generate?${new URLSearchParams({
         prompt: trimmed,
+        model,
         aspect,
         count: String(count),
+        resolution,
         isPublic: String(isPublic),
       }).toString()}`,
       {
@@ -379,19 +405,35 @@ export function LandingView() {
               }
             }}
             onFocusCapture={(event) => {
-              const target = event.target as HTMLElement;
-              if (composerDocked && target.closest('.agent-chat-input__textarea')) {
+              if (composerDocked && event.currentTarget.contains(event.target)) {
                 setComposerExpanded(true);
               }
             }}
             onBlurCapture={(event) => {
+              const anchor = event.currentTarget;
               if (
-                composerDocked &&
-                !event.currentTarget.contains(event.relatedTarget) &&
-                !composerHasContent
+                !composerDocked ||
+                composerHasContent ||
+                anchor.contains(event.relatedTarget) ||
+                isComposerDropdownTarget(anchor, event.relatedTarget)
               ) {
-                setComposerExpanded(false);
+                return;
               }
+
+              if (!anchor.contains(event.target)) {
+                window.setTimeout(() => {
+                  const activeTarget = document.activeElement;
+                  if (
+                    !anchor.contains(activeTarget) &&
+                    !isComposerDropdownTarget(anchor, activeTarget)
+                  ) {
+                    setComposerExpanded(false);
+                  }
+                }, 0);
+                return;
+              }
+
+              setComposerExpanded(false);
             }}
           >
             <AnimatePresence initial={false} mode="wait">
@@ -461,19 +503,24 @@ export function LandingView() {
                     acceptedFileTypes="image/png,image/jpeg,image/webp"
                     toolbarContent={
                       <LandingGenerationControls
+                        model={model}
                         aspect={aspect}
                         count={count}
+                        resolution={resolution}
                         isPublic={isPublic}
+                        disabled={authLoading}
                         quotaLabel={quotaLabel}
                         quotaAriaLabel={quotaAriaLabel}
                         quotaIsAction={!authLoading && !isAuthenticated}
+                        onModelChange={setModel}
                         onAspectChange={setAspect}
                         onCountChange={setCount}
+                        onResolutionChange={updateResolution}
                         onPublicChange={setIsPublic}
                         onQuotaClick={openAuthModal}
                       />
                     }
-                    className="landing-composer"
+                    className="generation-composer landing-composer"
                   />
                 </div>
               </motion.div>
