@@ -91,6 +91,7 @@ export function GenerationComposerControls({
         disabled={disabled}
         leadingIcon={<ModelLogo modelId={model} className="generation-model-select__icon" />}
         className="generation-model-select"
+        contentClassName="generation-control-panel generation-model-menu"
         onValueChange={onModelChange}
       />
 
@@ -113,7 +114,7 @@ export function GenerationComposerControls({
           align="start"
           side={customPanelSide}
           avoidCollisions={false}
-          className="generation-custom-panel"
+          className="generation-control-panel generation-custom-panel"
           aria-label="自定义生成参数"
         >
           <AnimatedDropdownLabel className="generation-custom-panel__header">

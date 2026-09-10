@@ -344,13 +344,20 @@ describe('React application routes', () => {
     expect(screen.queryByRole('button', { name: /选择智能体/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '添加参考图或技能' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /选择模型和推理强度/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '选择模型' })).toHaveTextContent('gpt-image-2');
+    const modelTrigger = screen.getByRole('button', { name: '选择模型' });
+    expect(modelTrigger).toHaveTextContent('gpt-image-2');
+    await user.click(modelTrigger);
+    expect(document.querySelector('.generation-model-menu')).toHaveClass(
+      'generation-control-panel',
+    );
+    await user.click(modelTrigger);
     const customTrigger = screen.getByRole('button', { name: '自定义生成参数' });
     expect(customTrigger).toHaveTextContent('自定义');
     expect(customTrigger).toHaveTextContent('智能 · 1K · 1张');
     expect(screen.queryByRole('group', { name: '画面比例' })).not.toBeInTheDocument();
     await user.click(customTrigger);
     const customPanel = screen.getByRole('menu', { name: '自定义生成参数' });
+    expect(customPanel).toHaveClass('generation-control-panel');
     expect(customPanel).toHaveAttribute('data-side', 'bottom');
     expect(within(customPanel).getByText('生成偏好')).toBeInTheDocument();
     expect(within(customPanel).queryByText('其他设置')).not.toBeInTheDocument();

@@ -10797,13 +10797,15 @@ video {
 .generation-custom-trigger[data-state='open'] > svg:last-child {
   transform: rotate(180deg);
 }
+.generation-control-panel {
+  background: var(--popover) !important;
+}
 .generation-custom-panel {
   width: min(540px, calc(100vw - 24px));
   max-width: calc(100vw - 24px);
   overflow-x: hidden;
   border: 0 !important;
   border-radius: 8px !important;
-  background: var(--popover) !important;
   padding: 12px !important;
   box-shadow:
     0 26px 64px -28px rgb(0 0 0 / 0.92),
