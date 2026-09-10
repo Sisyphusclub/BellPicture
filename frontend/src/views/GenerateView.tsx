@@ -715,6 +715,7 @@ export function GenerateView() {
       const session = createSession();
       generationSession = session;
       generationSessionId = session.id;
+      previousSessionId.current = session.id;
       const nextSearch = new URLSearchParams({
         session: session.id,
         model: generationSettings.model,
@@ -822,7 +823,7 @@ export function GenerateView() {
         }
       }
       if (clearComposer) {
-        setPrompt('');
+        setPrompt((current) => (current.trim() === generationSettings.prompt ? '' : current));
         upload.clear();
         setReusedReferenceIds([]);
       }
