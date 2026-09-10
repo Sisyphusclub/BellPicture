@@ -151,6 +151,15 @@ const DROPDOWN_MOTION_STYLES = `
     display: none;
   }
 
+  .${MOTION_CLASS} [data-beui-dropdown-item]:focus,
+  .${MOTION_CLASS} [data-beui-dropdown-item]:focus-visible,
+  .${SUB_MOTION_CLASS} [data-beui-dropdown-item]:focus,
+  .${SUB_MOTION_CLASS} [data-beui-dropdown-item]:focus-visible {
+    outline: none;
+    outline-offset: 0;
+    box-shadow: none;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .${MOTION_CLASS}[data-state],
     .${SUB_MOTION_CLASS}[data-state] {
