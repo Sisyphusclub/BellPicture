@@ -8,7 +8,12 @@ const api = vi.hoisted(() => ({
 
 vi.mock('@/services/api/historyApi', () => api);
 
-import { resetPublicGalleryForTests, usePublicGallery } from '@/hooks/usePublicGallery';
+import {
+  addPublicRecord,
+  removePublicRecord,
+  resetPublicGalleryForTests,
+  usePublicGallery,
+} from '@/hooks/usePublicGallery';
 
 const record = (id: string) => ({
   id,
@@ -26,6 +31,21 @@ beforeEach(() => {
 });
 
 describe('usePublicGallery', () => {
+  it('adds and removes owner-updated records without reloading the gallery', () => {
+    const publicRecord = record('owner-image.png');
+    const { result } = renderHook(() => usePublicGallery());
+
+    act(() => {
+      addPublicRecord(publicRecord);
+    });
+    expect(result.current.entries).toHaveLength(1);
+
+    act(() => {
+      removePublicRecord(publicRecord.id);
+    });
+    expect(result.current.entries).toHaveLength(0);
+  });
+
   it('loads one page at a time and ignores a stale load-more response after refresh', async () => {
     let resolveLoadMore!: (value: { records: ReturnType<typeof record>[] }) => void;
     const loadMore = new Promise<{ records: ReturnType<typeof record>[] }>((resolve) => {

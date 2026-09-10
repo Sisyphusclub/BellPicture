@@ -79,7 +79,7 @@ No actionable P0, P1, or P2 findings remain.
 
 ## beUI Product Workspace QA
 
-- Source design truth: `design.md`, `.trellis/tasks/07-30-nebulens-beui-product-workspace-rebuild/prd.md`, and the source-owned beUI components under `frontend/src/components/premium/`.
+- Source design truth: `design.md` and the source-owned beUI components under `frontend/src/components/premium/`.
 - Generate implementation: `design-qa-assets/generate-1440.png`.
 - Destructive confirmation implementations: `design-qa-assets/confirm-delete-desktop.png` and `design-qa-assets/confirm-delete-mobile.png`.
 - Authentication implementation: `design-qa-assets/auth-sign-in-1440.png`.
@@ -89,7 +89,7 @@ No actionable P0, P1, or P2 findings remain.
 - Focused before/after comparison: `design-qa-assets/templates-assets-comparison.png`.
 - Local implementation: latest Generate check at `http://127.0.0.1:5173/`; production preview: `http://127.0.0.1:4173/`.
 - States: anonymous Generate empty session, sign-in modal focused, Templates populated, Assets auth-loading and unauthenticated.
-- Browser CSS viewports: latest Generate check at 1440 x 900 and 390 x 844, plus 1028 x 774 and 320-class mobile coverage from the independent Trellis check.
+- Browser CSS viewports: latest Generate check at 1440 x 900 and 390 x 844, plus 1028 x 774 and 320-class mobile coverage from the independent QA check.
 
 ### Findings
 
@@ -113,7 +113,7 @@ No actionable P0, P1, or P2 findings remain.
 
 - Replaced six duplicated source-site images with 12 unique GPT Image 2 WebP assets under `frontend/public/media/templates/`.
 - Added a route regression assertion that requires one unique `/media/templates/` image URL per visible template.
-- Added the admin clarity selector contract, explicit Assets list visibility metadata, and responsive Assets auth-loading skeleton discovered by the independent Trellis check.
+- Added the admin clarity selector contract, explicit Assets list visibility metadata, and responsive Assets auth-loading skeleton discovered by the independent QA check.
 - Added the product-owned template asset convention to `design.md` and the frontend component code-spec.
 - Replaced native Generate and Assets deletion confirmations with the shared beUI Morphic `ConfirmActionModal`, including single, batch, detail, and bulk paths plus cancellation, failure, retry, and pending-state coverage.
 - Rebalanced Generate around a bottom-docked 880px creation bar for both empty and populated sessions, compact status/quota groups, the OpenAI model mark, and a looser two-column result grid. The redundant empty-result frame and copy are removed. Browser metrics report zero horizontal overflow at 1440px and 390px.
@@ -187,7 +187,7 @@ No actionable P0, P1, or P2 mismatch remains.
   `src/components/ui/sidebar.tsx:743`.
 - `npm run test`: passed, 13 files and 76 tests.
 - `npm run build`: passed with the existing non-blocking Vite chunk-size warning.
-- Focused Prettier check, `git diff --check`, and Trellis task validation: passed.
+- Focused Prettier check, `git diff --check`, and task validation: passed.
 
 final result: passed
 
@@ -264,7 +264,7 @@ No actionable P0, P1, or P2 findings remain.
 
 - Removed the component-owned `mask-image` and `-webkit-mask-image` gradient block.
 - Added a regression assertion that the landing gallery no longer injects a scoped style element.
-- Updated `design.md`, the frontend component guideline, and the active Trellis PRD to forbid edge-fade masks on the Discover gallery.
+- Updated `design.md` and the frontend component guideline to forbid edge-fade masks on the Discover gallery.
 
 ### Verification
 
@@ -304,7 +304,7 @@ No actionable P0, P1, or P2 findings remain.
 
 - Removed the duplicate loop copies, alternating up/down keyframes, timing styles, transform hints, and obsolete speed prop from the beUI Pro vertical gallery adaptation.
 - Kept one stable image node per work in each responsive gallery while preserving ratios, hover treatment, and detail actions.
-- Updated the landing selector depth, regression test, `design.md`, frontend component guideline, and active Trellis PRD to make static behavior the documented contract.
+- Updated the landing selector depth, regression test, `design.md`, and frontend component guideline to make static behavior the documented contract.
 
 ### Verification
 
@@ -379,7 +379,7 @@ No actionable P0, P1, or P2 findings remain.
 - Synchronized returned quota state across the discovery header, mobile
   Sidebar, and image composer.
 - Added migration, route/service/API/UI regression coverage and updated the
-  product and Trellis component/database contracts.
+  product and component/database contracts.
 
 ### Verification
 
@@ -426,7 +426,7 @@ No actionable P0, P1, or P2 findings remain.
 - Removed the visible session count badge and strengthened the active/inactive hierarchy.
 - Moved rename and delete into the dropdown while preserving inline rename and shared confirmation behavior.
 - Removed the duplicate global focus outline from dropdown items so the beUI moving highlight remains the only focus treatment.
-- Updated route tests, `design.md`, and the active Trellis PRD with the component provenance and interaction contract.
+- Updated route tests, `design.md`, and the component provenance and interaction contract.
 
 ### Verification
 
@@ -623,7 +623,7 @@ No actionable P0, P1, or P2 findings remain.
 - Added the typed React gradient style object and applied it only to the `into images` headline span.
 - Added compensated lower padding and negative margin to keep the italic `g` descender painted without moving the subtitle or composer, and reversed the keyframe direction for left-to-right travel.
 - Added a regression test for the animation class, gradient stops, and inline sizing contract.
-- Added a static centered-gradient fallback for `prefers-reduced-motion` and documented the contract in `design.md` and the active Trellis PRD.
+- Added a static centered-gradient fallback for `prefers-reduced-motion` and documented the contract in `design.md`.
 
 ### Verification
 
@@ -662,7 +662,7 @@ No actionable P0, P1, or P2 findings remain.
 - Replaced the dark translucent composer fill with continuous displacement, a lightly tinted radial sheen, lower chrome blur, and directional inset highlights.
 - Increased the Discover-only material radius to 30px while leaving the Generate composer at 20px.
 - Added route regression assertions for the liquid-glass displacement scale and Discover radius.
-- Updated `design.md`, the frontend component guideline, and the active Trellis PRD with the final material contract.
+- Updated `design.md` and the frontend component guideline with the final material contract.
 
 ### Verification
 
@@ -730,7 +730,7 @@ visible`; measured horizontal document overflow is `0px` on desktop and mobile.
 - Enabled the material only in `LandingView`, preserved the original focused mesh border, and added
   no-filter and higher-contrast fallbacks.
 - Added route regression coverage and documented the material contract in `design.md`, the frontend
-  component specification, and the active Trellis PRD.
+  component specification.
 
 ### Verification
 
@@ -1105,7 +1105,7 @@ No actionable P0, P1, or P2 findings remain.
 - `npm test -- --run`: passed, 10 files and 48 tests.
 - `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
 - `git diff --check`: passed with only the repository's LF-to-CRLF notices.
-- Independent Trellis check: the 32px batch-target finding was fixed; its aspect-ratio concern was
+- Independent QA check: the 32px batch-target finding was fixed; its aspect-ratio concern was
   disproved by the inline preview ratio and browser measurement, then covered with a test.
 
 ### Follow-up Polish
@@ -1395,7 +1395,7 @@ No actionable P0, P1, or P2 findings remain.
 - Replaced the editor's two raw `<button>` elements with the shared `Button` primitive.
 - Assigned semantic `secondary` and `primary` variants and increased the action-group gap to 12px.
 - Removed the page-local duplicate button styling while preserving the existing responsive 40px mobile minimum.
-- Added regression assertions for the shared variant classes and documented the rule in `design.md` and the active Trellis PRD.
+- Added regression assertions for the shared variant classes and documented the rule in `design.md`.
 - Removed the temporary screenshot-only edit initializer after capture.
 
 ### Verification

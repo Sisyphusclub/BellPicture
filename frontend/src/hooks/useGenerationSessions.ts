@@ -135,30 +135,50 @@ function persist(sessions: GenerationSession[]): void {
   }
 }
 
-function readActiveSessionsByUser(): Record<string, string> {
-  if (typeof window === 'undefined') return {};
+function parseActiveSessionsByUser(value: string | null): Record<string, string> | null {
+  if (value === null) return null;
   try {
-    const parsed: unknown = JSON.parse(
-      window.sessionStorage.getItem(ACTIVE_SESSION_STORAGE_KEY) ?? '{}',
-    );
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return {};
+    const parsed: unknown = JSON.parse(value);
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
     return Object.fromEntries(
       Object.entries(parsed).filter(
         ([userId, sessionId]) => userId.length > 0 && typeof sessionId === 'string',
       ),
     );
   } catch {
-    return {};
+    return null;
   }
 }
 
 function persistActiveSessionsByUser(activeSessions: Record<string, string>): void {
   if (typeof window === 'undefined') return;
   try {
-    window.sessionStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, JSON.stringify(activeSessions));
+    window.localStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, JSON.stringify(activeSessions));
+    window.sessionStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
   } catch {
     // Route continuity is best-effort and must not block generation.
   }
+}
+
+function readActiveSessionsByUser(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  let persistent: Record<string, string> | null = null;
+  try {
+    persistent = parseActiveSessionsByUser(window.localStorage.getItem(ACTIVE_SESSION_STORAGE_KEY));
+  } catch {
+    // Fall through to the legacy tab-scoped value when persistent storage is unavailable.
+  }
+  if (persistent !== null) return persistent;
+
+  let legacy: Record<string, string> | null = null;
+  try {
+    legacy = parseActiveSessionsByUser(window.sessionStorage.getItem(ACTIVE_SESSION_STORAGE_KEY));
+  } catch {
+    return {};
+  }
+  if (legacy === null) return {};
+  persistActiveSessionsByUser(legacy);
+  return legacy;
 }
 
 export function getRememberedGenerationSession(userId: string): string | null {
@@ -327,6 +347,7 @@ export function useGenerationSessions() {
 export function resetGenerationSessionsForTests(): void {
   setSessions({ sessions: [] });
   if (typeof window !== 'undefined') {
+    window.localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
     window.sessionStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
   }
 }

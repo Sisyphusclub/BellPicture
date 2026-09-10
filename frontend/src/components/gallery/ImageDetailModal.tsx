@@ -1,5 +1,5 @@
-import { Copy, Download, Globe2, ImagePlus, Lock, Trash2, X } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { Copy, Download, EyeOff, Globe2, ImagePlus, Trash2, X } from 'lucide-react';
+import { useEffect, useRef, type CSSProperties } from 'react';
 
 import { MorphicCardModal } from '@/components/premium/morphic-card-modal';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { useImageDetailModalState } from '@/hooks/useImageDetailModalState';
 import type { HistoryEntry } from '@/types/image';
 import { downloadUrl } from '@/utils/download';
 import { formatDateTime } from '@/utils/format';
+import { getImageVisibilityActionLabel, getImageVisibilityLabel } from '@/utils/imageVisibility';
 
 interface ImageDetailModalProps {
   entry: HistoryEntry | null;
@@ -57,10 +58,15 @@ export function ImageDetailModal({
       onClose={onClose}
       sharedLayout={false}
       backdropClassName="!bg-black/[0.78]"
-      className="image-detail-modal !max-w-[1080px] !rounded-2xl !bg-card !text-card-foreground !shadow-[var(--shadow-modal)]"
+      className="image-detail-modal !rounded-2xl !bg-card !text-card-foreground !shadow-[var(--shadow-modal)]"
     >
       <section
         className="dialog image-detail"
+        style={
+          {
+            '--image-detail-image-ratio': entry.record.width / entry.record.height,
+          } as CSSProperties
+        }
         role="dialog"
         aria-modal="true"
         aria-labelledby="image-detail-title"
@@ -80,7 +86,12 @@ export function ImageDetailModal({
           </IconTooltip>
         </div>
         <div className="image-detail__media">
-          <img src={entry.imageUrl} alt={entry.record.prompt || '生成图片'} />
+          <img
+            src={entry.imageUrl}
+            alt={entry.record.prompt || '生成图片'}
+            width={entry.record.width}
+            height={entry.record.height}
+          />
         </div>
         <div className="image-detail__body">
           <p className="eyebrow">NEBULENS OUTPUT</p>
@@ -106,8 +117,8 @@ export function ImageDetailModal({
               <dd>{formatDateTime(entry.record.createdAt)}</dd>
             </div>
             <div>
-              <dt>状态</dt>
-              <dd>{entry.record.isPublic ? '公开' : '私有'}</dd>
+              <dt>可见范围</dt>
+              <dd>{getImageVisibilityLabel(entry.record.isPublic)}</dd>
             </div>
           </dl>
           <div className="detail-actions">
@@ -136,11 +147,11 @@ export function ImageDetailModal({
             {onToggleVisibility ? (
               <Button type="button" variant="ghost" onClick={() => onToggleVisibility(entry)}>
                 {entry.record.isPublic ? (
-                  <Lock aria-hidden="true" />
+                  <EyeOff aria-hidden="true" />
                 ) : (
                   <Globe2 aria-hidden="true" />
                 )}
-                {entry.record.isPublic ? '设为私有' : '设为公开'}
+                {getImageVisibilityActionLabel(entry.record.isPublic)}
               </Button>
             ) : null}
             {canDelete && onDelete ? (

@@ -39,6 +39,56 @@ async function seedUpload(filename: string, bytes: Buffer): Promise<string> {
 }
 
 describe('TwoApiImageProvider', () => {
+  it('validates a credential against the configured model list without exposing it elsewhere', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ object: 'list', data: [{ id: 'gpt-image-2', object: 'model' }] }),
+    );
+    const provider = new TwoApiImageProvider(baseConfig, fetchMock);
+
+    await provider.validateCredential({ credential: 'sk-personal', model: 'gpt-image-2' });
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [calledUrl, init] = fetchMock.mock.calls[0]!;
+    expect(calledUrl).toBe('https://api.example.com/v1/models');
+    expect((init as RequestInit).method).toBe('GET');
+    expect(((init as RequestInit).headers as Record<string, string>)['Authorization']).toBe(
+      'Bearer sk-personal',
+    );
+  });
+
+  it('rejects invalid credentials and groups without the configured image model', async () => {
+    const invalid = new TwoApiImageProvider(
+      baseConfig,
+      vi.fn(async () => errorResponse(401)),
+    );
+    await expect(
+      invalid.validateCredential({ credential: 'sk-invalid', model: 'gpt-image-2' }),
+    ).rejects.toMatchObject({ code: 'PROVIDER_KEY_INVALID', status: 400 });
+
+    const wrongGroup = new TwoApiImageProvider(
+      baseConfig,
+      vi.fn(async () => jsonResponse({ data: [{ id: 'gpt-5' }] })),
+    );
+    await expect(
+      wrongGroup.validateCredential({ credential: 'sk-chat', model: 'gpt-image-2' }),
+    ).rejects.toMatchObject({
+      code: 'PROVIDER_KEY_MODEL_UNAVAILABLE',
+      status: 400,
+      details: { model: 'gpt-image-2' },
+    });
+  });
+
+  it('maps a structurally invalid model list to a credential validation failure', async () => {
+    const provider = new TwoApiImageProvider(
+      baseConfig,
+      vi.fn(async () => jsonResponse({ data: { id: 'gpt-image-2' } })),
+    );
+
+    await expect(
+      provider.validateCredential({ credential: 'sk-personal', model: 'gpt-image-2' }),
+    ).rejects.toMatchObject({ code: 'PROVIDER_KEY_VALIDATION_FAILED', status: 502 });
+  });
+
   it('writes one image per data entry and returns the array (text-to-image)', async () => {
     const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
       jsonResponse({
@@ -138,6 +188,35 @@ describe('TwoApiImageProvider', () => {
     const init = fetchMock.mock.calls[0]![1] as RequestInit;
     const headers = init.headers as Record<string, string>;
     expect(headers['Authorization']).toBe('Bearer sk-test');
+  });
+
+  it('uses a request credential for standard generation without sending it to high-res providers', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
+    );
+    const provider = new TwoApiImageProvider(
+      {
+        ...baseConfig,
+        highResBaseUrl: 'https://codex.example.com',
+        highResApiKey: 'sk-high-res',
+      },
+      fetchMock,
+    );
+
+    await provider.generate({
+      prompt: 'standard personal',
+      providerCredential: 'sk-personal',
+    });
+    await provider.generate({
+      prompt: 'high res platform',
+      providerCredential: 'sk-personal',
+      resolution: '2k',
+    });
+
+    const standardHeaders = fetchMock.mock.calls[0]![1]!.headers as Record<string, string>;
+    const highResHeaders = fetchMock.mock.calls[1]![1]!.headers as Record<string, string>;
+    expect(standardHeaders['Authorization']).toBe('Bearer sk-personal');
+    expect(highResHeaders['Authorization']).toBe('Bearer sk-high-res');
   });
 
   it('uses the configured high-res API key for high-resolution requests', async () => {
@@ -240,6 +319,7 @@ describe('TwoApiImageProvider', () => {
     const out = await provider.generate({
       prompt: 'reshape it',
       referencePath: refPath,
+      providerCredential: 'sk-personal-edit',
       count: 2,
       aspectRatio: '1:1',
     });
@@ -264,7 +344,7 @@ describe('TwoApiImageProvider', () => {
     expect((image as Blob).size).toBe(refBytes.length);
 
     const headers = (init as RequestInit).headers as Record<string, string>;
-    expect(headers['Authorization']).toBe('Bearer sk-test');
+    expect(headers['Authorization']).toBe('Bearer sk-personal-edit');
     // We must NOT set content-type manually for FormData — let undici set
     // the multipart boundary.
     expect(headers['content-type']).toBeUndefined();

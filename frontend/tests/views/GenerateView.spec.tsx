@@ -17,7 +17,20 @@ const authMocks = vi.hoisted(() => ({
   isAdmin: true,
 }));
 
-const publicGalleryMocks = vi.hoisted(() => ({ addPublicRecord: vi.fn() }));
+const publicGalleryMocks = vi.hoisted(() => ({
+  addPublicRecord: vi.fn(),
+  removePublicRecord: vi.fn(),
+}));
+
+const imageApiKeyMocks = vi.hoisted(
+  (): {
+    status: { configured: boolean; keySuffix?: string };
+    isLoading: boolean;
+  } => ({
+    status: { configured: false },
+    isLoading: false,
+  }),
+);
 
 const historyMocks = vi.hoisted(() => ({
   batches: [] as Array<{
@@ -69,6 +82,18 @@ vi.mock('@/hooks/useImageQuota', () => ({
   }),
 }));
 
+vi.mock('@/hooks/useImageApiKey', () => ({
+  useImageApiKey: () => ({
+    status: imageApiKeyMocks.status,
+    isLoading: imageApiKeyMocks.isLoading,
+    isMutating: false,
+    error: null,
+    refresh: vi.fn(),
+    save: vi.fn(),
+    remove: vi.fn(),
+  }),
+}));
+
 vi.mock('@/hooks/useImageGeneration', () => ({
   useImageGeneration: () => ({
     isLoading: generation.isLoading,
@@ -82,6 +107,7 @@ vi.mock('@/hooks/useImageGeneration', () => ({
 vi.mock('@/hooks/useImageHistory', () => ({
   useImageHistory: () => ({
     batches: historyMocks.batches,
+    isHydrated: true,
     isHydrating: false,
     hydrateError: null,
     removeBatch: historyMocks.removeBatch,
@@ -122,6 +148,8 @@ beforeEach(() => {
   historyMocks.batches = [];
   generation.error = null;
   generation.isLoading = false;
+  imageApiKeyMocks.status = { configured: false };
+  imageApiKeyMocks.isLoading = false;
   generation.generate.mockResolvedValue({
     batchId: 'batch-one',
     aspectRatio: '16:9',
@@ -150,6 +178,20 @@ beforeEach(() => {
   });
 });
 
+it('shows personal Key routing instead of site quota when configured', () => {
+  imageApiKeyMocks.status = { configured: true, keySuffix: '4321' };
+  render(
+    <MemoryRouter initialEntries={['/generate']}>
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+
+  expect(screen.getByLabelText('当前使用个人 API Key')).toHaveTextContent('调用：个人 Key · 4321');
+  expect(screen.queryByLabelText('今日生成额度')).not.toBeInTheDocument();
+});
+
 it('keeps the generation workspace prompt plain and focused', () => {
   render(
     <MemoryRouter initialEntries={['/generate']}>
@@ -172,6 +214,79 @@ it('keeps the generation workspace prompt plain and focused', () => {
   );
   expect(screen.queryByText('描述你想生成的画面…')).not.toBeInTheDocument();
   expect(document.querySelectorAll('.generation-history-track__mark')).toHaveLength(0);
+});
+
+it('offers the default model and both new upstream models', async () => {
+  const user = userEvent.setup();
+  render(
+    <MemoryRouter initialEntries={['/generate']}>
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+
+  const trigger = screen.getByRole('button', { name: '选择模型' });
+  expect(trigger).toHaveTextContent('gpt-image-2');
+
+  await user.click(trigger);
+  expect(screen.getByRole('menuitemradio', { name: 'gpt-image-2' })).toHaveAttribute(
+    'data-state',
+    'checked',
+  );
+  expect(screen.getByRole('menuitemradio', { name: 'gpt-image-2.5-flare' })).toBeInTheDocument();
+  expect(screen.getByRole('menuitemradio', { name: 'gpt-image-2.5-sunburst' })).toBeInTheDocument();
+});
+
+it.each(['gpt-image-2.5-flare', 'gpt-image-2.5-sunburst'] as const)(
+  'submits the selected upstream model %s',
+  async (model) => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/generate?prompt=雨夜建筑']}>
+        <ToastProvider>
+          <GenerateView />
+        </ToastProvider>
+      </MemoryRouter>,
+    );
+
+    const trigger = screen.getByRole('button', { name: '选择模型' });
+    await user.click(trigger);
+    await user.click(screen.getByRole('menuitemradio', { name: model }));
+    expect(trigger).toHaveTextContent(model);
+
+    await user.click(screen.getByRole('button', { name: '生成图片' }));
+    await waitFor(() => expect(generation.generate).toHaveBeenCalledTimes(1));
+    expect(generation.generate).toHaveBeenCalledWith(expect.objectContaining({ model }));
+  },
+);
+
+it('restores a generated batch model when reusing its complete settings', async () => {
+  const user = userEvent.setup();
+  render(
+    <MemoryRouter initialEntries={['/generate?prompt=雨夜建筑']}>
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+
+  const trigger = screen.getByRole('button', { name: '选择模型' });
+  await user.click(trigger);
+  await user.click(screen.getByRole('menuitemradio', { name: 'gpt-image-2.5-sunburst' }));
+  await user.click(screen.getByRole('button', { name: '生成图片' }));
+  await waitFor(() => expect(generation.generate).toHaveBeenCalledTimes(1));
+
+  await user.click(trigger);
+  await user.click(screen.getByRole('menuitemradio', { name: 'gpt-image-2.5-flare' }));
+  await user.click(screen.getByRole('button', { name: '复用完整设置' }));
+  expect(trigger).toHaveTextContent('gpt-image-2.5-sunburst');
+
+  await user.click(screen.getByRole('button', { name: '生成图片' }));
+  await waitFor(() => expect(generation.generate).toHaveBeenCalledTimes(2));
+  expect(generation.generate).toHaveBeenLastCalledWith(
+    expect.objectContaining({ model: 'gpt-image-2.5-sunburst' }),
+  );
 });
 
 it('keeps the composer neutral when a retryable result error is present', () => {
@@ -283,6 +398,33 @@ it('supports up to four images per generation', async () => {
   await user.click(screen.getByRole('button', { name: '生成图片' }));
   await waitFor(() =>
     expect(generation.generate).toHaveBeenCalledWith(expect.objectContaining({ count: 4 })),
+  );
+});
+
+it('adds a dropped reference image to the next generation', async () => {
+  const user = userEvent.setup();
+  const file = new File(['dropped-image'], 'dropped-reference.png', { type: 'image/png' });
+  const { container } = render(
+    <MemoryRouter initialEntries={['/generate?prompt=拖拽参考图']}>
+      <ToastProvider>
+        <GenerateView />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+  const surface = container.querySelector('.studio-agent-input .agent-chat-input__surface');
+  expect(surface).toBeInTheDocument();
+
+  fireEvent.drop(surface!, {
+    dataTransfer: { files: [file], types: ['Files'], dropEffect: 'none' },
+  });
+
+  expect(await screen.findByText('dropped-reference.png')).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: '生成图片' }));
+
+  await waitFor(() =>
+    expect(generation.generate).toHaveBeenCalledWith(
+      expect.objectContaining({ referenceFiles: [file] }),
+    ),
   );
 });
 
@@ -533,7 +675,10 @@ it('opens the right history flyout, searches, and loads a selected batch', async
   );
 
   const rail = screen.getByRole('button', { name: '展开生成历史' });
-  expect(document.querySelectorAll('.generation-history-track__mark')).toHaveLength(0);
+  await waitFor(() =>
+    expect(document.querySelectorAll('.generation-history-track__mark')).toHaveLength(1),
+  );
+  expect(screen.getByRole('region', { name: '本次创作结果' })).toHaveTextContent('海边灯塔');
   await user.click(rail);
   const panel = await screen.findByRole('complementary', { name: '生成历史' });
   expect(panel).toBeVisible();
@@ -678,7 +823,7 @@ it('reveals a completed image only after its load event', async () => {
   expect(screen.queryByRole('button', { name: '查看图片' })).not.toBeInTheDocument();
   expect(within(batch!).getByRole('button', { name: '用作参考图' })).toBeInTheDocument();
   expect(within(batch!).getByRole('button', { name: '下载图片' })).toBeInTheDocument();
-  expect(within(batch!).getByRole('button', { name: '设为私有' })).toBeInTheDocument();
+  expect(within(batch!).getByRole('button', { name: '从发现页移除' })).toBeInTheDocument();
   expect(within(batch!).getByRole('button', { name: '删除图片' })).toBeInTheDocument();
   expect(batch?.querySelector('.session-batch__header .session-batch__actions')).toBeNull();
   expect(preview).toHaveStyle({ aspectRatio: '1792 / 1024' });
@@ -992,7 +1137,7 @@ it('restores supported settings and normalizes legacy high-resolution snapshots 
   expect(screen.getByText('沿用 1 张历史参考图')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: '选择画面比例' })).toHaveTextContent('16:9');
   expect(screen.getByRole('status', { name: '2 张' })).toBeInTheDocument();
-  expect(screen.getByRole('switch', { name: '私有模式' })).not.toBeChecked();
+  expect(screen.getByRole('switch', { name: '发布到发现页' })).toBeChecked();
 });
 
 it('confirms single-image deletion with the beUI modal and supports cancel', async () => {

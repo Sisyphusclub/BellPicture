@@ -22,6 +22,7 @@ import type { ImageGenerationProvider } from '../services/providers/ImageGenerat
 import type { DailyCheckInResult, QuotaSnapshot } from '../services/quota.service.js';
 import { recordReferenceUpload } from '../services/referenceUpload.service.js';
 import type { UserQuotaService } from '../services/userQuota.service.js';
+import type { UserImageApiKeyService } from '../services/userImageApiKey.service.js';
 import { removeOutput, removeUpload, saveUpload } from '../storage/localStorage.js';
 import {
   ASPECT_RATIOS,
@@ -59,6 +60,7 @@ const highResGenerateBodySchema = generateBaseBodySchema.extend({
 export interface ImagesControllerDeps {
   provider: ImageGenerationProvider;
   userQuota: UserQuotaService;
+  userImageApiKeys: UserImageApiKeyService;
   demoGenerationDelayMs?: number;
   demoPromptCache?: DemoPromptCacheConfig;
 }
@@ -232,7 +234,9 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           }
         }
 
-        const quotaPool = deps.userQuota.forUser(user.id);
+        const providerCredential = deps.userImageApiKeys.getProviderCredential(user.id);
+        const quotaPool =
+          providerCredential === undefined ? deps.userQuota.forUser(user.id) : undefined;
         const result = await generateImage(
           {
             prompt: parsed.prompt,
@@ -243,8 +247,12 @@ export function buildImagesController(deps: ImagesControllerDeps): {
             userId: user.id,
             requestId: req.requestId,
             signal: requestAbort.signal,
+            ...(providerCredential === undefined ? {} : { providerCredential }),
           },
-          { provider: deps.provider, quotaPool },
+          {
+            provider: deps.provider,
+            ...(quotaPool === undefined ? {} : { quotaPool }),
+          },
         );
         if (requestAbort.signal.aborted) {
           await discardAbortedResult(result, requestAbort.signal);

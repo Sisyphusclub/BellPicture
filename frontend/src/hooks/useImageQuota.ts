@@ -27,7 +27,7 @@ async function loadQuota(authenticated: boolean): Promise<void> {
     if (requestId === currentId) {
       store.set({
         quota: authenticated
-          ? { total: 20, remaining: 20, checkedInToday: false, dailyCheckInReward: 5 }
+          ? { total: 0, remaining: 0, checkedInToday: false, dailyCheckInReward: 5 }
           : null,
         isLoading: false,
         error: new Error('无法读取剩余额度。'),

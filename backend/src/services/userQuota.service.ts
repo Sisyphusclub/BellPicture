@@ -52,7 +52,7 @@ interface QuotaSnapshotParts {
 }
 
 function permanentTotal(row: QuotaRow | undefined): number {
-  return row?.permanentTotal ?? row?.dailyTotal ?? env.DAILY_USER_QUOTA;
+  return row?.permanentTotal ?? row?.dailyTotal ?? 0;
 }
 
 function permanentUsed(row: QuotaRow | undefined, today = productDateKey()): number {
@@ -230,7 +230,7 @@ export function createUserQuotaService(): UserQuotaService {
             dailyTotal: row?.dailyTotal ?? null,
             checkInDate: row?.checkInDate ?? null,
             bonusToday: row?.bonusToday ?? 0,
-            permanentTotal: row?.permanentTotal ?? row?.dailyTotal ?? env.DAILY_USER_QUOTA,
+            permanentTotal: row?.permanentTotal ?? row?.dailyTotal ?? 0,
             permanentUsed: baseUsed + left,
           })
           .onConflictDoUpdate({
@@ -414,7 +414,7 @@ export function createUserQuotaService(): UserQuotaService {
             dailyTotal: row?.dailyTotal ?? null,
             checkInDate: today,
             bonusToday: row?.bonusToday ?? env.DAILY_CHECK_IN_REWARD,
-            permanentTotal: row?.permanentTotal ?? row?.dailyTotal ?? env.DAILY_USER_QUOTA,
+            permanentTotal: row?.permanentTotal ?? row?.dailyTotal ?? 0,
             permanentUsed: row?.permanentUsed ?? (row?.quotaDate === today ? row.usedToday : 0),
           })
           .onConflictDoUpdate({

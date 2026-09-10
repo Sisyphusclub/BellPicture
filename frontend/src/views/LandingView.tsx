@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
@@ -7,6 +7,7 @@ import { GenerationSubmitCost } from '@/components/generation/GenerationSubmitCo
 import { LandingSidebar } from '@/components/landing/LandingSidebar';
 import { LandingGenerationControls } from '@/components/landing/LandingGenerationControls';
 import { LandingAccountActions } from '@/components/landing/LandingAccountActions';
+import { ImageApiKeySettingsDialog } from '@/components/settings/ImageApiKeySettingsDialog';
 import { useToast } from '@/components/common/ToastProvider';
 import { AgentChatInput } from '@/components/premium/agent-chat-input/agent-chat-input';
 import type { AgentChatAttachment } from '@/components/premium/agent-chat-input/types';
@@ -18,6 +19,7 @@ import { IMAGE_PROMPT_EXAMPLES } from '@/data/imagePromptExamples';
 import { useAuth } from '@/hooks/useAuth';
 import { openAuthModal } from '@/hooks/useAuthModal';
 import { useImageQuota } from '@/hooks/useImageQuota';
+import { useImageApiKey } from '@/hooks/useImageApiKey';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { usePublicGallery } from '@/hooks/usePublicGallery';
 import { getAppNavigation } from '@/config/navigation';
@@ -29,7 +31,6 @@ import {
 import { buildApiUrl } from '@/services/api/imagesApi';
 import type { AspectChoice, HistoryEntry } from '@/types/image';
 import { DEFAULT_ASPECT_CHOICE, DEFAULT_COUNT, MAX_REFERENCE_IMAGES } from '@/types/image';
-import { Button } from '@/components/ui/button';
 
 const HERO_VIDEO = buildApiUrl('/api/media/liquid-glass.mp4');
 const HERO_SHINY_GRADIENT_STYLE: CSSProperties = {
@@ -43,9 +44,9 @@ const HERO_SHINY_GRADIENT_STYLE: CSSProperties = {
 };
 const LANDING_SCROLL_KEY = 'nebulens:landing-scroll';
 const LANDING_SCROLL_RESTORE_KEY = 'nebulens:landing-scroll-restore';
-const LANDING_COMPOSER_MORPH_EASE = [0.16, 1, 0.3, 1] as const;
-const DISCOVER_INITIAL_TEMPLATE_COUNT = 30;
-const DISCOVER_TEMPLATE_BATCH_SIZE = 30;
+const LANDING_COMPOSER_TRANSITION_EASE = [0.16, 1, 0.3, 1] as const;
+const LANDING_COMPOSER_CLOSED_CLIP = 'inset(0 50% 0 50% round 20px)';
+const LANDING_COMPOSER_OPEN_CLIP = 'inset(0 0% 0 0% round 20px)';
 const HERO_ENTRIES: HistoryEntry[] = [
   {
     record: {
@@ -141,9 +142,16 @@ export function LandingView() {
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading: authLoading, isAdmin, logout } = useAuth();
   const { quota, isLoading: quotaLoading, checkIn } = useImageQuota();
+  const imageApiKey = useImageApiKey();
   const { notify } = useToast();
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
-  const publicGallery = usePublicGallery();
+  const {
+    entries: publicGalleryEntries,
+    isHydrating: publicGalleryIsHydrating,
+    hydrateError: publicGalleryError,
+    hasMore: publicGalleryHasMore,
+    loadMore: loadMorePublicGallery,
+  } = usePublicGallery();
   const composerAnchorRef = useRef<HTMLDivElement>(null);
   const composerDockedRef = useRef(false);
   const [videoFailed, setVideoFailed] = useState(false);
@@ -153,15 +161,15 @@ export function LandingView() {
   const [count, setCount] = useState(DEFAULT_COUNT);
   const [isPublic, setIsPublic] = useState(false);
   const [selected, setSelected] = useState<HistoryEntry | null>(null);
+  const [imageApiKeySettingsOpen, setImageApiKeySettingsOpen] = useState(false);
   const [composerDocked, setComposerDocked] = useState(false);
   const [composerExpanded, setComposerExpanded] = useState(false);
-  const [visibleTemplateCount, setVisibleTemplateCount] = useState(DISCOVER_INITIAL_TEMPLATE_COUNT);
   const composerHasContent = prompt.trim().length > 0 || attachments.length > 0;
   const composerIsExpanded = composerDocked && (composerExpanded || composerHasContent);
-  const composerMorphDuration = composerIsExpanded ? 0.38 : composerDocked ? 0.42 : 0.32;
+  const composerPresentation = composerDocked ? 'dock' : 'hero';
   const galleryEntries = useMemo(
-    () => [...publicGallery.entries, ...TODAY_CREATIONS.slice(0, visibleTemplateCount)],
-    [publicGallery.entries, visibleTemplateCount],
+    () => [...publicGalleryEntries, ...TODAY_CREATIONS],
+    [publicGalleryEntries],
   );
   const galleryImages = useMemo<GalleryImage[]>(
     () =>
@@ -173,9 +181,6 @@ export function LandingView() {
       })),
     [galleryEntries],
   );
-  const hasLocalGalleryEntries = visibleTemplateCount < TODAY_CREATIONS.length;
-  const hasMoreGalleryEntries = hasLocalGalleryEntries || publicGallery.hasMore;
-
   useEffect(() => {
     const savedScroll = Number(sessionStorage.getItem(LANDING_SCROLL_KEY));
     const shouldRestoreScroll = sessionStorage.getItem(LANDING_SCROLL_RESTORE_KEY) === 'true';
@@ -224,6 +229,13 @@ export function LandingView() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!publicGalleryHasMore || publicGalleryIsHydrating || publicGalleryError !== null) {
+      return;
+    }
+    void loadMorePublicGallery();
+  }, [loadMorePublicGallery, publicGalleryError, publicGalleryHasMore, publicGalleryIsHydrating]);
+
   const copyPrompt = async (entry: HistoryEntry): Promise<void> => {
     try {
       await navigator.clipboard.writeText(entry.record.prompt);
@@ -233,17 +245,26 @@ export function LandingView() {
     }
   };
   const accountName = user?.username ?? user?.name ?? '账户';
-  const quotaPending = authLoading || (isAuthenticated && quotaLoading);
-  const quotaLabel = quotaPending
-    ? '额度同步中'
-    : isAuthenticated
-      ? `额度 ${quota?.remaining ?? '—'}/${quota?.total ?? '—'}`
-      : '登录查额度';
-  const quotaAriaLabel = quotaPending
-    ? '生成额度同步中'
-    : isAuthenticated
-      ? `剩余额度 ${quota?.remaining ?? '未知'}，总额度 ${quota?.total ?? '未知'}`
-      : '登录后查看生成额度';
+  const providerPending = authLoading || (isAuthenticated && imageApiKey.isLoading);
+  const quotaPending = isAuthenticated && quotaLoading;
+  const quotaLabel = providerPending
+    ? '调用方式同步中'
+    : imageApiKey.status?.configured === true
+      ? '个人 Key'
+      : quotaPending
+        ? '额度同步中'
+        : isAuthenticated
+          ? `额度 ${quota?.remaining ?? '—'}/${quota?.total ?? '—'}`
+          : '登录查额度';
+  const quotaAriaLabel = providerPending
+    ? '生图调用方式同步中'
+    : imageApiKey.status?.configured === true
+      ? '当前使用个人 API Key'
+      : quotaPending
+        ? '生成额度同步中'
+        : isAuthenticated
+          ? `剩余额度 ${quota?.remaining ?? '未知'}，总额度 ${quota?.total ?? '未知'}`
+          : '登录后查看生成额度';
   const updateAttachments = (next: AgentChatAttachment[]): void => {
     if (next.length > MAX_REFERENCE_IMAGES) {
       notify(
@@ -302,6 +323,7 @@ export function LandingView() {
         ) : null}
         <div className="landing-hero__overlay" aria-hidden="true" />
         <LandingSidebar
+          accountImage={user?.image}
           accountName={accountName}
           brandLabel="Nebulens"
           creditsRemaining={quota?.remaining ?? '—'}
@@ -310,22 +332,32 @@ export function LandingView() {
           checkedInToday={quota?.checkedInToday ?? false}
           dailyCheckInReward={quota?.dailyCheckInReward ?? 5}
           isAuthenticated={isAuthenticated}
+          imageApiKeyConfigured={imageApiKey.status?.configured === true}
           items={getAppNavigation(isAdmin)}
           logoSrc="/brand/logo.png"
           onCheckIn={checkIn}
           onLogin={openAuthModal}
+          onOpenImageApiKeySettings={() => setImageApiKeySettingsOpen(true)}
           onNotify={notify}
         />
         <LandingAccountActions
+          accountImage={user?.image}
           accountName={accountName}
           checkedInToday={quota?.checkedInToday ?? false}
           creditsRemaining={quota?.remaining ?? '—'}
           dailyCheckInReward={quota?.dailyCheckInReward ?? 5}
           isAuthenticated={isAuthenticated}
+          imageApiKeyConfigured={imageApiKey.status?.configured === true}
+          imageApiKeySuffix={imageApiKey.status?.keySuffix}
           onCheckIn={checkIn}
           onLogin={openAuthModal}
           onLogout={logout}
+          onOpenImageApiKeySettings={() => setImageApiKeySettingsOpen(true)}
           onNotify={notify}
+        />
+        <ImageApiKeySettingsDialog
+          open={imageApiKeySettingsOpen}
+          onClose={() => setImageApiKeySettingsOpen(false)}
         />
         <div className="landing-hero__content">
           <h1 id="landing-title" aria-label="Turn your idea into images">
@@ -335,19 +367,11 @@ export function LandingView() {
             </em>
           </h1>
           <p>用 GPT-IMAGE-2 将你的创意变为精美图片，只需描述你脑海中的画面。</p>
-          <motion.div
+          <div
             ref={composerAnchorRef}
             className={`landing-composer-anchor${composerDocked ? ' is-docked' : ''}${composerIsExpanded ? ' is-expanded' : ''}`}
             data-docked={composerDocked}
             data-expanded={composerIsExpanded}
-            layout={!reducedMotion}
-            layoutDependency={`${composerDocked}:${composerIsExpanded}`}
-            transition={{
-              layout: {
-                duration: composerMorphDuration,
-                ease: LANDING_COMPOSER_MORPH_EASE,
-              },
-            }}
             onPointerDownCapture={(event) => {
               const target = event.target as HTMLElement;
               if (composerDocked && target.closest('.agent-chat-input__textarea')) {
@@ -370,48 +394,91 @@ export function LandingView() {
               }
             }}
           >
-            <div className="landing-composer-content">
-              <AgentChatInput
-                value={prompt}
-                onValueChange={updatePrompt}
-                onSubmit={({ text, attachments: selectedAttachments }) =>
-                  submitPrompt(text, selectedAttachments)
+            <AnimatePresence initial={false} mode="wait">
+              <motion.div
+                key={composerPresentation}
+                className={`landing-composer-presentation landing-composer-${composerPresentation}${composerIsExpanded ? ' is-expanded' : ''}`}
+                data-composer-presentation={composerPresentation}
+                initial={
+                  reducedMotion
+                    ? false
+                    : composerDocked
+                      ? { opacity: 0, clipPath: LANDING_COMPOSER_CLOSED_CLIP }
+                      : { opacity: 0 }
                 }
-                skills={[]}
-                models={[]}
-                defaultModel="gpt-image-2"
-                agents={[]}
-                reasoningLevels={[]}
-                speedModes={[]}
-                streamingPlaceholders={IMAGE_PROMPT_EXAMPLES}
-                placeholder="描述你想生成的画面..."
-                ariaLabel="首页创作提示词"
-                submitLabel="带着提示词开始创作"
-                submitContent={<GenerationSubmitCost count={count} />}
-                minRows={1}
-                maxRows={4}
-                allowFileUpload
-                attachments={attachments}
-                onAttachmentsChange={updateAttachments}
-                acceptedFileTypes="image/png,image/jpeg,image/webp"
-                toolbarContent={
-                  <LandingGenerationControls
-                    aspect={aspect}
-                    count={count}
-                    isPublic={isPublic}
-                    quotaLabel={quotaLabel}
-                    quotaAriaLabel={quotaAriaLabel}
-                    quotaIsAction={!authLoading && !isAuthenticated}
-                    onAspectChange={setAspect}
-                    onCountChange={setCount}
-                    onPublicChange={setIsPublic}
-                    onQuotaClick={openAuthModal}
+                animate={
+                  reducedMotion
+                    ? { opacity: 1 }
+                    : composerDocked
+                      ? {
+                          opacity: 1,
+                          clipPath: LANDING_COMPOSER_OPEN_CLIP,
+                          transition: { duration: 0.28, ease: LANDING_COMPOSER_TRANSITION_EASE },
+                        }
+                      : {
+                          opacity: 1,
+                          transition: { duration: 0.18, ease: LANDING_COMPOSER_TRANSITION_EASE },
+                        }
+                }
+                exit={
+                  reducedMotion
+                    ? { opacity: 0, transition: { duration: 0 } }
+                    : composerDocked
+                      ? {
+                          opacity: 0,
+                          clipPath: LANDING_COMPOSER_CLOSED_CLIP,
+                          transition: { duration: 0.18, ease: LANDING_COMPOSER_TRANSITION_EASE },
+                        }
+                      : {
+                          opacity: 0,
+                          transition: { duration: 0.14, ease: LANDING_COMPOSER_TRANSITION_EASE },
+                        }
+                }
+              >
+                <div className="landing-composer-content">
+                  <AgentChatInput
+                    value={prompt}
+                    onValueChange={updatePrompt}
+                    onSubmit={({ text, attachments: selectedAttachments }) =>
+                      submitPrompt(text, selectedAttachments)
+                    }
+                    skills={[]}
+                    models={[]}
+                    defaultModel="gpt-image-2"
+                    agents={[]}
+                    reasoningLevels={[]}
+                    speedModes={[]}
+                    streamingPlaceholders={IMAGE_PROMPT_EXAMPLES}
+                    placeholder="描述你想生成的画面..."
+                    ariaLabel="首页创作提示词"
+                    submitLabel="带着提示词开始创作"
+                    submitContent={<GenerationSubmitCost count={count} />}
+                    minRows={1}
+                    maxRows={4}
+                    allowFileUpload
+                    attachments={attachments}
+                    onAttachmentsChange={updateAttachments}
+                    acceptedFileTypes="image/png,image/jpeg,image/webp"
+                    toolbarContent={
+                      <LandingGenerationControls
+                        aspect={aspect}
+                        count={count}
+                        isPublic={isPublic}
+                        quotaLabel={quotaLabel}
+                        quotaAriaLabel={quotaAriaLabel}
+                        quotaIsAction={!authLoading && !isAuthenticated}
+                        onAspectChange={setAspect}
+                        onCountChange={setCount}
+                        onPublicChange={setIsPublic}
+                        onQuotaClick={openAuthModal}
+                      />
+                    }
+                    className="landing-composer"
                   />
-                }
-                className="landing-composer"
-              />
-            </div>
-          </motion.div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </section>
       <ImageGalleryVertical
@@ -426,26 +493,6 @@ export function LandingView() {
           if (entry) setSelected(entry);
         }}
       />
-      {hasMoreGalleryEntries ? (
-        <div className="landing-gallery-pagination">
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={!hasLocalGalleryEntries && publicGallery.isHydrating}
-            onClick={() => {
-              if (hasLocalGalleryEntries) {
-                setVisibleTemplateCount((current) =>
-                  Math.min(current + DISCOVER_TEMPLATE_BATCH_SIZE, TODAY_CREATIONS.length),
-                );
-                return;
-              }
-              void publicGallery.loadMore();
-            }}
-          >
-            {!hasLocalGalleryEntries && publicGallery.isHydrating ? '加载中' : '加载更多'}
-          </Button>
-        </div>
-      ) : null}
       <ImageDetailModal
         entry={selected}
         onClose={() => setSelected(null)}

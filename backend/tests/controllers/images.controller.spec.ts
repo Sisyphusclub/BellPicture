@@ -2,6 +2,7 @@ import { Buffer } from 'node:buffer';
 import { randomUUID } from 'node:crypto';
 import { stat } from 'node:fs/promises';
 
+import { eq } from 'drizzle-orm';
 import type { RequestHandler } from 'express';
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
@@ -11,6 +12,7 @@ import { db } from '../../src/db/drizzle.js';
 import { imageRecords, user, userQuota } from '../../src/db/schema.js';
 import { AppError } from '../../src/errors/AppError.js';
 import type { ImageGenerationProvider } from '../../src/services/providers/ImageGenerationProvider.js';
+import { createUserImageApiKeyService } from '../../src/services/userImageApiKey.service.js';
 import { saveOutput } from '../../src/storage/localStorage.js';
 import {
   aspectSizeForResolution,
@@ -58,6 +60,17 @@ function createDbUser(input: { userId?: string; isAdmin?: boolean } = {}): strin
       target: user.id,
       set: { isAdmin: input.isAdmin ?? false, updatedAt: now },
     })
+    .run();
+  db.insert(userQuota)
+    .values({
+      userId,
+      usedToday: 0,
+      quotaDate: productDateKey(),
+      dailyTotal: 20,
+      permanentTotal: 20,
+      permanentUsed: 0,
+    })
+    .onConflictDoNothing({ target: userQuota.userId })
     .run();
   return userId;
 }
@@ -175,6 +188,67 @@ describe('POST /api/images/quota/check-in', () => {
 });
 
 describe('POST /api/images/generate', () => {
+  it('uses a saved user credential without consuming site quota', async () => {
+    const { provider } = fakeProvider();
+    const userId = createDbUser({ userId: `personal-key-${randomUUID()}` });
+    db.update(userQuota)
+      .set({ permanentTotal: 0, permanentUsed: 0, dailyTotal: 0, usedToday: 0 })
+      .where(eq(userQuota.userId, userId))
+      .run();
+    const userImageApiKeys = createUserImageApiKeyService();
+    userImageApiKeys.save(userId, 'sk-personal-generation-9999');
+    const app = createApp({
+      provider,
+      authMiddleware: stubAuth(userId),
+      userImageApiKeys,
+      demoGenerationDelayMs: 0,
+    });
+
+    const response = await request(app)
+      .post('/api/images/generate')
+      .send({ prompt: 'personal key generation' });
+
+    expect(response.status).toBe(200);
+    const call = (provider.generate as ReturnType<typeof vi.fn>).mock.calls[0]![0] as GenerateInput;
+    expect(call.providerCredential).toBe('sk-personal-generation-9999');
+    const quota = await request(app).get('/api/images/quota');
+    expect(quota.body.remaining).toBe(0);
+  });
+
+  it('does not consume site quota when personal-key generation fails', async () => {
+    const provider: ImageGenerationProvider = {
+      generate: vi.fn(async () => {
+        throw new AppError('PROVIDER_KEY_INVALID', 'rejected', 400);
+      }),
+    };
+    const userId = createDbUser({ userId: `personal-key-failure-${randomUUID()}` });
+    db.update(userQuota)
+      .set({ permanentTotal: 7, permanentUsed: 2, dailyTotal: 7, usedToday: 2 })
+      .where(eq(userQuota.userId, userId))
+      .run();
+    const userImageApiKeys = createUserImageApiKeyService();
+    userImageApiKeys.save(userId, 'sk-personal-failure-3333');
+    const app = createApp({
+      provider,
+      authMiddleware: stubAuth(userId),
+      userImageApiKeys,
+      demoGenerationDelayMs: 0,
+    });
+
+    const before = await request(app).get('/api/images/quota');
+    const response = await request(app)
+      .post('/api/images/generate')
+      .send({ prompt: 'personal key failure', count: 2 });
+    const after = await request(app).get('/api/images/quota');
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('PROVIDER_KEY_INVALID');
+    expect(after.body).toEqual(before.body);
+    expect(provider.generate).toHaveBeenCalledWith(
+      expect.objectContaining({ providerCredential: 'sk-personal-failure-3333' }),
+    );
+  });
+
   it('returns 500 and removes generated files when history persistence fails', async () => {
     const userId = createDbUser({ userId: `persist-failure-${randomUUID()}` });
     const saved = await saveOutput(Buffer.concat([PNG_PREFIX, Buffer.alloc(32)]), 'png');
@@ -751,7 +825,10 @@ describe('POST /api/images/generate', () => {
     const app = buildApp(provider, stubAuth(userId));
     db.insert(userQuota)
       .values({ userId, usedToday: 0, quotaDate: productDateKey(), dailyTotal: 1 })
-      .onConflictDoUpdate({ target: userQuota.userId, set: { usedToday: 0, dailyTotal: 1 } })
+      .onConflictDoUpdate({
+        target: userQuota.userId,
+        set: { usedToday: 0, dailyTotal: 1, permanentTotal: 1, permanentUsed: 0 },
+      })
       .run();
 
     const firstPromise = request(app).post('/api/images/generate').send({ prompt: 'first' });
@@ -777,7 +854,10 @@ describe('POST /api/images/generate', () => {
     const app = buildApp(provider, stubAuth(userId));
     db.insert(userQuota)
       .values({ userId, usedToday: 0, quotaDate: productDateKey(), dailyTotal: 1 })
-      .onConflictDoUpdate({ target: userQuota.userId, set: { usedToday: 0, dailyTotal: 1 } })
+      .onConflictDoUpdate({
+        target: userQuota.userId,
+        set: { usedToday: 0, dailyTotal: 1, permanentTotal: 1, permanentUsed: 0 },
+      })
       .run();
 
     expect(

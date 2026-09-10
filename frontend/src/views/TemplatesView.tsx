@@ -1,5 +1,6 @@
 import { ArrowUpRight, Copy, ExternalLink, Heart, Search, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { type CSSProperties, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 
 import { useToast } from '@/components/common/ToastProvider';
@@ -234,85 +235,100 @@ export function TemplatesView() {
         </div>
       ) : null}
 
-      {selected ? (
-        <MorphicCardModal
-          id={`template-${selected.id}`}
-          open
-          onClose={closePreview}
-          className="template-detail-modal"
-          sharedLayout={false}
-        >
-          <section
-            className="template-detail"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="template-detail-title"
-          >
-            <div className="template-detail__media">
-              <img src={selected.imageUrl} alt={`${selected.title}示例`} />
-            </div>
-            <div className="template-detail__body">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="icon-button dialog__close"
-                aria-label="关闭模板预览"
-                onClick={closePreview}
+      {selected
+        ? createPortal(
+            <MorphicCardModal
+              id={`template-${selected.id}`}
+              open
+              onClose={closePreview}
+              className="template-detail-modal"
+              sharedLayout={false}
+            >
+              <section
+                className="template-detail"
+                style={
+                  { '--template-image-ratio': selected.width / selected.height } as CSSProperties
+                }
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="template-detail-title"
               >
-                <X aria-hidden="true" />
-              </Button>
-              <span>{selected.category}</span>
-              <h2 id="template-detail-title">{selected.title}</h2>
-              <p>{selected.prompt}</p>
-              <a
-                className="template-detail__source"
-                href={selected.sourceUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <ExternalLink aria-hidden="true" />
-                查看 GPT Image 2 Prompt Gallery 来源
-              </a>
-              <dl className="template-settings">
-                <div>
-                  <dt>比例</dt>
-                  <dd>{ASPECT_RATIO_LABELS[selected.settings.aspectRatio]}</dd>
-                </div>
-                <div>
-                  <dt>数量</dt>
-                  <dd>{selected.settings.count} 张</dd>
-                </div>
-                <div>
-                  <dt>清晰度</dt>
-                  <dd>{IMAGE_RESOLUTION_LABELS[selected.settings.resolution]}</dd>
-                </div>
-              </dl>
-              <div className="detail-actions">
-                <Button type="button" onClick={() => applyTemplate(selected)}>
-                  使用模板
-                  <ArrowUpRight aria-hidden="true" />
-                </Button>
-                <Button type="button" variant="secondary" onClick={() => void copyPrompt(selected)}>
-                  <Copy aria-hidden="true" />
-                  复制提示词
-                </Button>
                 <Button
                   type="button"
-                  variant="secondary"
-                  onClick={() => toggleFavorite(selected.id)}
+                  variant="ghost"
+                  size="icon"
+                  className="icon-button dialog__close"
+                  aria-label="关闭模板预览"
+                  onClick={closePreview}
                 >
-                  <Heart
-                    aria-hidden="true"
-                    fill={favoriteIds.includes(selected.id) ? 'currentColor' : 'none'}
-                  />
-                  {favoriteIds.includes(selected.id) ? '取消收藏' : '收藏'}
+                  <X aria-hidden="true" />
                 </Button>
-              </div>
-            </div>
-          </section>
-        </MorphicCardModal>
-      ) : null}
+                <div className="template-detail__media">
+                  <img
+                    src={selected.imageUrl}
+                    alt={`${selected.title}示例`}
+                    width={selected.width}
+                    height={selected.height}
+                  />
+                </div>
+                <div className="template-detail__body">
+                  <span>{selected.category}</span>
+                  <h2 id="template-detail-title">{selected.title}</h2>
+                  <p>{selected.prompt}</p>
+                  <a
+                    className="template-detail__source"
+                    href={selected.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <ExternalLink aria-hidden="true" />
+                    查看 GPT Image 2 Prompt Gallery 来源
+                  </a>
+                  <dl className="template-settings">
+                    <div>
+                      <dt>比例</dt>
+                      <dd>{ASPECT_RATIO_LABELS[selected.settings.aspectRatio]}</dd>
+                    </div>
+                    <div>
+                      <dt>数量</dt>
+                      <dd>{selected.settings.count} 张</dd>
+                    </div>
+                    <div>
+                      <dt>清晰度</dt>
+                      <dd>{IMAGE_RESOLUTION_LABELS[selected.settings.resolution]}</dd>
+                    </div>
+                  </dl>
+                  <div className="detail-actions">
+                    <Button type="button" onClick={() => applyTemplate(selected)}>
+                      使用模板
+                      <ArrowUpRight aria-hidden="true" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => void copyPrompt(selected)}
+                    >
+                      <Copy aria-hidden="true" />
+                      复制提示词
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => toggleFavorite(selected.id)}
+                    >
+                      <Heart
+                        aria-hidden="true"
+                        fill={favoriteIds.includes(selected.id) ? 'currentColor' : 'none'}
+                      />
+                      {favoriteIds.includes(selected.id) ? '取消收藏' : '收藏'}
+                    </Button>
+                  </div>
+                </div>
+              </section>
+            </MorphicCardModal>,
+            document.body,
+          )
+        : null}
     </section>
   );
 }

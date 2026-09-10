@@ -6,6 +6,7 @@ const root = mkdtempSync(path.join(tmpdir(), 'nebulens-test-'));
 
 process.env.IMAGE_API_BASE_URL ??= 'https://test.example.com';
 process.env.IMAGE_API_KEY ??= 'test-key';
+process.env.USER_API_KEY_ENCRYPTION_KEY ??= Buffer.alloc(32, 7).toString('base64');
 process.env.OPENAI_COMPAT_API_KEY ??= 'test-openai-compat-key';
 process.env.LOG_LEVEL ??= 'silent';
 process.env.UPLOAD_DIR ??= path.join(root, 'uploads');

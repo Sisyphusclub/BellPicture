@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import type { GroupedBatch } from '@/hooks/useImageHistory';
 import { ASPECT_RATIO_LABELS } from '@/types/image';
 import { formatClockTime } from '@/utils/format';
+import { getImageVisibilityLabel } from '@/utils/imageVisibility';
 
 type HistoryGroupKey = 'today' | 'yesterday' | 'week' | 'earlier';
 
@@ -342,8 +343,8 @@ export function GenerationHistoryFlyout({
                 {previewBatch.model} · {formatClockTime(previewBatch.createdAt)}
                 <br />
                 {ASPECT_RATIO_LABELS[previewBatch.settings.aspectRatio]} ·{' '}
-                {previewBatch.settings.count} 张 ·
-                {previewBatch.settings.isPublic ? ' 公开' : ' 私有'}
+                {previewBatch.settings.count} 张 ·{' '}
+                {getImageVisibilityLabel(previewBatch.settings.isPublic)}
               </span>
             </span>
             <ChevronRight aria-hidden="true" />

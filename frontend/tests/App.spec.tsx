@@ -22,11 +22,40 @@ const historyMocks = vi.hoisted(() => ({
   batches: [] as unknown[],
 }));
 
-vi.mock('@/hooks/useAuth', () => ({
-  useAuth: () => ({
-    user: { id: 'admin', email: 'admin@example.com', username: 'admin', isAdmin: true },
+const authMocks = vi.hoisted(
+  (): {
+    user: {
+      id: string;
+      email: string;
+      username: string;
+      isAdmin: boolean;
+    } | null;
+    isAuthenticated: boolean;
+    isLoading: boolean;
+  } => ({
+    user: {
+      id: 'admin',
+      email: 'admin@example.com',
+      username: 'admin',
+      isAdmin: true,
+    },
     isAuthenticated: true,
     isLoading: false,
+  }),
+);
+
+const publicGalleryMocks = vi.hoisted(() => ({
+  hasMore: false,
+  isHydrating: false,
+  hydrateError: null as Error | null,
+  loadMore: vi.fn(),
+}));
+
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({
+    user: authMocks.user,
+    isAuthenticated: authMocks.isAuthenticated,
+    isLoading: authMocks.isLoading,
     isAdmin: true,
     refreshProfile: vi.fn(),
     signInWithGoogle: vi.fn(),
@@ -46,6 +75,18 @@ vi.mock('@/hooks/useImageQuota', () => ({
   }),
 }));
 
+vi.mock('@/hooks/useImageApiKey', () => ({
+  useImageApiKey: () => ({
+    status: { configured: false },
+    isLoading: false,
+    isMutating: false,
+    error: null,
+    refresh: vi.fn(),
+    save: vi.fn(),
+    remove: vi.fn(),
+  }),
+}));
+
 vi.mock('@/hooks/useImageGeneration', () => ({
   useImageGeneration: () => ({
     isLoading: false,
@@ -61,6 +102,7 @@ vi.mock('@/hooks/useImageHistory', () => ({
     records: [],
     entries: [],
     batches: historyMocks.batches,
+    isHydrated: true,
     isHydrating: false,
     hydrateError: null,
     refresh: vi.fn(),
@@ -75,15 +117,16 @@ vi.mock('@/hooks/useImageHistory', () => ({
 vi.mock('@/hooks/usePublicGallery', () => ({
   usePublicGallery: () => ({
     entries: [],
-    isHydrating: false,
-    hydrateError: null,
-    hasMore: false,
+    isHydrating: publicGalleryMocks.isHydrating,
+    hydrateError: publicGalleryMocks.hydrateError,
+    hasMore: publicGalleryMocks.hasMore,
     refresh: vi.fn(),
-    loadMore: vi.fn(),
+    loadMore: publicGalleryMocks.loadMore,
     add: vi.fn(),
     removeAsAdmin: vi.fn(),
   }),
   addPublicRecord: vi.fn(),
+  removePublicRecord: vi.fn(),
 }));
 
 vi.mock('@/hooks/useAdminUsers', () => ({
@@ -158,20 +201,36 @@ function mockHistoryBatch(batchId: string, prompt: string) {
 }
 
 function renderRoute(entry: TestRouteEntry) {
-  return render(
+  return render(<RouteFixture entry={entry} />);
+}
+
+function RouteFixture({ entry }: { entry: TestRouteEntry }) {
+  return (
     <MemoryRouter initialEntries={[entry]}>
       <LocationProbe />
       <ToastProvider>
         <App />
       </ToastProvider>
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
   resetGenerationSessionsForTests();
+  authMocks.user = {
+    id: 'admin',
+    email: 'admin@example.com',
+    username: 'admin',
+    isAdmin: true,
+  };
+  authMocks.isAuthenticated = true;
+  authMocks.isLoading = false;
   historyMocks.batches = [];
+  publicGalleryMocks.hasMore = false;
+  publicGalleryMocks.isHydrating = false;
+  publicGalleryMocks.hydrateError = null;
+  publicGalleryMocks.loadMore.mockResolvedValue(undefined);
   generation.generate.mockResolvedValue({
     batchId: 'landing-batch',
     aspectRatio: '16:9',
@@ -199,8 +258,7 @@ beforeEach(() => {
 });
 
 describe('React application routes', () => {
-  it('renders one progressive GPT Image 2 gallery and keeps the full library reachable', async () => {
-    const user = userEvent.setup();
+  it('renders the complete GPT Image 2 gallery without pagination', async () => {
     const { container } = renderRoute('/');
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Turn your idea into images' }),
@@ -227,17 +285,15 @@ describe('React application routes', () => {
       '.landing-creations [style*="--gallery-columns"]',
     );
     expect(desktopGallery?.style.getPropertyValue('--gallery-columns')).toBe('6');
-    expect(initialCreationCards).toHaveLength(30);
-    expect(initialCreationImages).toHaveLength(30);
+    expect(initialCreationCards).toHaveLength(169);
+    expect(initialCreationImages).toHaveLength(169);
     expect(container.querySelectorAll('.image-gallery-vertical__columns')).toHaveLength(1);
     expect(initialCreationCards[0]).toHaveAccessibleName(
       '查看图片：雾中的混凝土运动场与奔跑者，冷灰建筑、湿润空气与柔和晨光',
     );
     expect(animatedGalleryTracks).toHaveLength(0);
     expect(container.querySelector('.landing-creations style')).not.toBeInTheDocument();
-    while (screen.queryByRole('button', { name: '加载更多' })) {
-      await user.click(screen.getByRole('button', { name: '加载更多' }));
-    }
+    expect(screen.queryByRole('button', { name: '加载更多' })).not.toBeInTheDocument();
     const creationCards = container.querySelectorAll('.image-gallery-vertical__image-button');
     const creationImages = container.querySelectorAll(
       '.landing-creations .image-gallery-vertical__columns img',
@@ -271,7 +327,11 @@ describe('React application routes', () => {
     expect(landingAnchor).toBeInTheDocument();
     expect(landingComposers).toHaveLength(1);
     expect(landingAnchor?.querySelector('.landing-composer-layout')).not.toBeInTheDocument();
-    expect(landingAnchor?.querySelectorAll(':scope > .landing-composer-content')).toHaveLength(1);
+    expect(
+      landingAnchor?.querySelectorAll(
+        ':scope > .landing-composer-hero > .landing-composer-content',
+      ),
+    ).toHaveLength(1);
     expect(landingAnchor?.querySelector('.landing-liquidglass-target')).not.toBeInTheDocument();
     expect(landingAnchor?.querySelector('.landing-liquidglass-backdrop')).not.toBeInTheDocument();
     expect(landingAnchor?.querySelector('canvas')).not.toBeInTheDocument();
@@ -285,24 +345,41 @@ describe('React application routes', () => {
     expect(screen.queryByRole('button', { name: /选择模型和推理强度/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '选择首页画面尺寸' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: '生成张数' })).toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: '公开作品' })).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: '发布到发现页' })).not.toBeChecked();
     expect(screen.getByRole('status', { name: '剩余额度 16，总额度 20' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: '正在发生的想象' })).not.toBeInTheDocument();
+  });
+
+  it('automatically loads remaining public gallery pages without pagination', async () => {
+    publicGalleryMocks.hasMore = true;
+    renderRoute('/');
+
+    await screen.findByRole('textbox', { name: '首页创作提示词' });
+    await waitFor(() => expect(publicGalleryMocks.loadMore).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole('button', { name: '加载更多' })).not.toBeInTheDocument();
   });
 
   it('docks the landing composer while browsing the gallery and expands it on focus', async () => {
     const user = userEvent.setup();
     const { container } = renderRoute('/');
+    await screen.findByRole('textbox', { name: '首页创作提示词' });
     const anchor = container.querySelector<HTMLElement>('.landing-composer-anchor');
     expect(anchor).toHaveAttribute('data-docked', 'false');
     expect(anchor).toHaveAttribute('data-expanded', 'false');
 
-    vi.spyOn(window, 'scrollY', 'get').mockReturnValue(520);
+    const scrollY = vi.spyOn(window, 'scrollY', 'get').mockReturnValue(520);
     vi.spyOn(anchor!, 'getBoundingClientRect').mockReturnValue(new DOMRect(250, -220, 940, 137));
     void act(() => window.dispatchEvent(new Event('scroll')));
 
     await waitFor(() => expect(anchor).toHaveAttribute('data-docked', 'true'));
     expect(anchor).toHaveAttribute('data-expanded', 'false');
+    expect(anchor?.querySelector('.landing-composer-hero')).toBeInTheDocument();
+    expect(anchor?.querySelector('.landing-composer-dock')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(anchor?.querySelector('.landing-composer-dock')).toBeInTheDocument(),
+    );
+    expect(anchor?.querySelector('.landing-composer-hero')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('textbox', { name: '首页创作提示词' })).toHaveLength(1);
 
     const promptInput = screen.getByRole('textbox', { name: '首页创作提示词' });
     await user.click(promptInput);
@@ -318,6 +395,30 @@ describe('React application routes', () => {
     await user.type(promptInput, '冷白背景产品摄影');
     expect(promptInput).toHaveTextContent('冷白背景产品摄影');
     expect(anchor).toHaveAttribute('data-expanded', 'true');
+
+    await user.click(screen.getByRole('button', { name: '添加参考图或技能' }));
+    await user.click(screen.getByRole('menuitem', { name: '添加参考图' }));
+    const fileInput = container.querySelector<HTMLInputElement>('input[type="file"]');
+    await user.upload(
+      fileInput!,
+      new File(['transition-reference'], 'transition-reference.png', { type: 'image/png' }),
+    );
+    expect(screen.getByText('transition-reference.png')).toBeInTheDocument();
+
+    scrollY.mockReturnValue(80);
+    void act(() => window.dispatchEvent(new Event('scroll')));
+    await waitFor(() => expect(anchor).toHaveAttribute('data-docked', 'false'));
+    expect(anchor?.querySelector('.landing-composer-dock')).toBeInTheDocument();
+    expect(anchor?.querySelector('.landing-composer-hero')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(anchor?.querySelector('.landing-composer-hero')).toBeInTheDocument(),
+    );
+    expect(anchor?.querySelector('.landing-composer-dock')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('textbox', { name: '首页创作提示词' })).toHaveLength(1);
+    expect(screen.getByRole('textbox', { name: '首页创作提示词' })).toHaveTextContent(
+      '冷白背景产品摄影',
+    );
+    expect(screen.getByText('transition-reference.png')).toBeInTheDocument();
   });
 
   it('keeps dock focus and collapse behavior with reduced motion enabled', async () => {
@@ -333,12 +434,16 @@ describe('React application routes', () => {
     }));
     const user = userEvent.setup();
     const { container } = renderRoute('/');
+    await screen.findByRole('textbox', { name: '首页创作提示词' });
     const anchor = container.querySelector<HTMLElement>('.landing-composer-anchor');
 
     vi.spyOn(window, 'scrollY', 'get').mockReturnValue(520);
     vi.spyOn(anchor!, 'getBoundingClientRect').mockReturnValue(new DOMRect(250, -220, 940, 137));
     void act(() => window.dispatchEvent(new Event('scroll')));
     await waitFor(() => expect(anchor).toHaveAttribute('data-docked', 'true'));
+    await waitFor(() =>
+      expect(anchor?.querySelector('.landing-composer-dock')).toBeInTheDocument(),
+    );
 
     const promptInput = screen.getByRole('textbox', { name: '首页创作提示词' });
     await user.click(promptInput);
@@ -454,7 +559,7 @@ describe('React application routes', () => {
     await user.click(screen.getByRole('button', { name: '选择首页画面尺寸' }));
     await user.click(screen.getByRole('menuitemradio', { name: /16:9/ }));
     await user.click(screen.getByRole('button', { name: '增加生成张数' }));
-    await user.click(screen.getByRole('switch', { name: '公开作品' }));
+    await user.click(screen.getByRole('switch', { name: '发布到发现页' }));
     await user.click(screen.getByRole('button', { name: '带着提示词开始创作' }));
 
     expect(await screen.findByRole('region', { name: '图像生成工作区' })).toBeInTheDocument();
@@ -473,7 +578,7 @@ describe('React application routes', () => {
     );
     expect(screen.getByRole('button', { name: '选择画面比例' })).toHaveTextContent('16:9');
     expect(screen.getByRole('status', { name: '2 张' })).toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: '私有模式' })).not.toBeChecked();
+    expect(screen.getByRole('switch', { name: '发布到发现页' })).toBeChecked();
   });
 
   it('opens and closes the shadcn mobile sidebar', async () => {
@@ -495,29 +600,47 @@ describe('React application routes', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
   });
 
-  it('opens a vertical gallery image without entering a modal state loop', async () => {
+  it('opens discover images with square, landscape, and portrait detail framing', async () => {
     const user = userEvent.setup();
     const { container } = renderRoute('/');
-    const creationCard = container.querySelector<HTMLButtonElement>(
+    const creationCards = container.querySelectorAll<HTMLButtonElement>(
       '.image-gallery-vertical__image-button',
     );
+    expect(creationCards.length).toBeGreaterThanOrEqual(4);
 
-    expect(creationCard).not.toBeNull();
-    await user.click(creationCard!);
+    for (const [index, ratio, width, height] of [
+      [0, 1024 / 1536, '1024', '1536'],
+      [1, 1536 / 1024, '1536', '1024'],
+      [3, 1, '1024', '1024'],
+    ] as const) {
+      await user.click(creationCards[index]!);
 
-    const dialog = screen.getByRole('dialog', { name: '图片详情' });
-    expect(dialog).toBeInTheDocument();
-    expect(dialog.querySelector(':scope > .image-detail__close')).toBeInTheDocument();
-    expect(dialog.querySelector(':scope > .image-detail__media')).toBeInTheDocument();
-    expect(dialog.querySelector(':scope > .image-detail__body')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '关闭图片详情' })).toBeInTheDocument();
+      const dialog = screen.getByRole('dialog', { name: '图片详情' });
+      expect(dialog).toBeInTheDocument();
+      expect(dialog.querySelector(':scope > .image-detail__close')).toBeInTheDocument();
+      const media = dialog.querySelector<HTMLElement>(':scope > .image-detail__media');
+      expect(media).toBeInTheDocument();
+      expect(dialog).toHaveStyle(`--image-detail-image-ratio: ${ratio}`);
+      expect(media?.querySelector('img')).toHaveAttribute('width', width);
+      expect(media?.querySelector('img')).toHaveAttribute('height', height);
+      expect(dialog.querySelector(':scope > .image-detail__body')).toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: '关闭图片详情' }));
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog', { name: '图片详情' })).not.toBeInTheDocument();
+      });
+    }
   });
 
-  it('keeps the generation route and its operational controls', () => {
+  it('keeps the generation route and its operational controls', async () => {
     renderRoute('/generate');
-    const workspace = screen.getByRole('region', { name: '图像生成工作区' });
+    const workspace = await screen.findByRole(
+      'region',
+      { name: '图像生成工作区' },
+      { timeout: 5_000 },
+    );
     const generate = within(workspace);
-    expect(generate.getByLabelText('当前模型 gpt-image-2')).toHaveTextContent('gpt-image-2');
+    expect(generate.getByRole('button', { name: '选择模型' })).toHaveTextContent('gpt-image-2');
     expect(generate.getByLabelText('今日生成额度')).toBeInTheDocument();
     expect(generate.getByLabelText('选择画面比例')).toBeInTheDocument();
     expect(generate.getByRole('button', { name: /生成图片/ })).toBeInTheDocument();
@@ -629,6 +752,88 @@ describe('React application routes', () => {
     expect(screen.getByLabelText('当前路由')).toHaveTextContent(`/generate?session=${session.id}`);
   });
 
+  it('keeps the remembered generation session across browser tabs', async () => {
+    const session = createGenerationSession('跨标签页保留的会话');
+    attachGenerationBatch(session.id, 'cross-tab-batch', '跨标签页保留的会话');
+    rememberGenerationSession('admin', session.id);
+    window.sessionStorage.clear();
+    historyMocks.batches = [mockHistoryBatch('cross-tab-batch', '跨标签页保留的会话')];
+
+    renderRoute('/generate');
+
+    expect(
+      await screen.findByRole('button', { name: '查看图片：跨标签页保留的会话' }),
+    ).toBeVisible();
+    expect(screen.getByLabelText('当前路由')).toHaveTextContent(`/generate?session=${session.id}`);
+  });
+
+  it('migrates a legacy tab-scoped remembered session to persistent storage', async () => {
+    const session = createGenerationSession('旧版标签页会话');
+    attachGenerationBatch(session.id, 'legacy-tab-batch', '旧版标签页会话');
+    window.sessionStorage.setItem(
+      'nebulens-active-generation-session-by-user-v1',
+      JSON.stringify({ admin: session.id }),
+    );
+    historyMocks.batches = [mockHistoryBatch('legacy-tab-batch', '旧版标签页会话')];
+
+    renderRoute('/generate');
+
+    expect(await screen.findByRole('button', { name: '查看图片：旧版标签页会话' })).toBeVisible();
+    expect(
+      JSON.parse(
+        window.localStorage.getItem('nebulens-active-generation-session-by-user-v1') ?? '{}',
+      ),
+    ).toMatchObject({ admin: session.id });
+    expect(
+      window.sessionStorage.getItem('nebulens-active-generation-session-by-user-v1'),
+    ).toBeNull();
+  });
+
+  it('rebuilds a generation session from server history when browser indexes are missing', async () => {
+    historyMocks.batches = [mockHistoryBatch('server-history-batch', '服务端保留的历史')];
+
+    renderRoute('/generate');
+
+    expect(await screen.findByRole('button', { name: '查看图片：服务端保留的历史' })).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getByLabelText('当前路由').textContent).toMatch(/^\/generate\?session=/),
+    );
+    const stored = JSON.parse(
+      window.localStorage.getItem('nebulens-generation-sessions-v1') ?? '[]',
+    ) as Array<{ batchIds?: string[] }>;
+    expect(stored[0]?.batchIds).toEqual(['server-history-batch']);
+  });
+
+  it('restores server history after the same account logs out and back in', async () => {
+    const view = renderRoute('/generate');
+    expect(
+      await screen.findByRole('region', { name: '图像生成工作区' }, { timeout: 3000 }),
+    ).toBeVisible();
+
+    act(() => {
+      authMocks.user = null;
+      authMocks.isAuthenticated = false;
+    });
+    view.rerender(<RouteFixture entry="/generate" />);
+
+    act(() => {
+      authMocks.user = {
+        id: 'admin',
+        email: 'admin@example.com',
+        username: 'admin',
+        isAdmin: true,
+      };
+      authMocks.isAuthenticated = true;
+      historyMocks.batches = [mockHistoryBatch('relogin-batch', '重新登录后的历史')];
+    });
+    view.rerender(<RouteFixture entry="/generate" />);
+
+    expect(await screen.findByRole('button', { name: '查看图片：重新登录后的历史' })).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getByLabelText('当前路由').textContent).toMatch(/^\/generate\?session=/),
+    );
+  });
+
   it('does not replace a prompt handoff with a remembered session', () => {
     const session = createGenerationSession('旧会话');
     attachGenerationBatch(session.id, 'old-batch', '旧会话');
@@ -685,10 +890,10 @@ describe('React application routes', () => {
   });
 
   it('does not restore after the bare route has already been initialized', async () => {
-    historyMocks.batches = [mockHistoryBatch('late-batch', '另一标签页的会话')];
     renderRoute('/generate');
 
     act(() => {
+      historyMocks.batches = [mockHistoryBatch('late-batch', '另一标签页的会话')];
       const session = createGenerationSession('另一标签页的会话');
       attachGenerationBatch(session.id, 'late-batch', '另一标签页的会话');
       rememberGenerationSession('admin', session.id);
@@ -702,15 +907,16 @@ describe('React application routes', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('does not restore a session remembered by another account', () => {
+  it('recovers current history instead of a session remembered by another account', async () => {
     const session = createGenerationSession('账号 A 的会话');
     attachGenerationBatch(session.id, 'account-a-batch', '账号 A 的会话');
     rememberGenerationSession('account-a', session.id);
-    historyMocks.batches = [mockHistoryBatch('account-a-batch', '账号 A 的会话')];
+    historyMocks.batches = [mockHistoryBatch('admin-batch', '当前账号的历史')];
 
     renderRoute('/generate');
 
-    expect(screen.getByLabelText('当前路由')).toHaveTextContent(/^\/generate$/);
+    expect(await screen.findByRole('button', { name: '查看图片：当前账号的历史' })).toBeVisible();
+    expect(screen.getByLabelText('当前路由')).not.toHaveTextContent(session.id);
     expect(
       screen.queryByRole('button', { name: '查看图片：账号 A 的会话' }),
     ).not.toBeInTheDocument();
@@ -778,16 +984,28 @@ describe('React application routes', () => {
     await user.click(screen.getByRole('button', { name: '模板排序' }));
     await user.click(screen.getByRole('menuitemradio', { name: '精选排序' }));
 
-    await user.click(screen.getAllByRole('button', { name: /使用模板 / })[0]!);
+    await user.click(screen.getAllByRole('button', { name: /预览模板：/ })[0]!);
+    const preview = await screen.findByRole('dialog');
+    expect(screen.getByRole('region', { name: '创作模板' })).not.toContainElement(preview);
+    const previewImage = within(preview).getByRole('img');
+    const width = Number(previewImage.getAttribute('width'));
+    const height = Number(previewImage.getAttribute('height'));
+    expect(width).toBeGreaterThan(0);
+    expect(height).toBeGreaterThan(0);
+    expect(preview.style.getPropertyValue('--template-image-ratio')).toBe(String(width / height));
+    await waitFor(() =>
+      expect(within(preview).getByRole('button', { name: '关闭模板预览' })).toHaveFocus(),
+    );
+    await user.click(within(preview).getByRole('button', { name: '使用模板' }));
     expect(screen.getByRole('region', { name: '图像生成工作区' })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: '图像提示词' })).toHaveTextContent(
       'Generate a high-end photorealistic render of a future-facing biotech laboratory',
     );
     expect(screen.getByRole('button', { name: '选择画面比例' })).toHaveTextContent('16:9');
     expect(screen.getByRole('status', { name: '1 张' })).toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: '私有模式' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: '发布到发现页' })).not.toBeChecked();
     expect(generation.generate).not.toHaveBeenCalled();
-  });
+  }, 10_000);
 
   it('keeps history and admin routes', async () => {
     const history = renderRoute('/history');

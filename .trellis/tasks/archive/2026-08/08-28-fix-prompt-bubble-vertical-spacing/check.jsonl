@@ -1,2 +1,0 @@
-{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Verify the prompt bubble keeps semantic ownership, compact geometry, and edit behavior."}
-{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Verify desktop/mobile layout, browser behavior, accessibility, tests, and build quality gates."}

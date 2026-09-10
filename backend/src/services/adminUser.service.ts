@@ -1,7 +1,6 @@
 import { and, asc, eq, gt, sql } from 'drizzle-orm';
 
 import { auth } from '../config/auth.js';
-import { env } from '../config/env.js';
 import { db } from '../db/drizzle.js';
 import { quotaGrants, user, userQuota } from '../db/schema.js';
 import { AppError } from '../errors/AppError.js';
@@ -82,7 +81,7 @@ function quotaState(row: {
   permanentUsed: number | null;
 }): EffectiveQuotaState {
   const today = productDateKey();
-  const permanentTotal = row.permanentTotal ?? row.dailyTotal ?? env.DAILY_USER_QUOTA;
+  const permanentTotal = row.permanentTotal ?? row.dailyTotal ?? 0;
   const useLegacyCounter =
     row.permanentUsed === null ||
     row.permanentUsed === undefined ||

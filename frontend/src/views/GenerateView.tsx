@@ -4,9 +4,9 @@ import {
   CircleAlert,
   Copy,
   Download,
+  EyeOff,
   Globe2,
   ImagePlus,
-  Lock,
   Minus,
   Pencil,
   Plus,
@@ -26,6 +26,7 @@ import { ImageGenerationPlaceholder } from '@/components/generation/ImageGenerat
 import { ImageDetailModal } from '@/components/gallery/ImageDetailModal';
 import { LandingAccountActions } from '@/components/landing/LandingAccountActions';
 import { LandingSidebar } from '@/components/landing/LandingSidebar';
+import { ImageApiKeySettingsDialog } from '@/components/settings/ImageApiKeySettingsDialog';
 import { AgentChatInput } from '@/components/premium/agent-chat-input/agent-chat-input';
 import type { AgentChatAttachment } from '@/components/premium/agent-chat-input/types';
 import { MorphicCard } from '@/components/premium/morphic-card-modal';
@@ -52,10 +53,11 @@ import {
   type PersistedGenerationTask,
 } from '@/hooks/useGenerationSessions';
 import { useImageGeneration } from '@/hooks/useImageGeneration';
+import { useImageApiKey } from '@/hooks/useImageApiKey';
 import { useImageHistory } from '@/hooks/useImageHistory';
 import type { GroupedBatch } from '@/hooks/useImageHistory';
 import { useImageQuota } from '@/hooks/useImageQuota';
-import { addPublicRecord } from '@/hooks/usePublicGallery';
+import { addPublicRecord, removePublicRecord } from '@/hooks/usePublicGallery';
 import { fetchOutputBlob } from '@/services/api/imagesApi';
 import {
   ASPECT_RATIOS,
@@ -71,6 +73,11 @@ import {
   type HistoryEntry,
 } from '@/types/image';
 import { downloadUrl } from '@/utils/download';
+import {
+  DISCOVERY_PUBLISH_LABEL,
+  getImageVisibilityActionLabel,
+  getImageVisibilityUpdateMessage,
+} from '@/utils/imageVisibility';
 
 interface FeedItem {
   id: string;
@@ -131,6 +138,19 @@ const ASPECT_MENU_OPTIONS = ASPECT_RATIOS.map((value) => ({
   value,
   label: ASPECT_RATIO_LABELS[value],
 }));
+
+const IMAGE_MODEL_OPTIONS = [
+  { value: 'gpt-image-2', label: 'gpt-image-2' },
+  { value: 'gpt-image-2.5-flare', label: 'gpt-image-2.5-flare' },
+  { value: 'gpt-image-2.5-sunburst', label: 'gpt-image-2.5-sunburst' },
+] as const;
+const AGENT_IMAGE_MODELS = IMAGE_MODEL_OPTIONS.map(({ value, label }) => ({ id: value, label }));
+const DEFAULT_IMAGE_MODEL = IMAGE_MODEL_OPTIONS[0].value;
+type ImageModel = (typeof IMAGE_MODEL_OPTIONS)[number]['value'];
+
+function normalizeImageModel(value: string): ImageModel {
+  return IMAGE_MODEL_OPTIONS.find((option) => option.value === value)?.value ?? DEFAULT_IMAGE_MODEL;
+}
 
 function isAspectRatio(value: string | null): value is AspectRatio {
   return value !== null && (ASPECT_RATIOS as readonly string[]).includes(value);
@@ -249,25 +269,27 @@ function SessionResultPreview({ entry, onOpen }: SessionResultPreviewProps) {
   );
 }
 
-interface PrivateModeToggleProps {
+interface DiscoveryPublishToggleProps {
   isPublic: boolean;
   disabled: boolean;
   onPublicChange: (value: boolean) => void;
 }
 
-function PrivateModeToggle({ isPublic, disabled, onPublicChange }: PrivateModeToggleProps) {
-  const isPrivate = !isPublic;
-
+function DiscoveryPublishToggle({
+  isPublic,
+  disabled,
+  onPublicChange,
+}: DiscoveryPublishToggleProps) {
   return (
-    <label className="studio-private-toggle" data-mode={isPrivate ? 'private' : 'public'}>
+    <label className="studio-private-toggle" data-mode={isPublic ? 'public' : 'private'}>
       <Switch
-        aria-label="私有模式"
-        checked={!isPublic}
+        aria-label={DISCOVERY_PUBLISH_LABEL}
+        checked={isPublic}
         disabled={disabled}
-        onCheckedChange={(checked) => onPublicChange(!checked)}
+        onCheckedChange={onPublicChange}
       />
       <span className="studio-private-toggle__track" aria-hidden="true" />
-      <span>{isPrivate ? '私有' : '公开'}</span>
+      <span>{DISCOVERY_PUBLISH_LABEL}</span>
     </label>
   );
 }
@@ -430,12 +452,14 @@ export function GenerateView() {
   const history = useImageHistory();
   const { sessions, create: createSession } = useGenerationSessions();
   const { quota, isLoading: quotaLoading, refresh: refreshQuota, checkIn } = useImageQuota();
+  const imageApiKey = useImageApiKey();
   const upload = useFileUpload();
   const { clear: clearUpload, selectFiles: selectUploadFiles } = upload;
   const generation = useImageGeneration();
   const autoGenerationHandled = useRef(false);
   const bareRouteRestoreHandled = useRef(false);
   const [prompt, setPrompt] = useState(searchParams.get('prompt') ?? '');
+  const [model, setModel] = useState<ImageModel>(DEFAULT_IMAGE_MODEL);
   const [count, setCount] = useState(() => readCount(searchParams));
   const [aspect, setAspect] = useState<AspectRatio>(() => {
     const value = searchParams.get('aspect');
@@ -460,6 +484,7 @@ export function GenerateView() {
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [mutatingId, setMutatingId] = useState<string | null>(null);
+  const [imageApiKeySettingsOpen, setImageApiKeySettingsOpen] = useState(false);
   const activeSessionId = searchParams.get('session');
   const previousSessionId = useRef<string | null>(activeSessionId);
   const accountName = user?.username ?? user?.name ?? '账户';
@@ -527,7 +552,7 @@ export function GenerateView() {
         createdAt: session.updatedAt,
         settings: {
           prompt: searchParams.get('prompt')?.trim() || session.title,
-          model: 'gpt-image-2',
+          model: DEFAULT_IMAGE_MODEL,
           count: readCount(searchParams),
           aspectRatio: isAspectRatio(queryAspect) ? queryAspect : DEFAULT_ASPECT_RATIO,
           resolution: DEFAULT_IMAGE_RESOLUTION,
@@ -686,7 +711,7 @@ export function GenerateView() {
 
   const currentSettings = (promptValue = prompt): GenerationSettingsSnapshot => ({
     prompt: promptValue.trim(),
-    model: 'gpt-image-2',
+    model,
     count,
     aspectRatio: aspect,
     resolution: DEFAULT_IMAGE_RESOLUTION,
@@ -899,29 +924,60 @@ export function GenerateView() {
   ]);
 
   useEffect(() => {
-    if (authLoading || bareRouteRestoreHandled.current) return;
-    bareRouteRestoreHandled.current = true;
+    if (authLoading) return;
+    if (currentUserId === null) {
+      bareRouteRestoreHandled.current = false;
+      return;
+    }
+    if (bareRouteRestoreHandled.current) return;
     if (
       activeSessionId ||
       searchParams.toString() !== '' ||
-      requestsAutoGeneration(location.state) ||
-      currentUserId === null
+      requestsAutoGeneration(location.state)
     ) {
+      bareRouteRestoreHandled.current = true;
       return;
     }
+    if (!history.isHydrated) return;
+    bareRouteRestoreHandled.current = true;
 
     const rememberedSessionId = getRememberedGenerationSession(currentUserId);
-    if (!rememberedSessionId) return;
-    if (!sessions.some((session) => session.id === rememberedSessionId)) {
+    const historyBatchIds = new Set(history.batches.map((batch) => batch.batchId));
+    const rememberedSession = sessions.find((session) => session.id === rememberedSessionId);
+    const rememberedSessionIsRestorable = Boolean(
+      rememberedSession &&
+      (rememberedSession.transientTasks.length > 0 ||
+        rememberedSession.batchIds.some(
+          (batchId) => batchId.startsWith('pending-') || historyBatchIds.has(batchId),
+        )),
+    );
+    if (rememberedSessionId && !rememberedSessionIsRestorable) {
       forgetRememberedGenerationSession(currentUserId);
-      return;
     }
-    const nextSearch = new URLSearchParams({ session: rememberedSessionId });
+
+    let restoredSession = rememberedSessionIsRestorable ? rememberedSession : undefined;
+    restoredSession ??= sessions.find((session) =>
+      session.batchIds.some((batchId) => historyBatchIds.has(batchId)),
+    );
+    if (!restoredSession && history.batches.length > 0) {
+      const recoveredSession = createSession(history.batches[0]?.prompt);
+      restoredSession = recoveredSession;
+      [...history.batches].reverse().forEach((batch) => {
+        attachGenerationBatch(recoveredSession.id, batch.batchId, batch.prompt);
+      });
+    }
+    if (!restoredSession) return;
+
+    rememberGenerationSession(currentUserId, restoredSession.id);
+    const nextSearch = new URLSearchParams({ session: restoredSession.id });
     void navigate(`/generate?${nextSearch.toString()}`, { replace: true });
   }, [
     activeSessionId,
     authLoading,
+    createSession,
     currentUserId,
+    history.batches,
+    history.isHydrated,
     location.state,
     navigate,
     searchParams,
@@ -958,6 +1014,7 @@ export function GenerateView() {
 
   const reuseSettings = (settings: GenerationSettingsSnapshot): void => {
     setPrompt(settings.prompt);
+    setModel(normalizeImageModel(settings.model));
     setCount(settings.count);
     setAspect(settings.aspectRatio);
     setIsPublic(settings.isPublic);
@@ -1035,7 +1092,8 @@ export function GenerateView() {
         })),
       );
       if (record.isPublic) addPublicRecord(record);
-      notify(record.isPublic ? '图片已设为公开。' : '图片已设为私有。');
+      else removePublicRecord(record.id);
+      notify(getImageVisibilityUpdateMessage(record.isPublic));
     } catch (error) {
       notify(error instanceof Error ? error.message : '可见性更新失败。', 'error');
     } finally {
@@ -1101,6 +1159,7 @@ export function GenerateView() {
       aria-label="图像生成工作区"
     >
       <LandingSidebar
+        accountImage={user?.image}
         accountName={accountName}
         brandLabel="Nebulens"
         creditsRemaining={quota?.remaining ?? '—'}
@@ -1109,22 +1168,32 @@ export function GenerateView() {
         checkedInToday={quota?.checkedInToday ?? false}
         dailyCheckInReward={quota?.dailyCheckInReward ?? 5}
         isAuthenticated={isAuthenticated}
+        imageApiKeyConfigured={imageApiKey.status?.configured === true}
         items={getAppNavigation(isAdmin)}
         logoSrc="/brand/logo.png"
         onCheckIn={checkIn}
         onLogin={openAuthModal}
+        onOpenImageApiKeySettings={() => setImageApiKeySettingsOpen(true)}
         onNotify={notify}
       />
       <LandingAccountActions
+        accountImage={user?.image}
         accountName={accountName}
         checkedInToday={quota?.checkedInToday ?? false}
         creditsRemaining={quota?.remaining ?? '—'}
         dailyCheckInReward={quota?.dailyCheckInReward ?? 5}
         isAuthenticated={isAuthenticated}
+        imageApiKeyConfigured={imageApiKey.status?.configured === true}
+        imageApiKeySuffix={imageApiKey.status?.keySuffix}
         onCheckIn={checkIn}
         onLogin={openAuthModal}
         onLogout={logout}
+        onOpenImageApiKeySettings={() => setImageApiKeySettingsOpen(true)}
         onNotify={notify}
+      />
+      <ImageApiKeySettingsDialog
+        open={imageApiKeySettingsOpen}
+        onClose={() => setImageApiKeySettingsOpen(false)}
       />
       <GenerationHistoryFlyout
         batches={generationHistoryBatches}
@@ -1193,8 +1262,8 @@ export function GenerateView() {
           disabled={authLoading}
           minRows={2}
           maxRows={7}
-          models={[{ id: 'gpt-image-2', label: 'gpt-image-2' }]}
-          model="gpt-image-2"
+          models={AGENT_IMAGE_MODELS}
+          model={model}
           reasoningLevels={[]}
           speedModes={[]}
           agents={[]}
@@ -1204,10 +1273,15 @@ export function GenerateView() {
           acceptedFileTypes="image/png,image/jpeg,image/webp"
           toolbarContent={
             <div className="studio-controls">
-              <span className="studio-model" aria-label="当前模型 gpt-image-2">
-                <ModelLogo modelId="gpt-image-2" className="studio-model__icon" />
-                <span>gpt-image-2</span>
-              </span>
+              <SelectMenu
+                label="选择模型"
+                value={model}
+                options={IMAGE_MODEL_OPTIONS}
+                disabled={generation.isLoading}
+                leadingIcon={<ModelLogo modelId={model} className="studio-model__icon" />}
+                className="studio-model-select"
+                onValueChange={setModel}
+              />
               <SelectMenu
                 label="选择画面比例"
                 value={aspect}
@@ -1239,7 +1313,7 @@ export function GenerateView() {
                   <Plus aria-hidden="true" />
                 </Button>
               </div>
-              <PrivateModeToggle
+              <DiscoveryPublishToggle
                 isPublic={isPublic}
                 disabled={generation.isLoading}
                 onPublicChange={setIsPublic}
@@ -1259,12 +1333,23 @@ export function GenerateView() {
                   />
                   {generation.isLoading ? generation.statusMessage : '准备生成'}
                 </span>
-                <span className="studio-toolbar-quota" aria-label="今日生成额度">
-                  {quotaLoading
-                    ? '额度：同步中'
-                    : isAuthenticated
-                      ? `额度：${quota?.remaining ?? '—'} / ${quota?.total ?? '—'}`
-                      : '额度：登录后查看'}
+                <span
+                  className="studio-toolbar-quota"
+                  aria-label={
+                    imageApiKey.status?.configured === true
+                      ? '当前使用个人 API Key'
+                      : '今日生成额度'
+                  }
+                >
+                  {imageApiKey.isLoading
+                    ? '调用：同步中'
+                    : imageApiKey.status?.configured === true
+                      ? `调用：个人 Key · ${imageApiKey.status.keySuffix ?? '已配置'}`
+                      : quotaLoading
+                        ? '额度：同步中'
+                        : isAuthenticated
+                          ? `额度：${quota?.remaining ?? '—'} / ${quota?.total ?? '—'}`
+                          : '额度：登录后查看'}
                 </span>
               </span>
             </div>
@@ -1376,19 +1461,19 @@ export function GenerateView() {
                             <Download aria-hidden="true" />
                           </Button>
                         </IconTooltip>
-                        <IconTooltip label={entry.record.isPublic ? '设为私有' : '设为公开'}>
+                        <IconTooltip label={getImageVisibilityActionLabel(entry.record.isPublic)}>
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            aria-label={entry.record.isPublic ? '设为私有' : '设为公开'}
+                            aria-label={getImageVisibilityActionLabel(entry.record.isPublic)}
                             disabled={mutatingId === entry.record.id}
                             onClick={() => void toggleVisibility(entry)}
                           >
                             {entry.record.isPublic ? (
-                              <Globe2 aria-hidden="true" />
+                              <EyeOff aria-hidden="true" />
                             ) : (
-                              <Lock aria-hidden="true" />
+                              <Globe2 aria-hidden="true" />
                             )}
                           </Button>
                         </IconTooltip>

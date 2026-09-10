@@ -61,6 +61,8 @@ IMAGE_API_BASE_URL=https://api.2api.example
 # 可选：管理员 2K/4K 专用上游，例如 Codex 图像通道。
 HIGH_RES_IMAGE_API_BASE_URL=
 IMAGE_API_KEY=replace-me
+# 用于加密用户自带 sub2api Key；执行 openssl rand -base64 32 生成。
+USER_API_KEY_ENCRYPTION_KEY=replace-with-a-base64-encoded-32-byte-key
 # 可选：管理员 2K/4K 专用上游密钥；留空则复用 IMAGE_API_KEY。
 HIGH_RES_IMAGE_API_KEY=
 OPENAI_COMPAT_API_KEY=replace-me-openai-compat
@@ -78,7 +80,7 @@ VITE_API_BASE_URL=
 TRUST_PROXY_HOPS=1
 ```
 
-如需启用 Google 登录，在 `.env` 中填写：
+如需启用 Google 登录，在 Google Cloud Console 创建“Web 应用”OAuth 客户端，并在 `.env` 中同时填写：
 
 ```env
 GOOGLE_CLIENT_ID=...
@@ -90,6 +92,16 @@ Google OAuth 回调地址配置为：
 ```text
 http://localhost:5173/api/auth/callback/google
 ```
+
+生产环境必须使用 HTTPS 域名，并将回调地址精确配置为：
+
+```text
+https://你的域名/api/auth/callback/google
+```
+
+Google 不接受公网 HTTP IP 作为 Web OAuth 回调地址。生产环境还需把
+`FRONTEND_ORIGIN`、`CORS_ORIGIN`、`BETTER_AUTH_URL` 统一设为上述 HTTPS origin；
+只填写一个 Google 凭据会让后端启动失败，两个都留空则安全禁用 Google 登录。
 
 ### 2. 启动服务
 
@@ -156,6 +168,8 @@ IMAGE_API_BASE_URL=https://api.2api.example
 # 可选：管理员 2K/4K 专用上游，例如 Codex 图像通道。
 HIGH_RES_IMAGE_API_BASE_URL=
 IMAGE_API_KEY=replace-me
+# 用于加密用户自带 sub2api Key；执行 openssl rand -base64 32 生成。
+USER_API_KEY_ENCRYPTION_KEY=replace-with-a-base64-encoded-32-byte-key
 # 可选：管理员 2K/4K 专用上游密钥；留空则复用 IMAGE_API_KEY。
 HIGH_RES_IMAGE_API_KEY=
 OPENAI_COMPAT_API_KEY=replace-me-openai-compat
@@ -184,7 +198,7 @@ http://localhost:3000/api/auth/callback/google
 SEED_DEFAULT_ADMIN=true
 ```
 
-开启后后端启动时会创建或提升默认管理员账号。生产环境不要使用弱默认凭据，请关闭该选项并使用安全账号策略。
+开启后后端启动时会创建或提升规范化用户名为 `blur` 的默认管理员账号。生产环境不要使用弱默认凭据，请关闭该选项并使用安全账号策略。
 
 ### 3. 启动后端
 
@@ -217,6 +231,7 @@ http://localhost:5173
 | `IMAGE_API_BASE_URL`          | 是   | 图像生成服务地址                                                                        |
 | `HIGH_RES_IMAGE_API_BASE_URL` | 否   | 管理员 2K/4K 专用图像生成服务地址；留空则复用 `IMAGE_API_BASE_URL`                      |
 | `IMAGE_API_KEY`               | 是   | 图像生成服务密钥                                                                        |
+| `USER_API_KEY_ENCRYPTION_KEY` | 是   | 32 字节 Base64 主密钥，用于 AES-256-GCM 加密用户自带的 sub2api Key                      |
 | `HIGH_RES_IMAGE_API_KEY`      | 否   | 管理员 2K/4K 专用图像生成服务密钥；留空则复用 `IMAGE_API_KEY`                           |
 | `OPENAI_COMPAT_API_KEY`       | 是   | OpenAI-compatible API 调用密钥                                                          |
 | `BETTER_AUTH_SECRET`          | 是   | Better Auth 会话密钥                                                                    |
@@ -225,8 +240,8 @@ http://localhost:5173
 | `IMAGE_API_TIMEOUT_MS`        | 否   | 图像生成请求超时时间，默认 `300000ms`（5 分钟）                                         |
 | `UPLOAD_MAX_BYTES`            | 否   | 参考图上传大小上限；Compose 会同时传给后端与前端代理，代理自动增加 1 MiB multipart 余量 |
 | `DAILY_USER_QUOTA`            | 否   | 默认用户永久生图额度（兼容旧环境变量名）                                                |
-| `GOOGLE_CLIENT_ID`            | 否   | Google OAuth Client ID                                                                  |
-| `GOOGLE_CLIENT_SECRET`        | 否   | Google OAuth Client Secret                                                              |
+| `GOOGLE_CLIENT_ID`            | 否   | Google Web OAuth Client ID；启用时必须和 Secret 同时填写                                |
+| `GOOGLE_CLIENT_SECRET`        | 否   | Google Web OAuth Client Secret；仅保存在服务端                                          |
 | `SEED_DEFAULT_ADMIN`          | 否   | 是否启用默认管理员种子                                                                  |
 
 ## 页面入口
@@ -240,18 +255,21 @@ http://localhost:5173
 
 ## API 入口
 
-| 方法     | 路径                         | 说明                         |
-| -------- | ---------------------------- | ---------------------------- |
-| `GET`    | `/api/health/live`           | 进程存活检查                 |
-| `GET`    | `/api/health/ready`          | SQLite 与存储就绪检查        |
-| `POST`   | `/api/images/generate`       | 应用内生图接口               |
-| `GET`    | `/api/history`               | 读取当前用户历史             |
-| `GET`    | `/api/auth/me`               | 读取当前用户资料和管理员状态 |
-| `GET`    | `/api/admin/users`           | 管理员查看用户列表           |
-| `POST`   | `/api/admin/users`           | 管理员创建用户               |
-| `PATCH`  | `/api/admin/users/:id/quota` | 管理员设置用户永久额度       |
-| `DELETE` | `/api/admin/users/:id`       | 管理员删除普通用户           |
-| `POST`   | `/v1/images/generations`     | OpenAI-compatible 生图接口   |
+| 方法     | 路径                          | 说明                         |
+| -------- | ----------------------------- | ---------------------------- |
+| `GET`    | `/api/health/live`            | 进程存活检查                 |
+| `GET`    | `/api/health/ready`           | SQLite 与存储就绪检查        |
+| `POST`   | `/api/images/generate`        | 应用内生图接口               |
+| `GET`    | `/api/settings/image-api-key` | 读取当前用户的 Key 配置状态  |
+| `PUT`    | `/api/settings/image-api-key` | 验证并保存当前用户的 Key     |
+| `DELETE` | `/api/settings/image-api-key` | 删除当前用户的 Key           |
+| `GET`    | `/api/history`                | 读取当前用户历史             |
+| `GET`    | `/api/auth/me`                | 读取当前用户资料和管理员状态 |
+| `GET`    | `/api/admin/users`            | 管理员查看用户列表           |
+| `POST`   | `/api/admin/users`            | 管理员创建用户               |
+| `PATCH`  | `/api/admin/users/:id/quota`  | 管理员设置用户永久额度       |
+| `DELETE` | `/api/admin/users/:id`        | 管理员删除普通用户           |
+| `POST`   | `/v1/images/generations`      | OpenAI-compatible 生图接口   |
 
 ## 存储说明
 
@@ -269,6 +287,7 @@ http://localhost:5173
 - 在负载均衡器、Caddy、Traefik 或云网关终止 TLS，并把 `FRONTEND_ORIGIN`、`CORS_ORIGIN`、`BETTER_AUTH_URL` 改为同一个 `https://` 公网域名。
 - 根据实际反向代理层数设置 `TRUST_PROXY_HOPS`，并在防火墙中拒绝外部直接访问后端。
 - 生产环境保持 `SEED_DEFAULT_ADMIN=false`，使用高强度且互不相同的 `BETTER_AUTH_SECRET`、`OPENAI_COMPAT_API_KEY` 和上游密钥。
+- `USER_API_KEY_ENCRYPTION_KEY` 必须持久保存且独立备份；丢失或直接替换后，已保存的用户 Key 将不能解密。轮换前应先完成密文迁移。
 - 备份前执行 SQLite checkpoint，再同时备份数据库卷与输出卷；恢复时必须把二者恢复到同一时间点。
 
 ```bash

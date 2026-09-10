@@ -28,6 +28,7 @@ interface AuthContextValue {
   isLoading: boolean;
   isAdmin: boolean;
   isGoogleEnabled: boolean;
+  isGoogleLoading: boolean;
   refreshProfile: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signInWithUsername: (credentials: Credentials) => Promise<void>;
@@ -130,6 +131,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const sessionUser = normalizeSessionUser(session.data?.user);
   const [profile, setProfile] = useState<AuthUserProfile | null>(null);
   const [isGoogleEnabled, setIsGoogleEnabled] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(true);
   const requestId = useRef(0);
   const isAuthenticated = sessionUser !== null;
 
@@ -137,10 +139,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
     let cancelled = false;
     void fetchAuthProviders()
       .then((providers) => {
-        if (!cancelled) setIsGoogleEnabled(providers.google);
+        if (!cancelled) {
+          setIsGoogleEnabled(providers.google);
+          setIsGoogleLoading(false);
+        }
       })
       .catch(() => {
-        if (!cancelled) setIsGoogleEnabled(false);
+        if (!cancelled) {
+          setIsGoogleEnabled(false);
+          setIsGoogleLoading(false);
+        }
       });
     return () => {
       cancelled = true;
@@ -248,6 +256,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isLoading: session.isPending,
       isAdmin: currentProfile?.isAdmin === true,
       isGoogleEnabled,
+      isGoogleLoading,
       refreshProfile,
       signInWithGoogle,
       signInWithUsername,
@@ -259,6 +268,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isAuthenticated,
       session.isPending,
       isGoogleEnabled,
+      isGoogleLoading,
       refreshProfile,
       signInWithGoogle,
       signInWithUsername,

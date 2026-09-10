@@ -1,17 +1,31 @@
 import { Buffer } from 'node:buffer';
 
-import type { Express } from 'express';
+import type { Express, NextFunction, Request, Response } from 'express';
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../src/app.js';
 import { env } from '../../src/config/env.js';
+import { buildOpenAICompatController } from '../../src/controllers/openaiCompat.controller.js';
 import type { ImageGenerationProvider } from '../../src/services/providers/ImageGenerationProvider.js';
 import { saveOutput } from '../../src/storage/localStorage.js';
 import { ASPECT_SIZE_MAP, type GenerateInput, type GenerateOutput } from '../../src/types/image.js';
 
 const PNG_PREFIX = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const AUTH_HEADER = `Bearer ${env.OPENAI_COMPAT_API_KEY}`;
+const OPENAI_COMPAT_MODEL_IDS = [
+  'gpt-image-2',
+  'gpt-image-2.5-flare',
+  'gpt-image-2.5-sunburst',
+  'codex-gpt-image-2',
+  'auto',
+  'gpt-5',
+  'gpt-5-1',
+  'gpt-5-2',
+  'gpt-5-3',
+  'gpt-5-3-mini',
+  'gpt-5-mini',
+] as const;
 
 function pngBytes(seed = 0): Buffer {
   return Buffer.concat([PNG_PREFIX, Buffer.alloc(32, seed)]);
@@ -129,6 +143,27 @@ describe('OpenAI-compatible /v1 bearer auth', () => {
 });
 
 describe('GET /v1/models', () => {
+  it('returns the model list without opening a network listener', async () => {
+    const harness = fakeProvider();
+    const controller = buildOpenAICompatController({ provider: harness.provider });
+    const response = { status: vi.fn(), json: vi.fn() };
+    response.status.mockReturnValue(response);
+    const next = vi.fn();
+
+    await controller.models({} as Request, response as unknown as Response, next as NextFunction);
+
+    expect(response.status).toHaveBeenCalledWith(200);
+    expect(response.json).toHaveBeenCalledOnce();
+    const body = response.json.mock.calls[0]?.[0] as {
+      object: string;
+      data: Array<{ id: string }>;
+    };
+    expect(body.object).toBe('list');
+    expect(body.data.map((model) => model.id)).toEqual(OPENAI_COMPAT_MODEL_IDS);
+    expect(next).not.toHaveBeenCalled();
+    expect(harness.generate).not.toHaveBeenCalled();
+  });
+
   it('returns the required OpenAI-compatible model list with valid bearer auth', async () => {
     const harness = fakeProvider();
     const app = buildApp(harness.provider);
@@ -137,17 +172,7 @@ describe('GET /v1/models', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.object).toBe('list');
-    expect(res.body.data.map((model: { id: string }) => model.id)).toEqual([
-      'gpt-image-2',
-      'codex-gpt-image-2',
-      'auto',
-      'gpt-5',
-      'gpt-5-1',
-      'gpt-5-2',
-      'gpt-5-3',
-      'gpt-5-3-mini',
-      'gpt-5-mini',
-    ]);
+    expect(res.body.data.map((model: { id: string }) => model.id)).toEqual(OPENAI_COMPAT_MODEL_IDS);
     expect(res.body.data[0]).toMatchObject({
       id: 'gpt-image-2',
       object: 'model',

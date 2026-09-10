@@ -17,7 +17,10 @@ import {
   type ImageResolution,
 } from '../../types/image.js';
 
-import type { ImageGenerationProvider } from './ImageGenerationProvider.js';
+import type {
+  ImageGenerationProvider,
+  ProviderCredentialValidationInput,
+} from './ImageGenerationProvider.js';
 
 export interface TwoApiConfig {
   baseUrl: string;
@@ -45,12 +48,105 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     this.fetchImpl = fetchImpl ?? globalThis.fetch.bind(globalThis);
   }
 
+  async validateCredential(input: ProviderCredentialValidationInput): Promise<void> {
+    const timeoutSignal = AbortSignal.timeout(this.config.timeoutMs);
+    const signal =
+      input.signal === undefined ? timeoutSignal : AbortSignal.any([input.signal, timeoutSignal]);
+    let response: Response;
+    try {
+      response = await this.fetchImpl(buildUrl(this.config.baseUrl, 'v1/models'), {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${input.credential}` },
+        signal,
+      });
+    } catch (err) {
+      if (input.signal?.aborted === true) {
+        throw new AppError('REQUEST_ABORTED', 'API Key validation was cancelled', 499, err);
+      }
+      if (timeoutSignal.aborted || isTimeoutLike(err)) {
+        throw new AppError(
+          'PROVIDER_KEY_VALIDATION_FAILED',
+          'Timed out while validating the API Key',
+          504,
+          err,
+        );
+      }
+      throw new AppError(
+        'PROVIDER_KEY_VALIDATION_FAILED',
+        'Failed to reach the image generation provider while validating the API Key',
+        502,
+        err,
+      );
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      throw new AppError(
+        'PROVIDER_KEY_INVALID',
+        'The image generation API Key was rejected',
+        400,
+        undefined,
+        { upstreamStatus: response.status },
+      );
+    }
+    if (!response.ok) {
+      throw new AppError(
+        'PROVIDER_KEY_VALIDATION_FAILED',
+        `Image generation provider returned ${response.status} while validating the API Key`,
+        502,
+        undefined,
+        { upstreamStatus: response.status },
+      );
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = await response.json();
+    } catch (err) {
+      if (input.signal?.aborted === true) {
+        throw new AppError('REQUEST_ABORTED', 'API Key validation was cancelled', 499, err);
+      }
+      if (timeoutSignal.aborted || isTimeoutLike(err)) {
+        throw new AppError(
+          'PROVIDER_KEY_VALIDATION_FAILED',
+          'Timed out while reading API Key validation results',
+          504,
+          err,
+        );
+      }
+      throw new AppError(
+        'PROVIDER_KEY_VALIDATION_FAILED',
+        'Image generation provider returned malformed model data',
+        502,
+        err,
+      );
+    }
+    if (!isRecord(parsed) || !Array.isArray(parsed.data)) {
+      throw new AppError(
+        'PROVIDER_KEY_VALIDATION_FAILED',
+        'Image generation provider returned malformed model data',
+        502,
+      );
+    }
+    const modelIds = parsed.data.flatMap((model) =>
+      isRecord(model) && typeof model.id === 'string' ? [model.id] : [],
+    );
+    if (!modelIds.includes(input.model)) {
+      throw new AppError(
+        'PROVIDER_KEY_MODEL_UNAVAILABLE',
+        'The API Key group does not provide the configured image model',
+        400,
+        undefined,
+        { model: input.model },
+      );
+    }
+  }
+
   async generate(input: GenerateInput): Promise<GenerateOutput> {
     const aspectRatio: AspectRatio = input.aspectRatio ?? DEFAULT_ASPECT_RATIO;
     const resolution: ImageResolution = input.resolution ?? DEFAULT_IMAGE_RESOLUTION;
     const model = this.modelForResolution(resolution, input.model);
     const baseUrl = this.baseUrlForResolution(resolution);
-    const apiKey = this.apiKeyForResolution(resolution);
+    const apiKey = this.apiKeyForResolution(resolution, input.providerCredential);
     const count = input.count ?? DEFAULT_COUNT;
     const sizing = aspectSizeForResolution(aspectRatio, resolution);
     if (sizing === undefined) {
@@ -129,6 +225,18 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
         { upstreamStatus: response.status, summary, hasReference },
         'image generation: provider non-2xx',
       );
+      if (
+        input.providerCredential !== undefined &&
+        (response.status === 401 || response.status === 403)
+      ) {
+        throw new AppError(
+          'PROVIDER_KEY_INVALID',
+          'The saved image generation API Key was rejected',
+          400,
+          undefined,
+          { upstreamStatus: response.status },
+        );
+      }
       if (isPromptRejectionStatus(response.status)) {
         throw new AppError(
           'PROVIDER_PROMPT_REJECTED',
@@ -233,8 +341,13 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     return this.config.highResBaseUrl ?? this.config.baseUrl;
   }
 
-  private apiKeyForResolution(resolution: ImageResolution): string {
-    if (resolution === DEFAULT_IMAGE_RESOLUTION) return this.config.apiKey;
+  private apiKeyForResolution(
+    resolution: ImageResolution,
+    providerCredential: string | undefined,
+  ): string {
+    if (resolution === DEFAULT_IMAGE_RESOLUTION) {
+      return providerCredential ?? this.config.apiKey;
+    }
     return this.config.highResApiKey ?? this.config.apiKey;
   }
 
@@ -336,6 +449,10 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
       signal,
     });
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function normalizeReferencePaths(input: GenerateInput): string[] {

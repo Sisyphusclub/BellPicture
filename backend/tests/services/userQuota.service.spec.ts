@@ -27,6 +27,22 @@ function createQuotaUser(dailyTotal: number): string {
   return userId;
 }
 
+function createUserWithoutQuota(): string {
+  const userId = `quota-unassigned-${randomUUID()}`;
+  const now = new Date();
+  db.insert(user)
+    .values({
+      id: userId,
+      name: userId,
+      email: `${userId}@test.local`,
+      emailVerified: false,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .run();
+  return userId;
+}
+
 describe('user quota reservations', () => {
   afterEach(() => vi.useRealTimers());
 
@@ -40,6 +56,15 @@ describe('user quota reservations', () => {
 
     first.release();
     expect(pool.snapshot().remaining).toBe(1);
+  });
+
+  it('reports zero quota for a user without an assigned quota row', () => {
+    const pool = createUserQuotaService().forUser(createUserWithoutQuota());
+
+    expect(pool.snapshot()).toMatchObject({
+      total: 0,
+      remaining: 0,
+    });
   });
 
   it('charges only the actual provider output count', () => {

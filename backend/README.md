@@ -71,4 +71,4 @@ introduced by image endpoints: `PROVIDER_RATE_LIMITED` (429), `NOT_FOUND` (404).
 
 ## Layout
 
-See [`.trellis/spec/backend/directory-structure.md`](../.trellis/spec/backend/directory-structure.md).
+Backend source lives under `src/`; generated JavaScript is written to `dist/`.

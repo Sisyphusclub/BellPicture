@@ -46,7 +46,7 @@ export async function fetchPublicHistory(
   const payload = await parseJsonResponse(response);
   if (!response.ok) throw buildApiError(response.status, payload);
   if (!isHistoryListResponse(payload)) {
-    throw new ImageApiError(response.status, 'INVALID_RESPONSE', '公开画廊返回了无法识别的响应。');
+    throw new ImageApiError(response.status, 'INVALID_RESPONSE', '发现页返回了无法识别的响应。');
   }
   return payload;
 }

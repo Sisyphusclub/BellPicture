@@ -105,6 +105,16 @@ export const userQuota = sqliteTable('user_quota', {
   permanentUsed: integer('permanent_used'),
 });
 
+export const userImageApiKeys = sqliteTable('user_image_api_keys', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  encryptedKey: text('encrypted_key').notNull(),
+  keySuffix: text('key_suffix').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
+});
+
 export const quotaGrants = sqliteTable(
   'quota_grants',
   {
