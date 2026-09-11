@@ -3,6 +3,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  MorphPopover,
+  MorphPopoverContent,
+  MorphPopoverTrigger,
+} from '@/components/motion/popover-morph';
 import type { GroupedBatch } from '@/hooks/useImageHistory';
 import { ASPECT_RATIO_LABELS, imageModelLabel } from '@/types/image';
 import { formatClockTime } from '@/utils/format';
@@ -259,217 +264,240 @@ export function GenerationHistoryFlyout({
   };
 
   return (
-    <div
-      ref={rootRef}
-      className={`generation-history-dock${isOpen ? ' is-open' : ''}${previewBatch ? ' has-preview' : ''}`}
-      onMouseEnter={clearCloseTimer}
-      onMouseLeave={() => {
-        onInteractionLeave?.();
-        closeSoon();
-      }}
-      onFocusCapture={clearCloseTimer}
-      onBlurCapture={(event) => {
-        const nextTarget = event.relatedTarget as Node | null;
-        if (!rootRef.current?.contains(nextTarget)) {
-          onInteractionLeave?.();
-          closeSoon();
+    <MorphPopover
+      open={isOpen}
+      className="generation-history-popover-root"
+      onOpenChange={(open) => {
+        if (!open) {
+          clearCloseTimer();
+          setPreviewBatchId(null);
         }
+        setIsOpen(open);
       }}
     >
-      <div className="generation-history-track" style={{ height: trackHeight }}>
-        <Button
-          type="button"
-          variant="ghost"
-          className="generation-history-track__all"
-          aria-label="展开生成历史"
-          aria-hidden={isOpen}
-          aria-expanded={isOpen}
-          aria-controls="generation-history-panel"
-          tabIndex={isOpen ? -1 : 0}
-          onClick={(event) => {
-            openPanel(event.currentTarget);
-          }}
-        >
-          <Search aria-hidden="true" />
-        </Button>
-
-        <div
-          className={`generation-history-track__marks${trackBatches.length === 1 ? ' is-single' : ''}`}
-          aria-hidden={isOpen}
-        >
-          {trackBatches.map((batch) => (
+      <div
+        ref={rootRef}
+        className={`generation-history-dock${isOpen ? ' is-open' : ''}${previewBatch ? ' has-preview' : ''}`}
+        onMouseEnter={clearCloseTimer}
+        onMouseLeave={() => {
+          onInteractionLeave?.();
+          closeSoon();
+        }}
+        onFocusCapture={clearCloseTimer}
+        onBlurCapture={(event) => {
+          const nextTarget = event.relatedTarget as Node | null;
+          if (!rootRef.current?.contains(nextTarget)) {
+            onInteractionLeave?.();
+            closeSoon();
+          }
+        }}
+      >
+        <div className="generation-history-track" style={{ height: trackHeight }}>
+          <MorphPopoverTrigger>
             <Button
               type="button"
               variant="ghost"
-              className={`generation-history-track__mark${batch.batchId === activeBatchId ? ' is-current' : ''}${batch.batchId === hoveredBatchId ? ' is-hovered' : ''}${batch.batchId === previewBatchId ? ' is-previewed' : ''}`}
-              key={batch.batchId}
-              data-history-batch-id={batch.batchId}
-              aria-label={`查看生成记录：${batch.prompt.trim() || '未命名任务'}`}
-              aria-current={batch.batchId === activeBatchId ? 'true' : undefined}
+              className="generation-history-track__all"
+              aria-label="展开生成历史"
+              aria-hidden={isOpen}
+              aria-controls="generation-history-panel"
               tabIndex={isOpen ? -1 : 0}
-              onMouseEnter={() => showPreview(batch.batchId)}
-              onFocus={() => {
-                if (suppressPreviewFocusRef.current) {
-                  suppressPreviewFocusRef.current = false;
-                  return;
-                }
-                showPreview(batch.batchId);
+              onClick={(event) => {
+                openPanel(event.currentTarget);
               }}
-              onClick={() => handleNavigate(batch)}
-            />
-          ))}
-        </div>
-      </div>
+            >
+              <Search aria-hidden="true" />
+            </Button>
+          </MorphPopoverTrigger>
 
-      <section
-        className={`generation-history-preview${previewBatch && !isOpen ? ' is-visible' : ''}`}
-        aria-label="生成记录预览"
-        aria-hidden={!previewBatch || isOpen}
-        style={{ top: `calc(50% - ${trackHeight / 2}px + ${previewOffset}px)` }}
-        onMouseEnter={clearCloseTimer}
-        onMouseLeave={closeSoon}
-      >
-        {previewBatch ? (
-          <Button
-            type="button"
-            variant="ghost"
-            className="generation-history-preview__jump"
-            aria-label={`定位到生成记录：${previewBatch.prompt.trim() || '未命名任务'}`}
-            tabIndex={previewBatch && !isOpen ? 0 : -1}
-            onClick={() => handleNavigate(previewBatch)}
+          <div
+            className={`generation-history-track__marks${trackBatches.length === 1 ? ' is-single' : ''}`}
+            aria-hidden={isOpen}
           >
-            <span className="generation-history-preview__content">
-              <strong>{previewBatch.prompt.trim() || '未命名任务'}</strong>
-              <span className="generation-history-preview__summary">
-                {imageModelLabel(previewBatch.model)} · {formatClockTime(previewBatch.createdAt)}
-                <br />
-                {ASPECT_RATIO_LABELS[previewBatch.settings.aspectRatio]} ·{' '}
-                {previewBatch.settings.count} 张 ·{' '}
-                {getImageVisibilityLabel(previewBatch.settings.isPublic)}
-              </span>
-            </span>
-            <ChevronRight aria-hidden="true" />
-          </Button>
-        ) : null}
-      </section>
-
-      <span
-        className="generation-history-hover-safe"
-        aria-hidden="true"
-        onMouseEnter={clearCloseTimer}
-        onMouseLeave={closeSoon}
-      />
-
-      <aside
-        id="generation-history-panel"
-        className="generation-history-panel"
-        aria-label="生成历史"
-        aria-hidden={!isOpen}
-        onMouseEnter={clearCloseTimer}
-        onMouseLeave={closeSoon}
-      >
-        <header className="generation-history-panel__header">
-          <div>
-            <span className="generation-history-panel__eyebrow">WORKSPACE MEMORY</span>
-            <h2>生成历史</h2>
+            {trackBatches.map((batch) => (
+              <Button
+                type="button"
+                variant="ghost"
+                className={`generation-history-track__mark${batch.batchId === activeBatchId ? ' is-current' : ''}${batch.batchId === hoveredBatchId ? ' is-hovered' : ''}${batch.batchId === previewBatchId ? ' is-previewed' : ''}`}
+                key={batch.batchId}
+                data-history-batch-id={batch.batchId}
+                aria-label={`查看生成记录：${batch.prompt.trim() || '未命名任务'}`}
+                aria-current={batch.batchId === activeBatchId ? 'true' : undefined}
+                tabIndex={isOpen ? -1 : 0}
+                onMouseEnter={() => showPreview(batch.batchId)}
+                onFocus={() => {
+                  if (suppressPreviewFocusRef.current) {
+                    suppressPreviewFocusRef.current = false;
+                    return;
+                  }
+                  showPreview(batch.batchId);
+                }}
+                onClick={() => handleNavigate(batch)}
+              />
+            ))}
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="generation-history-panel__close"
-            aria-label="收起生成历史"
-            aria-hidden={!isOpen}
-            tabIndex={isOpen ? 0 : -1}
-            onClick={handlePanelClose}
-          >
-            <X aria-hidden="true" />
-          </Button>
-        </header>
-
-        <label className="generation-history-search">
-          <Search aria-hidden="true" />
-          <Input
-            ref={searchInputRef}
-            type="search"
-            value={query}
-            tabIndex={isOpen ? 0 : -1}
-            placeholder="搜索提示词、任务、模型或日期"
-            aria-label="搜索生成历史"
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </label>
-
-        <div className="generation-history-panel__body">
-          {isGenerating ? (
-            <div className="generation-history-pending" role="status" aria-live="polite">
-              <span className="generation-history-pending__icon" aria-hidden="true">
-                <Sparkles />
-              </span>
-              <span>
-                <strong>正在生成</strong>
-                <small>{pendingPrompt.trim() || '当前任务'}</small>
-              </span>
-            </div>
-          ) : null}
-
-          {isHydrating ? (
-            <p className="generation-history-message">正在同步历史记录…</p>
-          ) : hydrateError ? (
-            <p className="generation-history-message">历史记录暂时无法加载，请稍后重试。</p>
-          ) : !hasHistory ? (
-            <p className="generation-history-message">暂无生成记录，完成第一次创作后将在这里显示</p>
-          ) : !hasSearchResults ? (
-            <p className="generation-history-message">没有匹配的生成记录。</p>
-          ) : (
-            groupedBatches.map((group) => (
-              <section className="generation-history-group" key={group.key}>
-                <h3>{group.label}</h3>
-                <div className="generation-history-list">
-                  {group.batches.map((batch) => {
-                    const thumbnail = batch.entries[0];
-                    const aspectRatio = batch.settings.aspectRatio;
-                    const isActive = activeBatchId === batch.batchId;
-                    return (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className={`generation-history-item${isActive ? ' is-active' : ''}`}
-                        key={batch.batchId}
-                        tabIndex={isOpen ? 0 : -1}
-                        onClick={() => handleSelect(batch)}
-                      >
-                        <span className="generation-history-item__thumb" aria-hidden="true">
-                          {thumbnail ? (
-                            <img src={thumbnail.imageUrl} alt="" loading="lazy" />
-                          ) : batch.error ? (
-                            <CircleAlert />
-                          ) : (
-                            <Sparkles />
-                          )}
-                        </span>
-                        <span className="generation-history-item__content">
-                          <strong>{batch.prompt.trim() || '未命名任务'}</strong>
-                          <small>
-                            {batch.error ? '生成失败' : imageModelLabel(batch.model)} ·{' '}
-                            {formatClockTime(batch.createdAt)}
-                          </small>
-                          <small>
-                            {ASPECT_RATIO_LABELS[aspectRatio]} · {batch.settings.count} 张
-                          </small>
-                        </span>
-                        <span className="generation-history-item__date">
-                          {formatHistoryDate(batch.createdAt)}
-                        </span>
-                      </Button>
-                    );
-                  })}
-                </div>
-              </section>
-            ))
-          )}
         </div>
-      </aside>
-    </div>
+
+        <section
+          className={`generation-history-preview${previewBatch && !isOpen ? ' is-visible' : ''}`}
+          aria-label="生成记录预览"
+          aria-hidden={!previewBatch || isOpen}
+          style={{ top: `calc(50% - ${trackHeight / 2}px + ${previewOffset}px)` }}
+          onMouseEnter={clearCloseTimer}
+          onMouseLeave={closeSoon}
+        >
+          {previewBatch ? (
+            <Button
+              type="button"
+              variant="ghost"
+              className="generation-history-preview__jump"
+              aria-label={`定位到生成记录：${previewBatch.prompt.trim() || '未命名任务'}`}
+              tabIndex={previewBatch && !isOpen ? 0 : -1}
+              onClick={() => handleNavigate(previewBatch)}
+            >
+              <span className="generation-history-preview__content">
+                <strong>{previewBatch.prompt.trim() || '未命名任务'}</strong>
+                <span className="generation-history-preview__summary">
+                  {imageModelLabel(previewBatch.model)} · {formatClockTime(previewBatch.createdAt)}
+                  <br />
+                  {ASPECT_RATIO_LABELS[previewBatch.settings.aspectRatio]} ·{' '}
+                  {previewBatch.settings.count} 张 ·{' '}
+                  {getImageVisibilityLabel(previewBatch.settings.isPublic)}
+                </span>
+              </span>
+              <ChevronRight aria-hidden="true" />
+            </Button>
+          ) : null}
+        </section>
+
+        <span
+          className="generation-history-hover-safe"
+          aria-hidden="true"
+          onMouseEnter={clearCloseTimer}
+          onMouseLeave={closeSoon}
+        />
+
+        <MorphPopoverContent
+          side="left"
+          align="center"
+          sideOffset={12}
+          radius={16}
+          forceMount
+          className="generation-history-popover-content generation-history-panel"
+        >
+          <aside
+            id="generation-history-panel"
+            aria-label="生成历史"
+            aria-hidden={!isOpen}
+            onMouseEnter={clearCloseTimer}
+            onMouseLeave={closeSoon}
+          >
+            <header className="generation-history-panel__header">
+              <div>
+                <span className="generation-history-panel__eyebrow">WORKSPACE MEMORY</span>
+                <h2>生成历史</h2>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="generation-history-panel__close"
+                aria-label="收起生成历史"
+                aria-hidden={!isOpen}
+                tabIndex={isOpen ? 0 : -1}
+                onClick={handlePanelClose}
+              >
+                <X aria-hidden="true" />
+              </Button>
+            </header>
+
+            <label className="generation-history-search">
+              <Search aria-hidden="true" />
+              <Input
+                ref={searchInputRef}
+                type="search"
+                value={query}
+                tabIndex={isOpen ? 0 : -1}
+                placeholder="搜索提示词、任务、模型或日期"
+                aria-label="搜索生成历史"
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </label>
+
+            <div className="generation-history-panel__body">
+              {isGenerating ? (
+                <div className="generation-history-pending" role="status" aria-live="polite">
+                  <span className="generation-history-pending__icon" aria-hidden="true">
+                    <Sparkles />
+                  </span>
+                  <span>
+                    <strong>正在生成</strong>
+                    <small>{pendingPrompt.trim() || '当前任务'}</small>
+                  </span>
+                </div>
+              ) : null}
+
+              {isHydrating ? (
+                <p className="generation-history-message">正在同步历史记录…</p>
+              ) : hydrateError ? (
+                <p className="generation-history-message">历史记录暂时无法加载，请稍后重试。</p>
+              ) : !hasHistory ? (
+                <p className="generation-history-message">
+                  暂无生成记录，完成第一次创作后将在这里显示
+                </p>
+              ) : !hasSearchResults ? (
+                <p className="generation-history-message">没有匹配的生成记录。</p>
+              ) : (
+                groupedBatches.map((group) => (
+                  <section className="generation-history-group" key={group.key}>
+                    <h3>{group.label}</h3>
+                    <div className="generation-history-list">
+                      {group.batches.map((batch) => {
+                        const thumbnail = batch.entries[0];
+                        const aspectRatio = batch.settings.aspectRatio;
+                        const isActive = activeBatchId === batch.batchId;
+                        return (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className={`generation-history-item${isActive ? ' is-active' : ''}`}
+                            key={batch.batchId}
+                            tabIndex={isOpen ? 0 : -1}
+                            onClick={() => handleSelect(batch)}
+                          >
+                            <span className="generation-history-item__thumb" aria-hidden="true">
+                              {thumbnail ? (
+                                <img src={thumbnail.imageUrl} alt="" loading="lazy" />
+                              ) : batch.error ? (
+                                <CircleAlert />
+                              ) : (
+                                <Sparkles />
+                              )}
+                            </span>
+                            <span className="generation-history-item__content">
+                              <strong>{batch.prompt.trim() || '未命名任务'}</strong>
+                              <small>
+                                {batch.error ? '生成失败' : imageModelLabel(batch.model)} ·{' '}
+                                {formatClockTime(batch.createdAt)}
+                              </small>
+                              <small>
+                                {ASPECT_RATIO_LABELS[aspectRatio]} · {batch.settings.count} 张
+                              </small>
+                            </span>
+                            <span className="generation-history-item__date">
+                              {formatHistoryDate(batch.createdAt)}
+                            </span>
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                ))
+              )}
+            </div>
+          </aside>
+        </MorphPopoverContent>
+      </div>
+    </MorphPopover>
   );
 }

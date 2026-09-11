@@ -18,8 +18,8 @@ import {
 import { SPRING_PANEL } from '@/lib/ease';
 import { cn } from '@/lib/utils';
 
-type Side = 'top' | 'bottom';
-type Align = 'start' | 'end';
+type Side = 'top' | 'bottom' | 'left' | 'right';
+type Align = 'start' | 'center' | 'end';
 
 type MorphContextValue = {
   open: boolean;
@@ -131,6 +131,8 @@ export function MorphPopoverTrigger({ children }: MorphPopoverTriggerProps) {
 }
 
 function clipHidden(side: Side, align: Align, radius: number) {
+  if (side === 'left') return `inset(0% 0% 0% 92% round ${radius}px)`;
+  if (side === 'right') return `inset(0% 92% 0% 0% round ${radius}px)`;
   const top = side === 'bottom' ? '0%' : '92%';
   const bottom = side === 'bottom' ? '92%' : '0%';
   const right = align === 'end' ? '0%' : '92%';
@@ -146,6 +148,7 @@ export type MorphPopoverContentProps = {
   align?: Align;
   sideOffset?: number;
   radius?: number;
+  forceMount?: boolean;
   className?: string;
 };
 
@@ -155,16 +158,47 @@ export function MorphPopoverContent({
   align = 'end',
   sideOffset = 8,
   radius = 16,
+  forceMount = false,
   className,
 }: MorphPopoverContentProps) {
   const context = useMorphContext('MorphPopoverContent');
   const reduce = useReducedMotion() ?? false;
   const position = cn(
-    side === 'bottom' ? 'top-full' : 'bottom-full',
-    align === 'end' ? 'right-0' : 'left-0',
+    side === 'bottom'
+      ? 'top-full'
+      : side === 'top'
+        ? 'bottom-full'
+        : side === 'left'
+          ? 'right-full'
+          : 'left-full',
+    side === 'top' || side === 'bottom'
+      ? align === 'end'
+        ? 'right-0'
+        : align === 'center'
+          ? 'left-1/2 -translate-x-1/2'
+          : 'left-0'
+      : align === 'end'
+        ? 'bottom-0'
+        : align === 'center'
+          ? 'top-1/2 -translate-y-1/2'
+          : 'top-0',
   );
-  const offset = side === 'bottom' ? { marginTop: sideOffset } : { marginBottom: sideOffset };
-  const origin = `${side === 'bottom' ? 'top' : 'bottom'} ${align === 'end' ? 'right' : 'left'}`;
+  const offset =
+    side === 'bottom'
+      ? { marginTop: sideOffset }
+      : side === 'top'
+        ? { marginBottom: sideOffset }
+        : side === 'left'
+          ? { marginRight: sideOffset }
+          : { marginLeft: sideOffset };
+  const origin =
+    side === 'bottom'
+      ? `${align === 'end' ? 'top right' : align === 'center' ? 'top center' : 'top left'}`
+      : side === 'top'
+        ? `${align === 'end' ? 'bottom right' : align === 'center' ? 'bottom center' : 'bottom left'}`
+        : side === 'left'
+          ? `${align === 'end' ? 'bottom right' : align === 'center' ? 'center right' : 'top right'}`
+          : `${align === 'end' ? 'bottom left' : align === 'center' ? 'center left' : 'top left'}`;
   const wrapperVariants = reduce
     ? {}
     : {
@@ -185,21 +219,34 @@ export function MorphPopoverContent({
 
   return (
     <AnimatePresence>
-      {context.open ? (
+      {context.open || forceMount ? (
         <motion.div
           variants={wrapperVariants}
-          initial={reduce ? { opacity: 0 } : 'hidden'}
-          animate={reduce ? { opacity: 1 } : 'show'}
+          initial={forceMount ? false : reduce ? { opacity: 0 } : 'hidden'}
+          animate={
+            forceMount
+              ? false
+              : context.open
+                ? reduce
+                  ? { opacity: 1 }
+                  : 'show'
+                : { opacity: 0, pointerEvents: 'none' }
+          }
           exit={reduce ? { opacity: 0 } : 'exit'}
           {...(reduce ? { transition: { duration: 0.12 } } : {})}
-          style={{ transformOrigin: origin, ...offset }}
+          style={{
+            transformOrigin: origin,
+            ...(forceMount ? { opacity: context.open ? 1 : 0 } : {}),
+            ...offset,
+          }}
           className={cn('absolute z-30', position)}
         >
           <motion.div
             id={context.contentId}
             role="menu"
+            aria-hidden={!context.open}
             variants={clipVariants}
-            style={{ borderRadius: radius }}
+            style={{ borderRadius: radius, pointerEvents: context.open ? 'auto' : 'none' }}
             className={cn('overflow-hidden border border-border bg-background', className)}
           >
             {children}
