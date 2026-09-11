@@ -151,6 +151,15 @@ const DROPDOWN_MOTION_STYLES = `
     display: none;
   }
 
+  .${MOTION_CLASS} [data-beui-dropdown-item]:focus,
+  .${MOTION_CLASS} [data-beui-dropdown-item]:focus-visible,
+  .${SUB_MOTION_CLASS} [data-beui-dropdown-item]:focus,
+  .${SUB_MOTION_CLASS} [data-beui-dropdown-item]:focus-visible {
+    outline: none;
+    outline-offset: 0;
+    box-shadow: none;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .${MOTION_CLASS}[data-state],
     .${SUB_MOTION_CLASS}[data-state] {
@@ -278,13 +287,13 @@ export const AnimatedDropdown = DropdownMenuPrimitive.Root;
 export const AnimatedDropdownTrigger = forwardRef<
   ComponentRef<typeof DropdownMenuPrimitive.Trigger>,
   ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Trigger>
->(function AnimatedDropdownTrigger({ className, onBlur, onKeyDown, ...props }, ref) {
+>(function AnimatedDropdownTrigger({ className, onBlur, onKeyDown, onPointerDown, ...props }, ref) {
   return (
     <DropdownMenuPrimitive.Trigger
       ref={ref}
       className={cn(
         'outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-        'data-[beui-pointer-focus]:focus-visible:shadow-none data-[beui-pointer-focus]:focus-visible:ring-0 data-[beui-pointer-focus]:focus-visible:ring-offset-0',
+        'data-[beui-pointer-focus]:focus-visible:outline-none data-[beui-pointer-focus]:focus-visible:shadow-none data-[beui-pointer-focus]:focus-visible:ring-0 data-[beui-pointer-focus]:focus-visible:ring-offset-0',
         className,
       )}
       onBlur={(event) => {
@@ -294,6 +303,10 @@ export const AnimatedDropdownTrigger = forwardRef<
       onKeyDown={(event) => {
         event.currentTarget.removeAttribute('data-beui-pointer-focus');
         onKeyDown?.(event);
+      }}
+      onPointerDown={(event) => {
+        event.currentTarget.setAttribute('data-beui-pointer-focus', '');
+        onPointerDown?.(event);
       }}
       {...props}
     />

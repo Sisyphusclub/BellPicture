@@ -1,25 +1,34 @@
 import cors from 'cors';
 import express, { type Express, type RequestHandler } from 'express';
+import helmet from 'helmet';
 import { toNodeHandler } from 'better-auth/node';
 
 import { auth } from './config/auth.js';
 import { env } from './config/env.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import { createAppRateLimiters } from './middlewares/rateLimit.js';
 import { requestLogger } from './middlewares/requestLogger.js';
 import { buildAdminUsersRouter } from './routes/adminUsers.js';
 import { buildUsernameAuthRouter } from './routes/auth.js';
 import { healthRouter } from './routes/health.js';
 import { buildHistoryRouter } from './routes/history.js';
 import { buildImagesRouter } from './routes/images.js';
+import { mediaRouter } from './routes/media.js';
 import { buildOpenAICompatRouter } from './routes/openaiCompat.js';
-import { outputsRouter } from './routes/outputs.js';
+import { buildOutputsRouter } from './routes/outputs.js';
+import { buildUserSettingsRouter } from './routes/userSettings.js';
 import type { DemoPromptCacheConfig } from './services/demoPromptCache.service.js';
 import type { ImageGenerationProvider } from './services/providers/ImageGenerationProvider.js';
+import {
+  createUserImageApiKeyService,
+  type UserImageApiKeyService,
+} from './services/userImageApiKey.service.js';
 import { createUserQuotaService, type UserQuotaService } from './services/userQuota.service.js';
 
 export interface AppDeps {
   provider: ImageGenerationProvider;
   userQuota?: UserQuotaService;
+  userImageApiKeys?: UserImageApiKeyService;
   /** Override the auth middleware. Tests can inject a stub that attaches `req.user` synchronously. */
   authMiddleware?: RequestHandler;
   /** Override the admin middleware. Tests can inject allow/deny behavior after auth. */
@@ -32,14 +41,25 @@ export interface AppDeps {
 
 export function createApp(deps: AppDeps): Express {
   const app = express();
+  if (env.TRUST_PROXY_HOPS > 0) app.set('trust proxy', env.TRUST_PROXY_HOPS);
 
   app.use(requestLogger);
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
   app.use(
     cors({
       origin: env.FRONTEND_ORIGIN,
       credentials: true,
     }),
   );
+
+  const rateLimiters = createAppRateLimiters();
+  app.use('/api/auth/sign-up', rateLimiters.signUp);
+  app.use('/api/auth', rateLimiters.auth);
 
   app.use('/api/auth', buildUsernameAuthRouter());
 
@@ -53,10 +73,27 @@ export function createApp(deps: AppDeps): Express {
   app.use(express.json({ limit: '1mb' }));
 
   const userQuota = deps.userQuota ?? createUserQuotaService();
+  const userImageApiKeys = deps.userImageApiKeys ?? createUserImageApiKeyService();
 
-  app.use('/v1', buildOpenAICompatRouter({ provider: deps.provider }));
+  app.use(
+    '/v1',
+    buildOpenAICompatRouter({
+      provider: deps.provider,
+      rateLimiter: rateLimiters.openAICompat,
+    }),
+  );
 
   app.use('/api', healthRouter);
+  app.use('/api/media', mediaRouter);
+  app.use(
+    '/api/settings',
+    buildUserSettingsRouter({
+      provider: deps.provider,
+      userImageApiKeys,
+      mutationRateLimiter: rateLimiters.settingsMutation,
+      ...(deps.authMiddleware !== undefined ? { authMiddleware: deps.authMiddleware } : {}),
+    }),
+  );
   app.use(
     '/api/admin',
     buildAdminUsersRouter({
@@ -69,6 +106,7 @@ export function createApp(deps: AppDeps): Express {
     buildImagesRouter({
       provider: deps.provider,
       userQuota,
+      userImageApiKeys,
       ...(deps.authMiddleware !== undefined ? { authMiddleware: deps.authMiddleware } : {}),
       ...(deps.demoGenerationDelayMs !== undefined
         ? { demoGenerationDelayMs: deps.demoGenerationDelayMs }
@@ -77,6 +115,8 @@ export function createApp(deps: AppDeps): Express {
         prompts: env.DEMO_PROMPTS,
         delayMs: env.DEMO_PROMPT_CACHE_DELAY_MS,
       },
+      uploadRateLimiter: rateLimiters.upload,
+      generationRateLimiter: rateLimiters.generation,
     }),
   );
   app.use(
@@ -86,7 +126,7 @@ export function createApp(deps: AppDeps): Express {
       ...(deps.adminMiddleware !== undefined ? { adminMiddleware: deps.adminMiddleware } : {}),
     }),
   );
-  app.use('/api/outputs', outputsRouter);
+  app.use('/api/outputs', buildOutputsRouter(deps.authMiddleware));
 
   app.use(errorHandler);
   return app;

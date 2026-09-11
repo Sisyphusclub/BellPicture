@@ -6,7 +6,7 @@ import {
   createAdminManagedUser,
   deleteAdminManagedUser,
   listAdminUsers,
-  setUserDailyQuota,
+  setUserPermanentQuota,
   type AdminUserDTO,
 } from '../services/adminUser.service.js';
 
@@ -16,11 +16,17 @@ const createUserBodySchema = z.object({
   username: z.string(),
   password: z.string().min(1),
   dailyTotal: z.number().int().min(0).max(10_000).optional(),
+  permanentTotal: z.number().int().min(0).max(10_000).optional(),
 });
 
-const updateQuotaBodySchema = z.object({
-  dailyTotal: z.number().int().min(0).max(10_000),
-});
+const updateQuotaBodySchema = z
+  .object({
+    dailyTotal: z.number().int().min(0).max(10_000).optional(),
+    permanentTotal: z.number().int().min(0).max(10_000).optional(),
+  })
+  .refine((value) => value.permanentTotal !== undefined || value.dailyTotal !== undefined, {
+    message: '需要提供永久额度。',
+  });
 
 export interface AdminUsersListResponse {
   users: AdminUserDTO[];
@@ -70,7 +76,13 @@ export function buildAdminUsersController(): {
         const input =
           parsed.dailyTotal === undefined
             ? { username: parsed.username, password: parsed.password }
-            : { username: parsed.username, password: parsed.password, dailyTotal: parsed.dailyTotal };
+            : {
+                username: parsed.username,
+                password: parsed.password,
+                ...(parsed.permanentTotal !== undefined
+                  ? { permanentTotal: parsed.permanentTotal }
+                  : { dailyTotal: parsed.dailyTotal }),
+              };
         const created = await createAdminManagedUser(input);
         const body: AdminUserResponse = { user: created };
         res.status(201).json(body);
@@ -86,7 +98,11 @@ export function buildAdminUsersController(): {
           throw new AppError('BAD_REQUEST', '用户 ID 无效。', 400, undefined, { field: 'id' });
         }
         const parsed = parseBody(updateQuotaBodySchema, req.body, '额度请求无效。');
-        const updated = setUserDailyQuota(targetUserId, parsed.dailyTotal);
+        const permanentTotal = parsed.permanentTotal ?? parsed.dailyTotal;
+        if (permanentTotal === undefined) {
+          throw new AppError('BAD_REQUEST', '需要提供永久额度。', 400);
+        }
+        const updated = setUserPermanentQuota(targetUserId, permanentTotal);
         const body: AdminUserResponse = { user: updated };
         res.status(200).json(body);
       } catch (err) {

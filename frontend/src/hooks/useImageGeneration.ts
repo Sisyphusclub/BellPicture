@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 import {
   createGenerateRequest,
@@ -10,14 +10,17 @@ import {
   DEFAULT_ASPECT_RATIO,
   DEFAULT_COUNT,
   DEFAULT_IMAGE_RESOLUTION,
+  supportsImageQuality,
   type AspectRatio,
   type GeneratedBatchResult,
   type HistoryEntry,
   type ImageRecord,
+  type ImageQuality,
   type ImageResolution,
 } from '@/types/image';
 
 import { addImageRecord } from './useImageHistory';
+import { useAuth } from './useAuth';
 
 export interface GenerateImageOptions {
   prompt: string;
@@ -29,12 +32,34 @@ export interface GenerateImageOptions {
   count?: number;
   aspectRatio?: AspectRatio;
   resolution?: ImageResolution;
+  quality?: ImageQuality;
   isPublic?: boolean;
   demoPresetId?: string;
 }
 
 function normalizeIds(ids?: string[], id?: string): string[] {
   return [...new Set((ids ?? (id ? [id] : [])).map((item) => item.trim()).filter(Boolean))];
+}
+
+interface AuthRequestContext {
+  userId: string | null;
+  generation: number;
+}
+
+function assertCurrentAuthContext(
+  expected: AuthRequestContext,
+  current: AuthRequestContext,
+  controller: AbortController,
+): void {
+  if (
+    expected.userId !== null &&
+    expected.userId === current.userId &&
+    expected.generation === current.generation
+  ) {
+    return;
+  }
+  controller.abort();
+  throw new DOMException('Account changed during image generation', 'AbortError');
 }
 
 function providerMessage(error: ImageApiError): string {
@@ -52,6 +77,10 @@ function generationError(error: unknown): Error {
     return new Error('生成失败，请检查后端服务是否可用后重试。');
   }
   const suffix = error.requestId ? `（请求编号：${error.requestId}）` : '';
+  const quotaMessage =
+    error.details?.['quotaScope'] === 'permanent'
+      ? '2K/4K 仅可使用永久积分，当前永久积分不足。'
+      : 'GPT 号池剩余额度不足，请稍后补充额度后再试。';
   const messages: Record<string, string> = {
     PAYLOAD_TOO_LARGE: '参考图超过后端限制，请压缩后重试。',
     UNSUPPORTED_MEDIA_TYPE: '后端无法识别此参考图格式，请改用 PNG、JPEG 或 WebP。',
@@ -59,7 +88,9 @@ function generationError(error: unknown): Error {
     PROVIDER_PROMPT_REJECTED: '提示词或参考图未通过上游安全策略，请改用更中性的描述。',
     PROVIDER_EMPTY_RESULT: '上游没有返回图片，请换一个更明确、限制更少的提示词。',
     PROVIDER_RATE_LIMITED: '生成服务当前请求过多，请稍后再试。',
-    QUOTA_EXHAUSTED: 'GPT 号池剩余额度不足，请稍后补充额度后再试。',
+    PROVIDER_KEY_INVALID: '个人生图 API Key 已失效，请更新后重试。',
+    PROVIDER_KEY_MODEL_UNAVAILABLE: '个人 Key 所属分组不支持当前生图模型。',
+    QUOTA_EXHAUSTED: quotaMessage,
     BAD_REQUEST: '请求内容无效，请检查提示词和参考图。',
     NOT_FOUND: '生成图片不存在或已被后端清理。',
     INVALID_RESPONSE: '后端返回了无法识别的响应。',
@@ -73,11 +104,31 @@ function generationError(error: unknown): Error {
 }
 
 export function useImageGeneration() {
-  const activeRequest = useRef<AbortController | null>(null);
+  const { user, isAuthenticated } = useAuth();
+  const userId = isAuthenticated ? (user?.id ?? null) : null;
+  const authContext = useRef<AuthRequestContext>({ userId, generation: 0 });
+  const activeRequest = useRef<{
+    controller: AbortController;
+    authGeneration: number;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [lastBatch, setLastBatch] = useState<GeneratedBatchResult | null>(null);
   const [statusMessage, setStatusMessage] = useState('已准备好开始新的生成。');
+
+  useLayoutEffect(() => {
+    if (authContext.current.userId === userId) return;
+    authContext.current = {
+      userId,
+      generation: authContext.current.generation + 1,
+    };
+    const active = activeRequest.current;
+    if (active !== null && active.authGeneration !== authContext.current.generation) {
+      active.controller.abort();
+      setIsLoading(false);
+    }
+    setLastBatch(null);
+  }, [userId]);
 
   const generate = useCallback(
     async (options: GenerateImageOptions): Promise<GeneratedBatchResult> => {
@@ -91,8 +142,10 @@ export function useImageGeneration() {
       setError(null);
       setStatusMessage('正在准备请求内容。');
       const controller = new AbortController();
-      activeRequest.current = controller;
+      const requestContext = authContext.current;
+      activeRequest.current = { controller, authGeneration: requestContext.generation };
       try {
+        assertCurrentAuthContext(requestContext, authContext.current, controller);
         let referenceIds = normalizeIds(options.referenceIds, options.referenceId);
         const files =
           options.referenceFiles ?? (options.referenceFile ? [options.referenceFile] : []);
@@ -103,11 +156,13 @@ export function useImageGeneration() {
           referenceIds = (await uploadReferenceImages(files, controller.signal)).map(
             (upload) => upload.id,
           );
+          assertCurrentAuthContext(requestContext, authContext.current, controller);
         }
         setStatusMessage(
           referenceIds.length ? '正在结合参考图生成图片。' : '正在根据提示词生成图片。',
         );
         const model = options.model?.trim() || 'gpt-image-2';
+        const quality = supportsImageQuality(model) ? options.quality : undefined;
         const startedAt = Date.now();
         const generated = await generateImage(
           createGenerateRequest({
@@ -116,12 +171,14 @@ export function useImageGeneration() {
             count: options.count ?? DEFAULT_COUNT,
             aspectRatio: options.aspectRatio ?? DEFAULT_ASPECT_RATIO,
             ...(options.resolution === undefined ? {} : { resolution: options.resolution }),
+            ...(quality === undefined ? {} : { quality }),
             ...(referenceIds.length ? { referenceIds } : {}),
             isPublic: options.isPublic ?? false,
             ...(options.demoPresetId === undefined ? {} : { demoPresetId: options.demoPresetId }),
           }),
           controller.signal,
         );
+        assertCurrentAuthContext(requestContext, authContext.current, controller);
         const createdAt = new Date().toISOString();
         const entries: HistoryEntry[] = generated.images.map((image) => {
           const record: ImageRecord = {
@@ -135,6 +192,7 @@ export function useImageGeneration() {
             height: image.height,
             count: options.count ?? DEFAULT_COUNT,
             resolution: options.resolution ?? DEFAULT_IMAGE_RESOLUTION,
+            ...(quality === undefined ? {} : { quality }),
             elapsedMs: Date.now() - startedAt,
             isPublic: options.isPublic ?? false,
             isFavorite: false,
@@ -164,7 +222,7 @@ export function useImageGeneration() {
         setStatusMessage('生成失败。');
         throw nextError;
       } finally {
-        if (activeRequest.current === controller) {
+        if (activeRequest.current?.controller === controller) {
           activeRequest.current = null;
           setIsLoading(false);
         }
@@ -179,7 +237,7 @@ export function useImageGeneration() {
     lastBatch,
     statusMessage,
     generate,
-    cancel: () => activeRequest.current?.abort(),
+    cancel: () => activeRequest.current?.controller.abort(),
     clearLastBatch: () => setLastBatch(null),
   };
 }

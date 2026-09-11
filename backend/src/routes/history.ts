@@ -16,8 +16,8 @@ export function buildHistoryRouter(deps: HistoryRouterDeps = {}): Router {
   const controller = buildHistoryController();
 
   // GET /api/history/public → list public image records from every account, newest first.
-  router.get('/public', (_req, res, next) => {
-    controller.listPublic(_req, res, next);
+  router.get('/public', (req, res, next) => {
+    controller.listPublic(req, res, next);
   });
 
   // DELETE /api/history/public/:id → admin removes one public record from the public gallery.
@@ -42,12 +42,12 @@ export function buildHistoryRouter(deps: HistoryRouterDeps = {}): Router {
   });
 
   router.post('/bulk-delete', (req, res, next) => {
-    controller.removeMany(req, res, next);
+    void controller.removeMany(req, res, next);
   });
 
   // DELETE /api/history/batch/:batchId → delete all records in a batch owned by the user.
   router.delete('/batch/:batchId', (req, res, next) => {
-    controller.removeBatch(req, res, next);
+    void controller.removeBatch(req, res, next);
   });
 
   router.patch('/:id', (req, res, next) => {
@@ -56,7 +56,7 @@ export function buildHistoryRouter(deps: HistoryRouterDeps = {}): Router {
 
   // DELETE /api/history/:id → delete one record owned by the user.
   router.delete('/:id', (req, res, next) => {
-    controller.removeOne(req, res, next);
+    void controller.removeOne(req, res, next);
   });
 
   return router;

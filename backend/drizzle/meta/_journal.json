@@ -43,6 +43,55 @@
       "when": 1785405605673,
       "tag": "0005_mean_nomad",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1786600984909,
+      "tag": "0006_naive_multiple_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1787889935857,
+      "tag": "0007_dusty_crystal",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1788237106683,
+      "tag": "0008_previous_golden_guardian",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1788255104080,
+      "tag": "0009_better-auth-account-issuer",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1788833079250,
+      "tag": "0010_flawless_ogun",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1789024935706,
+      "tag": "0011_ambitious_runaways",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1789111283037,
+      "tag": "0012_superb_nitro",
+      "breakpoints": true
     }
   ]
 }

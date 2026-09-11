@@ -25,7 +25,6 @@ describe('config/env', () => {
     delete process.env.HIGH_RES_IMAGE_MODEL;
     delete process.env.PORT;
     delete process.env.IMAGE_API_TIMEOUT_MS;
-    delete process.env.GPT_POOL_QUOTA;
     delete process.env.UPLOAD_DIR;
     delete process.env.OUTPUT_DIR;
     delete process.env.LOG_LEVEL;
@@ -34,22 +33,26 @@ describe('config/env', () => {
     delete process.env.FRONTEND_ORIGIN;
     delete process.env.SQLITE_PATH;
     delete process.env.DAILY_USER_QUOTA;
+    delete process.env.DAILY_CHECK_IN_REWARD;
     delete process.env.SEED_DEFAULT_ADMIN;
     delete process.env.DEMO_PROMPTS;
     delete process.env.DEMO_PROMPT_CACHE_DELAY_MS;
+    delete process.env.TRUST_PROXY_HOPS;
+    delete process.env.APP_VERSION;
 
     const { env } = await import('../../src/config/env.js');
 
     expect(env.IMAGE_API_BASE_URL).toBe('https://api.example.com');
     expect(env.HIGH_RES_IMAGE_API_BASE_URL).toBeUndefined();
     expect(env.IMAGE_API_KEY).toBe('sk-test');
+    expect(env.GEMINI_IMAGE_API_KEY).toBe('test-gemini-key');
+    expect(env.USER_API_KEY_ENCRYPTION_KEY).toBe(Buffer.alloc(32, 7).toString('base64'));
     expect(env.HIGH_RES_IMAGE_API_KEY).toBeUndefined();
     expect(env.OPENAI_COMPAT_API_KEY).toBe('compat-test');
     expect(env.IMAGE_MODEL).toBe('gpt-image-2');
     expect(env.HIGH_RES_IMAGE_MODEL).toBeUndefined();
     expect(env.PORT).toBe(3000);
-    expect(env.IMAGE_API_TIMEOUT_MS).toBe(120_000);
-    expect(env.GPT_POOL_QUOTA).toBe(100);
+    expect(env.IMAGE_API_TIMEOUT_MS).toBe(300_000);
     expect(env.UPLOAD_DIR).toBe('./tmp/uploads');
     expect(env.OUTPUT_DIR).toBe('./tmp/outputs');
     expect(env.LOG_LEVEL).toBe('info');
@@ -58,12 +61,64 @@ describe('config/env', () => {
     expect(env.FRONTEND_ORIGIN).toBe('http://localhost:5173');
     expect(env.SQLITE_PATH).toBe('./data/app.sqlite');
     expect(env.DAILY_USER_QUOTA).toBe(20);
+    expect(env.DAILY_CHECK_IN_REWARD).toBe(5);
     expect(env.SEED_DEFAULT_ADMIN).toBe(false);
     expect(env.DEMO_PROMPTS).toEqual([]);
     expect(env.DEMO_PROMPT_CACHE_DELAY_MS).toBe(4_000);
+    expect(env.TRUST_PROXY_HOPS).toBe(0);
+    expect(env.APP_VERSION).toBe('0.0.0');
     expect(env.GOOGLE_CLIENT_ID).toBeUndefined();
     expect(env.GOOGLE_CLIENT_SECRET).toBeUndefined();
   });
+
+  it('reads the deployed application version', async () => {
+    process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
+    process.env.IMAGE_API_KEY = 'sk-test';
+    process.env.OPENAI_COMPAT_API_KEY = 'compat-test';
+    process.env.BETTER_AUTH_SECRET = 'test-secret-padding';
+    process.env.APP_VERSION = '2026.09.01+7bac27d';
+
+    const { env } = await import('../../src/config/env.js');
+
+    expect(env.APP_VERSION).toBe('2026.09.01+7bac27d');
+  });
+
+  it('reads paired Google OAuth credentials', async () => {
+    process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
+    process.env.IMAGE_API_KEY = 'sk-test';
+    process.env.OPENAI_COMPAT_API_KEY = 'compat-test';
+    process.env.BETTER_AUTH_SECRET = 'test-secret-padding';
+    process.env.GOOGLE_CLIENT_ID = 'client.apps.googleusercontent.com';
+    process.env.GOOGLE_CLIENT_SECRET = 'google-secret';
+
+    const { env } = await import('../../src/config/env.js');
+
+    expect(env.GOOGLE_CLIENT_ID).toBe('client.apps.googleusercontent.com');
+    expect(env.GOOGLE_CLIENT_SECRET).toBe('google-secret');
+  });
+
+  it.each([
+    {
+      configuredKey: 'GOOGLE_CLIENT_ID',
+      configuredValue: 'client.apps.googleusercontent.com',
+    },
+    { configuredKey: 'GOOGLE_CLIENT_SECRET', configuredValue: 'google-secret' },
+  ] as const)(
+    'rejects incomplete Google OAuth credentials when only $configuredKey is set',
+    async ({ configuredKey, configuredValue }) => {
+      process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
+      process.env.IMAGE_API_KEY = 'sk-test';
+      process.env.OPENAI_COMPAT_API_KEY = 'compat-test';
+      process.env.BETTER_AUTH_SECRET = 'test-secret-padding';
+      delete process.env.GOOGLE_CLIENT_ID;
+      delete process.env.GOOGLE_CLIENT_SECRET;
+      process.env[configuredKey] = configuredValue;
+
+      await expect(import('../../src/config/env.js')).rejects.toThrow(
+        /GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must either both be set or both be unset/,
+      );
+    },
+  );
 
   it('parses configured demo prompts and cache delay', async () => {
     process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
@@ -102,12 +157,32 @@ describe('config/env', () => {
     await expect(import('../../src/config/env.js')).rejects.toThrow(/IMAGE_API_KEY/);
   });
 
+  it('throws on import when GEMINI_IMAGE_API_KEY is missing', async () => {
+    process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
+    process.env.IMAGE_API_KEY = 'sk-test';
+    delete process.env.GEMINI_IMAGE_API_KEY;
+
+    await expect(import('../../src/config/env.js')).rejects.toThrow(/GEMINI_IMAGE_API_KEY/);
+  });
+
   it('throws on import when OPENAI_COMPAT_API_KEY is missing', async () => {
     process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
     process.env.IMAGE_API_KEY = 'sk-test';
     delete process.env.OPENAI_COMPAT_API_KEY;
 
     await expect(import('../../src/config/env.js')).rejects.toThrow(/OPENAI_COMPAT_API_KEY/);
+  });
+
+  it('requires a canonical base64-encoded 32-byte user API key encryption key', async () => {
+    process.env.IMAGE_API_BASE_URL = 'https://api.example.com';
+    process.env.IMAGE_API_KEY = 'sk-test';
+    process.env.OPENAI_COMPAT_API_KEY = 'compat-test';
+    process.env.BETTER_AUTH_SECRET = 'test-secret-padding';
+    process.env.USER_API_KEY_ENCRYPTION_KEY = 'not-a-32-byte-key';
+
+    await expect(import('../../src/config/env.js')).rejects.toThrow(
+      /USER_API_KEY_ENCRYPTION_KEY.*base64-encoded 32-byte key/,
+    );
   });
 
   it('reads SEED_DEFAULT_ADMIN only when explicitly true', async () => {

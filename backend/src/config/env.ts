@@ -2,15 +2,17 @@ import process from 'node:process';
 
 export interface Env {
   PORT: number;
+  APP_VERSION: string;
   IMAGE_API_BASE_URL: string;
   HIGH_RES_IMAGE_API_BASE_URL: string | undefined;
   IMAGE_API_KEY: string;
+  GEMINI_IMAGE_API_KEY: string;
+  USER_API_KEY_ENCRYPTION_KEY: string;
   HIGH_RES_IMAGE_API_KEY: string | undefined;
   OPENAI_COMPAT_API_KEY: string;
   IMAGE_MODEL: string;
   HIGH_RES_IMAGE_MODEL: string | undefined;
   IMAGE_API_TIMEOUT_MS: number;
-  GPT_POOL_QUOTA: number;
   UPLOAD_DIR: string;
   UPLOAD_MAX_BYTES: number;
   OUTPUT_DIR: string;
@@ -23,9 +25,11 @@ export interface Env {
   FRONTEND_ORIGIN: string;
   SQLITE_PATH: string;
   DAILY_USER_QUOTA: number;
+  DAILY_CHECK_IN_REWARD: number;
   SEED_DEFAULT_ADMIN: boolean;
   DEMO_PROMPTS: string[];
   DEMO_PROMPT_CACHE_DELAY_MS: number;
+  TRUST_PROXY_HOPS: number;
 }
 
 function readString(name: string, fallback?: string): string {
@@ -45,6 +49,15 @@ function readString(name: string, fallback?: string): string {
 function readOptionalString(name: string): string | undefined {
   const raw = process.env[name];
   if (raw === undefined || raw === '') return undefined;
+  return raw;
+}
+
+function readBase64Key(name: string): string {
+  const raw = readString(name);
+  const decoded = Buffer.from(raw, 'base64');
+  if (decoded.byteLength !== 32 || decoded.toString('base64') !== raw) {
+    throw new Error(`Environment variable ${name} must be a canonical base64-encoded 32-byte key.`);
+  }
   return raw;
 }
 
@@ -96,17 +109,27 @@ function readDelimitedStrings(name: string, delimiter: string): string[] {
 }
 
 function loadEnv(): Env {
+  const googleClientId = readOptionalString('GOOGLE_CLIENT_ID');
+  const googleClientSecret = readOptionalString('GOOGLE_CLIENT_SECRET');
+  if ((googleClientId === undefined) !== (googleClientSecret === undefined)) {
+    throw new Error(
+      'GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must either both be set or both be unset.',
+    );
+  }
+
   return {
     PORT: readInt('PORT', 3000),
+    APP_VERSION: readString('APP_VERSION', '0.0.0'),
     IMAGE_API_BASE_URL: readString('IMAGE_API_BASE_URL'),
     HIGH_RES_IMAGE_API_BASE_URL: readOptionalString('HIGH_RES_IMAGE_API_BASE_URL'),
     IMAGE_API_KEY: readString('IMAGE_API_KEY'),
+    GEMINI_IMAGE_API_KEY: readString('GEMINI_IMAGE_API_KEY'),
+    USER_API_KEY_ENCRYPTION_KEY: readBase64Key('USER_API_KEY_ENCRYPTION_KEY'),
     HIGH_RES_IMAGE_API_KEY: readOptionalString('HIGH_RES_IMAGE_API_KEY'),
     OPENAI_COMPAT_API_KEY: readString('OPENAI_COMPAT_API_KEY'),
     IMAGE_MODEL: readString('IMAGE_MODEL', 'gpt-image-2'),
     HIGH_RES_IMAGE_MODEL: readOptionalString('HIGH_RES_IMAGE_MODEL'),
-    IMAGE_API_TIMEOUT_MS: readInt('IMAGE_API_TIMEOUT_MS', 120_000),
-    GPT_POOL_QUOTA: readInt('GPT_POOL_QUOTA', 100),
+    IMAGE_API_TIMEOUT_MS: readInt('IMAGE_API_TIMEOUT_MS', 300_000),
     UPLOAD_DIR: readString('UPLOAD_DIR', './tmp/uploads'),
     UPLOAD_MAX_BYTES: readInt('UPLOAD_MAX_BYTES', 10_485_760),
     OUTPUT_DIR: readString('OUTPUT_DIR', './tmp/outputs'),
@@ -114,14 +137,16 @@ function loadEnv(): Env {
     CORS_ORIGIN: readString('CORS_ORIGIN', 'http://localhost:5173'),
     BETTER_AUTH_URL: readString('BETTER_AUTH_URL', 'http://localhost:3000'),
     BETTER_AUTH_SECRET: readString('BETTER_AUTH_SECRET'),
-    GOOGLE_CLIENT_ID: readOptionalString('GOOGLE_CLIENT_ID'),
-    GOOGLE_CLIENT_SECRET: readOptionalString('GOOGLE_CLIENT_SECRET'),
+    GOOGLE_CLIENT_ID: googleClientId,
+    GOOGLE_CLIENT_SECRET: googleClientSecret,
     FRONTEND_ORIGIN: readString('FRONTEND_ORIGIN', 'http://localhost:5173'),
     SQLITE_PATH: readString('SQLITE_PATH', './data/app.sqlite'),
     DAILY_USER_QUOTA: readInt('DAILY_USER_QUOTA', 20),
+    DAILY_CHECK_IN_REWARD: readInt('DAILY_CHECK_IN_REWARD', 5),
     SEED_DEFAULT_ADMIN: readBool('SEED_DEFAULT_ADMIN', false),
     DEMO_PROMPTS: readDelimitedStrings('DEMO_PROMPTS', '|||'),
     DEMO_PROMPT_CACHE_DELAY_MS: readNonNegativeInt('DEMO_PROMPT_CACHE_DELAY_MS', 4_000),
+    TRUST_PROXY_HOPS: readNonNegativeInt('TRUST_PROXY_HOPS', 0),
   };
 }
 

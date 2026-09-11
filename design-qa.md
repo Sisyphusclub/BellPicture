@@ -79,7 +79,7 @@ No actionable P0, P1, or P2 findings remain.
 
 ## beUI Product Workspace QA
 
-- Source design truth: `design.md`, `.trellis/tasks/07-30-nebulens-beui-product-workspace-rebuild/prd.md`, and the source-owned beUI components under `frontend/src/components/premium/`.
+- Source design truth: `design.md` and the source-owned beUI components under `frontend/src/components/premium/`.
 - Generate implementation: `design-qa-assets/generate-1440.png`.
 - Destructive confirmation implementations: `design-qa-assets/confirm-delete-desktop.png` and `design-qa-assets/confirm-delete-mobile.png`.
 - Authentication implementation: `design-qa-assets/auth-sign-in-1440.png`.
@@ -87,9 +87,9 @@ No actionable P0, P1, or P2 findings remain.
 - Assets guest implementations: `design-qa-assets/assets-guest-1440.png`, `design-qa-assets/assets-guest-1024.png`, `design-qa-assets/assets-guest-390.png`, and `design-qa-assets/assets-guest-320-settled.png`.
 - Template image asset truth: `design-qa-assets/template-assets-contact-sheet.png`.
 - Focused before/after comparison: `design-qa-assets/templates-assets-comparison.png`.
-- Local implementation: `http://127.0.0.1:5175/`; production preview: `http://127.0.0.1:4173/`.
+- Local implementation: latest Generate check at `http://127.0.0.1:5173/`; production preview: `http://127.0.0.1:4173/`.
 - States: anonymous Generate empty session, sign-in modal focused, Templates populated, Assets auth-loading and unauthenticated.
-- Browser CSS viewports: 1447 x 905, 1028 x 774, 394 x 852, and 320-class mobile coverage from the independent Trellis check.
+- Browser CSS viewports: latest Generate check at 1440 x 900 and 390 x 844, plus 1028 x 774 and 320-class mobile coverage from the independent QA check.
 
 ### Findings
 
@@ -104,7 +104,7 @@ No actionable P0, P1, or P2 findings remain.
 ### Comparison Evidence
 
 - `templates-assets-comparison.png` places the previous repeated Squarespace-derived cards beside the current 12-asset Nebulens library. The new implementation removes visible source text such as `Schedule a Lesson`, `PLANTS`, and registration navigation while preserving the beUI image-led mosaic.
-- `generate-1440.png` confirms the persistent Agent Chat Input, model, aspect, count, advanced visibility, quota state, and reserved result feed fit without crowding.
+- `generate-1440.png` confirms the 880px Agent Chat Input is docked near the lower edge of the workspace with OpenAI model identity, aspect, count, advanced visibility, and quota state intact. The result-state version keeps the same bottom dock while results own the reading area above it.
 - `confirm-delete-desktop.png` and `confirm-delete-mobile.png` confirm the shared destructive alert dialog keeps its copy, warning icon, and two actions legible without overflow. Browser checks verified initial cancel focus, forward/reverse Tab containment, Escape and backdrop close, trigger focus return, and pending-state close guards.
 - `auth-sign-in-1440.png` confirms the Morphic auth surface, initial username focus, sign-in/sign-up tabs, password visibility control, and Google action fit within the viewport.
 - Assets guest screenshots confirm the oversized framed card is gone; the state uses only the necessary heading and login action. Independent browser QA also verified the reserved auth-loading skeleton at 320px, 390px, 1024px, and 1440px.
@@ -113,9 +113,10 @@ No actionable P0, P1, or P2 findings remain.
 
 - Replaced six duplicated source-site images with 12 unique GPT Image 2 WebP assets under `frontend/public/media/templates/`.
 - Added a route regression assertion that requires one unique `/media/templates/` image URL per visible template.
-- Added the admin clarity selector contract, explicit Assets list visibility metadata, and responsive Assets auth-loading skeleton discovered by the independent Trellis check.
+- Added the admin clarity selector contract, explicit Assets list visibility metadata, and responsive Assets auth-loading skeleton discovered by the independent QA check.
 - Added the product-owned template asset convention to `design.md` and the frontend component code-spec.
 - Replaced native Generate and Assets deletion confirmations with the shared beUI Morphic `ConfirmActionModal`, including single, batch, detail, and bulk paths plus cancellation, failure, retry, and pending-state coverage.
+- Rebalanced Generate around a bottom-docked 880px creation bar for both empty and populated sessions, compact status/quota groups, the OpenAI model mark, and a looser two-column result grid. The redundant empty-result frame and copy are removed. Browser metrics report zero horizontal overflow at 1440px and 390px.
 
 ### Follow-up Polish
 
@@ -132,13 +133,1039 @@ No actionable P0, P1, or P2 findings remain.
 
 - Typography: the headline uses responsive sizes of 96px wide desktop, 72px base desktop, 52px tablet, and 38px mobile. `Turn your idea` uses Geist Variable at 460 weight with slightly tightened internal word spacing, while the smaller italic serif phrase remains the visual counterpoint with a deliberate natural-space gap. The Chinese supporting line is 17px at base sizes and 18px on wide desktop.
 - Spacing: the desktop hero content starts at 168px, with the composer 40px below the supporting line. The hero remains one focused viewport; the independent static creation feed begins below it without overlapping the composer.
-- Focus treatment: the existing `BorderBeam size="md"` remains the only animated border. Its sunset beam uses a slower 3.2s cycle, controlled brightness and saturation, and a restrained warm halo without a second white focus outline.
-- Responsive integrity: browser checks found no horizontal overflow, the video remained ready, and all six creation assets loaded. The mobile state retained the title, controls, focused beam, and a single-column feed below the hero.
+- Focus treatment: the Agent Composer uses the ReactBits `BorderGlow` component. Discover clips its colored `::before` mesh to a 1px border ring and disables only the `::after` interior fill, so the orange, cyan, and blue gradient remains visible without bleeding through the glass. The pointer-owned outer edge light remains active, with no permanent shell stroke or second white outline.
+- Responsive integrity: browser checks found no horizontal overflow, the video remained ready, and all six creation assets loaded. The mobile state retained the title, controls, focused glow, and a single-column feed below the hero.
 
 ### Verification
 
 - Frontend `typecheck`, `lint`, `test` (40 tests), `format:check`, and `build` passed.
-- Browser metrics confirmed the focused beam is active only after the prompt field receives focus, with no white outline and a clear boundary before the creation feed.
+- Browser metrics confirmed the focused glow activates after the prompt field receives focus, responds more strongly near the edge, and keeps a clear boundary before the creation feed.
+
+final result: passed
+
+## Composer Glow Corner Continuity QA (2026-08-28)
+
+- Source screenshot: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-ec03a9de-cea0-4ec3-b886-27cdea26e14e.png`.
+- Full implementation screenshot: `design-qa-assets/composer-glow-corners-after-1440x813.png`.
+- Focused implementation screenshot: `design-qa-assets/composer-glow-corners-focused-1440x813.png`.
+- Docked evidence: `design-qa-assets/composer-glow-corners-docked-compact-1440x813.png` and
+  `design-qa-assets/composer-glow-corners-docked-expanded-1440x813.png`.
+- Responsive and shared-route evidence: `design-qa-assets/composer-glow-corners-mobile-390x844.png`,
+  `design-qa-assets/composer-glow-corners-docked-mobile-390x844.png`, and
+  `design-qa-assets/composer-glow-corners-generate-1440x813.png`.
+- Local implementation: `http://localhost:5173/` and `http://localhost:5173/generate`.
+
+### Findings
+
+No actionable P0, P1, or P2 mismatch remains.
+
+- Corner continuity: at the source screenshot's left-edge pointer position, the top-left and
+  bottom-left arcs now join their adjacent horizontal and vertical edges without a visible cut.
+  The same uninterrupted ring remains at the top, right, and bottom pointer positions.
+- Layer ownership: computed `::before` `mask-image` is `none` in all four pointer directions.
+  `.edge-light` retains its conic direction mask, while its shadow stack contains only soft outer
+  shadows and no inset stroke that could introduce a second corner boundary.
+- Palette fidelity: Generate reports the shared `#ffb51b`, `#12c8f4`, and `#1464ff` gradient
+  variables; Discover and Generate both render the same complete structural ring.
+- State coverage: Discover hero, desktop compact dock, desktop expanded dock, 390 x 844 hero,
+  and 390 x 844 compact dock all report zero horizontal overflow and preserve their existing
+  geometry.
+- Lifecycle: after focus and pointer leave, `::before`, `::after`, and `.edge-light` computed
+  opacity each settles to `0`. The browser log contains no warning or error entries.
+
+### Patches Made
+
+- Removed the directional conic mask from the shared 1px structural border.
+- Removed inset edge-light strokes while retaining the pointer-responsive outer glow shadows.
+- Kept composer geometry, controls, docking motion, generation behavior, and route CSS unchanged.
+
+### Verification
+
+- `npm run check:components`: passed.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed with the existing Fast Refresh warning in
+  `src/components/ui/sidebar.tsx:743`.
+- `npm run test`: passed, 13 files and 76 tests.
+- `npm run build`: passed with the existing non-blocking Vite chunk-size warning.
+- Focused Prettier check, `git diff --check`, and task validation: passed.
+
+final result: passed
+
+## Landing and Generate Composer Glow Parity QA (2026-08-28)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-d7f8cf8c-5aeb-4b42-852b-6a2e2b533a2c.png` for the uneven Discover state and `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-31811fc0-b144-4017-b084-f4d769e28179.png` for the Generate glow target.
+- Implementation screenshot: `C:/Users/ADMINI~1/AppData/Local/Temp/nebulens-glow-qa/landing-after.png`.
+- Full-view comparison evidence: `C:/Users/ADMINI~1/AppData/Local/Temp/nebulens-glow-qa/generate-landing-comparison.png`.
+- Focused comparison evidence: `C:/Users/ADMINI~1/AppData/Local/Temp/nebulens-glow-qa/generate-landing-focused-comparison.png`.
+- Local implementation: `http://localhost:5173/` and `http://localhost:5173/generate`.
+- Viewports/states: anonymous dark workspace at 1440 x 813 with the composer focused, plus Discover at 390 x 844 in hero, compact docked, and expanded docked states.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: prompt, control, quota, and submit typography are unchanged. The focused comparison preserves each route's existing content hierarchy without clipping or wrapping regressions.
+- Spacing and layout rhythm: Discover retains its 940px hero and expanded dock footprint, 560px compact desktop dock, and responsive 358px mobile dock. All checked states keep the existing 20px outer radius and report zero horizontal overflow.
+- Colors and visual tokens: Discover and Generate now compute the same eight orange/cyan/blue gradient layers, `::before` conic direction mask, `::after` fill mask, edge-light mask, opacity values, and full cyan inner/outer shadow stack. The fixed full-perimeter blue and yellow lines from the supplied Discover screenshot are absent.
+- Image quality and asset fidelity: the existing landing video and gallery rasters remain unchanged. The glow fix adds no image asset, placeholder, SVG, or code-drawn decoration.
+- Copy and content: all prompt examples, model/count/private controls, quota labels, and submit-cost content remain unchanged.
+- Interaction and responsiveness: focus and pointer direction continue to control the shared glow. Compact and expanded dock states retain their geometry; after focus leaves the component, `::before`, `::after`, and edge-light computed opacity all settle to `0`.
+
+### Comparison Evidence
+
+- The full-view side-by-side capture places Generate and Discover at the same 1440 x 813 viewport and focus state. Both show the restrained cyan emphasis near the active edge and the same warm transition without a permanently saturated perimeter.
+- The focused crop makes the complete composer outlines readable. Generate and Discover share the same directional highlight distribution and continuous corner treatment despite their intentionally different route content and widths.
+- Computed-style parity returned `true` for palette, root radius, before/after masks and opacity, edge mask and opacity, edge shadow, and active edge proximity.
+
+### Patches Made
+
+- Removed the Discover-only full-perimeter gradient ring.
+- Removed the Discover-only reduced outer-shadow stack and restored the shared BorderGlow inner/outer glow treatment.
+- Restored the shared low-opacity edge fill on Discover.
+- Updated the frontend component contract to forbid route-owned replacement glow algorithms.
+
+### Verification
+
+- `npm run check:components`: passed.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed with one pre-existing Fast Refresh warning in `src/components/ui/sidebar.tsx`.
+- `npm run test`: passed, 13 files and 76 tests.
+- `npm run build`: passed with the existing non-blocking Vite chunk-size warning.
+- Targeted Prettier check and `git diff --check`: passed. The repository-wide format check retains its 43 pre-existing unrelated files.
+- Browser console: no warnings or errors.
+
+final result: passed
+
+## Discovery Gallery Fade Removal QA (2026-08-13)
+
+- Source visual truth: the user-requested removal of the fade from the previously approved static gallery at `design-qa-assets/discovery-static-gallery-1440x813.png`.
+- Implementation screenshots: `design-qa-assets/discovery-static-gallery-no-fade-1440x813.png` and `design-qa-assets/discovery-static-gallery-no-fade-390x844.png`.
+- Full-view comparison evidence: `design-qa-assets/discovery-static-gallery-no-fade-comparison.png`.
+- Local implementation: `http://localhost:5173/`.
+- Viewport/state: unauthenticated Discover page at 1440 x 813 and 390 x 844.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: navigation, hero, subtitle, composer, and control typography remain unchanged.
+- Spacing and layout rhythm: the four-column desktop and two-column compact tracks retain their positions, widths, aspect ratios, and 6px landing-page gutters. Only the optical fade was removed.
+- Colors and visual tokens: every gallery image now starts at full source opacity with no top or bottom gradient masking; the graphite canvas and existing image hover treatment remain unchanged.
+- Image quality and asset fidelity: all six product-owned raster works remain sharp and preserve the established crop and aspect ratio.
+- Copy and content: all visible copy and image accessibility labels remain unchanged.
+- Interaction and responsiveness: computed `mask-image` is `none` in both desktop and compact galleries, image-detail controls remain present, and neither viewport has horizontal overflow.
+
+### Comparison Evidence
+
+- The 1440px side-by-side comparison shows the previous masked gallery on the left and the full-opacity gallery on the right. The first image row is now immediately legible without adding a replacement overlay or transition.
+- A separate focused crop was unnecessary because the complete first image row clearly exposes the only requested change at full-view scale.
+
+### Patches Made
+
+- Removed the component-owned `mask-image` and `-webkit-mask-image` gradient block.
+- Added a regression assertion that the landing gallery no longer injects a scoped style element.
+- Updated `design.md` and the frontend component guideline to forbid edge-fade masks on the Discover gallery.
+
+### Verification
+
+- `npm run typecheck`: passed.
+- `npm test -- --run tests/App.spec.tsx`: passed, 16 tests.
+- `npm run lint`: passed with one pre-existing Fast Refresh warning in `src/components/ui/sidebar.tsx`.
+- Focused Prettier check: passed.
+- Browser checks at 1440 x 813 and 390 x 844: passed, no mask and no horizontal overflow.
+
+final result: passed
+
+## Discovery Static Gallery QA (2026-08-13)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-22ce644e-69e2-4bdc-99dc-8e1b3864f9ff.png`.
+- Implementation screenshots: `design-qa-assets/discovery-static-gallery-2048x750.png`, `design-qa-assets/discovery-static-gallery-1440x813.png`, `design-qa-assets/discovery-static-gallery-1366x768.png`, and `design-qa-assets/discovery-static-gallery-390x844.png`.
+- Full-view comparison evidence: `design-qa-assets/discovery-static-gallery-comparison.png`.
+- Local implementation: `http://localhost:5173/`.
+- Viewport/state: unauthenticated Discover page at 2048 x 750 for source comparison, with responsive checks at 1440 x 813, 1366 x 768, and 390 x 844.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: the existing Nebulens navigation, hero title, subtitle, and composer typography remain unchanged; the requested edit introduces no gallery text.
+- Spacing and layout rhythm: the existing four-column desktop and two-column compact waterfall tracks remain stable, retain their 6px landing-page gutters, and continue to rise into the first viewport beneath the composer. The symmetric edge mask still blends the gallery into the hero.
+- Colors and visual tokens: the existing dark graphite canvas, subdued image treatment, hover scale, and mask opacity remain unchanged. No new borders, surfaces, or accent colors were introduced.
+- Image quality and asset fidelity: all six product-owned raster works remain sharp and preserve their source aspect ratios and crop. The static layout renders each work once in the active responsive gallery rather than duplicating images for an animation loop.
+- Copy and content: navigation, hero copy, composer content, and image accessibility labels remain unchanged.
+- Interaction and responsiveness: a 3.2-second before/after measurement returned identical rectangles for every visible image and zero gallery animation names. Image-detail activation still opens the shared dialog. Browser checks found no horizontal overflow at 2048px, 1440px, 1366px, or 390px; the compact view retains two columns.
+
+### Comparison Evidence
+
+- The side-by-side 2048 x 750 comparison shows the requested static waterfall composition while preserving the existing Nebulens shell and long top fade into the images.
+- A focused crop was not needed because the requested behavior concerns the complete waterfall and its position relative to the hero; the full-view comparison and measured DOM rectangles cover the relevant surface.
+
+### Patches Made
+
+- Removed the duplicate loop copies, alternating up/down keyframes, timing styles, transform hints, and obsolete speed prop from the beUI Pro vertical gallery adaptation.
+- Kept one stable image node per work in each responsive gallery while preserving ratios, hover treatment, and detail actions.
+- Updated the landing selector depth, regression test, `design.md`, and frontend component guideline to make static behavior the documented contract.
+
+### Verification
+
+- `npm run typecheck`: passed.
+- `npm test -- --run`: passed, 70 tests.
+- `npm run lint`: passed with one pre-existing Fast Refresh warning in `src/components/ui/sidebar.tsx`.
+- `npm run check:components`: passed.
+- Focused Prettier check: passed. The all-repository format check still reports 50 pre-existing files outside this change.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+- `git diff --check`: passed with only repository LF-to-CRLF notices.
+
+final result: passed
+
+## Discovery Account Actions and Daily Check-in QA (2026-08-13)
+
+- Source visual truth: `design-qa-assets/landing-account-actions-reference.png`.
+- Implementation screenshot: `design-qa-assets/landing-account-actions-1440.jpg`.
+- Focused region: `design-qa-assets/landing-account-actions-crop.jpg`.
+- Side-by-side comparison: `design-qa-assets/landing-account-actions-comparison.jpg`.
+- Mobile verification: `design-qa-assets/landing-account-actions-mobile.jpg`.
+- Local implementation: `http://localhost:5173/`.
+- Viewports: 1440 x 813 and 1366 x 768 desktop; 390 x 844 mobile.
+- States: authenticated discovery page before check-in, check-in popover open,
+  successfully claimed state, notifications/account triggers, and mobile fallback.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: the compact 13-16px Geist UI hierarchy matches the
+  reference density; credits use a tabular 14px value and the popover keeps one
+  strong headline with an 11px explanatory line. Copy stays legible without
+  clipping or negative letter spacing.
+- Spacing and layout rhythm: the desktop cluster uses two 40px quiet icon
+  targets, one 44px credits pill, a separated 40px circular account trigger,
+  and a 12px-offset popover. The group remains 18px from the right edge at
+  1440px and 1366px. Browser metrics report no horizontal overflow. At 390px,
+  the desktop cluster is hidden and the same action remains available in the
+  mobile Sidebar.
+- Colors and visual tokens: the graphite pill, low-contrast borders, pale
+  blue/lilac check-in action, and cool account avatar preserve the existing
+  Nebulens dark system. The source's purple membership label was intentionally
+  replaced by the product's real personal-credit state.
+- Image quality and asset fidelity: the existing Nebulens raster logo and video
+  remain unchanged. The new actions use Lucide icons and a typographic account
+  initial through shared controls; no source avatar, code-drawn SVG, or
+  placeholder asset was introduced.
+- Copy and content: the cluster exposes Templates, Notifications, Personal
+  Credits, and Account. The open state reads `赢取每日灵感值！` and
+  `每日签到可得 5 积分`; after the claim it reads `今日灵感已领取` and
+  `已签到`.
+
+### Comparison Evidence
+
+- The focused side-by-side comparison places the supplied upper-right reference
+  next to the rendered Nebulens cluster. Control density, pill division,
+  circular account entry, and below-trigger popover hierarchy align closely.
+- Browser interaction changed the authenticated account from 20 to 25 credits,
+  changed the composer quota from 20/20 to 25/25, disabled the repeated claim,
+  and rendered the success toast. This confirms the visible state is driven by
+  the persisted quota mutation rather than local decoration.
+- DOM checks verified the notification and account popovers, accessible trigger
+  names, and a 390px layout with the desktop cluster hidden and no document
+  overflow.
+
+### Patches Made
+
+- Rebuilt the desktop upper-right account actions around shared `Button`,
+  `IconTooltip`, and `MorphPopover` components.
+- Added server-persisted, idempotent daily check-in credits using the
+  `Asia/Shanghai` product date and a configurable reward.
+- Synchronized returned quota state across the discovery header, mobile
+  Sidebar, and image composer.
+- Added migration, route/service/API/UI regression coverage and updated the
+  product and component/database contracts.
+
+### Verification
+
+- Backend typecheck, lint, 168 tests, and production build passed.
+- Frontend typecheck, lint, component provenance audit, 70 tests, and production
+  build passed.
+- Component provenance reported 0 visible native controls outside shared roots
+  and 0 forbidden imports or browser dialogs.
+- Browser QA passed at 1440 x 813, 1366 x 768, and 390 x 844 with no horizontal
+  overflow. The existing non-blocking Vite chunk-size warning remains.
+
+final result: passed
+
+## GPT-style Recent Sessions QA (2026-08-04)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-1705e9ec-83e8-4a75-89d3-a20c139eec34.png`.
+- Implementation screenshot: `design-qa-assets/generate-gpt-recents-active-1280.png`.
+- Menu screenshot: `design-qa-assets/generate-gpt-recents-menu-1280.png`.
+- Focused comparison evidence: `design-qa-assets/generate-gpt-recents-comparison.png`.
+- Local implementation: `http://localhost:5173/generate`.
+- Viewport/state: 1280 x 720 authenticated Generate workspace with one active session and one inactive session. A temporary empty session was used for comparison and removed after capture.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: the section heading uses the product's 12px/650 compact heading treatment; session titles use 13px with active text at the primary foreground and inactive text at the secondary foreground. Both rows stay single-line and truncate without shifting the action track.
+- Spacing and layout rhythm: both session rows are a stable 40px high with one `1fr + 30px` grid. The active session has the persistent full-row 8px-radius fill shown in the GPT reference, while inactive sessions remain unfilled until hover or focus. The visible numeric badge and the second action column were removed.
+- Colors and visual tokens: the light GPT selected row is intentionally translated to the dark graphite theme through semantic foreground and raised-surface tokens. The selected fill is visibly distinct from the canvas without competing with the active Generate navigation state.
+- Image quality and asset fidelity: this sidebar change introduces no raster asset. The only new icons are Lucide `Pencil` and `Trash2`, used through the shared beUI dropdown item contract.
+- Copy and content: the product keeps the concise Chinese heading `最近会话`. Row actions are now `重命名` and `删除` inside one menu, matching the reference's low-chrome conversation list rather than exposing parallel controls.
+- Component compliance: the row trigger is the shared ghost icon `Button`; its option surface is the shared beUI `AnimatedDropdown`; destructive confirmation remains the shared `ConfirmActionModal`. Page-local duplicate dropdown, tooltip, and dialog implementations were not added.
+- Interaction and accessibility: the three-dot trigger appears on hover, focus-within, or menu-open. It remains keyboard focusable while visually hidden, Enter opens the menu, the dropdown supplies semantic `menuitem` roles, and inline rename/delete confirmation behavior is preserved.
+
+### Comparison Evidence
+
+- The focused side-by-side comparison places the supplied GPT Recents reference beside the rendered dark-theme sidebar. Both show one clearly selected conversation row, unfilled inactive rows, a distinct group heading, and no persistent row actions.
+- Browser measurement reports 40px for both active and inactive rows, transparent inactive background, persistent active graphite fill, and zero width change between states.
+- The menu capture confirms a single ellipsis trigger expands into the beUI Animated Dropdown with semantic rename and destructive delete items without changing sidebar width or the Generate canvas.
+
+### Patches Made
+
+- Replaced the two visible row action columns with one shared beUI Animated Dropdown trigger.
+- Removed the visible session count badge and strengthened the active/inactive hierarchy.
+- Moved rename and delete into the dropdown while preserving inline rename and shared confirmation behavior.
+- Removed the duplicate global focus outline from dropdown items so the beUI moving highlight remains the only focus treatment.
+- Updated route tests, `design.md`, and the component provenance and interaction contract.
+
+### Verification
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm run test`: passed, 53 tests.
+- `npm run format:check`: passed.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+- `git diff --check`: passed with only repository LF-to-CRLF notices.
+- In-app browser checks passed for active/inactive contrast, keyboard menu opening, semantic menu roles, and post-QA cleanup of the temporary empty session.
+
+final result: passed
+
+## Editable Prompt Replacement QA (2026-08-04)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-69566ce3-6b68-497b-af2e-36d7bb19d6f3.png`.
+- Implementation screenshot: `design-qa-assets/generate-edit-prompt-hover-1280.png`.
+- Focused comparison: `design-qa-assets/generate-edit-prompt-comparison.png`.
+- Local implementation: `http://localhost:5173/generate`.
+- Viewport/state: 1280 x 720 authenticated desktop workspace with an existing completed batch and the prompt edit action focused.
+
+### Findings
+
+No actionable P0, P1, or P2 mismatch remains.
+
+- Composition: the completed prompt remains a compact right-aligned conversation bubble while its image result stays left-aligned with the composer.
+- Typography: prompt and metadata retain the existing 14px/10px hierarchy; editing does not introduce a competing heading treatment.
+- Color and surface: the editor uses the current cool graphite tokens, restrained border contrast, and the existing white primary action rather than a new warm surface.
+- Spacing and geometry: the edit state expands in place to a bounded 580px surface, preserves the turn position, and uses 8px control radii with 32px action targets.
+- Interaction: the pencil action appears on hover or keyboard focus; `Escape` cancels, `Ctrl/Cmd + Enter` submits, and empty text disables regeneration. Submission reuses the complete generation settings and swaps the old result for same-ratio placeholders.
+- Persistence safety: the old batch is deleted only after the replacement succeeds. Cancellation or generation failure restores the original prompt, image, and session batch ID.
+
+### Verification
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm run format:check`: passed.
+- `npm test -- --run`: passed, 11 files and 52 tests.
+- Focused Generate view suite: passed, 13 tests, including successful replacement and failed-replacement restoration.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+- Browser verification: latest Vite source loaded, authenticated history result loaded, edit action present and visible in keyboard focus state, and no horizontal overflow observed. No live regeneration was submitted, avoiding quota consumption and destructive replacement of an existing user batch.
+
+final result: passed
+
+## Result/Composer Scrollbar Alignment Regression QA (2026-08-04)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-93a65412-f41f-4e4d-8b52-b2fdfca442bd.png`.
+- Implementation screenshot: `C:/Users/Administrator/AppData/Local/Temp/nebulens-result-alignment-fixed.png`.
+- Full-view comparison evidence: `C:/Users/Administrator/AppData/Local/Temp/nebulens-result-alignment-full-comparison.png`.
+- Focused comparison evidence: `C:/Users/Administrator/AppData/Local/Temp/nebulens-result-alignment-focus-comparison.png`.
+- Local implementation: `http://localhost:5173/generate?session=1e127208-b01b-4d8a-9a9d-9d7deab9fcff`.
+- Viewport: 2045 x 1389 CSS pixels with a 15px vertical scrollbar.
+- State: authenticated Generate workspace with two completed square-image batches; the second
+  image intersects the fixed composer region.
+
+### Findings
+
+No actionable P0, P1, or P2 mismatches remain.
+
+- Fonts and typography: prompt, model, ratio, visibility, and quota labels retain the existing
+  compact Geist hierarchy; this alignment-only patch does not alter font metrics or wrapping.
+- Spacing and layout rhythm: the result preview frame, loaded image, and visible composer root now
+  share the exact `601.67px` left coordinate at the reference viewport. The prior `7.5px` drift was
+  half of the 15px scrollbar width.
+- Colors and visual tokens: the existing dark canvas, lower fade, translucent composer, border,
+  and blur tokens are unchanged.
+- Image quality and asset fidelity: the real generated dog and cat images were used for the final
+  comparison. Both loaded at full scale and retained their square aspect ratio without cropping or
+  a left-edge strip.
+- Copy and content: no labels, prompts, session metadata, or actions changed.
+
+### Comparison Evidence
+
+- The combined full view places the user's annotated screenshot beside the fixed authenticated
+  workspace at the same 2045 x 1389 viewport.
+- The focused comparison isolates the reported left edge. The reference shows the image extending
+  left of the composer; the fixed view shows image and composer on the same vertical axis.
+- Browser DOM measurements report `frameToInput: 0px` and `imageToInput: 0px` after both images
+  complete their 220ms load transition.
+
+### Patch Made
+
+- Replaced `100vw` with percentage-based layout viewport sizing for the fixed composer position and
+  width. Percentage sizing excludes the browser scrollbar, matching the in-flow result feed's
+  centering calculation.
+
+### Verification
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm run format:check`: passed.
+- `npm run test`: passed, 11 files and 50 tests.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+- Browser verification: 0px result/composer left-edge delta at 1878 x 1185 and 2045 x 1389.
+
+final result: passed
+
+## Generation History Tick Navigation QA (2026-08-11)
+
+- Scope: the right-side history tick navigation, contextual batch preview, and secondary searchable
+  flyout in the Generate workspace.
+- Interaction contract: every persisted batch owns one independently focusable shared `Button` tick.
+  Hover or focus reveals only that batch's compact preview; clicking the tick loads the batch directly.
+- Secondary action contract: the full searchable panel opens only from the rail search action or
+  `查看全部历史`. Tick, preview, safety corridor, and panel share delayed-leave behavior, while Escape
+  closes the active surface and restores focus to its opener. The panel removes hidden ticks from
+  pointer and keyboard navigation and exposes a shared close action in its header.
+- Layout contract: one history item produces a compact rail rather than a tall invisible target; the
+  fixed overlay keeps the existing right-side breathing room and does not resize the canvas or composer.
+- Motion contract: tick length, preview, and panel transitions use restrained opacity/transform changes;
+  reduced-motion removes nonessential transitions and the pending pulse.
+
+### Visual Evidence
+
+- Supplied reference: `design-qa-assets/generation-history-reference.png`.
+- Side-by-side comparison: `design-qa-assets/generation-history-comparison.png`.
+- Desktop captures: `design-qa-assets/generation-history-ticks-1440.png`,
+  `design-qa-assets/generation-history-tick-preview-1440.png`,
+  `design-qa-assets/generation-history-panel-1440.png`, and
+  `design-qa-assets/generation-history-panel-1366x768.png`.
+- Mobile capture: `design-qa-assets/generation-history-panel-390x844.png`.
+
+### Verification Status
+
+- `npm run check:components`: passed, with no visible native controls or forbidden component imports.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm test -- --run`: passed, 13 files and 67 tests.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+- Component and Generate-view regressions cover tick preview, direct selection, secondary panel access,
+  safe travel, focus-within retention, hidden-tick tab removal, compact single-item sizing,
+  current/hover state, and keyboard Escape behavior.
+- In-app Browser QA passed at 1366x768, 1440x900, 1920x1080, and 390x844. The searchable panel keeps
+  23px, 16px, 123px, and 20px of composer clearance respectively; desktop document width equals the
+  viewport, and the 390px composer remains fully inside the viewport after its late-cascade fix.
+- The final comparison preserves the reference interaction hierarchy: quiet ticks, one longer active
+  state, tick-aligned contextual detail, and an explicit secondary path to full search.
+
+final result: passed
+
+## Wanxiang Navigation Hierarchy QA (2026-08-12)
+
+- Scope: Discover navigation layout and account/points placement.
+- Desktop uses a full-height left rail with icon-plus-label routes for 发现、生图、创作模板、资产;
+  the current route has a persistent raised graphite row with visible focus treatment.
+- The upper-right account cluster separates 登录/账户 from 个人积分. Guest points remain an auth
+  action, while authenticated points render the live remaining quota.
+- Mobile restores the compact top brand bar and menu overlay, preserving all route links and the
+  create action without horizontal overflow.
+
+## Wanxiang Full-Viewport Hero QA (2026-08-13)
+
+- Source inspected: `https://tongyi.aliyun.com/wan/explore` at a 1952 x 1098 desktop viewport.
+- Wanxiang renders its hero video as a 1952 x 1098 absolute layer with `object-fit: cover`; Nebulens
+  now follows the same viewport-layer geometry and removes the previous 140% x 170% enlargement.
+- The desktop navigation is a transparent approximately 88px visual rail over the video rather than
+  an opaque application sidebar. Routes use compact icon-over-label targets, with the asset route
+  separated from creation routes and glass reserved for selection/interaction feedback.
+- The hero and gallery are centered in the canvas remaining beside the rail. Mobile retains the
+  compact top navigation surface and resets all desktop rail offsets.
+
+## Discovery Sidebar Component Normalization QA (2026-08-13)
+
+- beUI Pro Navbar was audited at `https://pro.beui.dev/components/navbar`; all four registry
+  variants are top navigation patterns and none provides a left application sidebar.
+- Per the project fallback rule, discovery navigation now uses the registry-copied shadcn Sidebar
+  primitives: Provider, Sidebar, Header, Content, Group, Menu, MenuButton, Separator, Footer,
+  Tooltip, and mobile Sheet.
+- `LandingSidebar` is only a product composition boundary for routes, the Nebulens brand, login,
+  and points. It does not reproduce Sidebar state, focus, mobile sheet, or tooltip behavior.
+- The previously adapted `NavbarExpand` implementation was removed to avoid representing modified
+  product code as an unchanged beUI Pro registry component.
+
+## Shiny Headline Gradient QA (2026-08-11)
+
+- Source visual truth: the user-provided `Shiny Text Gradient Animation` React/Tailwind specification in the current request.
+- Implementation screenshots: `design-qa-assets/discover-shiny-headline-final-desktop.png` and `design-qa-assets/discover-shiny-headline-final-mobile.png`.
+- Local implementation: `http://127.0.0.1:5173/`.
+- Viewport/state: Discover page with the hero video playing and the headline rendered at requested desktop and mobile breakpoints. The in-app browser's effective CSS viewports were 1014 x 573 and 274 x 594 under Windows display scaling.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: `Turn your idea` remains the existing Geist Variable treatment; only the Instrument Serif Italic `into images` span receives the shiny gradient, preserving the shared baseline and existing title scale.
+- Colors and visual tokens: the inline gradient uses the requested 110deg stops `#3D81E3`, `#AE9AE6`, `#F8D8D5`, `#FEEFDB`, and `#3D81E3`. The effect is limited to the headline text and does not tint the video, composer, or navigation.
+- Motion: the browser reports `6s linear infinite shiny`, and sampled `background-position` values decrease from the positive side toward the negative side so the visible sheen travels left to right. The reduced-motion media rule disables the loop and centers the gradient.
+- Responsive integrity: desktop and mobile screenshots retain the complete headline, with zero horizontal document overflow and no overlap with the subtitle or composer.
+- Copy and content: the accessible heading remains `Turn your idea into images` and the visible copy is unchanged.
+
+### Patches Made
+
+- Added the reusable `.animate-shiny` utility and `@keyframes shiny` to the existing global stylesheet.
+- Added the typed React gradient style object and applied it only to the `into images` headline span.
+- Added compensated lower padding and negative margin to keep the italic `g` descender painted without moving the subtitle or composer, and reversed the keyframe direction for left-to-right travel.
+- Added a regression test for the animation class, gradient stops, and inline sizing contract.
+- Added a static centered-gradient fallback for `prefers-reduced-motion` and documented the contract in `design.md`.
+
+### Verification
+
+- `npm run check:components`: passed.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm test -- --run tests/App.spec.tsx`: passed, 14 tests.
+- `npm run build`: passed; the existing non-blocking chunk-size warning remains.
+- Focused Prettier check for changed source/spec files: passed. Repository-wide format check still reports pre-existing baseline files outside this change.
+- `git diff --check`: passed.
+
+final result: passed
+
+## Centered Hero Video and Wanxiang Glass QA (2026-08-11)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-b503d54e-a028-4023-9e9b-983a25d8ea36.png` and `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-99371377-520f-4f64-9b6a-b346c54e824a.png`.
+- Implementation screenshots: `design-qa-assets/discover-centered-video-wanxiang-glass-final-desktop.png` and `design-qa-assets/discover-wanxiang-glass-final-mobile.png`.
+- Focused comparison evidence: `design-qa-assets/discover-wanxiang-glass-focused-comparison.png`.
+- Local implementation: `http://127.0.0.1:5173/`.
+- Viewport/state: requested 1440 x 813 desktop and 390 x 844 mobile overrides; the in-app browser rendered effective CSS viewports of 1014 x 573 and 274 x 594 under Windows display scaling. Anonymous Discover page, hero video playing, composer checked in idle and focused states.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: the existing Geist and Instrument Serif title lockup, 16px streamed prompt, model label, quantity, privacy, and quota text remain unchanged and legible over the lighter material.
+- Spacing and layout rhythm: the desktop video overscan covers the full viewport while its vortex focal point is centered behind the title and composer. The composer keeps its established width and toolbar geometry with a reference-aligned 30px material radius. Desktop and mobile checks report zero horizontal overflow.
+- Colors and visual tokens: the composer uses a cool blue-graphite tint, translucent radial sheen, restrained directional rim, and separate 4-6px chrome blur. It no longer reads as a flat black panel. The focused orange, cyan, and blue BorderGlow remains the only colored edge treatment.
+- Image quality and asset fidelity: the existing source video is preserved, brightened by the established filter, and reframed without stretching or replacement. The focused comparison places the supplied Wanxiang crop and current composer in the same image; both show transparent source imagery, a soft cool material, large rounded corners, and differentiated top, side, and lower rim light.
+- Copy and content: the Discover title, subtitle, streaming image prompts, GPT Image 2 model label, settings, privacy, and quota copy remain unchanged.
+- Responsive and interaction states: mobile keeps a single contained composer with the same glass contract, 6px blur, readable controls, and no document overflow. Keyboard focus retains the existing brand gradient edge without adding a second white focus outline.
+
+### Patches Made
+
+- Reframed the desktop hero video around its visual focal point while keeping mobile framing unchanged.
+- Replaced the dark translucent composer fill with continuous displacement, a lightly tinted radial sheen, lower chrome blur, and directional inset highlights.
+- Increased the Discover-only material radius to 30px while leaving the Generate composer at 20px.
+- Added route regression assertions for the liquid-glass displacement scale and Discover radius.
+- Updated `design.md` and the frontend component guideline with the final material contract.
+
+### Verification
+
+- `npm run check:components`: passed; 79 TypeScript files scanned and only the documented hidden browser-control exception remains.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm test -- --run tests/App.spec.tsx`: passed, 14 tests.
+- `npm run build`: passed; the existing non-blocking 708.42 kB chunk warning remains.
+- Focused Prettier check for every changed source/spec file: passed. Repository-wide `npm run format:check` still reports 56 pre-existing baseline files outside this focused change.
+- `git diff --check`: passed with only the repository LF-to-CRLF notices.
+- Browser console: no application errors or warnings; only Vite connection and React development messages were present.
+
+final result: passed
+
+## Discover Liquid-Glass Composer QA (2026-08-11)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-869a5446-8105-4137-8f00-9d51765802d6.png`.
+- Desktop implementation: `design-qa-assets/discover-liquid-glass-focused-1440.png`.
+- Mobile implementation: `design-qa-assets/discover-liquid-glass-390.png`.
+- Full-view comparison: `design-qa-assets/discover-liquid-glass-full-comparison.png`.
+- Focused material comparison: `design-qa-assets/discover-liquid-glass-focused-comparison.png`.
+- Local implementation: `http://127.0.0.1:5173/`.
+- Viewport/state: 1440 x 813 focused Discover composer over the live hero video; responsive check at
+  390 x 844. The supplied source is a wider full-browser capture, so the focused comparison normalizes
+  the two composer regions while the full comparison is retained for visual context only.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain for the requested material-only change.
+
+- Fonts and typography: existing Nebulens heading, subtitle, streamed prompt, and toolbar text remain
+  unchanged. The glass layers are non-content elements and do not alter wrapping, font weight, or
+  contrast.
+- Spacing and layout rhythm: the existing beUI composer geometry and toolbar grouping remain intact.
+  The glass layers are absolutely positioned inside a 1px inset, while the root keeps `overflow:
+visible`; measured horizontal document overflow is `0px` on desktop and mobile.
+- Colors and visual tokens: the material uses a cool graphite radial tint over the hero video, a
+  `2px` desktop / `2.5px` mobile chrome blur, and restrained saturation. The existing orange, cyan,
+  and royal-blue BorderGlow remains a focused 1px ring with no warm interior fill.
+- Image quality and asset fidelity: the existing hero video, logo, and gallery assets are unchanged.
+  The directional displacement map refracts the live video backdrop instead of replacing it with a
+  fake image or decorative artwork.
+- Copy and content: no visible copy, controls, model values, generation settings, or route behavior
+  changed.
+- Scope isolation: browser inspection reports the Discover effect as
+  `url("#liquid-glass-...") saturate(1.05)` plus `blur(2px) saturate(1.15)`; Generate renders one
+  existing studio composer and zero `[data-liquid-glass="true"]` nodes.
+
+### Comparison Evidence
+
+- The focused side-by-side artifact shows the source and implementation using the same material
+  hierarchy: background detail remains perceptible through a neutral dark body, the edge carries a
+  restrained highlight, and content sits above the glass rather than inside another opaque card.
+- The full-view artifact confirms that the requested material was adapted to the existing Nebulens
+  hero without copying Wanxiang navigation, branding, layout, or controls.
+- The 390px capture preserves the stacked toolbar, readable prompt region, complete radius, and
+  horizontal containment.
+
+### Patches Made
+
+- Added a typed optional liquid-glass capability to the shared beUI `AgentChatInput` and
+  `BorderGlow` wrapper.
+- Added a directional red/green SVG displacement map, neutral radial tint, and independent chrome
+  blur layers behind the composer content.
+- Enabled the material only in `LandingView`, preserved the original focused mesh border, and added
+  no-filter and higher-contrast fallbacks.
+- Added route regression coverage and documented the material contract in `design.md`, the frontend
+  component specification.
+
+### Verification
+
+- `npm run check:components`: passed, 79 TypeScript files scanned with no provenance violations.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm run test`: passed, 13 files and 67 tests.
+- `npm run build`: passed; the existing non-blocking chunk-size warning remains.
+- Changed frontend source/test files and the component specification pass the focused Prettier
+  check. Repository-wide `npm run format:check` still reports the 55 pre-existing baseline files
+  outside this change.
+- Browser console: no warnings or errors.
+- Browser layout: zero horizontal overflow at the checked desktop and mobile viewports.
+
+final result: passed
+
+## Discover Glass Composer Shell QA (2026-08-11)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-e9f5ad62-3973-4fc5-86df-9a596c48ebc9.png`.
+- Desktop implementation screenshot: `C:/Users/Administrator/.codex/visualizations/2026/07/27/019fa120-4eb7-7f41-aca4-df1f91b0a446/discovery-glass-gradient-border-restored.png`.
+- Mobile implementation screenshot: `C:/Users/Administrator/.codex/visualizations/2026/07/27/019fa120-4eb7-7f41-aca4-df1f91b0a446/discovery-glass-composer-mobile.png`.
+- Local implementation: `http://127.0.0.1:5173/`.
+- States checked: idle and focused Discover composer on desktop, plus the compact mobile composition.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- The Discover-scoped `BorderGlow` `::before` layer is masked to a 1px ring, retaining the logo-aligned gradient without painting the padding box. The `::after` interior mesh computes to `display: none`, so color cannot bleed through the translucent surface.
+- The composer root border stays transparent in idle and focus states. The permanent inset shell strokes were removed; the masked gradient ring and pointer-owned `.edge-light` appear only in the active edge treatment.
+- The neutral graphite body uses a desktop `0.04` alpha with a restrained `7px` backdrop blur, slight backdrop brightening, and no extra inner-surface fill. Mobile uses a `0.12` alpha and `9px` blur for denser control readability. The overscanned hero video is shifted downward so its moving texture remains clearly perceptible through the prompt area without exposing a blank edge.
+- Desktop and mobile checks report zero horizontal document overflow. The shifted video extends beyond both hero edges, and the composer remains contained at the compact breakpoint.
+- Browser console inspection found no warnings or errors.
+
+### Verification
+
+- `npm run check:components`: passed.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm run test`: passed, 67 tests.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+- `npm run format:check`: retains the repository baseline of 60 previously unformatted files; no bulk formatting was applied.
+- `git diff --check`: passed with only repository LF-to-CRLF notices.
+
+final result: passed
+
+## Discover Video Framing QA (2026-08-11)
+
+- Before reference: `design-qa-assets/discover-liquid-glass-1440.png`.
+- Desktop implementation: `design-qa-assets/discover-video-position-1440.png`.
+- Mobile implementation: `design-qa-assets/discover-video-position-390.png`.
+- Side-by-side evidence: `design-qa-assets/discover-video-position-comparison.png`.
+- Brightness follow-up: `design-qa-assets/discover-video-brighter-1440.png` and
+  `design-qa-assets/discover-video-brighter-390.png`.
+- Brightness comparison: `design-qa-assets/discover-video-brighter-comparison.png`.
+- Local implementation: `http://127.0.0.1:5173/`.
+- Viewport/state: Discover hero at 1440 x 813 and 390 x 844 with the live background video.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- The overscanned video framing moves down by exactly `30px` at every responsive interpolation point,
+  changing the translate range from `124-160px` to `154-190px` without resizing the video.
+- The brighter spiral now sits closer to the title and composer rather than reading top-heavy, while
+  the input, glass refraction, navigation, and gallery positions remain unchanged.
+- The video brightness increases from `0.96` to `1.08` while opacity, saturation, contrast, overlay,
+  and text colors remain unchanged. The video reads more clearly without washing out the heading.
+- Desktop and mobile retain full hero coverage and report `0px` horizontal document overflow.
+- No typography, color token, copy, control, media asset, or interaction behavior changed.
+
+### Verification
+
+- Browser comparison: passed at the desktop and mobile viewports.
+- Browser console: no application warnings or errors.
+- `npm run typecheck`, `npm run lint`, and focused route tests: passed.
+- `npm run build`: passed; the existing non-blocking chunk-size warning remains.
+- Focused Prettier and `git diff --check`: passed.
+
+final result: passed
+
+## Discovery Glass Composer QA (2026-08-11)
+
+- Source visual truth:
+  `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-a9c09a9c-0a13-43e4-8daf-c93523620b9f.png`.
+- Implementation screenshot:
+  `C:/Users/Administrator/.codex/visualizations/2026/07/27/019fa120-4eb7-7f41-aca4-df1f91b0a446/discovery-glass-composer.png`.
+- Focus-state regression truth:
+  `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-4da3f35a-4e88-49e3-a0c0-213bd1aa3ed9.png`.
+- Corrected focus-state screenshot:
+  `C:/Users/Administrator/.codex/visualizations/2026/07/27/019fa120-4eb7-7f41-aca4-df1f91b0a446/discovery-glass-composer-edge-only.png`.
+- Scope: the existing beUI Pro Agent Chat Input on Discover only. Generate keeps its established
+  opaque graphite workbench treatment.
+
+### Findings
+
+- Material: the composer uses a `34%` cool graphite root fill, `14px` backdrop blur, `132%`
+  saturation, and `90%` backdrop brightness. A `3.5%` cool light tint and four low-contrast inset
+  edges keep the inner prompt and toolbar area reading as one continuous glass surface.
+- Focus hierarchy: the existing logo-aligned BorderGlow remains the only decorative focus effect.
+  Its translucent mesh fill is disabled on Discover so the orange, cyan, and blue light stays on the
+  edge instead of tinting the complete input surface. Browser inspection confirms the focused
+  `::after` mesh opacity is exactly `0`, while the directional edge-light layer remains active.
+- Interaction: the beUI component hierarchy and root overflow remain unchanged. Browser inspection
+  confirms the aspect-ratio menu portals outside the composer and remains fully interactive instead
+  of being clipped by the glass surface.
+- Resilience: narrow screens use a quieter `13px` blur and a stronger `44%` dark fill. Browsers
+  without backdrop-filter receive a `90%` opaque graphite frame and `84%` surface, while
+  `prefers-contrast: more` increases border and fill contrast.
+- Layout: the measured browser state is `851 x 201px` with `0px` horizontal overflow. The streamed
+  prompt, model controls, generation controls, focus state, and video background remain visible and
+  aligned.
+
+### Verification
+
+- `npm run test`: passed, 13 files and 67 tests.
+- `npm run typecheck`: passed.
+- `npm run check:components`: passed with no component-source violations.
+- `npm run lint`: passed.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+
+final result: passed
+
+## Generation History Scroll Navigation QA (2026-08-11)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-f86e16a5-01ee-4f7a-bff2-bbc28235852c.png`, `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-08746d5d-e387-4460-b540-57b5091fc900.png`, and `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-27d8dcc8-4a56-40f2-b329-44d5c282e1e2.png`.
+- Implementation screenshot: `C:/Users/Administrator/.codex/visualizations/2026/07/27/019fa120-4eb7-7f41-aca4-df1f91b0a446/history-rail-implementation.png`.
+- Full-view and focused comparison evidence: `C:/Users/Administrator/.codex/visualizations/2026/07/27/019fa120-4eb7-7f41-aca4-df1f91b0a446/history-rail-comparison.png`.
+- Local implementation: `http://localhost:5173/generate`.
+- Viewport/state: 1280 x 720 authenticated Generate workspace with two completed 16:9 batches rendered in their persisted feed order; the lower batch tick is hovered and then activated.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: the contextual preview keeps the existing Geist UI stack, compact 13px prompt title, 11px metadata, and source-like two-level hierarchy without introducing reference-site branding.
+- Spacing and layout rhythm: each visible result maps to one vertically distributed tick; the preview is aligned to its tick and separated from the fixed composer. Tick activation scrolls to the existing result and leaves result DOM order unchanged.
+- Colors and visual tokens: the white reference surface is intentionally translated to Nebulens graphite tokens; idle, hover, current, focus, border, and shadow states retain equivalent contrast hierarchy.
+- Image quality and asset fidelity: generated images remain the original loaded assets at their existing positions and dimensions. The interaction adds no placeholder imagery, crop, duplication, or image movement.
+- Copy and content: the preview exposes the matching prompt, model, time, ratio, count, and visibility. The chevron communicates navigation while the accessible name states `定位到生成记录`.
+- Interaction and responsiveness: hover/focus reveals one compact preview; tick and preview activation use `scrollIntoView` with reduced-motion support. Only currently rendered batches receive ticks, while full history search can append a missing batch without moving existing results.
+
+### Patches Made
+
+- Limited rail ticks to batch IDs already present in the rendered result feed.
+- Separated tick navigation from searchable history selection.
+- Added scroll-only navigation for existing results and append-only loading for missing history.
+- Reworked the tick preview into the compact text summary shown by the supplied interaction references.
+- Added regression coverage for direct navigation, stable result order, empty feeds, and append-only history loading.
+
+### Verification
+
+- Targeted component and Generate-view tests: passed, 22 tests.
+- `npm run typecheck`: passed.
+- `npm run check:components`: passed.
+- `npm run lint`: passed.
+- `npm run test`: passed, 13 files and 67 tests.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+- Focused Prettier check for the new history component and its tests: passed. The repository-wide
+  `npm run format:check` remains blocked by the existing 60-file formatting baseline, which includes
+  unrelated application, premium-component, configuration, and generated lock files.
+- In-app Browser QA: two ticks map to two loaded results; activating either tick preserves the exact DOM order `[f20d79ae-8c38-4baf-9f1f-9230f644e81f, b8cc92d4-b082-4393-bc8b-f7e6946d7f29]`, updates the active tick, and introduces no horizontal overflow.
+- Mobile evidence at 390 x 844 confirms the searchable history panel remains inside the viewport,
+  the composer is not compressed or clipped, and the hover-only contextual preview stays absent on
+  touch media.
+- `git diff --check`: passed.
+
+final result: passed
+
+## Generation History Transient State and Latest Return QA (2026-08-11)
+
+- Scope: transient active history-tick feedback and the circular `回到最新图片` action above the
+  fixed Agent Composer.
+- Interaction contract: activating a tick scrolls to the existing result without moving it, while
+  leaving the complete history interaction area clears only the persistent active extension. Tick
+  and result hover/focus emphasis remain available.
+- Visibility contract: the return action listens to the existing window scroll container and
+  compares the latest batch bounds with the live composer boundary. The feed, latest batch, and
+  composer are all resize-observed so upstream image loading cannot leave visibility state stale. It
+  is absent for empty feeds and hides only after the latest batch bottom fully clears the composer by
+  `24px` with a meaningful visible area; a narrow strip or composer-obscured bottom keeps it visible.
+- Component contract: the action uses the shared `Button`, `IconTooltip`, and Lucide `ArrowDown`, is
+  anchored above the composer instead of participating in feed layout, computes an exact window
+  scroll target from live rectangles, and uses immediate scrolling when reduced motion is requested.
+
+### Verification Status
+
+- Targeted component and Generate-view tests: passed, 22 tests. Coverage includes exact
+  smooth/reduced-motion window targets, composer obstruction, minimum visible area, feed resize
+  observation, transient active state, and stable result order.
+- `npm run typecheck`: passed.
+- `npm run check:components`: passed, with no visible native-control or component-source violations.
+- Full `npm run test`: passed, 13 files and 67 tests.
+- `npm run lint`: passed.
+- Source references:
+  `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-e4cdc449-8f57-4108-b0bc-1d1bfc9726b3.png`
+  and
+  `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-5f2a2442-56c5-482a-abf8-f724b3f0c18e.png`.
+- Final browser capture at `1280x720`:
+  `C:/Users/Administrator/.codex/visualizations/2026/07/27/019fa120-4eb7-7f41-aca4-df1f91b0a446/history-jump-latest-final.png`.
+- Fidelity surfaces: the history tick extends on direct activation, returns to its default length
+  after pointer departure, the `42px` circular action stays horizontally centered over the fixed
+  composer, the latest batch lands `24px` above the composer, and the result DOM order remains
+  unchanged. The measured desktop state has `0px` horizontal overflow; the button hides after the
+  successful return.
+
+final result: passed
+
+## Generation Session Deletion QA (2026-08-04)
+
+- Source visual truth: `design-qa-assets/reference-gpt-recents.png` and the existing GPT-style
+  recent-session interaction contract.
+- Implementation screenshots: `design-qa-assets/session-delete-idle-1440.png`,
+  `design-qa-assets/session-delete-dialog-1440.png`, and
+  `design-qa-assets/session-delete-after-1440.png`.
+- Local implementation: `http://localhost:5173/generate`.
+- Viewport: 1440px desktop browser capture.
+- State: authenticated dark Generate workspace with two recent sessions; the active session is
+  being deleted.
+
+### Findings
+
+No actionable P0, P1, or P2 mismatches remain.
+
+- Interaction: each session row exposes a familiar trash icon beside rename, while the action
+  remains hidden until hover/focus to keep the compact GPT-style rail quiet.
+- Confirmation: deletion uses the shared beUI `ConfirmActionModal` and explicitly states that
+  generated image assets are retained.
+- Layout: the two action targets fit within the existing rail without changing its 232px width;
+  browser measurement reports zero horizontal overflow.
+- State handling: deleting the active session removes it from local storage, navigates back to
+  `/generate`, restores the empty workspace, and leaves other sessions untouched.
+
+### Patches Made
+
+- Added `removeGenerationSession` to the persistent session store.
+- Added the sidebar delete action and shared confirmation dialog in `AppHeader`.
+- Added regression coverage for opening the dialog, confirming deletion, preserving assets, and
+  returning to the empty Generate workspace.
+
+### Verification
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm run format:check`: passed.
+- `npm test -- --run tests/App.spec.tsx tests/views/GenerateView.spec.tsx`: passed, 24 tests.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+- Browser verification: delete dialog, post-delete route, empty state, rail width, and overflow
+  all passed.
+
+final result: passed
+
+## Generate Composer Frame and Result Alignment QA (2026-08-04)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-81b88580-e961-4a10-926a-6e67f983289d.png`.
+- Implementation screenshots: `design-qa-assets/generate-pending-aligned-1440.png`,
+  `design-qa-assets/generate-completed-aligned-1440.png`, and
+  `design-qa-assets/generate-final-1440.png`.
+- Full-view comparison evidence: `design-qa-assets/generate-pending-frame-comparison.png`.
+- Focused result comparison: `design-qa-assets/generate-alignment-comparison-1440.png`.
+- Local implementation: `http://localhost:5173/generate`.
+- Viewports: 1366px, 1440px, and 1920px desktop widths; final browser capture at 1440px.
+- State: authenticated dark Generate workspace, generating and completed result states.
+
+### Findings
+
+No actionable P0, P1, or P2 mismatches remain.
+
+- Fonts and typography: the prompt bubble, loading label, quota, and result actions retain the
+  existing compact Geist hierarchy and remain readable against the dark canvas.
+- Spacing and layout rhythm: the result feed and fixed composer share the same centered 1060px
+  content width. At 1366px, 1440px, and 1920px, the result/input left edges are respectively
+  272px/272px, 298.33px/298.33px, and 546px/546px; no horizontal overflow was detected.
+- Colors and visual tokens: the idle composer no longer renders the default white 1px
+  BorderGlow frame; its background and border are transparent while the interactive glow remains
+  active on focus. Skeleton cards keep their low-contrast graphite treatment without a shadow.
+- Image quality and asset fidelity: completed previews retain their intrinsic aspect ratio and
+  load with the existing opacity/scale transition. The left-aligned square result and its action
+  row begin at the same baseline as the composer.
+- Copy and content: no QA-only prompt or fixture is present in the rendered route; the normal
+  empty-state and composer copy remain unchanged.
+
+### Comparison Evidence
+
+- `generate-pending-frame-comparison.png` places the supplied annotated generating state beside
+  the updated state. The comparison shows the removed outer composer frame, a quiet input surface,
+  and the loading result aligned to the same content column.
+- `generate-alignment-comparison-1440.png` places the previous centered result beside the updated
+  completed result. The updated media and batch actions begin from the same left edge as the
+  composer rather than floating in the middle of the canvas.
+- Browser DOM checks confirm `border-width: 0` visually (transparent computed border),
+  `box-shadow: none` for skeleton cards, and `scrollWidth - clientWidth === 0`.
+
+### Patches Made
+
+- Removed the temporary `qaState` pending/completed fixtures from `GenerateView.tsx`.
+- Made the Generate-only BorderGlow root frame transparent in its idle state while preserving
+  focus/hover glow behavior.
+- Kept the result feed, error grid, skeleton grid, and batch actions left-aligned to the shared
+  composer baseline.
+
+### Verification
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm run format:check`: passed.
+- `npm test -- --run tests/views/GenerateView.spec.tsx`: passed, 11 tests.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+- Browser verification: 1440px final empty state has no horizontal overflow; focus activates
+  `data-glow-active="true"` without restoring a white outer border.
+
+final result: passed
+
+## Completed Result Regression QA (2026-08-03)
+
+- Source visual truth: `design-qa-assets/generate-result-user-reference-1963.png`.
+- Implementation screenshots: `design-qa-assets/generate-result-after-1963.png`,
+  `design-qa-assets/generate-result-after-1440.png`, and
+  `design-qa-assets/generate-result-after-1366.png`.
+- Full-view comparison evidence: `design-qa-assets/generate-result-comparison-1963.png`.
+- Local implementation: `http://127.0.0.1:5173/generate`.
+- Viewports: 1963 x 1282, 1440 x 900, and 1366 x 768.
+- State: authenticated dark Generate workspace with one completed square result; intrinsic-ratio
+  verification also loaded a completed two-image 16:9 batch.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: the prompt and timestamp now use a compact two-level conversation bubble;
+  sidebar labels, session count, session title, and ellipsis action remain distinct at every checked
+  desktop width.
+- Spacing and layout rhythm: the completed turn uses a centered 960px reading column. The square
+  result measures 520px at 1963px, 451px at 1440px, and 319px at 1366px. The 36px batch toolbar
+  stays attached to the output and ends 24px above the fixed composer at both shorter viewports.
+- Colors and visual tokens: the prompt bubble, border, toolbar, and destructive state use the
+  existing graphite, foreground, muted, and destructive tokens. No new palette or decorative
+  surface was introduced.
+- Image quality and asset fidelity: the supplied generated cat image remains sharp and uncropped.
+  Direct DOM measurement of the completed 16:9 previews returned 422 x 241 and a computed ratio of
+  1.75; square results measured 520 x 520. Loaded images therefore keep their intrinsic ratio and
+  replace equal-ratio pending geometry without distortion.
+- Copy and content: the prompt, localized aspect label, count, recent-session name, quota, and
+  existing action labels remain unchanged; no marketing copy or duplicate empty-state text was
+  added to the completed state.
+
+### Comparison Evidence
+
+- The combined full-view comparison shows the old detached 1120px task header and 340px thumbnail
+  beside the corrected right-aligned prompt bubble, larger centered media, and output-aligned
+  actions. The same image and application state make the hierarchy change directly comparable.
+- The 1440px and 1366px captures are the focused layout evidence for the fixed composer boundary;
+  DOM measurements confirm 24px clearance and document `scrollWidth === clientWidth`.
+- A separate focused crop was unnecessary because the individual breakpoint screenshots keep the
+  prompt, media, toolbar, composer, and session rail readable at their native capture scale.
+
+### Patches Made
+
+- Replaced the detached full-width batch header with a right-aligned prompt and metadata bubble.
+- Expanded single-result media responsively up to 520px and centered balanced 2/3/4-result grids.
+- Moved batch actions below the generated media, reduced their visual weight, and normalized their
+  interactive target to 36px.
+- Reserved the fixed composer's full height plus a 24px reading gap on shorter desktop viewports.
+- Split recent-session heading/count and title/ellipsis into explicit grid tracks.
+- Added an intrinsic-aspect regression assertion for completed result previews.
+
+### Verification
+
+- `npm run lint`: passed.
+- `npm run typecheck`: passed.
+- `npm run format:check`: passed.
+- `npm test -- --run`: passed, 10 files and 48 tests.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+- `git diff --check`: passed with only the repository's LF-to-CRLF notices.
+- Independent QA check: the 32px batch-target finding was fixed; its aspect-ratio concern was
+  disproved by the inline preview ratio and browser measurement, then covered with a test.
+
+### Follow-up Polish
+
+- P3: route-level code splitting can address the existing production bundle-size warning later.
+
+final result: passed
+
+## Creation Session Sidebar QA
+
+- Source visual truth: `design-qa-assets/reference-gpt-recents.png`.
+- Implementation screenshot: `design-qa-assets/generation-sessions-1280.png`.
+- Focused side-by-side comparison: `design-qa-assets/generation-sessions-comparison.png`.
+- Local implementation: `http://localhost:5173/generate?session=<id>`.
+- Browser viewport: 1280 x 720; comparison is cropped to the full-height left rail.
+- State: authenticated dark Generate workspace, one active session renamed to `雾港概念图`.
+
+### Findings
+
+No actionable P0, P1, or P2 mismatches remain.
+
+- Fonts and typography: the localized `最近会话` heading, one-line session title, count, and
+  account labels use the established compact Geist hierarchy. Long titles truncate and do not
+  alter the sidebar width or row height.
+- Spacing and layout rhythm: the session region sits directly below `新建生成`, the active row
+  follows the reference's quiet filled-row treatment, and the account block remains anchored at
+  the bottom. Navigation and quota are intentional Nebulens additions rather than reference drift.
+- Colors and visual tokens: the light GPT reference is translated to the existing Nebulens dark
+  token system. Hover, focus, active, and inline-edit states use layered graphite surfaces without
+  adding a new accent color or heavy border.
+- Image quality and asset fidelity: the existing Nebulens raster logo remains sharp and unchanged;
+  the session pattern requires no new illustration or generated image asset.
+- Copy and content: `新建生成`, `最近会话`, `未命名会话`, automatic prompt titles, and inline rename
+  labels match the requested workflow. Left sessions are distinct from the right-side batch history.
+
+### Comparison Evidence
+
+- The combined comparison places the supplied GPT Recents rail beside the rendered Nebulens rail.
+  Both keep one compact active conversation row near the top and the account identity at the bottom.
+- Browser interaction verified that `新建生成` creates a unique `session` URL, immediately inserts
+  an active `未命名会话` row, reveals the three-dot rename action, and persists the saved title.
+- Automated route coverage verifies that the first submitted prompt automatically titles a new
+  session and that discovery-provided aspect ratio, count, and visibility survive session creation.
+
+### Patches Made
+
+- Added persistent generation sessions with title, timestamps, and owned batch ids.
+- Added the GPT-style recent-session list, active state, three-dot action, and inline rename flow.
+- Scoped result and right-side batch history restoration to the active session.
+- Added regression tests for session creation, inline rename, automatic prompt naming, and discovery
+  generation settings.
+- Added the Creation Sessions contract to `design.md`.
+
+### Verification
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm test -- --run`: passed, 10 files and 48 tests.
+- `npm run build`: passed; the existing large-chunk warning remains non-blocking.
+- `git diff --check`: passed; Git reports only the repository's existing LF-to-CRLF notices.
 
 final result: passed
 
@@ -153,13 +1180,348 @@ No actionable P0, P1, or P2 findings remain.
 
 - Structure: the standalone beUI Pro `ImageGalleryVertical` component owns the unlabeled home gallery. Carousel timers, previous/next controls, and horizontal rails are absent; the video hero remains a full viewport.
 - Typography: `Turn your idea` uses Geist Variable at 460 weight with slightly tightened internal word spacing, while `into images` uses same-scale Instrument Serif Italic on one baseline with a clear natural-space gap between treatments; the display scales fluidly from 64px to an 80px desktop cap and stacks at 40px on mobile.
-- Layout: six local works are passed into the component, which renders four alternating motion columns on wide screens and two compact columns below the large breakpoint. The gallery header is removed, the image columns begin after a deliberate `64-96px` gap beneath the composer, and primary images retain the existing image-detail modal.
+- Layout: six local works are passed into the component, which renders four alternating motion columns on wide screens and two compact columns below the large breakpoint. The gallery header is removed, its responsive pull-up offset is `80px`, and primary images retain the existing image-detail modal.
 - Responsive integrity: browser checks found six unique local image sources, no horizontal document overflow, and no remote gallery assets rendered.
-- Motion: the component's columns move continuously along the vertical axis and honor reduced motion. The preserved hero video and focused Agent Chat Input BorderBeam remain intact.
+- Motion: the component's columns move continuously along the vertical axis and honor reduced motion. The preserved hero video and ReactBits BorderGlow-enhanced Agent Chat Input remain intact.
 
 ### Verification
 
 - Route tests require six unique gallery sources, no `今日创作` heading, no previous/next buttons, and working image-detail opening.
 - Frontend `typecheck`, `lint`, tests, formatting, and production build pass.
+
+final result: passed
+
+## Generate Result Scale and Loading Motion QA (2026-08-04)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-9eea29e9-73ea-4dbc-bf42-63ced14cb391.png`.
+- Implementation screenshots: `design-qa-assets/generate-pending-motion-1440.png` and
+  `design-qa-assets/generate-completed-smaller-1440.png`.
+- Local implementation: `http://localhost:5173/generate`.
+- Viewport: 1440px desktop browser capture.
+- State: authenticated Generate workspace, generating and completed single-image states.
+
+### Findings
+
+No actionable P0, P1, or P2 mismatches remain.
+
+- Result scale: single-result cards now use the shared `--result-media-max-height` cap of 440px
+  on tall desktop viewports and 300px at the checked 1440px viewport. Pending and completed
+  states use the same variable, so the result does not jump in size when the image loads.
+- Loading motion: the skeleton keeps its low-contrast 1.8s pulse and now adds a more readable
+  2.2s dot-field drift plus a small sparkle pulse. The motion is not a bright sweep and is
+  disabled under reduced motion.
+- Action alignment: the batch toolbar and delete action now share the same 36px inline-grid
+  target, center alignment, and icon baseline. The destructive action no longer inherits the
+  legacy inline-flex sizing.
+- Layout integrity: browser measurements report no horizontal overflow and the result/action row
+  remains left-aligned with the composer.
+
+### Patches Made
+
+- Reduced the single-result media cap and applied it to pending skeleton geometry.
+- Added the `generation-skeleton-drift` animation with a reduced-motion fallback.
+- Normalized batch action button display, dimensions, and icon placement.
+- Removed the temporary QA fixture after capture.
+
+### Verification
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm run format:check`: passed.
+- `npm test -- --run`: passed, 10 files and 49 tests.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+- Browser verification: pending/completed card size, animation names/durations, action alignment,
+  and overflow all passed.
+
+final result: passed
+
+## GPT-Style Result and Composer Alignment QA (2026-08-04)
+
+- Scope: completed Generate workspace with one or more generated images and the fixed prompt
+  composer.
+- Alignment contract: the result stream, single-image card, and composer use the same centered
+  content axis; single-image results begin at the same left edge as the composer.
+- Layering contract: the lower canvas uses a transparent-to-graphite fade, while the composer
+  surface keeps the prompt readable with restrained translucency and backdrop blur.
+
+### Verification
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm run format:check`: passed.
+- `npm test -- --run`: passed.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+- Browser measurements at 1366px, 1440px, and 1920px report a `0px` left-edge delta
+  between the first result card and composer, with no horizontal overflow.
+- The 1440px browser check confirms a computed 270px transparent-to-graphite lower fade.
+- The composer edge check confirms its outer translucent mask covers the rounded inset, so no
+  generated-image strip bleeds out from the left edge.
+
+final result: passed
+
+## Four-Image Count and Compact Result QA (2026-08-04)
+
+- Source request: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-6afbbf95-0fb9-4d4a-9355-806f4e51446f.png`.
+- Implementation screenshot: `design-qa-assets/generate-compact-result-1280.png`.
+- Local implementation: `http://localhost:5173/generate`.
+- Viewport/state: 1280 x 720 authenticated desktop workspace, count selector at its maximum of 4, with one existing completed square result loaded for size verification.
+
+### Findings
+
+No actionable P0, P1, or P2 mismatch remains.
+
+- Count contract: frontend and backend now accept 1-4 images; the increment control disables at 4 and both native and OpenAI-compatible endpoints reject 5.
+- Result scale: a single square result measures 260 x 260px at the checked viewport, down from the prior 300px minimum, while retaining left alignment with the composer.
+- Batch geometry: two results use a compact 700px two-column grid, three use a 780px three-column grid, and four use a 640px `2 x 2` grid. The size decreases as comparison density increases.
+- Loading continuity: pending skeletons, errors, completed media, and the batch toolbar use the same count-aware maximum width, avoiding a geometry jump on completion.
+- Responsive integrity: below 560px, all batch sizes collapse to one column capped at 360px; the checked desktop state reports zero horizontal overflow.
+
+### Verification
+
+- Frontend: typecheck, lint, format check, production build, and 53 tests passed.
+- Backend: typecheck, lint, production build, and 166 tests passed.
+- Backend changed-file Prettier check passed. The repository-wide backend format check still reports 59 pre-existing baseline files outside this change.
+- Browser verification confirmed the `4 张` status, disabled increment control, 260px completed result geometry, and zero horizontal overflow without consuming generation quota.
+
+final result: passed
+
+## GPT-Style Prompt Editor QA (2026-08-04)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-303a12ac-5898-426b-a19d-cdd2bc685a20.png`.
+- Implementation screenshot: `design-qa-assets/generate-prompt-editor-gpt-1280.png`.
+- Focused comparison evidence: `design-qa-assets/generate-prompt-editor-gpt-comparison.png`.
+- Local implementation: `http://localhost:5173/generate`.
+- Viewport/state: 1280 x 720 authenticated Generate workspace with an existing completed batch in prompt-editing state. The QA prompt was changed only in the local editor and was not submitted.
+
+### Findings
+
+No actionable P0, P1, or P2 mismatch remains.
+
+- Fonts and typography: the editor uses the existing Geist stack at 15px with a relaxed 1.6 line height. Long Chinese text wraps naturally without clipping or crowding the action row.
+- Spacing and layout rhythm: the edit surface expands to 720px on desktop, keeps 16px content insets, and aligns the two actions at the lower right. The textarea and action row read as one continuous surface rather than nested cards.
+- Colors and visual tokens: the reference's light neutral surface is intentionally mapped to the product's cool graphite dark theme. Border contrast, surface elevation, and the white primary action remain consistent with the Generate workspace.
+- Image quality and asset fidelity: this state introduces no new image assets or replacement icons. The existing generated result remains sharp, uncropped, and outside the editor surface.
+- Copy and content: `取消` and `重新生成` preserve the source action hierarchy while using product-specific Chinese copy. The temporary long QA prompt was never submitted or persisted.
+- Interaction and responsiveness: `Escape` cancels, `Ctrl/Cmd + Enter` submits, empty text disables regeneration, and the existing mobile rule keeps the editor within 94% of the available width with 40px action targets. Browser measurement reports zero horizontal overflow at 1280px.
+
+### Patches Made
+
+- Removed the nested textarea treatment and redundant edit metadata.
+- Replaced icon-heavy edit controls with restrained text actions at the lower right.
+- Removed the inherited 580px prompt-bubble cap from editing state so the intended 720px desktop width can apply.
+- Removed the temporary screenshot-only automatic edit initializer after capture.
+
+### Verification
+
+- `npm run typecheck`: passed.
+- `npm test -- --run tests/views/GenerateView.spec.tsx`: passed, 14 tests.
+- `npm run lint`: passed.
+- `npm run format:check`: passed.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+- Focused reference/implementation comparison confirmed one continuous surface, natural wrapping, lower-right actions, and intentional dark-theme adaptation.
+
+final result: passed
+
+## Compact Prompt Editor QA (2026-08-04)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-d65ec48a-74e6-49e0-ac9e-83df06e6cea7.png`.
+- Implementation screenshot: `design-qa-assets/generate-prompt-editor-compact-1280.jpg`.
+- Focused comparison evidence: `design-qa-assets/generate-prompt-editor-compact-comparison.jpg`.
+- Local implementation: `http://localhost:5173/generate`.
+- Viewport/state: 1280 x 720 authenticated Generate workspace with an existing completed batch in prompt-editing state. No regeneration was submitted.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: the existing 15px Geist prompt text and 1.6 line height remain unchanged. A one-line prompt occupies a 56px text area, while wrapped Chinese content grows without clipping.
+- Spacing and layout rhythm: the desktop editor remains 720px wide and right-aligned, but the one-line surface is now 134.33px tall instead of reserving a three-row text field. The action row stays at the lower right and the document reports no horizontal overflow.
+- Colors and visual tokens: the established cool graphite surface, low-contrast border, quiet cancel action, and white regenerate action are preserved; no new accent or elevated nested input surface was introduced.
+- Image quality and asset fidelity: generated media remains unchanged, sharp, and outside the editing surface. This refinement adds no placeholder or code-drawn visual asset.
+- Copy and content: `取消` and `重新生成` remain intact. The stale `编辑提示词` tooltip is removed as soon as its trigger unmounts.
+- Interaction and responsiveness: the textarea grows from 56px to 160px using its measured content height, then scrolls internally with `resize: none`. Escape cancellation, Ctrl/Cmd + Enter regeneration, empty-text disabling, and the existing mobile containment remain intact.
+
+### Comparison Evidence
+
+- The focused side-by-side comparison places the supplied oversized editor beside the rendered compact state. It shows the removal of the unused vertical area, native resize handle, and stale tooltip without changing the action hierarchy.
+- Browser measurements report a 720 x 134.33px form, 56px one-line textarea, 84px naturally wrapped textarea, and a capped 160px textarea with `overflow-y: auto` for long content.
+- Browser DOM checks report zero tooltip portals after entering edit mode and `scrollWidth === clientWidth` at 1280px.
+
+### Patches Made
+
+- Added measured textarea auto-sizing with 56px and 160px bounds.
+- Removed native textarea resizing and enabled internal scrolling only at the cap.
+- Added immediate Morphic Tooltip cleanup when its trigger unmounts.
+- Added focused editor and tooltip regression tests and recorded the interaction contract in `design.md`.
+- Removed the temporary screenshot-only edit initializer after capture.
+
+### Verification
+
+- `npm test -- --run tests/views/GenerateView.spec.tsx tests/components/MorphicTooltip.spec.tsx`: passed, 15 tests.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- Focused Prettier check: passed.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+
+final result: passed
+
+## beUI Prompt Editor Actions QA (2026-08-04)
+
+- Source visual truth: `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-e05465d4-4ef8-4e99-9f87-ff984bd6f033.png`.
+- Implementation screenshot: `design-qa-assets/generate-prompt-editor-beui-actions-1280.jpg`.
+- Focused comparison evidence: `design-qa-assets/generate-prompt-editor-beui-actions-comparison.jpg`.
+- Local implementation: `http://localhost:5173/generate`.
+- Viewport/state: 1280 x 720 authenticated Generate workspace with the existing `生成一直狗` batch opened in prompt-editing state. No regeneration was submitted.
+
+### Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: both actions inherit the shared Button's 13px/600 label treatment and keep the existing `取消` / `重新生成` hierarchy without wrapping.
+- Spacing and layout rhythm: the action group now uses a visible 12px gap instead of 6px. The shared default 44px control height and 8px control radius align with the rest of the beUI-derived workspace rather than resembling a segmented control.
+- Colors and visual tokens: `取消` uses `button--secondary` with semantic card/border tokens; `重新生成` uses `button--primary` with semantic primary foreground/background tokens. Hover, focus-visible, and disabled states come from the shared primitive and global state contract.
+- Image quality and asset fidelity: generated media and all existing imagery remain unchanged. This normalization introduces no new image or icon asset.
+- Copy and content: action wording, submit/cancel behavior, and the surrounding prompt content remain unchanged.
+- Component compliance: the rendered DOM uses `button button--secondary session-batch__prompt-cancel` and `button button--primary session-batch__prompt-regenerate`. The previous page-local border, radius, padding, color, hover, active, and disabled declarations were removed.
+
+### Comparison Evidence
+
+- The focused side-by-side comparison places the annotated 6px action gap beside the rendered shared-Button state. The updated controls read as two separate commands with a clear graphite interval.
+- The full 1280px capture confirms the action group remains right-aligned, does not expand the result column, and introduces no horizontal overflow or overlap.
+- A focused crop is sufficient for the requested component-level change; the full screenshot preserves the surrounding prompt, result, composer, sidebar, and history rail for layout context.
+
+### Patches Made
+
+- Replaced the editor's two raw `<button>` elements with the shared `Button` primitive.
+- Assigned semantic `secondary` and `primary` variants and increased the action-group gap to 12px.
+- Removed the page-local duplicate button styling while preserving the existing responsive 40px mobile minimum.
+- Added regression assertions for the shared variant classes and documented the rule in `design.md`.
+- Removed the temporary screenshot-only edit initializer after capture.
+
+### Verification
+
+- `npm test -- --run tests/views/GenerateView.spec.tsx tests/components/MorphicTooltip.spec.tsx`: passed, 15 tests.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- Focused Prettier check: passed.
+- `npm run build`: passed; the existing non-blocking Vite chunk-size warning remains.
+- `git diff --check`: passed with only repository LF-to-CRLF notices.
+
+final result: passed
+
+## Assets And User Management Header Clearance QA (2026-08-28)
+
+- Source feedback screenshots:
+  `C:/Users/Administrator/Desktop/aae23017-5af4-4881-9f7a-ba2cdc62cc4c.png` and
+  `C:/Users/Administrator/Desktop/506199ed-cb87-4971-85cb-4b8c1ba9a187.png`.
+- Local implementation: `http://127.0.0.1:5174/templates`,
+  `http://127.0.0.1:5174/history`, and `http://127.0.0.1:5174/admin/users`.
+- Source states: authenticated desktop Assets empty state and authenticated desktop User
+  Management table.
+- Implementation screenshot: unavailable because the Chrome connection fails before page capture;
+  the installed runtime still imports a removed `26.820.80927` browser service path.
+
+### Findings
+
+- P1 spacing and layout rhythm: both workbench pages started inside the fixed account action region.
+  The account chrome ends near `72px`, while the pages previously started at `24px`. The code now
+  starts desktop content and the Assets sticky command bar at `92px`, preserving a `20px` gap.
+- P1 Templates spacing: the Templates page and sticky toolbar still used an older `18px` desktop
+  offset. Both now use the same `92px` boundary as the other operational pages.
+- Responsive structure: below `860px`, page content uses `84px` plus the top safe area and the
+  Assets sticky bar uses `76px` plus the top safe area. This keeps both below the fixed `56px`
+  mobile header without stacking the desktop clearance a second time.
+- Fonts and typography, colors and visual tokens, image quality and asset fidelity, and copy/content
+  were intentionally unchanged by this narrow correction.
+
+### Patches Made
+
+- Added one shared desktop workbench header-clearance variable for Assets and User Management.
+- Applied the same desktop boundary to the Assets sticky command bar.
+- Aligned the Templates page and sticky toolbar to that desktop boundary without changing its grid.
+- Preserved separate mobile content and sticky offsets with safe-area support.
+
+### Verification
+
+- Focused Assets and User Management tests: passed, 15 tests.
+- Templates route tests: passed, 18 tests.
+- TypeScript typecheck: passed.
+- Lint: passed with the existing Fast Refresh warning in `src/components/ui/sidebar.tsx`.
+- Targeted Prettier and `git diff --check`: passed.
+- Visual comparison: blocked until a post-fix screenshot can be captured in Chrome.
+
+final result: blocked
+
+## GPT-Style Generate Prompt Bubble QA (2026-08-28)
+
+- Source visual truth:
+  `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-093074c9-26e7-4bd3-8ba2-d9c52ebf0268.png`,
+  `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-dd9e3e23-a1c9-41e1-8eba-f20f1b11c2b4.png`, and
+  `C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-b10a3c96-5043-4da5-b894-c9e2fd7d88bc.png`.
+- Local implementation: `http://localhost:5173/generate`.
+- Implementation screenshots:
+  `design-qa-assets/prompt-bubble/desktop-idle.png`,
+  `design-qa-assets/prompt-bubble/desktop-hover.png`,
+  `design-qa-assets/prompt-bubble/desktop-focus.png`, and
+  `design-qa-assets/prompt-bubble/mobile-idle.png`.
+- Focused side-by-side comparison: `design-qa-assets/prompt-bubble/focused-comparison.png`.
+- Viewports: 1440 x 813 desktop and 390 x 844 mobile override (375px CSS client width).
+- States: authenticated dark Generate workspace, completed prompt idle/hover/keyboard focus,
+  prompt edit entry, and pending prompt structure through the focused regression test.
+
+### Findings
+
+No actionable P0, P1, or P2 mismatches remain.
+
+- Fonts and typography: prompt copy uses the existing Geist stack at 14px desktop and 16px mobile,
+  medium weight, normal letter spacing, and natural wrapping. The short `生成一张猫` sample remains
+  one line at both checked viewports instead of breaking after four characters.
+- Spacing and layout rhythm: the painted bubble measures 101 x 43px on desktop and 97 x 41px on
+  mobile. It contains one paragraph and no metadata or hidden-control column. The 30px action row is
+  a sibling below the bubble and does not change the painted surface width.
+- Colors and visual tokens: the reference's neutral bubble treatment is mapped to the existing
+  graphite raised surface and subtle border. No glow, gradient, nested card, or extra rectangle was
+  introduced.
+- Image quality and asset fidelity: generated output and existing workspace imagery are unchanged.
+  Copy and Pencil use the existing Lucide icon source rather than replacement glyphs or custom SVGs.
+- Copy and content: the toolbar exposes exactly `复制提示词` and `编辑提示词`. The source Share icon
+  is intentionally omitted to follow the user's explicit request.
+- Interaction and accessibility: desktop hover and `:focus-within` reveal the toolbar; the keyboard
+  focus state has a visible focus ring. Coarse-pointer CSS keeps actions visible. Copy writes the
+  complete prompt and shows `提示词已复制。`; Edit opens the existing editor. During pending
+  generation Copy stays enabled and Edit is disabled.
+- Responsive integrity: desktop and mobile report `scrollWidth === clientWidth`; the bubble, actions,
+  result, fixed composer, and mobile header do not overlap horizontally.
+
+### Comparison Evidence
+
+- Full view: desktop idle/hover and mobile captures show the compact message integrated into the
+  existing Generate workspace without shifting result media or the fixed composer.
+- Focused region: `focused-comparison.png` places the source bubble and action references beside the
+  rendered idle and hover regions. The implementation matches the content-sized bubble and external
+  action-row relationship while intentionally omitting Share and retaining the product's dark theme.
+- A component crop is the authoritative fidelity target because the supplied references describe the
+  message bubble rather than the surrounding page. Full-page captures are retained for integration
+  and overflow evidence.
+
+### Patches Made
+
+- Removed prompt metadata and the fixed hidden Edit column from the painted bubble.
+- Added a sibling BeUI Copy/Edit toolbar with hover, focus, touch, disabled, and reduced-motion states.
+- Corrected pending selectors so the shell is alignment-only and surface styles target the bubble.
+- Added regression coverage for Copy, no Share, external toolbar structure, pending disabled behavior,
+  existing editor behavior, and replacement generation.
+- Removed the temporary local demo batch after browser capture.
+
+### Verification
+
+- `npm run check:components`: passed.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed with the existing Fast Refresh warning in `src/components/ui/sidebar.tsx`.
+- `npm run test`: passed, 18 files and 90 tests.
+- `npm run build`: passed with the existing Vite large-chunk warning.
+- Targeted Prettier for the three changed frontend files: passed.
+- Repository-wide `npm run format:check`: still reports 42 pre-existing files outside this task.
+- `git diff --check`: passed.
 
 final result: passed

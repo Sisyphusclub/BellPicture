@@ -1,10 +1,7 @@
 import type { ApiErrorEnvelope } from '@/types/image';
 import { isRecord } from '@/utils/narrowing';
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(
-  /\/$/,
-  '',
-);
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 const NETWORK_ERROR_MESSAGE = '无法连接到服务器，请检查网络或稍后重试。';
 

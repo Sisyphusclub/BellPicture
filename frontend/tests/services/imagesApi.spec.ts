@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  claimDailyCheckIn,
   fetchImageQuota,
   generateImage,
   registerUnauthorizedHandler,
@@ -11,10 +12,18 @@ import type { ImageApiError } from '@/services/api/imagesApi';
 describe('imagesApi', () => {
   it('reads GPT pool quota through the backend quota endpoint', async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
-      new Response(JSON.stringify({ total: 100, remaining: 98 }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }),
+      new Response(
+        JSON.stringify({
+          total: 100,
+          remaining: 98,
+          checkedInToday: false,
+          dailyCheckInReward: 5,
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
     );
     vi.stubGlobal('fetch', fetchMock);
 
@@ -22,8 +31,32 @@ describe('imagesApi', () => {
 
     expect(result.remaining).toBe(98);
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:3000/api/images/quota',
+      '/api/images/quota',
       expect.objectContaining({ credentials: 'include' }),
+    );
+  });
+
+  it('claims daily check-in credits through the authenticated endpoint', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          total: 105,
+          remaining: 103,
+          checkedInToday: true,
+          dailyCheckInReward: 5,
+          claimed: true,
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await claimDailyCheckIn();
+
+    expect(result).toMatchObject({ claimed: true, remaining: 103, checkedInToday: true });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/images/quota/check-in',
+      expect.objectContaining({ method: 'POST', credentials: 'include' }),
     );
   });
 
@@ -45,7 +78,7 @@ describe('imagesApi', () => {
 
     expect(result.id).toBe('ref.png');
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:3000/api/images/upload',
+      '/api/images/upload',
       expect.objectContaining({ method: 'POST' }),
     );
   });
@@ -115,6 +148,41 @@ describe('imagesApi', () => {
     });
   });
 
+  it('sends the selected quality in generate requests', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          batchId: 'b-quality',
+          aspectRatio: '1:1',
+          generationMode: 'text-to-image',
+          images: [
+            {
+              id: 'quality.png',
+              outputUrl: '/api/outputs/quality.png',
+              filename: 'quality.png',
+              mime: 'image/png',
+              width: 1024,
+              height: 1024,
+            },
+          ],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await generateImage({
+      prompt: 'quality test',
+      model: 'gpt-image-2.5-flare',
+      quality: 'xhigh',
+    });
+
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toMatchObject({
+      model: 'gpt-image-2.5-flare',
+      quality: 'xhigh',
+    });
+  });
+
   it('routes high-resolution generate requests to the dedicated endpoint', async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(
@@ -146,7 +214,7 @@ describe('imagesApi', () => {
 
     expect(result.images[0]?.width).toBe(3840);
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:3000/api/images/generate/high-res',
+      '/api/images/generate/high-res',
       expect.objectContaining({ method: 'POST' }),
     );
     expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toMatchObject({

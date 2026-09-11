@@ -7,19 +7,22 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
+      APP_VERSION: ${APP_VERSION:?Set APP_VERSION to the release tag or commit}
       IMAGE_API_BASE_URL: ${IMAGE_API_BASE_URL:?Set IMAGE_API_BASE_URL in the root .env file}
       HIGH_RES_IMAGE_API_BASE_URL: ${HIGH_RES_IMAGE_API_BASE_URL:-}
       IMAGE_API_KEY: ${IMAGE_API_KEY:?Set IMAGE_API_KEY in the root .env file}
+      GEMINI_IMAGE_API_KEY: ${GEMINI_IMAGE_API_KEY:?Set GEMINI_IMAGE_API_KEY in the root .env file}
+      USER_API_KEY_ENCRYPTION_KEY: ${USER_API_KEY_ENCRYPTION_KEY:?Set USER_API_KEY_ENCRYPTION_KEY in the root .env file}
       HIGH_RES_IMAGE_API_KEY: ${HIGH_RES_IMAGE_API_KEY:-}
       OPENAI_COMPAT_API_KEY: ${OPENAI_COMPAT_API_KEY:?Set OPENAI_COMPAT_API_KEY in the root .env file}
       IMAGE_MODEL: ${IMAGE_MODEL:-gpt-image-2}
       HIGH_RES_IMAGE_MODEL: ${HIGH_RES_IMAGE_MODEL:-}
-      IMAGE_API_TIMEOUT_MS: ${IMAGE_API_TIMEOUT_MS:-120000}
-      GPT_POOL_QUOTA: ${GPT_POOL_QUOTA:-100}
+      IMAGE_API_TIMEOUT_MS: ${IMAGE_API_TIMEOUT_MS:-300000}
       UPLOAD_DIR: /app/tmp/uploads
       UPLOAD_MAX_BYTES: ${UPLOAD_MAX_BYTES:-10485760}
       OUTPUT_DIR: /app/tmp/outputs
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-1}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:5173}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in the root .env file}
@@ -31,22 +34,17 @@ services:
       DAILY_USER_QUOTA: ${DAILY_USER_QUOTA:-20}
       DEMO_PROMPTS: ${DEMO_PROMPTS:-}
       DEMO_PROMPT_CACHE_DELAY_MS: ${DEMO_PROMPT_CACHE_DELAY_MS:-4000}
-    ports:
-      - "${BACKEND_PORT:-3000}:3000"
+    expose:
+      - "3000"
     volumes:
       - backend-data:/app/data
       - backend-uploads:/app/tmp/uploads
       - backend-outputs:/app/tmp/outputs
-    networks:
-      default:
-      provider:
-        aliases:
-          - nebulens-backend
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          'node -e "fetch(''http://127.0.0.1:3000/api/health'').then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))"',
+          'node -e "fetch(''http://127.0.0.1:3000/api/health/ready'').then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))"',
         ]
       interval: 30s
       timeout: 5s
@@ -58,8 +56,10 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5173}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
     restart: unless-stopped
+    environment:
+      UPLOAD_MAX_BYTES: ${UPLOAD_MAX_BYTES:-10485760}
     depends_on:
       backend:
         condition: service_healthy
@@ -68,10 +68,8 @@ services:
 
 volumes:
   backend-data:
+    name: bellpicture_backend-data
   backend-uploads:
+    name: bellpicture_backend-uploads
   backend-outputs:
-
-networks:
-  provider:
-    name: ${PROVIDER_NETWORK:-chatgpt2api_default}
-    external: true
+    name: bellpicture_backend-outputs

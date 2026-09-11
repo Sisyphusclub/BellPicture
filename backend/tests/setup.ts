@@ -6,6 +6,8 @@ const root = mkdtempSync(path.join(tmpdir(), 'nebulens-test-'));
 
 process.env.IMAGE_API_BASE_URL ??= 'https://test.example.com';
 process.env.IMAGE_API_KEY ??= 'test-key';
+process.env.GEMINI_IMAGE_API_KEY ??= 'test-gemini-key';
+process.env.USER_API_KEY_ENCRYPTION_KEY ??= Buffer.alloc(32, 7).toString('base64');
 process.env.OPENAI_COMPAT_API_KEY ??= 'test-openai-compat-key';
 process.env.LOG_LEVEL ??= 'silent';
 process.env.UPLOAD_DIR ??= path.join(root, 'uploads');
@@ -15,6 +17,7 @@ process.env.BETTER_AUTH_SECRET ??= 'test-secret-32-chars-min-padding-padding';
 process.env.FRONTEND_ORIGIN ??= 'http://localhost:5173';
 process.env.SQLITE_PATH ??= path.join(root, 'app.sqlite');
 process.env.DAILY_USER_QUOTA ??= '20';
+process.env.DAILY_CHECK_IN_REWARD ??= '5';
 process.env.SEED_DEFAULT_ADMIN ??= 'false';
 
 // Run drizzle migrations once for the test process. Subsequent test files share

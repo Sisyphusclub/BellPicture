@@ -3,10 +3,6 @@
 .gitignore
 .gitattributes
 .github
-.claude
-.codex
-.trellis/.runtime
-.trellis/.developer
 .idea
 .vscode
 .DS_Store

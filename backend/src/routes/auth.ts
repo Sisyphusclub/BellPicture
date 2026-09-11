@@ -117,6 +117,16 @@ async function handleSignUpUsername(req: Request, res: Response): Promise<void> 
 export function buildUsernameAuthRouter(): Router {
   const router = express.Router();
 
+  // GET /api/auth/providers (public) - expose optional sign-in providers
+  // without leaking provider credentials to the browser.
+  router.get('/providers', (_req, res) => {
+    res.status(200).json({
+      providers: {
+        google: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
+      },
+    });
+  });
+
   router.post('/sign-up/email', rejectEmailPasswordAuth);
   router.post('/sign-in/email', rejectEmailPasswordAuth);
   router.get(

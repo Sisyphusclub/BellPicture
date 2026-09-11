@@ -5,6 +5,7 @@ import { z, ZodError } from 'zod';
 
 import { env } from '../config/env.js';
 import { AppError } from '../errors/AppError.js';
+import { createSignedOutputPath } from '../services/outputAccess.service.js';
 import {
   generateImage,
   type GenerateImageInput,
@@ -26,6 +27,9 @@ const MODEL_CREATED_AT = 1_710_000_000;
 
 const OPENAI_COMPAT_MODEL_IDS = [
   'gpt-image-2',
+  'gpt-image-2.5-flare',
+  'gpt-image-2.5-sunburst',
+  'gemini-3.1-flash-image',
   'codex-gpt-image-2',
   'auto',
   'gpt-5',
@@ -427,7 +431,7 @@ async function buildImagesResponse(
 function absoluteOutputUrl(req: Request, filename: string): string {
   const protocol = firstHeaderSegment(req.get('x-forwarded-proto')) ?? req.protocol ?? 'http';
   const host = req.get('host') ?? `localhost:${env.PORT}`;
-  return `${protocol}://${host}/api/outputs/${encodeURIComponent(filename)}`;
+  return `${protocol}://${host}${createSignedOutputPath(filename)}`;
 }
 
 function firstHeaderSegment(value: string | undefined): string | undefined {

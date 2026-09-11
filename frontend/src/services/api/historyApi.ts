@@ -1,10 +1,12 @@
 import {
   ASPECT_RATIOS,
+  IMAGE_QUALITIES,
   IMAGE_RESOLUTIONS,
   type AspectRatio,
   type ImageMetadataUpdate,
   type ImageRecord,
   type ImageResolution,
+  type ImageQuality,
 } from '@/types/image';
 import { isNumber, isRecord, readNumber, readString } from '@/utils/narrowing';
 
@@ -19,6 +21,7 @@ import {
 
 export interface HistoryListResponse {
   records: ImageRecord[];
+  nextCursor?: string;
 }
 
 export async function fetchHistory(): Promise<ImageRecord[]> {
@@ -31,14 +34,23 @@ export async function fetchHistory(): Promise<ImageRecord[]> {
   return payload.records;
 }
 
-export async function fetchPublicHistory(): Promise<ImageRecord[]> {
-  const response = await publicFetch(buildApiUrl('/api/history/public'));
+export async function fetchPublicHistory(
+  input: {
+    cursor?: string;
+    limit?: number;
+  } = {},
+): Promise<HistoryListResponse> {
+  const query = new URLSearchParams();
+  if (input.cursor !== undefined) query.set('cursor', input.cursor);
+  if (input.limit !== undefined) query.set('limit', String(input.limit));
+  const suffix = query.size > 0 ? `?${query.toString()}` : '';
+  const response = await publicFetch(buildApiUrl(`/api/history/public${suffix}`));
   const payload = await parseJsonResponse(response);
   if (!response.ok) throw buildApiError(response.status, payload);
   if (!isHistoryListResponse(payload)) {
-    throw new ImageApiError(response.status, 'INVALID_RESPONSE', '公开画廊返回了无法识别的响应。');
+    throw new ImageApiError(response.status, 'INVALID_RESPONSE', '发现页返回了无法识别的响应。');
   }
-  return payload.records;
+  return payload;
 }
 
 export async function deleteHistoryRecord(id: string): Promise<void> {
@@ -128,6 +140,10 @@ function isImageResolution(value: unknown): value is ImageResolution {
   return typeof value === 'string' && (IMAGE_RESOLUTIONS as readonly string[]).includes(value);
 }
 
+function isImageQuality(value: unknown): value is ImageQuality {
+  return typeof value === 'string' && (IMAGE_QUALITIES as readonly string[]).includes(value);
+}
+
 function isImageRecord(value: unknown): value is ImageRecord {
   if (!isRecord(value)) return false;
   const id = readString(value, 'id');
@@ -149,6 +165,7 @@ function isImageRecord(value: unknown): value is ImageRecord {
   const isPublic = value.isPublic;
   const count = value.count;
   const resolution = value.resolution;
+  const quality = value.quality;
   const isFavorite = value.isFavorite;
   const collection = value.collection;
   return (
@@ -159,6 +176,7 @@ function isImageRecord(value: unknown): value is ImageRecord {
     (elapsedMs === undefined || typeof elapsedMs === 'number') &&
     (count === undefined || typeof count === 'number') &&
     (resolution === undefined || isImageResolution(resolution)) &&
+    (quality === undefined || isImageQuality(quality)) &&
     (isFavorite === undefined || typeof isFavorite === 'boolean') &&
     (collection === undefined || typeof collection === 'string') &&
     typeof isPublic === 'boolean'
@@ -176,5 +194,8 @@ function isStringArray(value: unknown): value is string[] {
 function isHistoryListResponse(value: unknown): value is HistoryListResponse {
   if (!isRecord(value)) return false;
   if (!Array.isArray(value.records)) return false;
-  return value.records.every(isImageRecord);
+  return (
+    value.records.every(isImageRecord) &&
+    (value.nextCursor === undefined || typeof value.nextCursor === 'string')
+  );
 }

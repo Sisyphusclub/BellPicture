@@ -39,19 +39,87 @@ async function seedUpload(filename: string, bytes: Buffer): Promise<string> {
 }
 
 describe('TwoApiImageProvider', () => {
+  it('validates a credential against the configured model list without exposing it elsewhere', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ object: 'list', data: [{ id: 'gpt-image-2', object: 'model' }] }),
+    );
+    const provider = new TwoApiImageProvider(baseConfig, fetchMock);
+
+    await provider.validateCredential({ credential: 'sk-personal', model: 'gpt-image-2' });
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [calledUrl, init] = fetchMock.mock.calls[0]!;
+    expect(calledUrl).toBe('https://api.example.com/v1/models');
+    expect((init as RequestInit).method).toBe('GET');
+    expect(((init as RequestInit).headers as Record<string, string>)['Authorization']).toBe(
+      'Bearer sk-personal',
+    );
+  });
+
+  it('validates a 2K/4K credential against the high-resolution provider', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ object: 'list', data: [{ id: 'high-res-image', object: 'model' }] }),
+    );
+    const provider = new TwoApiImageProvider(
+      { ...baseConfig, highResBaseUrl: 'https://high-res.example.com' },
+      fetchMock,
+    );
+
+    await provider.validateCredential({
+      credential: 'sk-high-res-personal',
+      credentialGroup: 'high-res',
+      model: 'high-res-image',
+    });
+
+    expect(fetchMock.mock.calls[0]![0]).toBe('https://high-res.example.com/v1/models');
+  });
+
+  it('rejects invalid credentials and groups without the configured image model', async () => {
+    const invalid = new TwoApiImageProvider(
+      baseConfig,
+      vi.fn(async () => errorResponse(401)),
+    );
+    await expect(
+      invalid.validateCredential({ credential: 'sk-invalid', model: 'gpt-image-2' }),
+    ).rejects.toMatchObject({ code: 'PROVIDER_KEY_INVALID', status: 400 });
+
+    const wrongGroup = new TwoApiImageProvider(
+      baseConfig,
+      vi.fn(async () => jsonResponse({ data: [{ id: 'gpt-5' }] })),
+    );
+    await expect(
+      wrongGroup.validateCredential({ credential: 'sk-chat', model: 'gpt-image-2' }),
+    ).rejects.toMatchObject({
+      code: 'PROVIDER_KEY_MODEL_UNAVAILABLE',
+      status: 400,
+      details: { model: 'gpt-image-2' },
+    });
+  });
+
+  it('maps a structurally invalid model list to a credential validation failure', async () => {
+    const provider = new TwoApiImageProvider(
+      baseConfig,
+      vi.fn(async () => jsonResponse({ data: { id: 'gpt-image-2' } })),
+    );
+
+    await expect(
+      provider.validateCredential({ credential: 'sk-personal', model: 'gpt-image-2' }),
+    ).rejects.toMatchObject({ code: 'PROVIDER_KEY_VALIDATION_FAILED', status: 502 });
+  });
+
   it('writes one image per data entry and returns the array (text-to-image)', async () => {
     const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
       jsonResponse({
         created: 1,
-        data: [{ b64_json: TINY_PNG_B64 }, { b64_json: TINY_PNG_B64 }],
+        data: Array.from({ length: 4 }, () => ({ b64_json: TINY_PNG_B64 })),
       }),
     );
     const provider = new TwoApiImageProvider(baseConfig, fetchMock);
 
-    const out = await provider.generate({ prompt: 'a red cube', count: 2, aspectRatio: '1:1' });
+    const out = await provider.generate({ prompt: 'a red cube', count: 4, aspectRatio: '1:1' });
 
     expect(out.aspectRatio).toBe('1:1');
-    expect(out.images).toHaveLength(2);
+    expect(out.images).toHaveLength(4);
     for (const image of out.images) {
       expect(image.width).toBe(1024);
       expect(image.height).toBe(1024);
@@ -65,7 +133,7 @@ describe('TwoApiImageProvider', () => {
     expect(body['model']).toBe('gpt-image-2');
     expect(body['prompt']).toBe('a red cube');
     expect(body['response_format']).toBe('b64_json');
-    expect(body['n']).toBe(2);
+    expect(body['n']).toBe(4);
     expect(body['size']).toBe('1024x1024');
     const headers = (init as RequestInit).headers as Record<string, string>;
     expect(headers['Authorization']).toBe('Bearer sk-test');
@@ -80,6 +148,81 @@ describe('TwoApiImageProvider', () => {
     const init = fetchMock.mock.calls[0]![1] as RequestInit;
     const body = JSON.parse(init.body as string) as Record<string, unknown>;
     expect(body['size']).toBe('1792x1024');
+  });
+
+  it('calls Gemini generateContent and stores inline image data', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({
+        candidates: [
+          {
+            content: {
+              parts: [{ inlineData: { mimeType: 'image/jpeg', data: TINY_PNG_B64 } }],
+            },
+          },
+        ],
+      }),
+    );
+    const provider = new TwoApiImageProvider(
+      { ...baseConfig, modelApiKeys: { 'gemini-3.1-flash-image': 'sk-gemini' } },
+      fetchMock,
+    );
+
+    const out = await provider.generate({
+      prompt: 'a red cube',
+      model: 'gemini-3.1-flash-image',
+      aspectRatio: '16:9',
+      resolution: '2k',
+    });
+
+    expect(out.images).toHaveLength(1);
+    expect(out.images[0]?.outputPath).toMatch(/\.jpeg$/);
+    const [calledUrl, init] = fetchMock.mock.calls[0]!;
+    expect(calledUrl).toBe(
+      'https://api.example.com/v1beta/models/gemini-3.1-flash-image:generateContent',
+    );
+    expect((init as RequestInit).headers).toMatchObject({ Authorization: 'Bearer sk-gemini' });
+    const body = JSON.parse((init as RequestInit).body as string) as {
+      contents: Array<{ parts: Array<Record<string, unknown>> }>;
+      generationConfig: Record<string, unknown>;
+    };
+    expect(body.contents[0]!.parts).toEqual([{ text: 'a red cube' }]);
+    expect(body.generationConfig).toEqual({
+      responseModalities: ['IMAGE'],
+      imageConfig: { aspectRatio: '16:9', imageSize: '2K' },
+    });
+  });
+
+  it('sends each reference image as Gemini inlineData and repeats requests for count', async () => {
+    const refBytes = Buffer.from(TINY_PNG_B64, 'base64');
+    const refPath = await seedUpload('cccccccc-cccc-cccc-cccc-cccccccccccc.png', refBytes);
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({
+        candidates: [{ content: { parts: [{ inlineData: { data: TINY_PNG_B64 } }] } }],
+      }),
+    );
+    const provider = new TwoApiImageProvider(
+      { ...baseConfig, modelApiKeys: { 'gemini-3.1-flash-image': 'sk-gemini' } },
+      fetchMock,
+    );
+
+    const out = await provider.generate({
+      prompt: 'edit this',
+      model: 'gemini-3.1-flash-image',
+      referencePath: refPath,
+      count: 2,
+    });
+
+    expect(out.images).toHaveLength(2);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const body = JSON.parse(fetchMock.mock.calls[0]![1]!.body as string) as {
+      contents: Array<{ parts: Array<Record<string, unknown>> }>;
+    };
+    expect(body.contents[0]!.parts).toHaveLength(2);
+    expect(body.contents[0]!.parts[0]).toEqual({ text: 'edit this' });
+    expect(body.contents[0]!.parts[1]!.inlineData).toEqual({
+      mimeType: 'image/png',
+      data: TINY_PNG_B64,
+    });
   });
 
   it('maps 2k resolution to provider size payload', async () => {
@@ -140,6 +283,35 @@ describe('TwoApiImageProvider', () => {
     expect(headers['Authorization']).toBe('Bearer sk-test');
   });
 
+  it('uses a request credential for standard generation without sending it to high-res providers', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
+    );
+    const provider = new TwoApiImageProvider(
+      {
+        ...baseConfig,
+        highResBaseUrl: 'https://codex.example.com',
+        highResApiKey: 'sk-high-res',
+      },
+      fetchMock,
+    );
+
+    await provider.generate({
+      prompt: 'standard personal',
+      providerCredential: 'sk-personal',
+    });
+    await provider.generate({
+      prompt: 'high res platform',
+      providerCredential: 'sk-personal',
+      resolution: '2k',
+    });
+
+    const standardHeaders = fetchMock.mock.calls[0]![1]!.headers as Record<string, string>;
+    const highResHeaders = fetchMock.mock.calls[1]![1]!.headers as Record<string, string>;
+    expect(standardHeaders['Authorization']).toBe('Bearer sk-personal');
+    expect(highResHeaders['Authorization']).toBe('Bearer sk-high-res');
+  });
+
   it('uses the configured high-res API key for high-resolution requests', async () => {
     const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
       jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
@@ -163,6 +335,32 @@ describe('TwoApiImageProvider', () => {
     expect(calledUrl).toBe('https://codex.example.com/v1/images/generations');
     const headers = (init as RequestInit).headers as Record<string, string>;
     expect(headers['Authorization']).toBe('Bearer sk-high-res');
+  });
+
+  it('uses a high-resolution request credential for 2K/4K requests', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
+    );
+    const provider = new TwoApiImageProvider(
+      {
+        ...baseConfig,
+        highResBaseUrl: 'https://high-res.example.com',
+        highResApiKey: 'sk-high-res',
+        modelApiKeys: { 'gpt-image-2': 'sk-server-model' },
+      },
+      fetchMock,
+    );
+
+    await provider.generate({
+      prompt: '2k personal',
+      resolution: '2k',
+      providerCredential: 'sk-personal-high-res',
+      providerCredentialGroup: 'high-res',
+    });
+
+    expect(fetchMock.mock.calls[0]![0]).toBe('https://high-res.example.com/v1/images/generations');
+    const headers = fetchMock.mock.calls[0]![1]!.headers as Record<string, string>;
+    expect(headers['Authorization']).toBe('Bearer sk-personal-high-res');
   });
 
   it('uses the configured high-res model when the app sends the default model', async () => {
@@ -208,24 +406,20 @@ describe('TwoApiImageProvider', () => {
     expect(body['size']).toBe('3840x2160');
   });
 
-  it('rejects 4k requests for unsupported aspect ratios before provider IO', async () => {
+  it('supports 4k square requests before provider IO', async () => {
     const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
       jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
     );
     const provider = new TwoApiImageProvider(baseConfig, fetchMock);
 
-    await expect(
-      provider.generate({
-        prompt: '4k square',
-        aspectRatio: '1:1',
-        resolution: '4k',
-      }),
-    ).rejects.toMatchObject({
-      code: 'BAD_REQUEST',
-      status: 400,
-      details: { aspectRatio: '1:1', resolution: '4k' },
+    const out = await provider.generate({
+      prompt: '4k square',
+      aspectRatio: '1:1',
+      resolution: '4k',
     });
-    expect(fetchMock).not.toHaveBeenCalled();
+
+    expect(out.images[0]).toMatchObject({ width: 4096, height: 4096 });
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
 
   it('calls /v1/images/edits with multipart FormData when referencePath is set (image-to-image)', async () => {
@@ -240,6 +434,7 @@ describe('TwoApiImageProvider', () => {
     const out = await provider.generate({
       prompt: 'reshape it',
       referencePath: refPath,
+      providerCredential: 'sk-personal-edit',
       count: 2,
       aspectRatio: '1:1',
     });
@@ -264,7 +459,7 @@ describe('TwoApiImageProvider', () => {
     expect((image as Blob).size).toBe(refBytes.length);
 
     const headers = (init as RequestInit).headers as Record<string, string>;
-    expect(headers['Authorization']).toBe('Bearer sk-test');
+    expect(headers['Authorization']).toBe('Bearer sk-personal-edit');
     // We must NOT set content-type manually for FormData — let undici set
     // the multipart boundary.
     expect(headers['content-type']).toBeUndefined();
@@ -374,6 +569,60 @@ describe('TwoApiImageProvider', () => {
 
     await expect(provider.generate({ prompt: 'x' })).rejects.toBeInstanceOf(AppError);
     await expect(provider.generate({ prompt: 'x' })).rejects.toMatchObject({
+      code: 'PROVIDER_TIMEOUT',
+      status: 504,
+    });
+  });
+
+  it('maps an external cancellation during a successful response body to REQUEST_ABORTED', async () => {
+    const controller = new AbortController();
+    let requestSignal: AbortSignal | undefined;
+    const response = jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] });
+    vi.spyOn(response, 'json').mockImplementation(
+      () =>
+        new Promise((resolve, reject) => {
+          requestSignal?.addEventListener(
+            'abort',
+            () => reject(new DOMException('cancelled', 'AbortError')),
+            { once: true },
+          );
+          void resolve;
+        }),
+    );
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async (_url, init) => {
+      requestSignal = init?.signal ?? undefined;
+      return response;
+    });
+    const provider = new TwoApiImageProvider(baseConfig, fetchMock);
+
+    const pending = provider.generate({ prompt: 'private prompt', signal: controller.signal });
+    await vi.waitFor(() => expect(response.json).toHaveBeenCalledOnce());
+    controller.abort();
+
+    await expect(pending).rejects.toMatchObject({ code: 'REQUEST_ABORTED', status: 499 });
+  });
+
+  it('maps a timeout during a successful response body to PROVIDER_TIMEOUT', async () => {
+    let requestSignal: AbortSignal | undefined;
+    const response = jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] });
+    vi.spyOn(response, 'json').mockImplementation(
+      () =>
+        new Promise((resolve, reject) => {
+          requestSignal?.addEventListener(
+            'abort',
+            () => reject(new DOMException('timed out', 'AbortError')),
+            { once: true },
+          );
+          void resolve;
+        }),
+    );
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async (_url, init) => {
+      requestSignal = init?.signal ?? undefined;
+      return response;
+    });
+    const provider = new TwoApiImageProvider({ ...baseConfig, timeoutMs: 5 }, fetchMock);
+
+    await expect(provider.generate({ prompt: 'timeout' })).rejects.toMatchObject({
       code: 'PROVIDER_TIMEOUT',
       status: 504,
     });

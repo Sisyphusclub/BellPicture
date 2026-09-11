@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type RequestHandler } from 'express';
 
 import { buildOpenAICompatController } from '../controllers/openaiCompat.controller.js';
 import { openaiCompatAuth } from '../middlewares/openaiCompatAuth.js';
@@ -7,6 +7,7 @@ import type { ImageGenerationProvider } from '../services/providers/ImageGenerat
 
 export interface OpenAICompatRouterDeps {
   provider: ImageGenerationProvider;
+  rateLimiter?: RequestHandler;
 }
 
 export function buildOpenAICompatRouter(deps: OpenAICompatRouterDeps): Router {
@@ -15,6 +16,7 @@ export function buildOpenAICompatRouter(deps: OpenAICompatRouterDeps): Router {
 
   // Every /v1 endpoint uses inbound API-key auth, not Better Auth sessions.
   router.use(openaiCompatAuth);
+  if (deps.rateLimiter) router.use(deps.rateLimiter);
 
   // GET /v1/models (auth: bearer) -> OpenAI-compatible model list envelope.
   router.get('/models', (req, res, next) => {

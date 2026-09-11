@@ -1,6 +1,6 @@
 export type GenerationMode = 'text-to-image' | 'image-to-image';
 
-export const ASPECT_RATIOS = ['1:1', '3:2', '2:3', '16:9', '9:16'] as const;
+export const ASPECT_RATIOS = ['1:1', '3:4', '4:3', '16:9', '9:16', '2:3', '3:2'] as const;
 export type AspectRatio = (typeof ASPECT_RATIOS)[number];
 
 export const ASPECT_CHOICES = ['auto', ...ASPECT_RATIOS] as const;
@@ -8,36 +8,113 @@ export type AspectChoice = (typeof ASPECT_CHOICES)[number];
 
 export const ASPECT_RATIO_LABELS: Record<AspectRatio, string> = {
   '1:1': '1:1（正方形）',
-  '3:2': '3:2（横向）',
-  '2:3': '2:3（纵向）',
+  '3:4': '3:4（竖向）',
+  '4:3': '4:3（横向）',
   '16:9': '16:9（宽屏）',
   '9:16': '9:16（竖屏）',
+  '2:3': '2:3（纵向）',
+  '3:2': '3:2（横向）',
 };
 
 export const ASPECT_CHOICE_LABELS: Record<AspectChoice, string> = {
   auto: '智能',
   '1:1': '1:1（正方形）',
-  '3:2': '3:2（横向）',
-  '2:3': '2:3（纵向）',
+  '3:4': '3:4（竖向）',
+  '4:3': '4:3（横向）',
   '16:9': '16:9（宽屏）',
   '9:16': '9:16（竖屏）',
+  '2:3': '2:3（纵向）',
+  '3:2': '3:2（横向）',
 };
 
 export const DEFAULT_ASPECT_CHOICE: AspectChoice = 'auto';
 export const DEFAULT_ASPECT_RATIO: AspectRatio = '1:1';
 export const IMAGE_RESOLUTIONS = ['standard', '2k', '4k'] as const;
 export type ImageResolution = (typeof IMAGE_RESOLUTIONS)[number];
-export const FOUR_K_ASPECT_RATIOS = ['16:9', '9:16'] as const;
 export const IMAGE_RESOLUTION_LABELS: Record<ImageResolution, string> = {
-  standard: '标准',
+  standard: '1K',
   '2k': '2K',
   '4k': '4K',
 };
 export const DEFAULT_IMAGE_RESOLUTION: ImageResolution = 'standard';
+export const IMAGE_MODELS = [
+  'gpt-image-2',
+  'gpt-image-2.5-flare',
+  'gpt-image-2.5-sunburst',
+  'gemini-3.1-flash-image',
+] as const;
+export type ImageModel = (typeof IMAGE_MODELS)[number];
+export const DEFAULT_IMAGE_MODEL: ImageModel = IMAGE_MODELS[0];
+export const IMAGE_MODEL_LABELS: Record<ImageModel, string> = {
+  'gpt-image-2': 'gpt-image-2',
+  'gpt-image-2.5-flare': 'gpt-image-2.5-flare',
+  'gpt-image-2.5-sunburst': 'gpt-image-2.5-sunburst',
+  'gemini-3.1-flash-image': 'Nano Banana 2',
+};
+export const IMAGE_QUALITIES = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
+export type ImageQuality = (typeof IMAGE_QUALITIES)[number];
+export const DEFAULT_IMAGE_QUALITY: ImageQuality = 'medium';
+export const QUALITY_CAPABLE_IMAGE_MODELS = [
+  'gpt-image-2.5-flare',
+  'gpt-image-2.5-sunburst',
+] as const satisfies readonly ImageModel[];
+export const STANDARD_IMAGE_GENERATION_CREDIT_COST = 1;
+export const HIGH_RES_IMAGE_GENERATION_CREDIT_COST = 3;
+export const SUNBURST_HIGH_RES_IMAGE_GENERATION_CREDIT_COST = 4;
 export const DEFAULT_COUNT = 1;
 export const MIN_COUNT = 1;
-export const MAX_COUNT = 2;
+export const MAX_COUNT = 4;
 export const MAX_REFERENCE_IMAGES = 4;
+
+export function isAspectChoice(value: string | null): value is AspectChoice {
+  return value !== null && (ASPECT_CHOICES as readonly string[]).includes(value);
+}
+
+export function isAspectRatio(value: string | null): value is AspectRatio {
+  return value !== null && (ASPECT_RATIOS as readonly string[]).includes(value);
+}
+
+export function isImageResolution(value: string | null): value is ImageResolution {
+  return value !== null && (IMAGE_RESOLUTIONS as readonly string[]).includes(value);
+}
+
+export function normalizeImageModel(value: string | null | undefined): ImageModel {
+  return IMAGE_MODELS.find((model) => model === value) ?? DEFAULT_IMAGE_MODEL;
+}
+
+export function imageModelLabel(model: string): string {
+  return IMAGE_MODEL_LABELS[model as ImageModel] ?? model;
+}
+
+export function isImageQuality(value: string | null | undefined): value is ImageQuality {
+  return value !== null && value !== undefined && IMAGE_QUALITIES.includes(value as ImageQuality);
+}
+
+export function normalizeImageQuality(value: string | null | undefined): ImageQuality {
+  return isImageQuality(value) ? value : DEFAULT_IMAGE_QUALITY;
+}
+
+export function supportsImageQuality(model: string | null | undefined): boolean {
+  return QUALITY_CAPABLE_IMAGE_MODELS.includes(
+    model as (typeof QUALITY_CAPABLE_IMAGE_MODELS)[number],
+  );
+}
+
+export function imageGenerationCreditCost(resolution: ImageResolution, model?: string): number {
+  if (resolution === DEFAULT_IMAGE_RESOLUTION) return STANDARD_IMAGE_GENERATION_CREDIT_COST;
+  return model === 'gpt-image-2.5-sunburst'
+    ? SUNBURST_HIGH_RES_IMAGE_GENERATION_CREDIT_COST
+    : HIGH_RES_IMAGE_GENERATION_CREDIT_COST;
+}
+
+export function normalizeAspectChoiceForResolution(
+  aspect: AspectChoice,
+  resolution: ImageResolution,
+): AspectChoice {
+  return (IMAGE_RESOLUTIONS as readonly string[]).includes(resolution)
+    ? aspect
+    : DEFAULT_ASPECT_CHOICE;
+}
 
 export interface ImageRecord {
   id: string;
@@ -54,6 +131,7 @@ export interface ImageRecord {
   height: number;
   count?: number;
   resolution?: ImageResolution;
+  quality?: ImageQuality;
   /** Wall-clock ms from request start to image saved. Optional. */
   elapsedMs?: number;
   isPublic: boolean;
@@ -67,6 +145,7 @@ export interface GenerationSettingsSnapshot {
   count: number;
   aspectRatio: AspectRatio;
   resolution: ImageResolution;
+  quality?: ImageQuality;
   isPublic: boolean;
   referenceIds: readonly string[];
 }
@@ -92,6 +171,7 @@ export interface GenerateRequest {
   count?: number;
   aspectRatio?: AspectRatio;
   resolution?: ImageResolution;
+  quality?: ImageQuality;
   isPublic?: boolean;
   demoPresetId?: string;
 }
@@ -126,6 +206,17 @@ export interface ApiErrorEnvelope {
 export interface QuotaResponse {
   total: number;
   remaining: number;
+  checkedInToday: boolean;
+  dailyCheckInReward: number;
+  permanentTotal?: number;
+  permanentUsed?: number;
+  permanentRemaining?: number;
+  bonusRemaining?: number;
+  bonusExpiresAt?: string | null;
+}
+
+export interface DailyCheckInResponse extends QuotaResponse {
+  claimed: boolean;
 }
 
 export interface HistoryEntry {

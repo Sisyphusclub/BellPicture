@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../src/app.js';
 import { db } from '../../src/db/drizzle.js';
-import { account, user } from '../../src/db/schema.js';
+import { account, user, userQuota } from '../../src/db/schema.js';
 import { seedDefaultAdminIfEnabled } from '../../src/services/defaultAdminSeed.service.js';
 import type { ImageGenerationProvider } from '../../src/services/providers/ImageGenerationProvider.js';
 import { internalEmailForUsername } from '../../src/utils/username.js';
@@ -26,6 +26,26 @@ function cookiesFrom(response: Response): string[] {
 }
 
 describe('username/password auth', () => {
+  it('GET /api/auth/providers reports optional social providers without secrets', async () => {
+    const app = createApp({ provider: fakeProvider });
+
+    const res = await request(app).get('/api/auth/providers');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ providers: { google: false } });
+    expect(JSON.stringify(res.body)).not.toContain('GOOGLE_CLIENT_SECRET');
+  });
+
+  it('does not rate-limit repeated public provider metadata checks', async () => {
+    const app = createApp({ provider: fakeProvider });
+
+    const responses = await Promise.all(
+      Array.from({ length: 25 }, () => request(app).get('/api/auth/providers')),
+    );
+
+    expect(responses.every((response) => response.status === 200)).toBe(true);
+  });
+
   it('POST /api/auth/sign-up/username creates a user and a credential account', async () => {
     const app = createApp({ provider: fakeProvider });
     const rawUsername = `User_${uniqueUsername('signup')}`;
@@ -45,6 +65,10 @@ describe('username/password auth', () => {
     const createdUser = users[0]!;
     expect(createdUser.name).toBe(username);
     expect(createdUser.email).toBe(internalEmailForUsername(username));
+
+    expect(
+      db.select().from(userQuota).where(eq(userQuota.userId, createdUser.id)).all(),
+    ).toHaveLength(0);
 
     const accounts = db.select().from(account).where(eq(account.userId, createdUser.id)).all();
     expect(accounts.length).toBeGreaterThanOrEqual(1);
@@ -78,7 +102,11 @@ describe('username/password auth', () => {
     expect(admin.status).toBe(403);
     expect(admin.body.error.code).toBe('FORBIDDEN');
 
-    const blur = db.select({ isAdmin: user.isAdmin }).from(user).where(eq(user.username, 'blur')).get();
+    const blur = db
+      .select({ isAdmin: user.isAdmin })
+      .from(user)
+      .where(eq(user.username, 'blur'))
+      .get();
     expect(blur?.isAdmin).toBe(false);
   });
 
@@ -179,18 +207,18 @@ describe('username/password auth', () => {
     });
   });
 
-  it('seeds admin/admin123 only when the explicit gate is enabled', async () => {
+  it('seeds blur/admin123 only when the explicit gate is enabled', async () => {
     const app = createApp({ provider: fakeProvider });
-    db.delete(user).where(eq(user.username, 'admin')).run();
+    db.delete(user).where(eq(user.username, 'blur')).run();
 
     const disabled = await seedDefaultAdminIfEnabled(false);
-    expect(disabled).toMatchObject({ created: false, reason: 'disabled', username: 'admin' });
-    expect(db.select().from(user).where(eq(user.username, 'admin')).all()).toHaveLength(0);
+    expect(disabled).toMatchObject({ created: false, reason: 'disabled', username: 'blur' });
+    expect(db.select().from(user).where(eq(user.username, 'blur')).all()).toHaveLength(0);
 
     const enabled = await seedDefaultAdminIfEnabled(true);
-    expect(enabled).toMatchObject({ created: true, reason: 'created', username: 'admin' });
+    expect(enabled).toMatchObject({ created: true, reason: 'created', username: 'blur' });
 
-    const adminUsers = db.select().from(user).where(eq(user.username, 'admin')).all();
+    const adminUsers = db.select().from(user).where(eq(user.username, 'blur')).all();
     expect(adminUsers).toHaveLength(1);
     const adminUser = adminUsers[0]!;
     expect(adminUser.isAdmin).toBe(true);
@@ -202,12 +230,12 @@ describe('username/password auth', () => {
     const signIn = await request(app)
       .post('/api/auth/sign-in/username')
       .set('Content-Type', 'application/json')
-      .send({ username: 'admin', password: 'admin123' });
+      .send({ username: 'Blur', password: 'admin123' });
 
     expect(signIn.status).toBeLessThan(400);
     expect(cookiesFrom(signIn).some((c) => /session/i.test(c))).toBe(true);
 
     const secondSeed = await seedDefaultAdminIfEnabled(true);
-    expect(secondSeed).toMatchObject({ created: false, reason: 'exists', username: 'admin' });
+    expect(secondSeed).toMatchObject({ created: false, reason: 'exists', username: 'blur' });
   });
 });

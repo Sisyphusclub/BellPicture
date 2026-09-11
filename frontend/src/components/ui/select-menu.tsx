@@ -25,6 +25,7 @@ interface SelectMenuProps<T extends string> {
   disabled?: boolean;
   leadingIcon?: ReactNode;
   className?: string;
+  contentClassName?: string;
 }
 
 export function SelectMenu<T extends string>({
@@ -35,11 +36,12 @@ export function SelectMenu<T extends string>({
   disabled = false,
   leadingIcon,
   className,
+  contentClassName,
 }: SelectMenuProps<T>) {
   const selected = options.find((option) => option.value === value) ?? options[0];
 
   return (
-    <AnimatedDropdown>
+    <AnimatedDropdown modal={false}>
       <AnimatedDropdownTrigger asChild>
         <button
           type="button"
@@ -60,7 +62,10 @@ export function SelectMenu<T extends string>({
       </AnimatedDropdownTrigger>
       <AnimatedDropdownContent
         align="start"
-        className="!min-w-[var(--radix-dropdown-menu-trigger-width)] !rounded-[4px] !border-border !bg-background !p-1 !shadow-none"
+        className={cn(
+          '!min-w-[var(--radix-dropdown-menu-trigger-width)] !rounded-[4px] !border-border !bg-background !p-1 !shadow-none',
+          contentClassName,
+        )}
       >
         <AnimatedDropdownLabel>{label}</AnimatedDropdownLabel>
         <AnimatedDropdownRadioGroup

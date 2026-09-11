@@ -57,8 +57,10 @@ export interface AgentChatInputProps {
   onStop?: () => void;
   status?: AgentChatInputStatus;
   placeholder?: string;
+  streamingPlaceholders?: readonly string[];
   ariaLabel?: string;
   submitLabel?: string;
+  submitContent?: ReactNode;
   disabled?: boolean;
   autoFocus?: boolean;
   minRows?: number;

@@ -13,19 +13,28 @@ import {
 } from '../services/demoPromptCache.service.js';
 import { isUserAdmin } from '../services/adminUser.service.js';
 import { insertImageRecords, type NewImageRecord } from '../services/history.service.js';
-import { generateImage, type GenerateImageOutput } from '../services/imageGeneration.service.js';
+import {
+  assertReferenceImagesOwnedByUser,
+  generateImage,
+  type GenerateImageOutput,
+} from '../services/imageGeneration.service.js';
 import type { ImageGenerationProvider } from '../services/providers/ImageGenerationProvider.js';
-import type { QuotaSnapshot } from '../services/quota.service.js';
+import type { DailyCheckInResult, QuotaSnapshot } from '../services/quota.service.js';
+import { recordReferenceUpload } from '../services/referenceUpload.service.js';
 import type { UserQuotaService } from '../services/userQuota.service.js';
-import { saveUpload } from '../storage/localStorage.js';
+import type { UserImageApiKeyService } from '../services/userImageApiKey.service.js';
+import { removeOutput, removeUpload, saveUpload } from '../storage/localStorage.js';
 import {
   ASPECT_RATIOS,
   DEFAULT_COUNT,
   DEFAULT_IMAGE_RESOLUTION,
   HIGH_RES_IMAGE_RESOLUTIONS,
+  IMAGE_QUALITIES,
   MAX_COUNT,
   MAX_REFERENCE_IMAGES,
   MIN_COUNT,
+  supportsImageQuality,
+  type ImageQuality,
   type ImageResolution,
 } from '../types/image.js';
 
@@ -38,6 +47,7 @@ const generateBaseBodySchema = z.object({
   model: z.string().min(1).max(100).optional(),
   count: z.number().int().min(MIN_COUNT).max(MAX_COUNT).optional(),
   aspectRatio: z.enum(ASPECT_RATIOS).optional(),
+  quality: z.enum(IMAGE_QUALITIES).optional(),
   isPublic: z.boolean().optional(),
 });
 
@@ -54,6 +64,7 @@ const highResGenerateBodySchema = generateBaseBodySchema.extend({
 export interface ImagesControllerDeps {
   provider: ImageGenerationProvider;
   userQuota: UserQuotaService;
+  userImageApiKeys: UserImageApiKeyService;
   demoGenerationDelayMs?: number;
   demoPromptCache?: DemoPromptCacheConfig;
 }
@@ -103,6 +114,7 @@ export function buildImagesController(deps: ImagesControllerDeps): {
   generate: (req: Request, res: Response, next: NextFunction) => Promise<void>;
   generateHighRes: (req: Request, res: Response, next: NextFunction) => Promise<void>;
   quota: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+  checkIn: (req: Request, res: Response, next: NextFunction) => Promise<void>;
 } {
   return {
     async quota(req, res, next) {
@@ -116,13 +128,29 @@ export function buildImagesController(deps: ImagesControllerDeps): {
       }
     },
 
+    async checkIn(req, res, next) {
+      try {
+        const user = requireUser(req);
+        const body: DailyCheckInResult = deps.userQuota.forUser(user.id).checkIn();
+        res.status(200).json(body);
+      } catch (err) {
+        next(err);
+      }
+    },
+
     async upload(req, res, next) {
       try {
-        requireUser(req);
+        const user = requireUser(req);
         if (!req.file) {
           throw new AppError('BAD_REQUEST', 'Missing "image" form field with a file', 400);
         }
         const saved = await saveUpload(req.file.buffer);
+        try {
+          recordReferenceUpload(saved.filename, user.id);
+        } catch (err) {
+          await removeUpload(saved.absolutePath);
+          throw err;
+        }
         const body: UploadResponse = {
           id: saved.filename,
           filename: saved.filename,
@@ -136,9 +164,11 @@ export function buildImagesController(deps: ImagesControllerDeps): {
     },
 
     async generate(req, res, next) {
+      const requestAbort = createRequestAbortSignal(req, res);
       try {
         const user = requireUser(req);
         const parsed = parseGenerateBody(generateBodySchema, req.body);
+        assertQualitySupported(parsed.model ?? env.IMAGE_MODEL, parsed.quality);
 
         const referenceIds = normalizeReferenceIds(parsed.referenceIds, parsed.referenceId);
         if (parsed.demoPresetId !== undefined) {
@@ -151,11 +181,15 @@ export function buildImagesController(deps: ImagesControllerDeps): {
 
           const result = await generateDemoImage({
             presetId: parsed.demoPresetId,
+            signal: requestAbort.signal,
             ...(deps.demoGenerationDelayMs !== undefined
               ? { delayMs: deps.demoGenerationDelayMs }
               : {}),
           });
-          persistGeneratedImages({
+          if (requestAbort.signal.aborted) {
+            await discardAbortedResult(result, requestAbort.signal);
+          }
+          await persistGeneratedImages({
             result,
             userId: user.id,
             prompt: parsed.prompt,
@@ -163,6 +197,7 @@ export function buildImagesController(deps: ImagesControllerDeps): {
             referenceIds,
             count: parsed.count ?? DEFAULT_COUNT,
             resolution: DEFAULT_IMAGE_RESOLUTION,
+            ...(parsed.quality !== undefined ? { quality: parsed.quality } : {}),
             isPublic: parsed.isPublic ?? false,
             requestId: req.requestId,
           });
@@ -171,8 +206,11 @@ export function buildImagesController(deps: ImagesControllerDeps): {
         }
 
         const hasReferenceContext = referenceIds.length > 0;
+        if (hasReferenceContext) {
+          await assertReferenceImagesOwnedByUser(referenceIds, user.id, requestAbort.signal);
+        }
         const promptCacheHit =
-          deps.demoPromptCache !== undefined
+          deps.demoPromptCache !== undefined && parsed.quality === undefined
             ? findDemoPromptCacheHit(parsed.prompt, deps.demoPromptCache)
             : null;
         if (promptCacheHit !== null && deps.demoPromptCache !== undefined) {
@@ -180,9 +218,13 @@ export function buildImagesController(deps: ImagesControllerDeps): {
             promptCacheHit,
             deps.demoPromptCache,
             hasReferenceContext ? 'image-to-image' : undefined,
+            requestAbort.signal,
           );
           if (cachedResult !== null) {
-            persistGeneratedImages({
+            if (requestAbort.signal.aborted) {
+              await discardAbortedResult(cachedResult, requestAbort.signal);
+            }
+            await persistGeneratedImages({
               result: cachedResult,
               userId: user.id,
               prompt: parsed.prompt,
@@ -190,6 +232,7 @@ export function buildImagesController(deps: ImagesControllerDeps): {
               referenceIds,
               count: parsed.count ?? DEFAULT_COUNT,
               resolution: DEFAULT_IMAGE_RESOLUTION,
+              ...(parsed.quality !== undefined ? { quality: parsed.quality } : {}),
               isPublic: parsed.isPublic ?? false,
               requestId: req.requestId,
             });
@@ -198,22 +241,34 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           }
         }
 
-        const quotaPool = deps.userQuota.forUser(user.id);
+        const providerCredential = deps.userImageApiKeys.getProviderCredentialForGroup(
+          user.id,
+          'standard',
+        );
+        const quotaPool =
+          providerCredential === undefined ? deps.userQuota.forUser(user.id) : undefined;
         const result = await generateImage(
           {
             prompt: parsed.prompt,
             count: parsed.count ?? DEFAULT_COUNT,
             ...(referenceIds.length > 0 ? { referenceIds } : {}),
-            ...(parsed.model !== undefined ? { model: parsed.model } : {}),
+            model: parsed.model ?? env.IMAGE_MODEL,
             ...(parsed.aspectRatio !== undefined ? { aspectRatio: parsed.aspectRatio } : {}),
+            ...(parsed.quality !== undefined ? { quality: parsed.quality } : {}),
+            userId: user.id,
+            requestId: req.requestId,
+            signal: requestAbort.signal,
+            ...(providerCredential === undefined ? {} : { providerCredential }),
           },
-          { provider: deps.provider, quotaPool },
+          {
+            provider: deps.provider,
+            ...(quotaPool === undefined ? {} : { quotaPool }),
+          },
         );
-        if (promptCacheHit !== null && !hasReferenceContext) {
-          await writeDemoPromptCache(promptCacheHit, result);
+        if (requestAbort.signal.aborted) {
+          await discardAbortedResult(result, requestAbort.signal);
         }
-
-        persistGeneratedImages({
+        await persistGeneratedImages({
           result,
           userId: user.id,
           prompt: parsed.prompt,
@@ -221,34 +276,65 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           referenceIds,
           count: parsed.count ?? DEFAULT_COUNT,
           resolution: DEFAULT_IMAGE_RESOLUTION,
+          ...(parsed.quality !== undefined ? { quality: parsed.quality } : {}),
           isPublic: parsed.isPublic ?? false,
           requestId: req.requestId,
         });
         res.status(200).json(responseFromGeneratedResult(result));
+        if (promptCacheHit !== null && !hasReferenceContext) {
+          void writeDemoPromptCache(promptCacheHit, result, requestAbort.signal).catch(
+            (cacheError: unknown) => {
+              logger.warn(
+                { requestId: req.requestId, batchId: result.batchId, err: cacheError },
+                'images.generate: failed to write optional demo prompt cache',
+              );
+            },
+          );
+        }
       } catch (err) {
-        next(err);
+        if (!requestAbort.signal.aborted || (!res.destroyed && !res.writableEnded)) next(err);
+      } finally {
+        requestAbort.dispose();
       }
     },
 
     async generateHighRes(req, res, next) {
+      const requestAbort = createRequestAbortSignal(req, res);
       try {
         const user = requireUser(req);
         const parsed = parseGenerateBody(highResGenerateBodySchema, req.body);
+        assertQualitySupported(parsed.model ?? env.IMAGE_MODEL, parsed.quality);
         const referenceIds = normalizeReferenceIds(parsed.referenceIds, parsed.referenceId);
-        const quotaPool = deps.userQuota.forUser(user.id);
+        const providerCredential = deps.userImageApiKeys.getProviderCredentialForGroup(
+          user.id,
+          'high-res',
+        );
+        const quotaPool =
+          providerCredential === undefined ? deps.userQuota.forUser(user.id) : undefined;
         const result = await generateImage(
           {
             prompt: parsed.prompt,
             count: parsed.count ?? DEFAULT_COUNT,
             ...(referenceIds.length > 0 ? { referenceIds } : {}),
-            ...(parsed.model !== undefined ? { model: parsed.model } : {}),
+            model: parsed.model ?? env.IMAGE_MODEL,
             ...(parsed.aspectRatio !== undefined ? { aspectRatio: parsed.aspectRatio } : {}),
             resolution: parsed.resolution,
+            ...(parsed.quality !== undefined ? { quality: parsed.quality } : {}),
+            userId: user.id,
+            requestId: req.requestId,
+            signal: requestAbort.signal,
+            ...(providerCredential === undefined ? {} : { providerCredential }),
+            ...(providerCredential === undefined
+              ? {}
+              : { providerCredentialGroup: 'high-res' as const }),
           },
-          { provider: deps.provider, quotaPool },
+          { provider: deps.provider, ...(quotaPool === undefined ? {} : { quotaPool }) },
         );
 
-        persistGeneratedImages({
+        if (requestAbort.signal.aborted) {
+          await discardAbortedResult(result, requestAbort.signal);
+        }
+        await persistGeneratedImages({
           result,
           userId: user.id,
           prompt: parsed.prompt,
@@ -256,12 +342,15 @@ export function buildImagesController(deps: ImagesControllerDeps): {
           referenceIds,
           count: parsed.count ?? DEFAULT_COUNT,
           resolution: parsed.resolution,
+          ...(parsed.quality !== undefined ? { quality: parsed.quality } : {}),
           isPublic: parsed.isPublic ?? false,
           requestId: req.requestId,
         });
         res.status(200).json(responseFromGeneratedResult(result));
       } catch (err) {
-        next(err);
+        if (!requestAbort.signal.aborted || (!res.destroyed && !res.writableEnded)) next(err);
+      } finally {
+        requestAbort.dispose();
       }
     },
   };
@@ -280,7 +369,7 @@ function parseGenerateBody<T>(schema: z.ZodType<T>, body: unknown): T {
   }
 }
 
-function persistGeneratedImages(input: {
+async function persistGeneratedImages(input: {
   result: GenerateImageOutput;
   userId: string;
   prompt: string;
@@ -288,9 +377,10 @@ function persistGeneratedImages(input: {
   referenceIds: string[];
   count: number;
   resolution: ImageResolution;
+  quality?: ImageQuality;
   isPublic: boolean;
   requestId: string;
-}): void {
+}): Promise<void> {
   const createdAt = new Date();
   const model = input.result.model ?? input.requestedModel ?? env.IMAGE_MODEL;
   const records: NewImageRecord[] = input.result.images.map((image) => ({
@@ -308,24 +398,46 @@ function persistGeneratedImages(input: {
     height: image.height,
     count: input.count,
     resolution: input.resolution,
+    ...(input.quality !== undefined ? { quality: input.quality } : {}),
     isPublic: input.isPublic,
     createdAt,
   }));
   try {
     insertImageRecords(records);
   } catch (insertErr) {
-    // Quota may already be consumed by real generation. Demo mode also returns
-    // saved files, so keep the user-visible result consistent and log for ops.
+    const cleanupResults = await Promise.allSettled(
+      input.result.images.map((image) => removeOutput(image.absolutePath)),
+    );
+    const cleanupFailures = cleanupResults.filter((result) => result.status === 'rejected');
     logger.error(
       {
         requestId: input.requestId,
         userId: input.userId,
         batchId: input.result.batchId,
         err: insertErr,
+        cleanupFailureCount: cleanupFailures.length,
       },
       'images.generate: failed to persist image_records',
     );
+    throw new AppError(
+      'INTERNAL',
+      'Generated images could not be saved to history',
+      500,
+      insertErr,
+      { batchId: input.result.batchId },
+    );
   }
+}
+
+function assertQualitySupported(model: string, quality: ImageQuality | undefined): void {
+  if (quality === undefined || supportsImageQuality(model)) return;
+  throw new AppError(
+    'BAD_REQUEST',
+    `Image quality is not supported for model ${model}`,
+    400,
+    undefined,
+    { model, quality },
+  );
 }
 
 function responseFromGeneratedResult(result: GenerateImageOutput): GenerateResponse {
@@ -342,4 +454,44 @@ function responseFromGeneratedResult(result: GenerateImageOutput): GenerateRespo
       height: image.height,
     })),
   };
+}
+
+function createRequestAbortSignal(
+  req: Request,
+  res: Response,
+): { signal: AbortSignal; dispose: () => void } {
+  const controller = new AbortController();
+  const abort = (): void => {
+    if (!controller.signal.aborted) {
+      controller.abort(new DOMException('Client disconnected', 'AbortError'));
+    }
+  };
+  const abortOnPrematureClose = (): void => {
+    if (!res.writableEnded) abort();
+  };
+  req.once('aborted', abort);
+  res.once('close', abortOnPrematureClose);
+  return {
+    signal: controller.signal,
+    dispose: () => {
+      req.off('aborted', abort);
+      res.off('close', abortOnPrematureClose);
+    },
+  };
+}
+
+async function discardAbortedResult(
+  result: GenerateImageOutput,
+  signal: AbortSignal,
+): Promise<void> {
+  await removeGeneratedImages(result);
+  throw requestAbortedError(signal.reason);
+}
+
+async function removeGeneratedImages(result: GenerateImageOutput): Promise<void> {
+  await Promise.all(result.images.map((image) => removeOutput(image.absolutePath)));
+}
+
+function requestAbortedError(cause: unknown): AppError {
+  return new AppError('REQUEST_ABORTED', 'Image generation request was cancelled', 499, cause);
 }

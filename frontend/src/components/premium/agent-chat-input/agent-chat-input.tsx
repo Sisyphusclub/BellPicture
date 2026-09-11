@@ -14,11 +14,10 @@ import {
   Trash2,
   WandSparkles,
 } from 'lucide-react';
-import { BorderBeam } from 'border-beam';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
   type ChangeEvent,
-  type FocusEvent,
+  type DragEvent,
   type ReactNode,
   useEffect,
   useRef,
@@ -30,6 +29,7 @@ import {
   MorphPopoverContent,
   MorphPopoverTrigger,
 } from '@/components/motion/popover-morph';
+import BorderGlow from '@/components/BorderGlow';
 import { SPRING_PRESS, SPRING_SWAP } from '@/lib/ease';
 import { cn } from '@/lib/utils';
 
@@ -61,6 +61,30 @@ interface OptionMenuProps {
   options: readonly AgentChatInputOption[];
   selectedId: string;
   onSelect: (id: string) => void;
+}
+
+function matchesAcceptedFileType(file: File, acceptedFileTypes: string): boolean {
+  const accepted = acceptedFileTypes
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  if (accepted.length === 0 || accepted.includes('*/*')) return true;
+
+  const type = file.type.toLowerCase();
+  const name = file.name.toLowerCase();
+  return accepted.some((pattern) => {
+    if (pattern.startsWith('.')) return name.endsWith(pattern);
+    if (pattern.endsWith('/*')) return type.startsWith(pattern.slice(0, -1));
+    return type === pattern;
+  });
+}
+
+function hasFileTransfer(dataTransfer: DataTransfer | null | undefined): boolean {
+  if (!dataTransfer) return false;
+  return (
+    Array.from(dataTransfer.types ?? []).some((type) => type.toLowerCase() === 'files') ||
+    dataTransfer.files.length > 0
+  );
 }
 
 function OptionMenu({ label, options, selectedId, onSelect }: OptionMenuProps) {
@@ -406,6 +430,70 @@ function IconButton({ label, disabled = false, reduce, onClick, children }: Icon
   );
 }
 
+interface StreamingPlaceholderProps {
+  active: boolean;
+  examples: readonly string[];
+  reduce: boolean;
+}
+
+function StreamingPlaceholder({ active, examples, reduce }: StreamingPlaceholderProps) {
+  const textRef = useRef<HTMLSpanElement>(null);
+  const signature = examples.join('\u0000');
+
+  useEffect(() => {
+    const prompts = signature.split('\u0000').filter(Boolean);
+    const target = textRef.current;
+    if (!target || !active || prompts.length === 0) {
+      if (target) target.textContent = '';
+      return;
+    }
+    if (reduce) {
+      target.textContent = prompts[0] ?? '';
+      return;
+    }
+
+    let promptIndex = 0;
+    let characterCount = 0;
+    let deleting = false;
+    let timeoutId: number | undefined;
+
+    const renderNextFrame = () => {
+      const prompt = prompts[promptIndex] ?? '';
+      if (deleting) {
+        characterCount = Math.max(0, characterCount - 1);
+      } else {
+        characterCount = Math.min(prompt.length, characterCount + 1);
+      }
+      target.textContent = prompt.slice(0, characterCount);
+
+      let delay = deleting ? 22 : 46;
+      if (!deleting && characterCount === prompt.length) {
+        deleting = true;
+        delay = 1800;
+      } else if (deleting && characterCount === 0) {
+        deleting = false;
+        promptIndex = (promptIndex + 1) % prompts.length;
+        delay = 260;
+      }
+      timeoutId = window.setTimeout(renderNextFrame, delay);
+    };
+
+    timeoutId = window.setTimeout(renderNextFrame, 180);
+    return () => window.clearTimeout(timeoutId);
+  }, [active, reduce, signature]);
+
+  return (
+    <span
+      className="agent-chat-input__streaming-placeholder"
+      data-active={active ? 'true' : undefined}
+      aria-hidden="true"
+    >
+      <span ref={textRef} className="agent-chat-input__streaming-placeholder-text" />
+      <span className="agent-chat-input__streaming-placeholder-caret" />
+    </span>
+  );
+}
+
 export function AgentChatInput({
   value,
   defaultValue = '',
@@ -414,8 +502,10 @@ export function AgentChatInput({
   onStop,
   status = 'ready',
   placeholder = 'Ask for follow-up changes',
+  streamingPlaceholders = [],
   ariaLabel = 'Agent prompt',
   submitLabel = 'Send message',
+  submitContent,
   disabled = false,
   autoFocus = false,
   minRows = 2,
@@ -461,8 +551,9 @@ export function AgentChatInput({
   const reduce = useReducedMotion() ?? false;
   const composerRef = useRef<AgentChatComposerHandle>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragDepthRef = useRef(0);
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   const [previewAttachmentId, setPreviewAttachmentId] = useState<string | null>(null);
-  const [beamActive, setBeamActive] = useState(false);
   const [text, setText] = useControllableString({
     value,
     defaultValue,
@@ -516,21 +607,16 @@ export function AgentChatInput({
     if (autoFocus) composerRef.current?.focus();
   }, [autoFocus]);
 
+  useEffect(() => {
+    if (!allowFileUpload || disabled) {
+      dragDepthRef.current = 0;
+      setIsDraggingFiles(false);
+    }
+  }, [allowFileUpload, disabled]);
+
   function handleComposerChange(next: ComposerValue) {
     setText(next.text);
     setSelectedSkillIds(next.skillIds);
-  }
-
-  function handleFocusCapture(event: FocusEvent<HTMLDivElement>) {
-    const target = event.target as HTMLElement;
-    if (target.closest('.agent-chat-input__textarea')) setBeamActive(true);
-  }
-
-  function handleBlurCapture(event: FocusEvent<HTMLDivElement>) {
-    const editor = event.currentTarget.querySelector('.agent-chat-input__textarea');
-    if (!event.relatedTarget || !editor?.contains(event.relatedTarget)) {
-      setBeamActive(false);
-    }
   }
 
   function submit() {
@@ -551,12 +637,12 @@ export function AgentChatInput({
     if (clearOnSubmit) composerRef.current?.clear();
   }
 
-  function handleFiles(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    if (files.length > 0) {
+  function addFiles(files: readonly File[]) {
+    const acceptedFiles = files.filter((file) => matchesAcceptedFileType(file, acceptedFileTypes));
+    if (acceptedFiles.length > 0) {
       setCurrentAttachments([
         ...currentAttachments,
-        ...files.map((file) => ({
+        ...acceptedFiles.map((file) => ({
           id: `${file.name}-${file.lastModified}-${file.size}-${crypto.randomUUID()}`,
           name: file.name,
           type: file.type,
@@ -565,7 +651,40 @@ export function AgentChatInput({
         })),
       ]);
     }
+  }
+
+  function handleFiles(event: ChangeEvent<HTMLInputElement>) {
+    addFiles(Array.from(event.target.files ?? []));
     event.target.value = '';
+  }
+
+  function handleDragEnter(event: DragEvent<HTMLDivElement>) {
+    if (!allowFileUpload || disabled || !hasFileTransfer(event.dataTransfer)) return;
+    event.preventDefault();
+    dragDepthRef.current += 1;
+    setIsDraggingFiles(true);
+  }
+
+  function handleDragOver(event: DragEvent<HTMLDivElement>) {
+    if (!allowFileUpload || disabled || !hasFileTransfer(event.dataTransfer)) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+    setIsDraggingFiles(true);
+  }
+
+  function handleDragLeave(event: DragEvent<HTMLDivElement>) {
+    if (!allowFileUpload || disabled) return;
+    if (event.dataTransfer && !hasFileTransfer(event.dataTransfer)) return;
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setIsDraggingFiles(false);
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
+    if (!allowFileUpload || disabled || !hasFileTransfer(event.dataTransfer)) return;
+    event.preventDefault();
+    dragDepthRef.current = 0;
+    setIsDraggingFiles(false);
+    addFiles(Array.from(event.dataTransfer.files));
   }
 
   function removeAttachment(id: string) {
@@ -579,35 +698,27 @@ export function AgentChatInput({
   }
 
   return (
-    <div
+    <BorderGlow
       data-slot="agent-chat-input"
       data-status={status}
-      onFocusCapture={handleFocusCapture}
-      onBlurCapture={handleBlurCapture}
+      animated={false}
+      backgroundColor="var(--muted)"
+      borderRadius={20}
+      colors={['#ffb51b', '#12c8f4', '#1464ff']}
+      coneSpread={22}
+      edgeSensitivity={24}
+      fillOpacity={0}
+      glowColor="198 96 70"
+      glowIntensity={0.9}
+      glowRadius={34}
       className={cn(
         'agent-chat-input',
         status === 'error' && 'agent-chat-input--error',
+        isDraggingFiles && 'agent-chat-input--dragging',
         className,
         classNames?.root,
       )}
     >
-      <BorderBeam
-        active={beamActive && !reduce}
-        aria-hidden="true"
-        borderRadius={20}
-        brightness={1.85}
-        className="agent-chat-input__border-beam"
-        colorVariant="sunset"
-        duration={3.2}
-        hueRange={18}
-        saturation={1.4}
-        size="md"
-        strength={1}
-        style={{ position: 'absolute', inset: '-2px', zIndex: 2, pointerEvents: 'none' }}
-      >
-        <span className="agent-chat-input__border-beam-anchor" />
-      </BorderBeam>
-
       <QueuedMessages
         messages={currentQueue}
         onSteer={(message) => onQueuedMessageSteer?.(message)}
@@ -615,12 +726,26 @@ export function AgentChatInput({
         onRemove={removeQueuedMessage}
       />
 
-      <div className="agent-chat-input__surface">
+      <div
+        className="agent-chat-input__surface"
+        data-dragging={isDraggingFiles ? 'true' : undefined}
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {streamingPlaceholders.length ? (
+          <StreamingPlaceholder
+            active={text.length === 0}
+            examples={streamingPlaceholders}
+            reduce={reduce}
+          />
+        ) : null}
         <AgentChatComposer
           ref={composerRef}
           value={text}
           skills={skills}
-          placeholder={placeholder}
+          placeholder={streamingPlaceholders.length ? '' : placeholder}
           ariaLabel={ariaLabel}
           disabled={disabled}
           minRows={minRows}
@@ -699,17 +824,25 @@ export function AgentChatInput({
               onClick={busy ? onStop : submit}
               whileTap={reduce ? {} : { scale: 0.94 }}
               transition={SPRING_PRESS}
-              className="agent-chat-input__submit"
+              className={cn('agent-chat-input__submit', busy && 'agent-chat-input__submit--stop')}
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span
                   key={busy ? 'stop' : 'send'}
+                  className={cn(
+                    'agent-chat-input__submit-content',
+                    !busy && submitContent && 'agent-chat-input__submit-content--custom',
+                  )}
                   initial={reduce ? false : { opacity: 0, scale: 0.72 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={reduce ? {} : { opacity: 0, scale: 0.72 }}
                   transition={reduce ? { duration: 0 } : SPRING_SWAP}
                 >
-                  {busy ? <Square aria-hidden="true" /> : <ArrowUp aria-hidden="true" />}
+                  {busy ? (
+                    <Square aria-hidden="true" className="size-3.5 fill-current" />
+                  ) : (
+                    (submitContent ?? <ArrowUp aria-hidden="true" />)
+                  )}
                 </motion.span>
               </AnimatePresence>
             </motion.button>
@@ -733,6 +866,7 @@ export function AgentChatInput({
         type="file"
         multiple
         hidden
+        disabled={disabled}
         accept={acceptedFileTypes}
         onChange={handleFiles}
       />
@@ -743,6 +877,6 @@ export function AgentChatInput({
         reduce={reduce}
         onClose={() => setPreviewAttachmentId(null)}
       />
-    </div>
+    </BorderGlow>
   );
 }

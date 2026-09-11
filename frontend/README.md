@@ -13,6 +13,8 @@ npm run dev
 
 Vite 开发服务器默认运行在 `http://localhost:5173`。请单独启动后端，并确保 `VITE_API_BASE_URL` 指向后端地址，通常是 `http://localhost:3000`。
 
+生产构建默认留空 `VITE_API_BASE_URL`，通过 nginx 的 `/api` 与 `/v1` 同源代理访问后端，避免把 localhost 地址编译进静态资源。
+
 ## beUI Pro 组件
 
 `components.json` 已配置 beUI 与 beUI Pro registry。安装 Pro 组件时只在当前终端提供 Token，不要将 Token 写入仓库：

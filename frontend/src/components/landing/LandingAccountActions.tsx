@@ -1,0 +1,210 @@
+import { Bell, BookOpen, Check, KeyRound, LogIn, LogOut, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+
+import { AccountAvatar } from '@/components/common/AccountAvatar';
+import {
+  MorphPopover,
+  MorphPopoverContent,
+  MorphPopoverTrigger,
+} from '@/components/motion/popover-morph';
+import { Button } from '@/components/ui/button';
+import { IconTooltip } from '@/components/ui/icon-tooltip';
+import type { DailyCheckInResponse } from '@/types/image';
+
+interface LandingAccountActionsProps {
+  accountImage: string | null | undefined;
+  accountName: string;
+  checkedInToday: boolean;
+  creditsRemaining: number | string;
+  dailyCheckInReward: number;
+  isAuthenticated: boolean;
+  imageApiKeyConfigured: boolean;
+  imageApiKeySuffix: string | undefined;
+  onCheckIn: () => Promise<DailyCheckInResponse>;
+  onLogin: () => void;
+  onLogout: () => Promise<void>;
+  onOpenImageApiKeySettings: () => void;
+  onNotify: (message: string, tone?: 'success' | 'error') => void;
+}
+
+export function LandingAccountActions({
+  accountImage,
+  accountName,
+  checkedInToday,
+  creditsRemaining,
+  dailyCheckInReward,
+  isAuthenticated,
+  imageApiKeyConfigured,
+  imageApiKeySuffix,
+  onCheckIn,
+  onLogin,
+  onLogout,
+  onOpenImageApiKeySettings,
+  onNotify,
+}: LandingAccountActionsProps) {
+  const [checkInOpen, setCheckInOpen] = useState(false);
+  const [checkingIn, setCheckingIn] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const handleCheckIn = async (): Promise<void> => {
+    if (!isAuthenticated) {
+      setCheckInOpen(false);
+      onLogin();
+      return;
+    }
+    if (checkedInToday || checkingIn) return;
+    setCheckingIn(true);
+    try {
+      await onCheckIn();
+    } catch {
+      onNotify('签到失败，请稍后重试。', 'error');
+    } finally {
+      setCheckingIn(false);
+    }
+  };
+  const handleLogout = async (): Promise<void> => {
+    try {
+      await onLogout();
+    } catch {
+      onNotify('退出登录失败，请稍后重试。', 'error');
+    }
+  };
+  const openImageApiKeySettings = (): void => {
+    setProfileOpen(false);
+    onOpenImageApiKeySettings();
+  };
+
+  return (
+    <aside className="landing-account-actions" aria-label="快捷操作与个人积分">
+      <IconTooltip label="创作模板" side="bottom">
+        <Button asChild variant="ghost" size="icon" className="landing-account-actions__icon">
+          <Link to="/templates" aria-label="打开创作模板">
+            <BookOpen aria-hidden="true" />
+          </Link>
+        </Button>
+      </IconTooltip>
+
+      <MorphPopover>
+        <MorphPopoverTrigger>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="landing-account-actions__icon"
+            aria-label="查看通知"
+          >
+            <Bell aria-hidden="true" />
+          </Button>
+        </MorphPopoverTrigger>
+        <MorphPopoverContent
+          className="landing-account-popover landing-notification-popover"
+          radius={16}
+        >
+          <strong>通知</strong>
+          <p>暂无新通知</p>
+        </MorphPopoverContent>
+      </MorphPopover>
+
+      <MorphPopover open={checkInOpen} onOpenChange={setCheckInOpen}>
+        <MorphPopoverTrigger>
+          <Button
+            type="button"
+            variant="ghost"
+            className="landing-account-actions__credits"
+            aria-label={
+              isAuthenticated
+                ? `个人积分 ${creditsRemaining}${checkedInToday ? '，今日已签到' : '，可签到'}`
+                : '个人积分，登录后签到'
+            }
+          >
+            <span>个人积分</span>
+            <i aria-hidden="true" />
+            <Sparkles aria-hidden="true" />
+            <strong>{isAuthenticated ? creditsRemaining : 0}</strong>
+          </Button>
+        </MorphPopoverTrigger>
+        <MorphPopoverContent
+          className="landing-account-popover landing-check-in-popover"
+          radius={16}
+          sideOffset={12}
+        >
+          <div>
+            <strong>{checkedInToday ? '今日灵感已领取' : '赢取每日灵感值！'}</strong>
+            <small>
+              {isAuthenticated
+                ? `签到可得 ${dailyCheckInReward} 积分，7 天有效`
+                : '登录后即可领取每日积分'}
+              {isAuthenticated ? (
+                <span className="sr-only">每日签到可得 {dailyCheckInReward} 积分</span>
+              ) : null}
+            </small>
+          </div>
+          <Button
+            type="button"
+            disabled={checkingIn || (isAuthenticated && checkedInToday)}
+            onClick={() => void handleCheckIn()}
+          >
+            {checkedInToday ? <Check aria-hidden="true" /> : null}
+            {isAuthenticated
+              ? checkedInToday
+                ? '已签到'
+                : checkingIn
+                  ? '签到中'
+                  : '签到'
+              : '登录签到'}
+          </Button>
+        </MorphPopoverContent>
+      </MorphPopover>
+
+      {isAuthenticated ? (
+        <MorphPopover open={profileOpen} onOpenChange={setProfileOpen}>
+          <MorphPopoverTrigger>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="landing-account-actions__avatar"
+              aria-label={`账户：${accountName}`}
+            >
+              <AccountAvatar image={accountImage} name={accountName} />
+            </Button>
+          </MorphPopoverTrigger>
+          <MorphPopoverContent
+            className="landing-account-popover landing-profile-popover"
+            radius={16}
+          >
+            <div>
+              <AccountAvatar image={accountImage} name={accountName} />
+              <span>
+                <strong>{accountName}</strong>
+                <small>{creditsRemaining} 积分可用</small>
+              </span>
+            </div>
+            <Button type="button" variant="ghost" onClick={openImageApiKeySettings}>
+              <KeyRound aria-hidden="true" />
+              <span>生图 API Key</span>
+              <small>
+                {imageApiKeyConfigured ? `尾号 ${imageApiKeySuffix ?? '未知'}` : '使用平台额度'}
+              </small>
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => void handleLogout()}>
+              <LogOut aria-hidden="true" />
+              退出登录
+            </Button>
+          </MorphPopoverContent>
+        </MorphPopover>
+      ) : (
+        <Button
+          type="button"
+          variant="secondary"
+          className="landing-account-actions__login"
+          onClick={onLogin}
+        >
+          <LogIn aria-hidden="true" />
+          登录
+        </Button>
+      )}
+    </aside>
+  );
+}

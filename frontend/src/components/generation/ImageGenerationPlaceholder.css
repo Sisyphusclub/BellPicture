@@ -1,0 +1,347 @@
+/* Adapted from AIcss Image Generation for Nebulens' three aspect orientations. */
+.image-generation {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklch, var(--border-strong) 64%, transparent);
+  border-radius: 15px;
+  background: color-mix(in oklch, var(--surface-raised) 78%, var(--card));
+  isolation: isolate;
+}
+
+.image-generation__dots,
+.image-generation__glow {
+  position: absolute;
+  inset: 2px;
+  pointer-events: none;
+}
+
+.image-generation__dots {
+  z-index: 0;
+  background-image: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--muted-foreground) 66%, transparent) 0.7px,
+    transparent 1.3px
+  );
+  background-repeat: space;
+  background-size: 11px 11px;
+  opacity: 0.22;
+}
+
+.image-generation__glow {
+  z-index: 1;
+  background-image: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--foreground) 92%, var(--accent)) 1.05px,
+    transparent 1.6px
+  );
+  background-repeat: space;
+  background-size: 11px 11px;
+  mask-image:
+    radial-gradient(ellipse at center, #000 0%, transparent 60%),
+    radial-gradient(ellipse at center, #000 0%, transparent 62%);
+  mask-repeat: no-repeat, no-repeat;
+  -webkit-mask-image:
+    radial-gradient(ellipse at center, #000 0%, transparent 60%),
+    radial-gradient(ellipse at center, #000 0%, transparent 62%);
+  -webkit-mask-repeat: no-repeat, no-repeat;
+  animation: image-generation-breathe 1.9s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.image-generation[data-orientation='square'] .image-generation__glow {
+  animation:
+    image-generation-morph-square 4.2s cubic-bezier(0.65, 0, 0.35, 1) infinite,
+    image-generation-breathe 1.9s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.image-generation[data-orientation='landscape'] .image-generation__glow {
+  background-size: 12px 10px;
+  animation:
+    image-generation-morph-landscape 4.2s cubic-bezier(0.65, 0, 0.35, 1) infinite,
+    image-generation-breathe 1.9s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.image-generation[data-orientation='portrait'] .image-generation__glow {
+  background-size: 10px 12px;
+  animation:
+    image-generation-morph-portrait 4.2s cubic-bezier(0.65, 0, 0.35, 1) infinite,
+    image-generation-breathe 1.9s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.image-generation__resolution {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  border: 1px solid color-mix(in oklch, var(--border) 72%, transparent);
+  border-radius: var(--radius-full);
+  background: color-mix(in oklch, var(--card) 76%, transparent);
+  color: color-mix(in oklch, var(--muted-foreground) 90%, var(--foreground));
+  padding: 3px 8px;
+  backdrop-filter: blur(4px);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.image-generation__status {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 2;
+  max-width: calc(100% - 24px);
+}
+
+.image-generation__label {
+  display: block;
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    var(--foreground) 0%,
+    var(--foreground) 30%,
+    color-mix(in oklch, var(--foreground) 44%, transparent) 45%,
+    color-mix(in oklch, var(--foreground) 44%, transparent) 55%,
+    var(--foreground) 70%,
+    var(--foreground) 100%
+  );
+  background-clip: text;
+  background-size: 300% 100%;
+  color: transparent;
+  font-size: 13px;
+  font-weight: 560;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 18px color-mix(in oklch, var(--background) 82%, transparent);
+  white-space: nowrap;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: image-generation-label-shine 2.25s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.image-generation.session-result__loading {
+  position: absolute;
+  width: auto;
+  aspect-ratio: auto;
+  border-radius: 0;
+}
+
+@keyframes image-generation-morph-square {
+  0%,
+  100% {
+    mask-position:
+      16% 20%,
+      30% 32%;
+    mask-size:
+      52% 46%,
+      40% 40%;
+    -webkit-mask-position:
+      16% 20%,
+      30% 32%;
+    -webkit-mask-size:
+      52% 46%,
+      40% 40%;
+  }
+  25% {
+    mask-position:
+      84% 16%,
+      66% 30%;
+    mask-size:
+      46% 58%,
+      44% 38%;
+    -webkit-mask-position:
+      84% 16%,
+      66% 30%;
+    -webkit-mask-size:
+      46% 58%,
+      44% 38%;
+  }
+  50% {
+    mask-position:
+      82% 84%,
+      62% 68%;
+    mask-size:
+      60% 44%,
+      38% 46%;
+    -webkit-mask-position:
+      82% 84%,
+      62% 68%;
+    -webkit-mask-size:
+      60% 44%,
+      38% 46%;
+  }
+  75% {
+    mask-position:
+      14% 82%,
+      34% 66%;
+    mask-size:
+      48% 54%,
+      46% 40%;
+    -webkit-mask-position:
+      14% 82%,
+      34% 66%;
+    -webkit-mask-size:
+      48% 54%,
+      46% 40%;
+  }
+}
+
+@keyframes image-generation-morph-landscape {
+  0%,
+  100% {
+    mask-position:
+      10% 16%,
+      28% 24%;
+    mask-size:
+      46% 84%,
+      34% 70%;
+    -webkit-mask-position:
+      10% 16%,
+      28% 24%;
+    -webkit-mask-size:
+      46% 84%,
+      34% 70%;
+  }
+  25% {
+    mask-position:
+      88% 12%,
+      68% 24%;
+    mask-size:
+      44% 88%,
+      38% 72%;
+    -webkit-mask-position:
+      88% 12%,
+      68% 24%;
+    -webkit-mask-size:
+      44% 88%,
+      38% 72%;
+  }
+  50% {
+    mask-position:
+      82% 88%,
+      62% 70%;
+    mask-size:
+      54% 78%,
+      32% 82%;
+    -webkit-mask-position:
+      82% 88%,
+      62% 70%;
+    -webkit-mask-size:
+      54% 78%,
+      32% 82%;
+  }
+  75% {
+    mask-position:
+      12% 84%,
+      34% 68%;
+    mask-size:
+      48% 86%,
+      40% 72%;
+    -webkit-mask-position:
+      12% 84%,
+      34% 68%;
+    -webkit-mask-size:
+      48% 86%,
+      40% 72%;
+  }
+}
+
+@keyframes image-generation-morph-portrait {
+  0%,
+  100% {
+    mask-position:
+      14% 10%,
+      26% 28%;
+    mask-size:
+      82% 42%,
+      70% 34%;
+    -webkit-mask-position:
+      14% 10%,
+      26% 28%;
+    -webkit-mask-size:
+      82% 42%,
+      70% 34%;
+  }
+  25% {
+    mask-position:
+      12% 88%,
+      24% 66%;
+    mask-size:
+      88% 38%,
+      68% 36%;
+    -webkit-mask-position:
+      12% 88%,
+      24% 66%;
+    -webkit-mask-size:
+      88% 38%,
+      68% 36%;
+  }
+  50% {
+    mask-position:
+      88% 82%,
+      68% 62%;
+    mask-size:
+      78% 50%,
+      82% 30%;
+    -webkit-mask-position:
+      88% 82%,
+      68% 62%;
+    -webkit-mask-size:
+      78% 50%,
+      82% 30%;
+  }
+  75% {
+    mask-position:
+      84% 12%,
+      66% 30%;
+    mask-size:
+      86% 42%,
+      72% 40%;
+    -webkit-mask-position:
+      84% 12%,
+      66% 30%;
+    -webkit-mask-size:
+      86% 42%,
+      72% 40%;
+  }
+}
+
+@keyframes image-generation-breathe {
+  0%,
+  100% {
+    opacity: 0.48;
+  }
+  50% {
+    opacity: 0.96;
+  }
+}
+
+@keyframes image-generation-label-shine {
+  0%,
+  18% {
+    background-position: 100% 0;
+  }
+  82%,
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image-generation__glow,
+  .image-generation__label {
+    animation: none;
+  }
+
+  .image-generation__glow {
+    opacity: 0.7;
+  }
+
+  .image-generation__label {
+    background: none;
+    color: color-mix(in oklch, var(--foreground) 86%, var(--muted-foreground));
+    -webkit-text-fill-color: currentColor;
+  }
+}

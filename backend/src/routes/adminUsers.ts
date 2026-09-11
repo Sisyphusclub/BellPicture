@@ -18,7 +18,7 @@ export function buildAdminUsersRouter(deps: AdminUsersRouterDeps = {}): Router {
   router.use(deps.authMiddleware ?? requireAuth);
   router.use(deps.adminMiddleware ?? requireAdmin);
 
-  // GET /api/admin/users → list users with admin flag and effective daily quota.
+  // GET /api/admin/users → list users with admin flag and effective quota pools.
   router.get('/users', (req, res, next) => {
     controller.list(req, res, next);
   });
@@ -28,7 +28,7 @@ export function buildAdminUsersRouter(deps: AdminUsersRouterDeps = {}): Router {
     void controller.create(req, res, next);
   });
 
-  // PATCH /api/admin/users/:id/quota → set per-user daily total quota.
+  // PATCH /api/admin/users/:id/quota → set per-user permanent total quota.
   router.patch('/users/:id/quota', (req, res, next) => {
     controller.updateQuota(req, res, next);
   });

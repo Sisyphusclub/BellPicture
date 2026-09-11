@@ -1,21 +1,25 @@
 import { Buffer } from 'node:buffer';
 import { randomUUID } from 'node:crypto';
+import { stat } from 'node:fs/promises';
 
+import { eq } from 'drizzle-orm';
 import type { RequestHandler } from 'express';
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../src/app.js';
 import { db } from '../../src/db/drizzle.js';
-import { user, userQuota } from '../../src/db/schema.js';
+import { imageRecords, user, userQuota } from '../../src/db/schema.js';
 import { AppError } from '../../src/errors/AppError.js';
 import type { ImageGenerationProvider } from '../../src/services/providers/ImageGenerationProvider.js';
+import { createUserImageApiKeyService } from '../../src/services/userImageApiKey.service.js';
 import { saveOutput } from '../../src/storage/localStorage.js';
 import {
   aspectSizeForResolution,
   type GenerateInput,
   type GenerateOutput,
 } from '../../src/types/image.js';
+import { productDateKey } from '../../src/utils/date.js';
 
 const PNG_PREFIX = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -56,6 +60,17 @@ function createDbUser(input: { userId?: string; isAdmin?: boolean } = {}): strin
       target: user.id,
       set: { isAdmin: input.isAdmin ?? false, updatedAt: now },
     })
+    .run();
+  db.insert(userQuota)
+    .values({
+      userId,
+      usedToday: 0,
+      quotaDate: productDateKey(),
+      dailyTotal: 20,
+      permanentTotal: 20,
+      permanentUsed: 0,
+    })
+    .onConflictDoNothing({ target: userQuota.userId })
     .run();
   return userId;
 }
@@ -145,7 +160,130 @@ describe('POST /api/images/upload', () => {
   });
 });
 
+describe('POST /api/images/quota/check-in', () => {
+  it('grants the daily reward once and returns an idempotent result afterwards', async () => {
+    const { provider } = fakeProvider();
+    const userId = `check-in-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId));
+
+    const first = await request(app).post('/api/images/quota/check-in');
+    const second = await request(app).post('/api/images/quota/check-in');
+
+    expect(first.status).toBe(200);
+    expect(first.body).toMatchObject({
+      total: 25,
+      remaining: 25,
+      checkedInToday: true,
+      dailyCheckInReward: 5,
+      claimed: true,
+    });
+    expect(second.status).toBe(200);
+    expect(second.body).toMatchObject({
+      total: 25,
+      remaining: 25,
+      checkedInToday: true,
+      claimed: false,
+    });
+  });
+});
+
 describe('POST /api/images/generate', () => {
+  it('uses a saved user credential without consuming site quota', async () => {
+    const { provider } = fakeProvider();
+    const userId = createDbUser({ userId: `personal-key-${randomUUID()}` });
+    db.update(userQuota)
+      .set({ permanentTotal: 0, permanentUsed: 0, dailyTotal: 0, usedToday: 0 })
+      .where(eq(userQuota.userId, userId))
+      .run();
+    const userImageApiKeys = createUserImageApiKeyService();
+    userImageApiKeys.save(userId, 'sk-personal-generation-9999');
+    const app = createApp({
+      provider,
+      authMiddleware: stubAuth(userId),
+      userImageApiKeys,
+      demoGenerationDelayMs: 0,
+    });
+
+    const response = await request(app)
+      .post('/api/images/generate')
+      .send({ prompt: 'personal key generation' });
+
+    expect(response.status).toBe(200);
+    const call = (provider.generate as ReturnType<typeof vi.fn>).mock.calls[0]![0] as GenerateInput;
+    expect(call.providerCredential).toBe('sk-personal-generation-9999');
+    const quota = await request(app).get('/api/images/quota');
+    expect(quota.body.remaining).toBe(0);
+  });
+
+  it('does not consume site quota when personal-key generation fails', async () => {
+    const provider: ImageGenerationProvider = {
+      generate: vi.fn(async () => {
+        throw new AppError('PROVIDER_KEY_INVALID', 'rejected', 400);
+      }),
+    };
+    const userId = createDbUser({ userId: `personal-key-failure-${randomUUID()}` });
+    db.update(userQuota)
+      .set({ permanentTotal: 7, permanentUsed: 2, dailyTotal: 7, usedToday: 2 })
+      .where(eq(userQuota.userId, userId))
+      .run();
+    const userImageApiKeys = createUserImageApiKeyService();
+    userImageApiKeys.save(userId, 'sk-personal-failure-3333');
+    const app = createApp({
+      provider,
+      authMiddleware: stubAuth(userId),
+      userImageApiKeys,
+      demoGenerationDelayMs: 0,
+    });
+
+    const before = await request(app).get('/api/images/quota');
+    const response = await request(app)
+      .post('/api/images/generate')
+      .send({ prompt: 'personal key failure', count: 2 });
+    const after = await request(app).get('/api/images/quota');
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('PROVIDER_KEY_INVALID');
+    expect(after.body).toEqual(before.body);
+    expect(provider.generate).toHaveBeenCalledWith(
+      expect.objectContaining({ providerCredential: 'sk-personal-failure-3333' }),
+    );
+  });
+
+  it('returns 500 and removes generated files when history persistence fails', async () => {
+    const userId = createDbUser({ userId: `persist-failure-${randomUUID()}` });
+    const saved = await saveOutput(Buffer.concat([PNG_PREFIX, Buffer.alloc(32)]), 'png');
+    db.insert(imageRecords)
+      .values({
+        id: saved.filename,
+        batchId: randomUUID(),
+        userId,
+        prompt: 'existing record',
+        model: 'test-model',
+        filename: saved.filename,
+        mime: 'image/png',
+        width: 1024,
+        height: 1024,
+        count: 1,
+        resolution: 'standard',
+        isPublic: false,
+        createdAt: new Date(),
+      })
+      .run();
+    const provider: ImageGenerationProvider = {
+      generate: vi.fn(async () => ({
+        images: [{ outputPath: saved.absolutePath, width: 1024, height: 1024 }],
+        aspectRatio: '1:1' as const,
+      })),
+    };
+    const app = buildApp(provider, stubAuth(userId));
+
+    const response = await request(app).post('/api/images/generate').send({ prompt: 'duplicate' });
+
+    expect(response.status).toBe(500);
+    expect(response.body.error.code).toBe('INTERNAL');
+    await expect(stat(saved.absolutePath)).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
   it('text-to-image happy path: returns 200 with batch + images array', async () => {
     const { provider } = fakeProvider();
     const app = buildApp(provider);
@@ -185,6 +323,53 @@ describe('POST /api/images/generate', () => {
     expect(history.body.records[0]).toMatchObject({ prompt: 'publish to gallery', isPublic: true });
   });
 
+  it('forwards and persists quality for supported models', async () => {
+    const { provider } = fakeProvider();
+    const userId = `quality-user-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId));
+
+    const response = await request(app).post('/api/images/generate').send({
+      prompt: 'quality generation',
+      model: 'gpt-image-2.5-flare',
+      quality: 'high',
+    });
+
+    expect(response.status).toBe(200);
+    expect(provider.generate).toHaveBeenCalledWith(
+      expect.objectContaining({ model: 'gpt-image-2.5-flare', quality: 'high' }),
+    );
+    const history = await request(app).get('/api/history');
+    expect(history.body.records[0]).toMatchObject({
+      model: 'gpt-image-2.5-flare',
+      quality: 'high',
+    });
+  });
+
+  it('rejects quality for gpt-image-2 and invalid quality values', async () => {
+    const { provider } = fakeProvider();
+    const app = buildApp(provider);
+
+    const unsupported = await request(app).post('/api/images/generate').send({
+      prompt: 'unsupported quality',
+      model: 'gpt-image-2',
+      quality: 'high',
+    });
+    const invalid = await request(app).post('/api/images/generate').send({
+      prompt: 'invalid quality',
+      model: 'gpt-image-2.5-flare',
+      quality: 'ultra',
+    });
+
+    expect(unsupported.status).toBe(400);
+    expect(unsupported.body.error).toMatchObject({
+      code: 'BAD_REQUEST',
+      details: { model: 'gpt-image-2', quality: 'high' },
+    });
+    expect(invalid.status).toBe(400);
+    expect(invalid.body.error.code).toBe('BAD_REQUEST');
+    expect(provider.generate).not.toHaveBeenCalled();
+  });
+
   it('respects explicit count + aspectRatio', async () => {
     const { provider } = fakeProvider();
     const app = buildApp(provider);
@@ -219,13 +404,13 @@ describe('POST /api/images/generate', () => {
     expect(quota.body.remaining).toBe(20);
   });
 
-  it('lets admins call the dedicated high-resolution endpoint', async () => {
+  it('lets authenticated users call the dedicated high-resolution endpoint', async () => {
     const { provider } = fakeProvider();
     const userId = `high-res-admin-${randomUUID()}`;
     const app = buildApp(provider, stubAuth(userId, true));
 
     const res = await request(app).post('/api/images/generate/high-res').send({
-      prompt: '管理员生成 4K 宽屏图',
+      prompt: '登录用户生成 4K 宽屏图',
       count: 1,
       aspectRatio: '16:9',
       resolution: '4k',
@@ -243,11 +428,11 @@ describe('POST /api/images/generate', () => {
     expect(call.aspectRatio).toBe('16:9');
 
     const quota = await request(app).get('/api/images/quota');
-    expect(quota.body.remaining).toBe(19);
+    expect(quota.body.remaining).toBe(17);
 
     const history = await request(app).get('/api/history');
     expect(history.body.records[0]).toMatchObject({
-      prompt: '管理员生成 4K 宽屏图',
+      prompt: '登录用户生成 4K 宽屏图',
       width: 3840,
       height: 2160,
       count: 1,
@@ -256,7 +441,27 @@ describe('POST /api/images/generate', () => {
     });
   });
 
-  it('rejects high-resolution endpoint calls from non-admin users', async () => {
+  it('charges four credits for a sunburst high-resolution image', async () => {
+    const { provider } = fakeProvider();
+    const userId = `sunburst-high-res-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId, true));
+
+    const res = await request(app).post('/api/images/generate/high-res').send({
+      prompt: 'Sunburst 生成 2K 图片',
+      model: 'gpt-image-2.5-sunburst',
+      resolution: '2k',
+    });
+
+    expect(res.status).toBe(200);
+    expect(provider.generate).toHaveBeenCalledWith(
+      expect.objectContaining({ model: 'gpt-image-2.5-sunburst', resolution: '2k' }),
+    );
+
+    const quota = await request(app).get('/api/images/quota');
+    expect(quota.body.remaining).toBe(16);
+  });
+
+  it('lets non-admin users call the high-resolution endpoint', async () => {
     const { provider } = fakeProvider();
     const userId = `high-res-user-${randomUUID()}`;
     const app = buildApp(provider, stubAuth(userId, false));
@@ -266,12 +471,65 @@ describe('POST /api/images/generate', () => {
       resolution: '2k',
     });
 
-    expect(res.status).toBe(403);
-    expect(res.body.error.code).toBe('FORBIDDEN');
-    expect(provider.generate).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(provider.generate).toHaveBeenCalledWith(expect.objectContaining({ resolution: '2k' }));
 
     const quota = await request(app).get('/api/images/quota');
-    expect(quota.body.remaining).toBe(20);
+    expect(quota.body.remaining).toBe(17);
+  });
+
+  it('rejects high-resolution generation when only check-in credits remain', async () => {
+    const { provider } = fakeProvider();
+    const userId = `high-res-check-in-only-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId));
+    db.update(userQuota)
+      .set({ dailyTotal: 0, permanentTotal: 0, permanentUsed: 0, usedToday: 0 })
+      .where(eq(userQuota.userId, userId))
+      .run();
+
+    const checkIn = await request(app).post('/api/images/quota/check-in');
+    expect(checkIn.body.remaining).toBe(5);
+
+    const highResolution = await request(app).post('/api/images/generate/high-res').send({
+      prompt: '签到积分不能生成 2K',
+      resolution: '2k',
+    });
+    expect(highResolution.status).toBe(429);
+    expect(highResolution.body.error).toMatchObject({
+      code: 'QUOTA_EXHAUSTED',
+      details: { requested: 3, remaining: 0, quotaScope: 'permanent' },
+    });
+    expect(provider.generate).not.toHaveBeenCalled();
+
+    const standard = await request(app)
+      .post('/api/images/generate')
+      .send({ prompt: '签到积分仍可生成 1K' });
+    expect(standard.status).toBe(200);
+    expect((await request(app).get('/api/images/quota')).body.remaining).toBe(4);
+  });
+
+  it('lets a non-admin use the saved 2K/4K credential without consuming site quota', async () => {
+    const { provider } = fakeProvider();
+    const userId = createDbUser({ userId: `high-res-key-${randomUUID()}` });
+    const userImageApiKeys = createUserImageApiKeyService();
+    userImageApiKeys.save(userId, 'sk-high-res-user-4444', 'high-res');
+    const app = createApp({
+      provider,
+      authMiddleware: stubAuth(userId, false),
+      userImageApiKeys,
+      demoGenerationDelayMs: 0,
+    });
+
+    const res = await request(app).post('/api/images/generate/high-res').send({
+      prompt: '用户 Key 生成 2K',
+      resolution: '2k',
+    });
+
+    expect(res.status).toBe(200);
+    const call = (provider.generate as ReturnType<typeof vi.fn>).mock.calls[0]![0] as GenerateInput;
+    expect(call.providerCredential).toBe('sk-high-res-user-4444');
+    expect(call.resolution).toBe('2k');
+    expect((await request(app).get('/api/images/quota')).body.remaining).toBe(20);
   });
 
   it('requires 2k or 4k on the high-resolution endpoint', async () => {
@@ -289,7 +547,7 @@ describe('POST /api/images/generate', () => {
     expect(provider.generate).not.toHaveBeenCalled();
   });
 
-  it('rejects 4k requests when the selected aspect ratio is not supported upstream', async () => {
+  it('accepts 4k requests for every supported aspect ratio', async () => {
     const { provider } = fakeProvider();
     const userId = `high-res-aspect-${randomUUID()}`;
     const app = buildApp(provider, stubAuth(userId, true));
@@ -300,9 +558,13 @@ describe('POST /api/images/generate', () => {
       resolution: '4k',
     });
 
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('BAD_REQUEST');
-    expect(provider.generate).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(provider.generate).toHaveBeenCalledWith(
+      expect.objectContaining({ aspectRatio: '1:1', resolution: '4k' }),
+    );
+
+    const quota = await request(app).get('/api/images/quota');
+    expect(quota.body.remaining).toBe(17);
   });
 
   it('passes reference ids through dedicated high-resolution image-to-image calls', async () => {
@@ -414,6 +676,7 @@ describe('POST /api/images/generate', () => {
 
     expect(first.status).toBe(200);
     expect(provider.generate).toHaveBeenCalledOnce();
+    await new Promise((resolve) => setTimeout(resolve, 25));
 
     const afterFirstQuota = await request(app).get('/api/images/quota');
     expect(afterFirstQuota.body.remaining).toBe(19);
@@ -467,7 +730,11 @@ describe('POST /api/images/generate', () => {
     expect(first.status).toBe(200);
     expect(provider.generate).toHaveBeenCalledOnce();
 
-    const referenceId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.png';
+    const upload = await request(app)
+      .post('/api/images/upload')
+      .attach('image', Buffer.concat([PNG_PREFIX, Buffer.alloc(32)]), 'reference.png');
+    expect(upload.status).toBe(200);
+    const referenceId = upload.body.id as string;
     const second = await request(app)
       .post('/api/images/generate')
       .send({
@@ -544,7 +811,7 @@ describe('POST /api/images/generate', () => {
     expect(afterB.body.remaining).toBe(20);
   });
 
-  it('resets stale daily quota rows on the next server-local day', async () => {
+  it('resets stale daily quota rows on the next Asia/Shanghai product day', async () => {
     const { provider } = fakeProvider();
     const userId = `quota-reset-${randomUUID()}`;
     const app = buildApp(provider, stubAuth(userId));
@@ -609,7 +876,7 @@ describe('POST /api/images/generate', () => {
     const { provider } = fakeProvider();
     const app = buildApp(provider);
 
-    const res = await request(app).post('/api/images/generate').send({ prompt: 'p', count: 3 });
+    const res = await request(app).post('/api/images/generate').send({ prompt: 'p', count: 5 });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('BAD_REQUEST');
   });
@@ -620,7 +887,7 @@ describe('POST /api/images/generate', () => {
 
     const res = await request(app)
       .post('/api/images/generate')
-      .send({ prompt: 'p', aspectRatio: '4:3' });
+      .send({ prompt: 'p', aspectRatio: '5:4' });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('BAD_REQUEST');
   });
@@ -635,6 +902,94 @@ describe('POST /api/images/generate', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('BAD_REQUEST');
+  });
+
+  it('rejects another user reference upload before calling the provider', async () => {
+    const { provider } = fakeProvider();
+    const ownerId = `reference-owner-${randomUUID()}`;
+    const otherId = `reference-other-${randomUUID()}`;
+    const ownerApp = buildApp(provider, stubAuth(ownerId));
+    const otherApp = buildApp(provider, stubAuth(otherId));
+    const upload = await request(ownerApp)
+      .post('/api/images/upload')
+      .attach('image', Buffer.concat([PNG_PREFIX, Buffer.alloc(32)]), 'private.png');
+    expect(upload.status).toBe(200);
+
+    const forbidden = await request(otherApp)
+      .post('/api/images/generate')
+      .send({ prompt: 'steal', referenceId: upload.body.id });
+
+    expect(forbidden.status).toBe(403);
+    expect(forbidden.body.error.code).toBe('FORBIDDEN');
+    expect(provider.generate).not.toHaveBeenCalled();
+
+    const owned = await request(ownerApp)
+      .post('/api/images/generate')
+      .send({ prompt: 'owned', referenceId: upload.body.id });
+    expect(owned.status).toBe(200);
+    expect(provider.generate).toHaveBeenCalledOnce();
+  });
+
+  it('reserves the final credit before concurrent provider work', async () => {
+    let releaseProvider!: () => void;
+    const providerGate = new Promise<void>((resolve) => {
+      releaseProvider = resolve;
+    });
+    const provider: ImageGenerationProvider = {
+      generate: vi.fn(async (): Promise<GenerateOutput> => {
+        await providerGate;
+        const saved = await saveOutput(Buffer.concat([PNG_PREFIX, Buffer.alloc(32)]), 'png');
+        return {
+          images: [{ outputPath: saved.absolutePath, width: 1024, height: 1024 }],
+          aspectRatio: '1:1',
+        };
+      }),
+    };
+    const userId = `quota-race-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId));
+    db.insert(userQuota)
+      .values({ userId, usedToday: 0, quotaDate: productDateKey(), dailyTotal: 1 })
+      .onConflictDoUpdate({
+        target: userQuota.userId,
+        set: { usedToday: 0, dailyTotal: 1, permanentTotal: 1, permanentUsed: 0 },
+      })
+      .run();
+
+    const firstPromise = request(app).post('/api/images/generate').send({ prompt: 'first' });
+    const firstStarted = firstPromise.then((response) => response);
+    await vi.waitFor(() => expect(provider.generate).toHaveBeenCalledOnce());
+    const second = await request(app).post('/api/images/generate').send({ prompt: 'second' });
+    expect(second.status).toBe(429);
+    expect(provider.generate).toHaveBeenCalledOnce();
+
+    releaseProvider();
+    expect((await firstStarted).status).toBe(200);
+  });
+
+  it('releases a reservation after provider failure', async () => {
+    const successful = fakeProvider().provider.generate as ReturnType<typeof vi.fn>;
+    const provider: ImageGenerationProvider = {
+      generate: vi
+        .fn()
+        .mockRejectedValueOnce(new AppError('PROVIDER_ERROR', 'failed', 502))
+        .mockImplementation(successful),
+    };
+    const userId = `quota-release-${randomUUID()}`;
+    const app = buildApp(provider, stubAuth(userId));
+    db.insert(userQuota)
+      .values({ userId, usedToday: 0, quotaDate: productDateKey(), dailyTotal: 1 })
+      .onConflictDoUpdate({
+        target: userQuota.userId,
+        set: { usedToday: 0, dailyTotal: 1, permanentTotal: 1, permanentUsed: 0 },
+      })
+      .run();
+
+    expect(
+      (await request(app).post('/api/images/generate').send({ prompt: 'failure' })).status,
+    ).toBe(502);
+    expect((await request(app).post('/api/images/generate').send({ prompt: 'retry' })).status).toBe(
+      200,
+    );
   });
 
   it('propagates PROVIDER_RATE_LIMITED 429 from the provider', async () => {
@@ -680,9 +1035,9 @@ describe('POST /api/images/generate', () => {
     const userId = `cap-${randomUUID()}`;
     const app = buildApp(provider, stubAuth(userId));
 
-    // DAILY_USER_QUOTA defaults to 20, MAX_COUNT=2 per request → 10 generate calls to drain.
-    for (let i = 0; i < 10; i += 1) {
-      const res = await request(app).post('/api/images/generate').send({ prompt: 'p', count: 2 });
+    // DAILY_USER_QUOTA defaults to 20, MAX_COUNT=4 per request -> 5 generate calls to drain.
+    for (let i = 0; i < 5; i += 1) {
+      const res = await request(app).post('/api/images/generate').send({ prompt: 'p', count: 4 });
       expect(res.status).toBe(200);
     }
 

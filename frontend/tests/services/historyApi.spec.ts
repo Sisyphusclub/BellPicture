@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   deleteHistoryRecords,
+  fetchPublicHistory,
   updateHistoryRecord,
   updateHistoryRecords,
 } from '@/services/api/historyApi';
@@ -82,6 +83,24 @@ describe('history metadata API', () => {
         method: 'POST',
         body: JSON.stringify({ ids: [record.id] }),
       }),
+    );
+  });
+
+  it('parses a paginated public gallery response and sends the cursor', async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ records: [record], nextCursor: 'next-page' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetch);
+
+    await expect(fetchPublicHistory({ cursor: 'previous-page', limit: 12 })).resolves.toEqual({
+      records: [record],
+      nextCursor: 'next-page',
+    });
+    expect(String(fetch.mock.calls[0]?.[0])).toContain(
+      '/api/history/public?cursor=previous-page&limit=12',
     );
   });
 });

@@ -2,6 +2,11 @@ export interface AdminQuotaState {
   total: number;
   usedToday: number;
   remainingToday: number;
+  permanentTotal?: number;
+  permanentUsed?: number;
+  permanentRemaining?: number;
+  bonusRemaining?: number;
+  bonusExpiresAt?: string | null;
 }
 
 export interface AdminUser {
@@ -26,8 +31,10 @@ export interface CreateAdminUserRequest {
   username: string;
   password: string;
   dailyTotal?: number;
+  permanentTotal?: number;
 }
 
 export interface UpdateAdminUserQuotaRequest {
-  dailyTotal: number;
+  dailyTotal?: number;
+  permanentTotal?: number;
 }

@@ -1,11 +1,13 @@
 import { Buffer } from 'node:buffer';
+import { stat } from 'node:fs/promises';
 
 import { describe, expect, it, vi } from 'vitest';
 
 import { AppError } from '../../src/errors/AppError.js';
 import { generateImage } from '../../src/services/imageGeneration.service.js';
 import type { ImageGenerationProvider } from '../../src/services/providers/ImageGenerationProvider.js';
-import { saveUpload } from '../../src/storage/localStorage.js';
+import type { QuotaPool } from '../../src/services/quota.service.js';
+import { saveOutput, saveUpload } from '../../src/storage/localStorage.js';
 import type { GenerateInput, GenerateOutput } from '../../src/types/image.js';
 
 const PNG_PREFIX = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -55,6 +57,33 @@ describe('imageGeneration.service', () => {
       count: 1,
       aspectRatio: '1:1',
     });
+  });
+
+  it('passes quality through for supported 2.5 models', async () => {
+    const provider = fakeProvider();
+    await generateImage(
+      { prompt: 'p', model: 'gpt-image-2.5-flare', quality: 'xhigh' },
+      { provider },
+    );
+    expect(provider.generate).toHaveBeenCalledWith({
+      prompt: 'p',
+      model: 'gpt-image-2.5-flare',
+      quality: 'xhigh',
+      count: 1,
+      aspectRatio: '1:1',
+    });
+  });
+
+  it('rejects quality for gpt-image-2 before provider work', async () => {
+    const provider = fakeProvider();
+    await expect(
+      generateImage({ prompt: 'p', model: 'gpt-image-2', quality: 'high' }, { provider }),
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      status: 400,
+      details: { model: 'gpt-image-2', quality: 'high' },
+    });
+    expect(provider.generate).not.toHaveBeenCalled();
   });
 
   it('honours explicit count and aspectRatio', async () => {
@@ -107,18 +136,80 @@ describe('imageGeneration.service', () => {
     expect(provider.generate).not.toHaveBeenCalled();
   });
 
-  it('rejects unsupported resolution and aspect ratio combinations before provider work', async () => {
+  it('accepts every aspect ratio at 4K resolution', async () => {
     const provider = fakeProvider();
+    const aspectRatios = ['1:1', '3:4', '4:3', '16:9', '9:16', '2:3', '3:2'] as const;
 
-    await expect(
-      generateImage({ prompt: 'p', aspectRatio: '1:1', resolution: '4k' }, { provider }),
-    ).rejects.toMatchObject({
-      code: 'BAD_REQUEST',
-      status: 400,
-      details: { aspectRatio: '1:1', resolution: '4k' },
+    for (const aspectRatio of aspectRatios) {
+      await generateImage({ prompt: 'p', aspectRatio, resolution: '4k' }, { provider });
+    }
+
+    expect(provider.generate).toHaveBeenCalledTimes(aspectRatios.length);
+    aspectRatios.forEach((aspectRatio, index) => {
+      expect(provider.generate).toHaveBeenNthCalledWith(
+        index + 1,
+        expect.objectContaining({ aspectRatio, resolution: '4k' }),
+      );
     });
-    expect(provider.generate).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ['gpt-image-2.5-flare', '2k', 6],
+    ['gpt-image-2.5-flare', '4k', 6],
+    ['gpt-image-2.5-sunburst', '2k', 8],
+    ['gpt-image-2.5-sunburst', '4k', 8],
+  ] as const)(
+    'charges the configured high-resolution cost for %s at %s',
+    async (model, resolution, expectedCost) => {
+      const provider = fakeProvider();
+      const commit = vi.fn();
+      const release = vi.fn();
+      const quotaPool: QuotaPool = {
+        snapshot: vi.fn(() => ({
+          total: 20,
+          remaining: 20,
+          checkedInToday: false,
+          dailyCheckInReward: 5,
+        })),
+        reserve: vi.fn(() => ({ commit, release })),
+        checkIn: vi.fn(() => ({
+          total: 20,
+          remaining: 20,
+          checkedInToday: true,
+          dailyCheckInReward: 5,
+          claimed: true,
+        })),
+      };
+
+      await generateImage(
+        { prompt: 'high resolution', model, count: 2, resolution },
+        { provider, quotaPool },
+      );
+
+      expect(quotaPool.reserve).toHaveBeenCalledWith(expectedCost, { scope: 'permanent' });
+      expect(commit).toHaveBeenCalledWith(expectedCost);
+      expect(release).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['gpt-image-2.5-flare', 'gpt-image-2.5-sunburst'])(
+    'charges one credit per standard image for %s',
+    async (model) => {
+      const provider = fakeProvider();
+      const commit = vi.fn();
+      const quotaPool = {
+        reserve: vi.fn(() => ({ commit, release: vi.fn() })),
+      } as unknown as QuotaPool;
+
+      await generateImage(
+        { prompt: 'standard resolution', model, count: 1, resolution: 'standard' },
+        { provider, quotaPool },
+      );
+
+      expect(quotaPool.reserve).toHaveBeenCalledWith(1, { scope: 'all' });
+      expect(commit).toHaveBeenCalledWith(1);
+    },
+  );
 
   it('image-to-image: resolves referenceId to an absolute path under UPLOAD_DIR', async () => {
     const buf = Buffer.concat([PNG_PREFIX, Buffer.alloc(64, 0)]);
@@ -143,13 +234,13 @@ describe('imageGeneration.service', () => {
     const provider = fakeProvider();
     await expect(
       generateImage(
-        { prompt: 'p', referenceId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png' },
+        { prompt: 'p', referenceId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.webp' },
         { provider },
       ),
     ).rejects.toBeInstanceOf(AppError);
     await expect(
       generateImage(
-        { prompt: 'p', referenceId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png' },
+        { prompt: 'p', referenceId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.webp' },
         { provider },
       ),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST', status: 400 });
@@ -161,5 +252,89 @@ describe('imageGeneration.service', () => {
     await expect(
       generateImage({ prompt: 'p', referenceId: 'totally-bogus' }, { provider }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST', status: 400 });
+  });
+
+  it('passes cancellation to the provider and releases the quota reservation', async () => {
+    const controller = new AbortController();
+    const release = vi.fn();
+    const commit = vi.fn();
+    const quotaPool: QuotaPool = {
+      snapshot: vi.fn(() => ({
+        total: 1,
+        remaining: 1,
+        checkedInToday: false,
+        dailyCheckInReward: 5,
+      })),
+      reserve: vi.fn(() => ({ commit, release })),
+      checkIn: vi.fn(() => ({
+        total: 1,
+        remaining: 1,
+        checkedInToday: true,
+        dailyCheckInReward: 5,
+        claimed: true,
+      })),
+    };
+    const provider: ImageGenerationProvider = {
+      generate: vi.fn(
+        (input: GenerateInput) =>
+          new Promise<GenerateOutput>((_resolve, reject) => {
+            input.signal?.addEventListener(
+              'abort',
+              () => reject(new DOMException('cancelled', 'AbortError')),
+              { once: true },
+            );
+          }),
+      ),
+    };
+
+    const pending = generateImage(
+      { prompt: 'cancel me', signal: controller.signal },
+      { provider, quotaPool },
+    );
+    await vi.waitFor(() => expect(provider.generate).toHaveBeenCalledOnce());
+    controller.abort();
+
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    expect(release).toHaveBeenCalledOnce();
+    expect(commit).not.toHaveBeenCalled();
+  });
+
+  it('removes provider outputs and releases quota when reservation commit fails', async () => {
+    const saved = await saveOutput(PNG_PREFIX, 'png');
+    const commitError = new AppError('INTERNAL', 'quota settlement failed', 500);
+    const release = vi.fn();
+    const quotaPool: QuotaPool = {
+      snapshot: vi.fn(() => ({
+        total: 1,
+        remaining: 1,
+        checkedInToday: false,
+        dailyCheckInReward: 5,
+      })),
+      reserve: vi.fn(() => ({
+        commit: vi.fn(() => {
+          throw commitError;
+        }),
+        release,
+      })),
+      checkIn: vi.fn(() => ({
+        total: 1,
+        remaining: 1,
+        checkedInToday: true,
+        dailyCheckInReward: 5,
+        claimed: true,
+      })),
+    };
+    const provider: ImageGenerationProvider = {
+      generate: vi.fn(async () => ({
+        images: [{ outputPath: saved.absolutePath, width: 1024, height: 1024 }],
+        aspectRatio: '1:1' as const,
+      })),
+    };
+
+    await expect(generateImage({ prompt: 'settle me' }, { provider, quotaPool })).rejects.toBe(
+      commitError,
+    );
+    await expect(stat(saved.absolutePath)).rejects.toMatchObject({ code: 'ENOENT' });
+    expect(release).toHaveBeenCalledOnce();
   });
 });

@@ -34,6 +34,9 @@ export interface MorphicCardModalProps {
   onClose: () => void;
   children: ReactNode;
   className?: string;
+  backdropClassName?: string;
+  /** Disable shared-layout morphing when the source card and detail view have different structures. */
+  sharedLayout?: boolean;
 }
 
 /**
@@ -66,6 +69,8 @@ export function MorphicCardModal({
   onClose,
   children,
   className,
+  backdropClassName,
+  sharedLayout = true,
 }: MorphicCardModalProps) {
   'use no memo';
   const reduce = useReducedMotion();
@@ -140,15 +145,22 @@ export function MorphicCardModal({
               transition: { duration: 0.18, ease: EASE_OUT },
             }}
             transition={{ duration: 0.32, ease: EASE_OUT }}
-            className="fixed inset-0 z-[100] bg-black/70"
+            className={cn('fixed inset-0 z-[100] bg-black/70', backdropClassName)}
             onClick={onClose}
           />
           <motion.div
             ref={modalRef}
             key={`modal-${id}`}
-            layoutId={`morphic-card-${id}`}
+            layout={sharedLayout}
+            {...(sharedLayout ? { layoutId: `morphic-card-${id}` } : {})}
             tabIndex={-1}
-            style={{ borderRadius: 8 }}
+            // Detail views opt out of shared-layout morphing so their media keeps
+            // a stable position. Use opacity-only entry/exit in that mode; a
+            // scale or y transform would move the image while the dialog opens.
+            initial={reduce || sharedLayout ? false : { opacity: 0 }}
+            animate={sharedLayout ? false : { opacity: 1 }}
+            exit={reduce || sharedLayout ? {} : { opacity: 0 }}
+            style={{ borderRadius: 8, transformOrigin: 'center center' }}
             className={cn(
               // The morph box is the scroller itself. Avoid an h-fit flex column
               // with flex-1 children: Safari resolves that to 0 height and the
@@ -157,29 +169,26 @@ export function MorphicCardModal({
               'pointer-events-auto fixed inset-x-4 inset-y-0 z-[101] m-auto h-fit max-h-[calc(100svh-2rem)] w-full max-w-sm overflow-x-hidden overflow-y-auto overscroll-contain',
               className,
             )}
-            transition={reduce ? { duration: 0 } : MORPH_SPRING}
+            transition={
+              reduce
+                ? { duration: 0 }
+                : sharedLayout
+                  ? MORPH_SPRING
+                  : { duration: 0.22, ease: EASE_OUT }
+            }
           >
-            {/* Content layer: fades/blurs to hide the card→modal content swap.
-                No overflow here — Safari misrenders overflow + filter together. */}
+            {/* Content layer fades in after the modal surface settles so its
+                different detail layout never appears detached during the transition. */}
             <motion.div
-              layout
-              initial={reduce ? false : { opacity: 0, filter: 'blur(8px)' }}
+              layout={sharedLayout}
+              initial={reduce ? false : { opacity: 0 }}
               animate={{
                 opacity: 1,
-                filter: 'blur(0px)',
                 transition: reduce
                   ? { duration: 0 }
-                  : { delay: 0.12, duration: 0.3, ease: EASE_OUT },
+                  : { delay: sharedLayout ? 0.12 : 0.06, duration: 0.2, ease: EASE_OUT },
               }}
-              exit={
-                reduce
-                  ? {}
-                  : {
-                      opacity: 0,
-                      filter: 'blur(6px)',
-                      transition: { duration: 0.12, ease: EASE_OUT },
-                    }
-              }
+              exit={reduce ? {} : { opacity: 0, transition: { duration: 0.12, ease: EASE_OUT } }}
             >
               {children}
             </motion.div>

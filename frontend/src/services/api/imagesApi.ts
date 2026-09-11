@@ -2,11 +2,13 @@ import {
   ASPECT_RATIOS,
   DEFAULT_IMAGE_RESOLUTION,
   type AspectRatio,
+  type DailyCheckInResponse,
   type GenerateRequest,
   type GenerateResponse,
   type GenerateResponseItem,
   type GenerationMode,
   type ImageResolution,
+  type ImageQuality,
   type QuotaResponse,
   type UploadResponse,
 } from '@/types/image';
@@ -30,6 +32,18 @@ export async function fetchImageQuota(): Promise<QuotaResponse> {
   if (!response.ok) throw buildApiError(response.status, payload);
   if (!isQuotaResponse(payload)) {
     throw new ImageApiError(response.status, 'INVALID_RESPONSE', '额度接口返回了无法识别的响应。');
+  }
+  return payload;
+}
+
+export async function claimDailyCheckIn(): Promise<DailyCheckInResponse> {
+  const response = await authedFetch(buildApiUrl('/api/images/quota/check-in'), {
+    method: 'POST',
+  });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw buildApiError(response.status, payload);
+  if (!isDailyCheckInResponse(payload)) {
+    throw new ImageApiError(response.status, 'INVALID_RESPONSE', '签到接口返回了无法识别的响应。');
   }
   return payload;
 }
@@ -118,7 +132,23 @@ export async function fetchOutputBlob(outputUrl: string, signal?: AbortSignal): 
 
 function isQuotaResponse(value: unknown): value is QuotaResponse {
   if (!isRecord(value)) return false;
-  return isNumber(readNumber(value, 'total')) && isNumber(readNumber(value, 'remaining'));
+  return (
+    isNumber(readNumber(value, 'total')) &&
+    isNumber(readNumber(value, 'remaining')) &&
+    typeof value.checkedInToday === 'boolean' &&
+    isNumber(readNumber(value, 'dailyCheckInReward')) &&
+    (value.permanentTotal === undefined || isNumber(readNumber(value, 'permanentTotal'))) &&
+    (value.permanentUsed === undefined || isNumber(readNumber(value, 'permanentUsed'))) &&
+    (value.permanentRemaining === undefined || isNumber(readNumber(value, 'permanentRemaining'))) &&
+    (value.bonusRemaining === undefined || isNumber(readNumber(value, 'bonusRemaining'))) &&
+    (value.bonusExpiresAt === undefined ||
+      value.bonusExpiresAt === null ||
+      typeof value.bonusExpiresAt === 'string')
+  );
+}
+
+function isDailyCheckInResponse(value: unknown): value is DailyCheckInResponse {
+  return isQuotaResponse(value) && 'claimed' in value && typeof value.claimed === 'boolean';
 }
 
 function isUploadResponse(value: unknown): value is UploadResponse {
@@ -173,6 +203,7 @@ export function createGenerateRequest(input: {
   count?: number;
   aspectRatio?: AspectRatio;
   resolution?: ImageResolution;
+  quality?: ImageQuality;
   isPublic?: boolean;
   demoPresetId?: string;
 }): GenerateRequest {
@@ -196,6 +227,9 @@ export function createGenerateRequest(input: {
   }
   if (input.resolution !== undefined) {
     request.resolution = input.resolution;
+  }
+  if (input.quality !== undefined) {
+    request.quality = input.quality;
   }
   if (input.isPublic !== undefined) {
     request.isPublic = input.isPublic;
