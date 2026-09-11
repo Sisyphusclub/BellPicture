@@ -559,9 +559,7 @@ export function GenerateView() {
         .filter((item) => session.batchIds.includes(item.id) && !persisted.has(item.id))
         .map((item) => [item.id, item]),
     );
-    const persistedBatchIds = [...history.batches]
-      .reverse()
-      .map((batch) => batch.batchId);
+    const persistedBatchIds = [...history.batches].reverse().map((batch) => batch.batchId);
     const orderedBatchIds = [
       ...persistedBatchIds,
       ...session.batchIds.filter((batchId) => !persisted.has(batchId)),

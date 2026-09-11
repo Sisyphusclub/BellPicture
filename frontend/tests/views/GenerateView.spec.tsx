@@ -285,9 +285,7 @@ it.each([
 ] as const)('does not expose or submit quality for %s', async (model, label) => {
   const user = userEvent.setup();
   render(
-    <MemoryRouter
-      initialEntries={[`/generate?prompt=雨夜建筑&quality=max&model=${model}`]}
-    >
+    <MemoryRouter initialEntries={[`/generate?prompt=雨夜建筑&quality=max&model=${model}`]}>
       <ToastProvider>
         <GenerateView />
       </ToastProvider>
@@ -315,10 +313,7 @@ it('opens the generation settings panel above its trigger', async () => {
   );
 
   await user.click(screen.getByRole('button', { name: '自定义生成参数' }));
-  expect(screen.getByRole('menu', { name: '自定义生成参数' })).toHaveAttribute(
-    'data-side',
-    'top',
-  );
+  expect(screen.getByRole('menu', { name: '自定义生成参数' })).toHaveAttribute('data-side', 'top');
 });
 
 it('shows the requested custom aspect ratios in order and preserves a selection', async () => {
