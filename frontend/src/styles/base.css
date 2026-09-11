@@ -6241,7 +6241,8 @@ video {
   height: 100%;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 2px;
   padding: 6px 0;
   pointer-events: none;
 }
@@ -6253,8 +6254,8 @@ video {
   display: grid;
   width: 32px;
   min-width: 32px;
-  height: 20px;
-  min-height: 20px;
+  height: 16px;
+  min-height: 16px;
   flex: 0 0 auto;
   place-items: center end;
   border: 0;
@@ -6268,7 +6269,7 @@ video {
   box-shadow: none;
 }
 .generation-history-track .generation-history-track__mark::before {
-  width: 11px;
+  width: var(--history-tick-length, 11px);
   height: 2px;
   border-radius: var(--radius-full);
   background: color-mix(in oklch, var(--foreground) 34%, var(--background));
@@ -6284,12 +6285,12 @@ video {
 .generation-history-track .generation-history-track__mark:hover::before,
 .generation-history-track .generation-history-track__mark:focus-visible::before,
 .generation-history-track .generation-history-track__mark.is-previewed::before {
-  width: 23px;
+  width: max(var(--history-tick-length, 11px), 23px);
   background: color-mix(in oklch, var(--foreground) 72%, var(--accent));
   opacity: 0.98;
 }
 .generation-history-track .generation-history-track__mark.is-current::before {
-  width: 27px;
+  width: max(var(--history-tick-length, 11px), 27px);
   height: 3px;
   background: color-mix(in oklch, var(--foreground) 90%, var(--accent));
   box-shadow: 0 0 8px color-mix(in oklch, var(--accent) 20%, transparent);
@@ -6300,12 +6301,12 @@ video {
   box-shadow: 0 0 0 2px color-mix(in oklch, var(--ring) 28%, transparent);
 }
 .generation-history-track .generation-history-track__mark.is-current:focus-visible::before {
-  width: 28px;
+  width: max(var(--history-tick-length, 11px), 28px);
   background: var(--foreground);
   box-shadow: 0 0 0 2px color-mix(in oklch, var(--ring) 36%, transparent);
 }
 .generation-history-track .generation-history-track__mark.is-hovered::before {
-  width: 25px;
+  width: max(var(--history-tick-length, 11px), 25px);
   background: color-mix(in oklch, var(--accent) 48%, var(--foreground));
   box-shadow: 0 0 10px color-mix(in oklch, var(--accent) 32%, transparent);
   opacity: 1;
@@ -6340,10 +6341,12 @@ video {
   z-index: 2;
   display: block;
   width: min(320px, calc(100vw - 96px));
-  border: 1px solid color-mix(in oklch, var(--border-strong) 68%, transparent);
+  border: 1px solid color-mix(in oklch, var(--border-strong) 92%, var(--foreground) 8%);
   border-radius: 12px;
-  background: color-mix(in oklch, var(--card) 94%, transparent);
-  box-shadow: 0 18px 52px -30px rgb(0 0 0 / 0.92);
+  background: color-mix(in oklch, var(--card) 98%, var(--background));
+  box-shadow:
+    0 24px 70px -28px rgb(0 0 0 / 0.96),
+    0 0 0 1px rgb(255 255 255 / 0.06);
   padding: 0;
   backdrop-filter: blur(16px) saturate(108%);
   opacity: 0;
@@ -6416,7 +6419,7 @@ video {
   display: block;
   max-height: 3em;
   overflow: hidden;
-  color: var(--muted-foreground);
+  color: color-mix(in oklch, var(--muted-foreground) 92%, var(--foreground));
   font-size: 11px;
   line-height: 1.5;
 }
@@ -6431,10 +6434,12 @@ video {
   min-height: 0;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid color-mix(in oklch, var(--border-strong) 72%, transparent);
+  border: 1px solid color-mix(in oklch, var(--border-strong) 88%, var(--foreground) 12%);
   border-radius: 16px;
-  background: color-mix(in oklch, var(--card) 88%, transparent);
-  box-shadow: 0 24px 68px -34px rgb(0 0 0 / 0.86);
+  background: color-mix(in oklch, var(--card) 96%, var(--background));
+  box-shadow:
+    0 24px 68px -30px rgb(0 0 0 / 0.92),
+    0 0 0 1px rgb(255 255 255 / 0.05);
   backdrop-filter: blur(18px) saturate(112%);
 }
 .generation-history-panel__header {
