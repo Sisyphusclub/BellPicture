@@ -158,13 +158,16 @@ function splitGenerationError(message: string): GenerationErrorCopy {
   };
 }
 
-function scrollToGenerationBatch(batchId: string): boolean {
+function scrollToGenerationBatch(
+  batchId: string,
+  behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth',
+): boolean {
   const target = Array.from(document.querySelectorAll<HTMLElement>('[data-generation-batch]')).find(
     (element) => element.dataset.generationBatch === batchId,
   );
   if (!target || typeof target.scrollIntoView !== 'function') return false;
   target.scrollIntoView({
-    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    behavior,
     block: 'center',
   });
   return true;
@@ -633,7 +636,7 @@ export function GenerateView() {
     );
   }, [feed, history.batches]);
   const visibleHistoryBatchIds = useMemo(
-    () => generationHistoryBatches.map((batch) => batch.batchId),
+    () => [...generationHistoryBatches].reverse().map((batch) => batch.batchId),
     [generationHistoryBatches],
   );
   const latestBatch = feed[feed.length - 1];
@@ -1172,7 +1175,7 @@ export function GenerateView() {
       return;
     }
     const latestId = feed[feed.length - 1]?.id;
-    if (!latestId || !scrollToGenerationBatch(latestId)) return;
+    if (!latestId || !scrollToGenerationBatch(latestId, 'auto')) return;
     initialLatestScrollSession.current = activeSessionId;
     setActiveHistoryBatchId(null);
   }, [activeSessionId, feed, generation.isLoading, history.isHydrated]);
