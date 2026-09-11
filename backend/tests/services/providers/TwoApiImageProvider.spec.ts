@@ -362,24 +362,20 @@ describe('TwoApiImageProvider', () => {
     expect(body['size']).toBe('3840x2160');
   });
 
-  it('rejects 4k requests for unsupported aspect ratios before provider IO', async () => {
+  it('supports 4k square requests before provider IO', async () => {
     const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
       jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
     );
     const provider = new TwoApiImageProvider(baseConfig, fetchMock);
 
-    await expect(
-      provider.generate({
-        prompt: '4k square',
-        aspectRatio: '1:1',
-        resolution: '4k',
-      }),
-    ).rejects.toMatchObject({
-      code: 'BAD_REQUEST',
-      status: 400,
-      details: { aspectRatio: '1:1', resolution: '4k' },
+    const out = await provider.generate({
+      prompt: '4k square',
+      aspectRatio: '1:1',
+      resolution: '4k',
     });
-    expect(fetchMock).not.toHaveBeenCalled();
+
+    expect(out.images[0]).toMatchObject({ width: 4096, height: 4096 });
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
 
   it('calls /v1/images/edits with multipart FormData when referencePath is set (image-to-image)', async () => {
