@@ -15,6 +15,7 @@ export const QUALITY_CAPABLE_IMAGE_MODELS = [
 
 export const DEFAULT_ASPECT_RATIO: AspectRatio = '1:1';
 export const DEFAULT_IMAGE_RESOLUTION: ImageResolution = 'standard';
+export const GEMINI_IMAGE_MODEL = 'gemini-3.1-flash-image';
 export const STANDARD_IMAGE_GENERATION_CREDIT_COST = 1;
 export const HIGH_RES_IMAGE_GENERATION_CREDIT_COST = 3;
 export const SUNBURST_HIGH_RES_IMAGE_GENERATION_CREDIT_COST = 4;
