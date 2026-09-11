@@ -109,8 +109,10 @@ export const userImageApiKeys = sqliteTable('user_image_api_keys', {
   userId: text('user_id')
     .primaryKey()
     .references(() => user.id, { onDelete: 'cascade' }),
-  encryptedKey: text('encrypted_key').notNull(),
-  keySuffix: text('key_suffix').notNull(),
+  encryptedKey: text('encrypted_key'),
+  keySuffix: text('key_suffix'),
+  highResEncryptedKey: text('high_res_encrypted_key'),
+  highResKeySuffix: text('high_res_key_suffix'),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
 });

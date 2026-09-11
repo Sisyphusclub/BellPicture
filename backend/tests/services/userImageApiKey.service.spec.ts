@@ -60,6 +60,24 @@ describe('userImageApiKey service', () => {
     expect(service.getProviderCredential(userId)).toBe(apiKey);
   });
 
+  it('stores and selects standard and high-resolution credentials independently', () => {
+    const service = createUserImageApiKeyService();
+    const userId = createUser();
+
+    service.save(userId, 'sk-standard-1111');
+    expect(service.save(userId, 'sk-high-res-4444', 'high-res')).toEqual({
+      configured: true,
+      keySuffix: '1111',
+      highResConfigured: true,
+      highResKeySuffix: '4444',
+    });
+    expect(service.getProviderCredentialForGroup(userId, 'standard')).toBe('sk-standard-1111');
+    expect(service.getProviderCredentialForGroup(userId, 'high-res')).toBe('sk-high-res-4444');
+
+    expect(service.remove(userId, 'high-res')).toEqual({ configured: true, keySuffix: '1111' });
+    expect(service.getProviderCredentialForGroup(userId, 'high-res')).toBeUndefined();
+  });
+
   it('authenticates ciphertext against its owning user and rejects tampering', () => {
     const service = createUserImageApiKeyService();
     const firstUserId = createUser();

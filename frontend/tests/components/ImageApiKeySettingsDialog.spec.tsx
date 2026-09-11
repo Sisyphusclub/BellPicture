@@ -73,3 +73,16 @@ it('renders a localized validation error without exposing a raw provider respons
 
   expect(screen.getByText('这个 API Key 未通过 sub2api 鉴权。')).toBeInTheDocument();
 });
+
+it('saves the 2K/4K key as a separate group', async () => {
+  const user = userEvent.setup();
+  render(<ImageApiKeySettingsDialog open onClose={vi.fn()} />);
+
+  await user.type(screen.getByLabelText('2K/4K 分组 Key'), 'sk-high-res-4444');
+  const highResForm = screen.getByLabelText('2K/4K 分组 Key').closest('form');
+  await user.click(highResForm!.querySelector<HTMLButtonElement>('button[type="submit"]')!);
+
+  await waitFor(() =>
+    expect(imageApiKey.save).toHaveBeenCalledWith('sk-high-res-4444', 'high-res'),
+  );
+});

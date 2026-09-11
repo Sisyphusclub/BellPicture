@@ -42,6 +42,7 @@ export interface GenerateImageInput {
   requestId?: string;
   signal?: AbortSignal;
   providerCredential?: string;
+  providerCredentialGroup?: 'standard' | 'high-res';
 }
 
 export interface GenerateImageItemOutput {
@@ -161,6 +162,9 @@ export async function generateImage(
       ...(input.signal !== undefined ? { signal: input.signal } : {}),
       ...(input.providerCredential !== undefined
         ? { providerCredential: input.providerCredential }
+        : {}),
+      ...(input.providerCredentialGroup !== undefined
+        ? { providerCredentialGroup: input.providerCredentialGroup }
         : {}),
       ...(input.resolution !== undefined ? { resolution } : {}),
       ...(input.quality !== undefined ? { quality: input.quality } : {}),

@@ -101,6 +101,7 @@ export interface GenerateInput {
   signal?: AbortSignal;
   /** Server-resolved credential for this request. Never accepted from an HTTP request body. */
   providerCredential?: string;
+  providerCredentialGroup?: 'standard' | 'high-res';
   /**
    * Optional reference image path under UPLOAD_DIR.
    * Routes the request to /v1/images/edits.

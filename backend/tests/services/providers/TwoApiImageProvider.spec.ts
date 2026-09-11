@@ -56,6 +56,24 @@ describe('TwoApiImageProvider', () => {
     );
   });
 
+  it('validates a 2K/4K credential against the high-resolution provider', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ object: 'list', data: [{ id: 'high-res-image', object: 'model' }] }),
+    );
+    const provider = new TwoApiImageProvider(
+      { ...baseConfig, highResBaseUrl: 'https://high-res.example.com' },
+      fetchMock,
+    );
+
+    await provider.validateCredential({
+      credential: 'sk-high-res-personal',
+      credentialGroup: 'high-res',
+      model: 'high-res-image',
+    });
+
+    expect(fetchMock.mock.calls[0]![0]).toBe('https://high-res.example.com/v1/models');
+  });
+
   it('rejects invalid credentials and groups without the configured image model', async () => {
     const invalid = new TwoApiImageProvider(
       baseConfig,
@@ -317,6 +335,32 @@ describe('TwoApiImageProvider', () => {
     expect(calledUrl).toBe('https://codex.example.com/v1/images/generations');
     const headers = (init as RequestInit).headers as Record<string, string>;
     expect(headers['Authorization']).toBe('Bearer sk-high-res');
+  });
+
+  it('uses a high-resolution request credential for 2K/4K requests', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ data: [{ b64_json: TINY_PNG_B64 }] }),
+    );
+    const provider = new TwoApiImageProvider(
+      {
+        ...baseConfig,
+        highResBaseUrl: 'https://high-res.example.com',
+        highResApiKey: 'sk-high-res',
+        modelApiKeys: { 'gpt-image-2': 'sk-server-model' },
+      },
+      fetchMock,
+    );
+
+    await provider.generate({
+      prompt: '2k personal',
+      resolution: '2k',
+      providerCredential: 'sk-personal-high-res',
+      providerCredentialGroup: 'high-res',
+    });
+
+    expect(fetchMock.mock.calls[0]![0]).toBe('https://high-res.example.com/v1/images/generations');
+    const headers = fetchMock.mock.calls[0]![1]!.headers as Record<string, string>;
+    expect(headers['Authorization']).toBe('Bearer sk-personal-high-res');
   });
 
   it('uses the configured high-res model when the app sends the default model', async () => {

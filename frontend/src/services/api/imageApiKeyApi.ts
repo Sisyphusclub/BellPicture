@@ -15,19 +15,24 @@ export async function fetchImageApiKeyStatus(): Promise<ImageApiKeyStatus> {
   return requestStatus(await authedFetch(buildApiUrl(ENDPOINT)));
 }
 
-export async function saveImageApiKey(apiKey: string): Promise<ImageApiKeyStatus> {
+export async function saveImageApiKey(
+  apiKey: string,
+  group: 'standard' | 'high-res' = 'standard',
+): Promise<ImageApiKeyStatus> {
   return requestStatus(
     await authedFetch(buildApiUrl(ENDPOINT), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apiKey }),
+      body: JSON.stringify(group === 'standard' ? { apiKey } : { apiKey, group }),
     }),
   );
 }
 
-export async function deleteImageApiKey(): Promise<ImageApiKeyStatus> {
+export async function deleteImageApiKey(
+  group: 'standard' | 'high-res' = 'standard',
+): Promise<ImageApiKeyStatus> {
   return requestStatus(
-    await authedFetch(buildApiUrl(ENDPOINT), {
+    await authedFetch(buildApiUrl(group === 'standard' ? ENDPOINT : `${ENDPOINT}?group=${group}`), {
       method: 'DELETE',
     }),
   );
@@ -49,13 +54,16 @@ async function requestStatus(response: Response): Promise<ImageApiKeyStatus> {
 function isImageApiKeyStatus(value: unknown): value is ImageApiKeyStatus {
   if (!isRecord(value) || typeof value.configured !== 'boolean') return false;
   const keys = Object.keys(value);
-  if (!value.configured) return keys.length === 1 && keys[0] === 'configured';
-  return (
-    keys.length === 2 &&
-    keys.includes('configured') &&
-    keys.includes('keySuffix') &&
-    typeof value.keySuffix === 'string' &&
-    value.keySuffix.length > 0 &&
-    value.keySuffix.length <= 4
-  );
+  const allowed = ['configured', 'keySuffix', 'highResConfigured', 'highResKeySuffix'];
+  if (keys.some((key) => !allowed.includes(key))) return false;
+  if (value.configured !== isValidSuffix(value.keySuffix)) return false;
+  if (value.highResConfigured !== undefined && typeof value.highResConfigured !== 'boolean') {
+    return false;
+  }
+  const highResConfigured = value.highResConfigured === true;
+  return highResConfigured === isValidSuffix(value.highResKeySuffix);
+}
+
+function isValidSuffix(value: unknown): boolean {
+  return typeof value === 'string' && value.length > 0 && value.length <= 4;
 }

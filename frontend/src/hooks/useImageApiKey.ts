@@ -89,13 +89,16 @@ export function useImageApiKey() {
     if (userId !== null) await load(userId);
   }, [userId]);
   const save = useCallback(
-    async (apiKey: string): Promise<ImageApiKeyStatus> => {
+    async (
+      apiKey: string,
+      group: 'standard' | 'high-res' = 'standard',
+    ): Promise<ImageApiKeyStatus> => {
       if (userId === null) throw new Error('请先登录。');
       const currentRequestId = requestId + 1;
       requestId = currentRequestId;
       store.set((current) => ({ ...current, userId, isMutating: true, error: null }));
       try {
-        const status = await saveImageApiKey(apiKey);
+        const status = await saveImageApiKey(apiKey, ...(group === 'standard' ? [] : [group]));
         if (requestId === currentRequestId) {
           store.set({ userId, status, isLoading: false, isMutating: false, error: null });
         }
@@ -110,25 +113,28 @@ export function useImageApiKey() {
     },
     [userId],
   );
-  const remove = useCallback(async (): Promise<ImageApiKeyStatus> => {
-    if (userId === null) throw new Error('请先登录。');
-    const currentRequestId = requestId + 1;
-    requestId = currentRequestId;
-    store.set((current) => ({ ...current, userId, isMutating: true, error: null }));
-    try {
-      const status = await deleteImageApiKey();
-      if (requestId === currentRequestId) {
-        store.set({ userId, status, isLoading: false, isMutating: false, error: null });
+  const remove = useCallback(
+    async (group: 'standard' | 'high-res' = 'standard'): Promise<ImageApiKeyStatus> => {
+      if (userId === null) throw new Error('请先登录。');
+      const currentRequestId = requestId + 1;
+      requestId = currentRequestId;
+      store.set((current) => ({ ...current, userId, isMutating: true, error: null }));
+      try {
+        const status = await deleteImageApiKey(...(group === 'standard' ? [] : [group]));
+        if (requestId === currentRequestId) {
+          store.set({ userId, status, isLoading: false, isMutating: false, error: null });
+        }
+        return status;
+      } catch (error) {
+        const nextError = readableError(error);
+        if (requestId === currentRequestId) {
+          store.set((current) => ({ ...current, isMutating: false, error: nextError }));
+        }
+        throw nextError;
       }
-      return status;
-    } catch (error) {
-      const nextError = readableError(error);
-      if (requestId === currentRequestId) {
-        store.set((current) => ({ ...current, isMutating: false, error: nextError }));
-      }
-      throw nextError;
-    }
-  }, [userId]);
+    },
+    [userId],
+  );
 
   const visibleState = state.userId === userId ? state : { ...EMPTY_STATE, userId };
   return { ...visibleState, refresh, save, remove };

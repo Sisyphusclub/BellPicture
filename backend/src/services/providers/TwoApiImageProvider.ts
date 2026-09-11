@@ -65,9 +65,13 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     const timeoutSignal = AbortSignal.timeout(this.config.timeoutMs);
     const signal =
       input.signal === undefined ? timeoutSignal : AbortSignal.any([input.signal, timeoutSignal]);
+    const baseUrl =
+      input.credentialGroup === 'high-res'
+        ? (this.config.highResBaseUrl ?? this.config.baseUrl)
+        : this.config.baseUrl;
     let response: Response;
     try {
-      response = await this.fetchImpl(buildUrl(this.config.baseUrl, 'v1/models'), {
+      response = await this.fetchImpl(buildUrl(baseUrl, 'v1/models'), {
         method: 'GET',
         headers: { Authorization: `Bearer ${input.credential}` },
         signal,
@@ -158,8 +162,13 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     const aspectRatio: AspectRatio = input.aspectRatio ?? DEFAULT_ASPECT_RATIO;
     const resolution: ImageResolution = input.resolution ?? DEFAULT_IMAGE_RESOLUTION;
     const model = this.modelForResolution(resolution, input.model);
-    const baseUrl = this.baseUrlForRequest(model, resolution);
-    const apiKey = this.apiKeyForRequest(model, resolution, input.providerCredential);
+    const baseUrl = this.baseUrlForRequest(model, resolution, input.providerCredentialGroup);
+    const apiKey = this.apiKeyForRequest(
+      model,
+      resolution,
+      input.providerCredential,
+      input.providerCredentialGroup,
+    );
     const count = input.count ?? DEFAULT_COUNT;
     const sizing = aspectSizeForResolution(aspectRatio, resolution);
     if (sizing === undefined) {
@@ -390,7 +399,14 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     return { images, aspectRatio, model };
   }
 
-  private baseUrlForRequest(model: string, resolution: ImageResolution): string {
+  private baseUrlForRequest(
+    model: string,
+    resolution: ImageResolution,
+    providerCredentialGroup: 'standard' | 'high-res' | undefined,
+  ): string {
+    if (providerCredentialGroup === 'high-res') {
+      return this.config.highResBaseUrl ?? this.config.baseUrl;
+    }
     if (this.config.modelApiKeys?.[model] !== undefined) return this.config.baseUrl;
     if (resolution === DEFAULT_IMAGE_RESOLUTION) return this.config.baseUrl;
     return this.config.highResBaseUrl ?? this.config.baseUrl;
@@ -400,11 +416,18 @@ export class TwoApiImageProvider implements ImageGenerationProvider {
     model: string,
     resolution: ImageResolution,
     providerCredential: string | undefined,
+    providerCredentialGroup: 'standard' | 'high-res' | undefined,
   ): string {
+    if (
+      providerCredential !== undefined &&
+      (resolution === DEFAULT_IMAGE_RESOLUTION || providerCredentialGroup === 'high-res')
+    ) {
+      return providerCredential;
+    }
     const modelApiKey = this.config.modelApiKeys?.[model];
     if (modelApiKey !== undefined) return modelApiKey;
     if (resolution === DEFAULT_IMAGE_RESOLUTION) {
-      return providerCredential ?? this.config.apiKey;
+      return this.config.apiKey;
     }
     return this.config.highResApiKey ?? this.config.apiKey;
   }

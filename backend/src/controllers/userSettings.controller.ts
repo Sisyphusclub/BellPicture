@@ -13,6 +13,7 @@ import '../types/express.js';
 
 const updateImageApiKeySchema = z.object({
   apiKey: z.string().min(1).max(4096),
+  group: z.enum(['standard', 'high-res']).default('standard'),
 });
 
 export interface UserSettingsControllerDeps {
@@ -57,10 +58,18 @@ export function buildUserSettingsController(deps: UserSettingsControllerDeps): {
         }
         await deps.provider.validateCredential({
           credential: apiKey,
-          model: env.IMAGE_MODEL,
+          model:
+            parsed.group === 'high-res'
+              ? (env.HIGH_RES_IMAGE_MODEL ?? env.IMAGE_MODEL)
+              : env.IMAGE_MODEL,
+          credentialGroup: parsed.group,
           requestId: req.requestId,
         });
-        const body: UserImageApiKeyStatus = deps.userImageApiKeys.save(user.id, apiKey);
+        const body: UserImageApiKeyStatus = deps.userImageApiKeys.save(
+          user.id,
+          apiKey,
+          parsed.group,
+        );
         res.status(200).json(body);
       } catch (err) {
         next(err);
@@ -70,7 +79,8 @@ export function buildUserSettingsController(deps: UserSettingsControllerDeps): {
     async deleteImageApiKey(req, res, next) {
       try {
         const user = requireUser(req);
-        const body: UserImageApiKeyStatus = deps.userImageApiKeys.remove(user.id);
+        const group = req.query.group === 'high-res' ? 'high-res' : 'standard';
+        const body: UserImageApiKeyStatus = deps.userImageApiKeys.remove(user.id, group);
         res.status(200).json(body);
       } catch (err) {
         next(err);

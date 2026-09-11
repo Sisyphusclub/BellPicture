@@ -4283,10 +4283,20 @@ video {
   display: grid;
   gap: 12px;
 }
-.image-api-key-form > label {
+.image-api-key-form__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.image-api-key-form__header label {
   color: var(--foreground);
   font-size: 12px;
   font-weight: 620;
+}
+.image-api-key-form__header small {
+  color: var(--muted-foreground);
+  font-size: 11px;
 }
 .image-api-key-field {
   position: relative;

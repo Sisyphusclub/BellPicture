@@ -14,13 +14,21 @@ const AUTH_TAG_BYTES = 16;
 export interface UserImageApiKeyStatus {
   configured: boolean;
   keySuffix?: string;
+  highResConfigured?: boolean;
+  highResKeySuffix?: string;
 }
+
+export type UserImageApiKeyGroup = 'standard' | 'high-res';
 
 export interface UserImageApiKeyService {
   getStatus: (userId: string) => UserImageApiKeyStatus;
   getProviderCredential: (userId: string) => string | undefined;
-  save: (userId: string, apiKey: string) => UserImageApiKeyStatus;
-  remove: (userId: string) => UserImageApiKeyStatus;
+  getProviderCredentialForGroup: (
+    userId: string,
+    group: UserImageApiKeyGroup,
+  ) => string | undefined;
+  save: (userId: string, apiKey: string, group?: UserImageApiKeyGroup) => UserImageApiKeyStatus;
+  remove: (userId: string, group?: UserImageApiKeyGroup) => UserImageApiKeyStatus;
 }
 
 export function createUserImageApiKeyService(
@@ -33,16 +41,31 @@ export function createUserImageApiKeyService(
 
   function getStatus(userId: string): UserImageApiKeyStatus {
     const row = selectKeyRow(userId);
-    return row === undefined ? { configured: false } : statusFromSuffix(row.keySuffix);
+    return row === undefined
+      ? { configured: false }
+      : statusFromSuffix(row.keySuffix, row.highResKeySuffix);
   }
 
   function getProviderCredential(userId: string): string | undefined {
-    const row = selectKeyRow(userId);
-    if (row === undefined) return undefined;
-    return decryptKey(row.encryptedKey, userId, encryptionKey);
+    return getProviderCredentialForGroup(userId, 'standard');
   }
 
-  function save(userId: string, apiKey: string): UserImageApiKeyStatus {
+  function getProviderCredentialForGroup(
+    userId: string,
+    group: UserImageApiKeyGroup,
+  ): string | undefined {
+    const row = selectKeyRow(userId);
+    if (row === undefined) return undefined;
+    const encrypted = group === 'high-res' ? row.highResEncryptedKey : row.encryptedKey;
+    if (encrypted === undefined || encrypted === null) return undefined;
+    return decryptKey(encrypted, userId, encryptionKey);
+  }
+
+  function save(
+    userId: string,
+    apiKey: string,
+    group: UserImageApiKeyGroup = 'standard',
+  ): UserImageApiKeyStatus {
     const normalized = apiKey.trim();
     if (normalized.length === 0) {
       throw new AppError('BAD_REQUEST', 'API Key 不能为空。', 400);
@@ -50,37 +73,88 @@ export function createUserImageApiKeyService(
     const now = new Date();
     const keySuffix = normalized.slice(-4);
     const encryptedKey = encryptKey(normalized, userId, encryptionKey);
+    const values =
+      group === 'high-res'
+        ? {
+            userId,
+            encryptedKey: null,
+            keySuffix: null,
+            highResEncryptedKey: encryptedKey,
+            highResKeySuffix: keySuffix,
+            createdAt: now,
+            updatedAt: now,
+          }
+        : { userId, encryptedKey, keySuffix, createdAt: now, updatedAt: now };
     db.insert(userImageApiKeys)
-      .values({ userId, encryptedKey, keySuffix, createdAt: now, updatedAt: now })
+      .values(values)
       .onConflictDoUpdate({
         target: userImageApiKeys.userId,
-        set: { encryptedKey, keySuffix, updatedAt: now },
+        set:
+          group === 'high-res'
+            ? { highResEncryptedKey: encryptedKey, highResKeySuffix: keySuffix, updatedAt: now }
+            : { encryptedKey, keySuffix, updatedAt: now },
       })
       .run();
-    return statusFromSuffix(keySuffix);
+    return getStatus(userId);
   }
 
-  function remove(userId: string): UserImageApiKeyStatus {
-    db.delete(userImageApiKeys).where(eq(userImageApiKeys.userId, userId)).run();
-    return { configured: false };
+  function remove(userId: string, group: UserImageApiKeyGroup = 'standard'): UserImageApiKeyStatus {
+    if (group === 'high-res') {
+      const row = selectKeyRow(userId);
+      if (row?.encryptedKey === null) {
+        db.delete(userImageApiKeys).where(eq(userImageApiKeys.userId, userId)).run();
+      } else {
+        db.update(userImageApiKeys)
+          .set({ highResEncryptedKey: null, highResKeySuffix: null })
+          .where(eq(userImageApiKeys.userId, userId))
+          .run();
+      }
+    } else {
+      const row = selectKeyRow(userId);
+      if (row?.highResEncryptedKey === null || row === undefined) {
+        db.delete(userImageApiKeys).where(eq(userImageApiKeys.userId, userId)).run();
+      } else {
+        db.update(userImageApiKeys)
+          .set({ encryptedKey: null, keySuffix: null })
+          .where(eq(userImageApiKeys.userId, userId))
+          .run();
+      }
+    }
+    return getStatus(userId);
   }
 
-  return { getStatus, getProviderCredential, save, remove };
+  return { getStatus, getProviderCredential, getProviderCredentialForGroup, save, remove };
 }
 
-function selectKeyRow(userId: string): { encryptedKey: string; keySuffix: string } | undefined {
+function selectKeyRow(userId: string):
+  | {
+      encryptedKey: string | null;
+      keySuffix: string | null;
+      highResEncryptedKey: string | null;
+      highResKeySuffix: string | null;
+    }
+  | undefined {
   return db
     .select({
       encryptedKey: userImageApiKeys.encryptedKey,
       keySuffix: userImageApiKeys.keySuffix,
+      highResEncryptedKey: userImageApiKeys.highResEncryptedKey,
+      highResKeySuffix: userImageApiKeys.highResKeySuffix,
     })
     .from(userImageApiKeys)
     .where(eq(userImageApiKeys.userId, userId))
     .get();
 }
 
-function statusFromSuffix(keySuffix: string): UserImageApiKeyStatus {
-  return { configured: true, keySuffix };
+function statusFromSuffix(
+  keySuffix: string | null,
+  highResKeySuffix: string | null,
+): UserImageApiKeyStatus {
+  return {
+    configured: keySuffix !== null,
+    ...(keySuffix === null ? {} : { keySuffix }),
+    ...(highResKeySuffix === null ? {} : { highResConfigured: true, highResKeySuffix }),
+  };
 }
 
 function encryptKey(plaintext: string, userId: string, key: Buffer): string {

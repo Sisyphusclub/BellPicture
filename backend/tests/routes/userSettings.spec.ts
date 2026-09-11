@@ -72,7 +72,11 @@ describe('/api/settings/image-api-key', () => {
     expect(saved.status).toBe(200);
     expect(saved.body).toEqual({ configured: true, keySuffix: '8765' });
     expect(validateCredential).toHaveBeenCalledWith(
-      expect.objectContaining({ credential: 'sk-user-private-8765', model: 'gpt-image-2' }),
+      expect.objectContaining({
+        credential: 'sk-user-private-8765',
+        credentialGroup: 'standard',
+        model: 'gpt-image-2',
+      }),
     );
     expect(JSON.stringify(saved.body)).not.toContain('sk-user-private');
 
@@ -114,6 +118,40 @@ describe('/api/settings/image-api-key', () => {
     expect(response.status).toBe(400);
     expect(response.body.error.code).toBe('PROVIDER_KEY_INVALID');
     expect(keyService.getProviderCredential(userId)).toBe('sk-existing-1111');
+  });
+
+  it('saves and removes the 2K/4K key independently', async () => {
+    const userId = createUser();
+    const keyService = createUserImageApiKeyService();
+    const validateCredential = vi.fn(async () => {});
+    const app = createApp({
+      provider: providerWithValidation(validateCredential),
+      authMiddleware: authFor(userId),
+      userImageApiKeys: keyService,
+    });
+
+    const saved = await request(app)
+      .put('/api/settings/image-api-key')
+      .send({ apiKey: 'sk-high-res-4444', group: 'high-res' });
+
+    expect(saved.status).toBe(200);
+    expect(saved.body).toEqual({
+      configured: false,
+      highResConfigured: true,
+      highResKeySuffix: '4444',
+    });
+    expect(keyService.getProviderCredentialForGroup(userId, 'standard')).toBeUndefined();
+    expect(keyService.getProviderCredentialForGroup(userId, 'high-res')).toBe('sk-high-res-4444');
+    expect(validateCredential).toHaveBeenCalledWith(
+      expect.objectContaining({
+        credential: 'sk-high-res-4444',
+        credentialGroup: 'high-res',
+      }),
+    );
+
+    expect((await request(app).delete('/api/settings/image-api-key?group=high-res')).body).toEqual({
+      configured: false,
+    });
   });
 
   it('isolates saved statuses by authenticated user', async () => {
